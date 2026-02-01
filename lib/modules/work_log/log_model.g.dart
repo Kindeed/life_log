@@ -1,0 +1,1359 @@
+// GENERATED CODE - DO NOT MODIFY BY HAND
+
+part of 'log_model.dart';
+
+// **************************************************************************
+// IsarCollectionGenerator
+// **************************************************************************
+
+// coverage:ignore-file
+// ignore_for_file: duplicate_ignore, non_constant_identifier_names, constant_identifier_names, invalid_use_of_protected_member, unnecessary_cast, prefer_const_constructors, lines_longer_than_80_chars, require_trailing_commas, inference_failure_on_function_invocation, unnecessary_parenthesis, unnecessary_raw_strings, unnecessary_null_checks, join_return_with_assignment, prefer_final_locals, avoid_js_rounded_ints, avoid_positional_boolean_parameters, always_specify_types
+
+extension GetWorkLogCollection on Isar {
+  IsarCollection<WorkLog> get workLogs => this.collection();
+}
+
+const WorkLogSchema = CollectionSchema(
+  name: r'WorkLog',
+  id: 9172451265745087192,
+  properties: {
+    r'date': PropertySchema(
+      id: 0,
+      name: r'date',
+      type: IsarType.dateTime,
+    ),
+    r'expenses': PropertySchema(
+      id: 1,
+      name: r'expenses',
+      type: IsarType.double,
+    ),
+    r'isReimbursed': PropertySchema(
+      id: 2,
+      name: r'isReimbursed',
+      type: IsarType.bool,
+    ),
+    r'location': PropertySchema(
+      id: 3,
+      name: r'location',
+      type: IsarType.string,
+    ),
+    r'note': PropertySchema(
+      id: 4,
+      name: r'note',
+      type: IsarType.string,
+    ),
+    r'overtimeHours': PropertySchema(
+      id: 5,
+      name: r'overtimeHours',
+      type: IsarType.double,
+    ),
+    r'transport': PropertySchema(
+      id: 6,
+      name: r'transport',
+      type: IsarType.string,
+    ),
+    r'type': PropertySchema(
+      id: 7,
+      name: r'type',
+      type: IsarType.byte,
+      enumMap: _WorkLogtypeEnumValueMap,
+    )
+  },
+  estimateSize: _workLogEstimateSize,
+  serialize: _workLogSerialize,
+  deserialize: _workLogDeserialize,
+  deserializeProp: _workLogDeserializeProp,
+  idName: r'id',
+  indexes: {},
+  links: {},
+  embeddedSchemas: {},
+  getId: _workLogGetId,
+  getLinks: _workLogGetLinks,
+  attach: _workLogAttach,
+  version: '3.1.0+1',
+);
+
+int _workLogEstimateSize(
+  WorkLog object,
+  List<int> offsets,
+  Map<Type, List<int>> allOffsets,
+) {
+  var bytesCount = offsets.last;
+  {
+    final value = object.location;
+    if (value != null) {
+      bytesCount += 3 + value.length * 3;
+    }
+  }
+  {
+    final value = object.note;
+    if (value != null) {
+      bytesCount += 3 + value.length * 3;
+    }
+  }
+  {
+    final value = object.transport;
+    if (value != null) {
+      bytesCount += 3 + value.length * 3;
+    }
+  }
+  return bytesCount;
+}
+
+void _workLogSerialize(
+  WorkLog object,
+  IsarWriter writer,
+  List<int> offsets,
+  Map<Type, List<int>> allOffsets,
+) {
+  writer.writeDateTime(offsets[0], object.date);
+  writer.writeDouble(offsets[1], object.expenses);
+  writer.writeBool(offsets[2], object.isReimbursed);
+  writer.writeString(offsets[3], object.location);
+  writer.writeString(offsets[4], object.note);
+  writer.writeDouble(offsets[5], object.overtimeHours);
+  writer.writeString(offsets[6], object.transport);
+  writer.writeByte(offsets[7], object.type.index);
+}
+
+WorkLog _workLogDeserialize(
+  Id id,
+  IsarReader reader,
+  List<int> offsets,
+  Map<Type, List<int>> allOffsets,
+) {
+  final object = WorkLog();
+  object.date = reader.readDateTime(offsets[0]);
+  object.expenses = reader.readDoubleOrNull(offsets[1]);
+  object.id = id;
+  object.isReimbursed = reader.readBool(offsets[2]);
+  object.location = reader.readStringOrNull(offsets[3]);
+  object.note = reader.readStringOrNull(offsets[4]);
+  object.overtimeHours = reader.readDoubleOrNull(offsets[5]);
+  object.transport = reader.readStringOrNull(offsets[6]);
+  object.type = _WorkLogtypeValueEnumMap[reader.readByteOrNull(offsets[7])] ??
+      LogType.work;
+  return object;
+}
+
+P _workLogDeserializeProp<P>(
+  IsarReader reader,
+  int propertyId,
+  int offset,
+  Map<Type, List<int>> allOffsets,
+) {
+  switch (propertyId) {
+    case 0:
+      return (reader.readDateTime(offset)) as P;
+    case 1:
+      return (reader.readDoubleOrNull(offset)) as P;
+    case 2:
+      return (reader.readBool(offset)) as P;
+    case 3:
+      return (reader.readStringOrNull(offset)) as P;
+    case 4:
+      return (reader.readStringOrNull(offset)) as P;
+    case 5:
+      return (reader.readDoubleOrNull(offset)) as P;
+    case 6:
+      return (reader.readStringOrNull(offset)) as P;
+    case 7:
+      return (_WorkLogtypeValueEnumMap[reader.readByteOrNull(offset)] ??
+          LogType.work) as P;
+    default:
+      throw IsarError('Unknown property with id $propertyId');
+  }
+}
+
+const _WorkLogtypeEnumValueMap = {
+  'work': 0,
+  'rest': 1,
+  'leave': 2,
+  'businessTrip': 3,
+};
+const _WorkLogtypeValueEnumMap = {
+  0: LogType.work,
+  1: LogType.rest,
+  2: LogType.leave,
+  3: LogType.businessTrip,
+};
+
+Id _workLogGetId(WorkLog object) {
+  return object.id;
+}
+
+List<IsarLinkBase<dynamic>> _workLogGetLinks(WorkLog object) {
+  return [];
+}
+
+void _workLogAttach(IsarCollection<dynamic> col, Id id, WorkLog object) {
+  object.id = id;
+}
+
+extension WorkLogQueryWhereSort on QueryBuilder<WorkLog, WorkLog, QWhere> {
+  QueryBuilder<WorkLog, WorkLog, QAfterWhere> anyId() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addWhereClause(const IdWhereClause.any());
+    });
+  }
+}
+
+extension WorkLogQueryWhere on QueryBuilder<WorkLog, WorkLog, QWhereClause> {
+  QueryBuilder<WorkLog, WorkLog, QAfterWhereClause> idEqualTo(Id id) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addWhereClause(IdWhereClause.between(
+        lower: id,
+        upper: id,
+      ));
+    });
+  }
+
+  QueryBuilder<WorkLog, WorkLog, QAfterWhereClause> idNotEqualTo(Id id) {
+    return QueryBuilder.apply(this, (query) {
+      if (query.whereSort == Sort.asc) {
+        return query
+            .addWhereClause(
+              IdWhereClause.lessThan(upper: id, includeUpper: false),
+            )
+            .addWhereClause(
+              IdWhereClause.greaterThan(lower: id, includeLower: false),
+            );
+      } else {
+        return query
+            .addWhereClause(
+              IdWhereClause.greaterThan(lower: id, includeLower: false),
+            )
+            .addWhereClause(
+              IdWhereClause.lessThan(upper: id, includeUpper: false),
+            );
+      }
+    });
+  }
+
+  QueryBuilder<WorkLog, WorkLog, QAfterWhereClause> idGreaterThan(Id id,
+      {bool include = false}) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addWhereClause(
+        IdWhereClause.greaterThan(lower: id, includeLower: include),
+      );
+    });
+  }
+
+  QueryBuilder<WorkLog, WorkLog, QAfterWhereClause> idLessThan(Id id,
+      {bool include = false}) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addWhereClause(
+        IdWhereClause.lessThan(upper: id, includeUpper: include),
+      );
+    });
+  }
+
+  QueryBuilder<WorkLog, WorkLog, QAfterWhereClause> idBetween(
+    Id lowerId,
+    Id upperId, {
+    bool includeLower = true,
+    bool includeUpper = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addWhereClause(IdWhereClause.between(
+        lower: lowerId,
+        includeLower: includeLower,
+        upper: upperId,
+        includeUpper: includeUpper,
+      ));
+    });
+  }
+}
+
+extension WorkLogQueryFilter
+    on QueryBuilder<WorkLog, WorkLog, QFilterCondition> {
+  QueryBuilder<WorkLog, WorkLog, QAfterFilterCondition> dateEqualTo(
+      DateTime value) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.equalTo(
+        property: r'date',
+        value: value,
+      ));
+    });
+  }
+
+  QueryBuilder<WorkLog, WorkLog, QAfterFilterCondition> dateGreaterThan(
+    DateTime value, {
+    bool include = false,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.greaterThan(
+        include: include,
+        property: r'date',
+        value: value,
+      ));
+    });
+  }
+
+  QueryBuilder<WorkLog, WorkLog, QAfterFilterCondition> dateLessThan(
+    DateTime value, {
+    bool include = false,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.lessThan(
+        include: include,
+        property: r'date',
+        value: value,
+      ));
+    });
+  }
+
+  QueryBuilder<WorkLog, WorkLog, QAfterFilterCondition> dateBetween(
+    DateTime lower,
+    DateTime upper, {
+    bool includeLower = true,
+    bool includeUpper = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.between(
+        property: r'date',
+        lower: lower,
+        includeLower: includeLower,
+        upper: upper,
+        includeUpper: includeUpper,
+      ));
+    });
+  }
+
+  QueryBuilder<WorkLog, WorkLog, QAfterFilterCondition> expensesIsNull() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(const FilterCondition.isNull(
+        property: r'expenses',
+      ));
+    });
+  }
+
+  QueryBuilder<WorkLog, WorkLog, QAfterFilterCondition> expensesIsNotNull() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(const FilterCondition.isNotNull(
+        property: r'expenses',
+      ));
+    });
+  }
+
+  QueryBuilder<WorkLog, WorkLog, QAfterFilterCondition> expensesEqualTo(
+    double? value, {
+    double epsilon = Query.epsilon,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.equalTo(
+        property: r'expenses',
+        value: value,
+        epsilon: epsilon,
+      ));
+    });
+  }
+
+  QueryBuilder<WorkLog, WorkLog, QAfterFilterCondition> expensesGreaterThan(
+    double? value, {
+    bool include = false,
+    double epsilon = Query.epsilon,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.greaterThan(
+        include: include,
+        property: r'expenses',
+        value: value,
+        epsilon: epsilon,
+      ));
+    });
+  }
+
+  QueryBuilder<WorkLog, WorkLog, QAfterFilterCondition> expensesLessThan(
+    double? value, {
+    bool include = false,
+    double epsilon = Query.epsilon,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.lessThan(
+        include: include,
+        property: r'expenses',
+        value: value,
+        epsilon: epsilon,
+      ));
+    });
+  }
+
+  QueryBuilder<WorkLog, WorkLog, QAfterFilterCondition> expensesBetween(
+    double? lower,
+    double? upper, {
+    bool includeLower = true,
+    bool includeUpper = true,
+    double epsilon = Query.epsilon,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.between(
+        property: r'expenses',
+        lower: lower,
+        includeLower: includeLower,
+        upper: upper,
+        includeUpper: includeUpper,
+        epsilon: epsilon,
+      ));
+    });
+  }
+
+  QueryBuilder<WorkLog, WorkLog, QAfterFilterCondition> idEqualTo(Id value) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.equalTo(
+        property: r'id',
+        value: value,
+      ));
+    });
+  }
+
+  QueryBuilder<WorkLog, WorkLog, QAfterFilterCondition> idGreaterThan(
+    Id value, {
+    bool include = false,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.greaterThan(
+        include: include,
+        property: r'id',
+        value: value,
+      ));
+    });
+  }
+
+  QueryBuilder<WorkLog, WorkLog, QAfterFilterCondition> idLessThan(
+    Id value, {
+    bool include = false,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.lessThan(
+        include: include,
+        property: r'id',
+        value: value,
+      ));
+    });
+  }
+
+  QueryBuilder<WorkLog, WorkLog, QAfterFilterCondition> idBetween(
+    Id lower,
+    Id upper, {
+    bool includeLower = true,
+    bool includeUpper = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.between(
+        property: r'id',
+        lower: lower,
+        includeLower: includeLower,
+        upper: upper,
+        includeUpper: includeUpper,
+      ));
+    });
+  }
+
+  QueryBuilder<WorkLog, WorkLog, QAfterFilterCondition> isReimbursedEqualTo(
+      bool value) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.equalTo(
+        property: r'isReimbursed',
+        value: value,
+      ));
+    });
+  }
+
+  QueryBuilder<WorkLog, WorkLog, QAfterFilterCondition> locationIsNull() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(const FilterCondition.isNull(
+        property: r'location',
+      ));
+    });
+  }
+
+  QueryBuilder<WorkLog, WorkLog, QAfterFilterCondition> locationIsNotNull() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(const FilterCondition.isNotNull(
+        property: r'location',
+      ));
+    });
+  }
+
+  QueryBuilder<WorkLog, WorkLog, QAfterFilterCondition> locationEqualTo(
+    String? value, {
+    bool caseSensitive = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.equalTo(
+        property: r'location',
+        value: value,
+        caseSensitive: caseSensitive,
+      ));
+    });
+  }
+
+  QueryBuilder<WorkLog, WorkLog, QAfterFilterCondition> locationGreaterThan(
+    String? value, {
+    bool include = false,
+    bool caseSensitive = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.greaterThan(
+        include: include,
+        property: r'location',
+        value: value,
+        caseSensitive: caseSensitive,
+      ));
+    });
+  }
+
+  QueryBuilder<WorkLog, WorkLog, QAfterFilterCondition> locationLessThan(
+    String? value, {
+    bool include = false,
+    bool caseSensitive = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.lessThan(
+        include: include,
+        property: r'location',
+        value: value,
+        caseSensitive: caseSensitive,
+      ));
+    });
+  }
+
+  QueryBuilder<WorkLog, WorkLog, QAfterFilterCondition> locationBetween(
+    String? lower,
+    String? upper, {
+    bool includeLower = true,
+    bool includeUpper = true,
+    bool caseSensitive = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.between(
+        property: r'location',
+        lower: lower,
+        includeLower: includeLower,
+        upper: upper,
+        includeUpper: includeUpper,
+        caseSensitive: caseSensitive,
+      ));
+    });
+  }
+
+  QueryBuilder<WorkLog, WorkLog, QAfterFilterCondition> locationStartsWith(
+    String value, {
+    bool caseSensitive = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.startsWith(
+        property: r'location',
+        value: value,
+        caseSensitive: caseSensitive,
+      ));
+    });
+  }
+
+  QueryBuilder<WorkLog, WorkLog, QAfterFilterCondition> locationEndsWith(
+    String value, {
+    bool caseSensitive = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.endsWith(
+        property: r'location',
+        value: value,
+        caseSensitive: caseSensitive,
+      ));
+    });
+  }
+
+  QueryBuilder<WorkLog, WorkLog, QAfterFilterCondition> locationContains(
+      String value,
+      {bool caseSensitive = true}) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.contains(
+        property: r'location',
+        value: value,
+        caseSensitive: caseSensitive,
+      ));
+    });
+  }
+
+  QueryBuilder<WorkLog, WorkLog, QAfterFilterCondition> locationMatches(
+      String pattern,
+      {bool caseSensitive = true}) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.matches(
+        property: r'location',
+        wildcard: pattern,
+        caseSensitive: caseSensitive,
+      ));
+    });
+  }
+
+  QueryBuilder<WorkLog, WorkLog, QAfterFilterCondition> locationIsEmpty() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.equalTo(
+        property: r'location',
+        value: '',
+      ));
+    });
+  }
+
+  QueryBuilder<WorkLog, WorkLog, QAfterFilterCondition> locationIsNotEmpty() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.greaterThan(
+        property: r'location',
+        value: '',
+      ));
+    });
+  }
+
+  QueryBuilder<WorkLog, WorkLog, QAfterFilterCondition> noteIsNull() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(const FilterCondition.isNull(
+        property: r'note',
+      ));
+    });
+  }
+
+  QueryBuilder<WorkLog, WorkLog, QAfterFilterCondition> noteIsNotNull() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(const FilterCondition.isNotNull(
+        property: r'note',
+      ));
+    });
+  }
+
+  QueryBuilder<WorkLog, WorkLog, QAfterFilterCondition> noteEqualTo(
+    String? value, {
+    bool caseSensitive = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.equalTo(
+        property: r'note',
+        value: value,
+        caseSensitive: caseSensitive,
+      ));
+    });
+  }
+
+  QueryBuilder<WorkLog, WorkLog, QAfterFilterCondition> noteGreaterThan(
+    String? value, {
+    bool include = false,
+    bool caseSensitive = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.greaterThan(
+        include: include,
+        property: r'note',
+        value: value,
+        caseSensitive: caseSensitive,
+      ));
+    });
+  }
+
+  QueryBuilder<WorkLog, WorkLog, QAfterFilterCondition> noteLessThan(
+    String? value, {
+    bool include = false,
+    bool caseSensitive = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.lessThan(
+        include: include,
+        property: r'note',
+        value: value,
+        caseSensitive: caseSensitive,
+      ));
+    });
+  }
+
+  QueryBuilder<WorkLog, WorkLog, QAfterFilterCondition> noteBetween(
+    String? lower,
+    String? upper, {
+    bool includeLower = true,
+    bool includeUpper = true,
+    bool caseSensitive = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.between(
+        property: r'note',
+        lower: lower,
+        includeLower: includeLower,
+        upper: upper,
+        includeUpper: includeUpper,
+        caseSensitive: caseSensitive,
+      ));
+    });
+  }
+
+  QueryBuilder<WorkLog, WorkLog, QAfterFilterCondition> noteStartsWith(
+    String value, {
+    bool caseSensitive = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.startsWith(
+        property: r'note',
+        value: value,
+        caseSensitive: caseSensitive,
+      ));
+    });
+  }
+
+  QueryBuilder<WorkLog, WorkLog, QAfterFilterCondition> noteEndsWith(
+    String value, {
+    bool caseSensitive = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.endsWith(
+        property: r'note',
+        value: value,
+        caseSensitive: caseSensitive,
+      ));
+    });
+  }
+
+  QueryBuilder<WorkLog, WorkLog, QAfterFilterCondition> noteContains(
+      String value,
+      {bool caseSensitive = true}) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.contains(
+        property: r'note',
+        value: value,
+        caseSensitive: caseSensitive,
+      ));
+    });
+  }
+
+  QueryBuilder<WorkLog, WorkLog, QAfterFilterCondition> noteMatches(
+      String pattern,
+      {bool caseSensitive = true}) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.matches(
+        property: r'note',
+        wildcard: pattern,
+        caseSensitive: caseSensitive,
+      ));
+    });
+  }
+
+  QueryBuilder<WorkLog, WorkLog, QAfterFilterCondition> noteIsEmpty() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.equalTo(
+        property: r'note',
+        value: '',
+      ));
+    });
+  }
+
+  QueryBuilder<WorkLog, WorkLog, QAfterFilterCondition> noteIsNotEmpty() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.greaterThan(
+        property: r'note',
+        value: '',
+      ));
+    });
+  }
+
+  QueryBuilder<WorkLog, WorkLog, QAfterFilterCondition> overtimeHoursIsNull() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(const FilterCondition.isNull(
+        property: r'overtimeHours',
+      ));
+    });
+  }
+
+  QueryBuilder<WorkLog, WorkLog, QAfterFilterCondition>
+      overtimeHoursIsNotNull() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(const FilterCondition.isNotNull(
+        property: r'overtimeHours',
+      ));
+    });
+  }
+
+  QueryBuilder<WorkLog, WorkLog, QAfterFilterCondition> overtimeHoursEqualTo(
+    double? value, {
+    double epsilon = Query.epsilon,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.equalTo(
+        property: r'overtimeHours',
+        value: value,
+        epsilon: epsilon,
+      ));
+    });
+  }
+
+  QueryBuilder<WorkLog, WorkLog, QAfterFilterCondition>
+      overtimeHoursGreaterThan(
+    double? value, {
+    bool include = false,
+    double epsilon = Query.epsilon,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.greaterThan(
+        include: include,
+        property: r'overtimeHours',
+        value: value,
+        epsilon: epsilon,
+      ));
+    });
+  }
+
+  QueryBuilder<WorkLog, WorkLog, QAfterFilterCondition> overtimeHoursLessThan(
+    double? value, {
+    bool include = false,
+    double epsilon = Query.epsilon,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.lessThan(
+        include: include,
+        property: r'overtimeHours',
+        value: value,
+        epsilon: epsilon,
+      ));
+    });
+  }
+
+  QueryBuilder<WorkLog, WorkLog, QAfterFilterCondition> overtimeHoursBetween(
+    double? lower,
+    double? upper, {
+    bool includeLower = true,
+    bool includeUpper = true,
+    double epsilon = Query.epsilon,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.between(
+        property: r'overtimeHours',
+        lower: lower,
+        includeLower: includeLower,
+        upper: upper,
+        includeUpper: includeUpper,
+        epsilon: epsilon,
+      ));
+    });
+  }
+
+  QueryBuilder<WorkLog, WorkLog, QAfterFilterCondition> transportIsNull() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(const FilterCondition.isNull(
+        property: r'transport',
+      ));
+    });
+  }
+
+  QueryBuilder<WorkLog, WorkLog, QAfterFilterCondition> transportIsNotNull() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(const FilterCondition.isNotNull(
+        property: r'transport',
+      ));
+    });
+  }
+
+  QueryBuilder<WorkLog, WorkLog, QAfterFilterCondition> transportEqualTo(
+    String? value, {
+    bool caseSensitive = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.equalTo(
+        property: r'transport',
+        value: value,
+        caseSensitive: caseSensitive,
+      ));
+    });
+  }
+
+  QueryBuilder<WorkLog, WorkLog, QAfterFilterCondition> transportGreaterThan(
+    String? value, {
+    bool include = false,
+    bool caseSensitive = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.greaterThan(
+        include: include,
+        property: r'transport',
+        value: value,
+        caseSensitive: caseSensitive,
+      ));
+    });
+  }
+
+  QueryBuilder<WorkLog, WorkLog, QAfterFilterCondition> transportLessThan(
+    String? value, {
+    bool include = false,
+    bool caseSensitive = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.lessThan(
+        include: include,
+        property: r'transport',
+        value: value,
+        caseSensitive: caseSensitive,
+      ));
+    });
+  }
+
+  QueryBuilder<WorkLog, WorkLog, QAfterFilterCondition> transportBetween(
+    String? lower,
+    String? upper, {
+    bool includeLower = true,
+    bool includeUpper = true,
+    bool caseSensitive = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.between(
+        property: r'transport',
+        lower: lower,
+        includeLower: includeLower,
+        upper: upper,
+        includeUpper: includeUpper,
+        caseSensitive: caseSensitive,
+      ));
+    });
+  }
+
+  QueryBuilder<WorkLog, WorkLog, QAfterFilterCondition> transportStartsWith(
+    String value, {
+    bool caseSensitive = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.startsWith(
+        property: r'transport',
+        value: value,
+        caseSensitive: caseSensitive,
+      ));
+    });
+  }
+
+  QueryBuilder<WorkLog, WorkLog, QAfterFilterCondition> transportEndsWith(
+    String value, {
+    bool caseSensitive = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.endsWith(
+        property: r'transport',
+        value: value,
+        caseSensitive: caseSensitive,
+      ));
+    });
+  }
+
+  QueryBuilder<WorkLog, WorkLog, QAfterFilterCondition> transportContains(
+      String value,
+      {bool caseSensitive = true}) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.contains(
+        property: r'transport',
+        value: value,
+        caseSensitive: caseSensitive,
+      ));
+    });
+  }
+
+  QueryBuilder<WorkLog, WorkLog, QAfterFilterCondition> transportMatches(
+      String pattern,
+      {bool caseSensitive = true}) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.matches(
+        property: r'transport',
+        wildcard: pattern,
+        caseSensitive: caseSensitive,
+      ));
+    });
+  }
+
+  QueryBuilder<WorkLog, WorkLog, QAfterFilterCondition> transportIsEmpty() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.equalTo(
+        property: r'transport',
+        value: '',
+      ));
+    });
+  }
+
+  QueryBuilder<WorkLog, WorkLog, QAfterFilterCondition> transportIsNotEmpty() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.greaterThan(
+        property: r'transport',
+        value: '',
+      ));
+    });
+  }
+
+  QueryBuilder<WorkLog, WorkLog, QAfterFilterCondition> typeEqualTo(
+      LogType value) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.equalTo(
+        property: r'type',
+        value: value,
+      ));
+    });
+  }
+
+  QueryBuilder<WorkLog, WorkLog, QAfterFilterCondition> typeGreaterThan(
+    LogType value, {
+    bool include = false,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.greaterThan(
+        include: include,
+        property: r'type',
+        value: value,
+      ));
+    });
+  }
+
+  QueryBuilder<WorkLog, WorkLog, QAfterFilterCondition> typeLessThan(
+    LogType value, {
+    bool include = false,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.lessThan(
+        include: include,
+        property: r'type',
+        value: value,
+      ));
+    });
+  }
+
+  QueryBuilder<WorkLog, WorkLog, QAfterFilterCondition> typeBetween(
+    LogType lower,
+    LogType upper, {
+    bool includeLower = true,
+    bool includeUpper = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.between(
+        property: r'type',
+        lower: lower,
+        includeLower: includeLower,
+        upper: upper,
+        includeUpper: includeUpper,
+      ));
+    });
+  }
+}
+
+extension WorkLogQueryObject
+    on QueryBuilder<WorkLog, WorkLog, QFilterCondition> {}
+
+extension WorkLogQueryLinks
+    on QueryBuilder<WorkLog, WorkLog, QFilterCondition> {}
+
+extension WorkLogQuerySortBy on QueryBuilder<WorkLog, WorkLog, QSortBy> {
+  QueryBuilder<WorkLog, WorkLog, QAfterSortBy> sortByDate() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'date', Sort.asc);
+    });
+  }
+
+  QueryBuilder<WorkLog, WorkLog, QAfterSortBy> sortByDateDesc() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'date', Sort.desc);
+    });
+  }
+
+  QueryBuilder<WorkLog, WorkLog, QAfterSortBy> sortByExpenses() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'expenses', Sort.asc);
+    });
+  }
+
+  QueryBuilder<WorkLog, WorkLog, QAfterSortBy> sortByExpensesDesc() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'expenses', Sort.desc);
+    });
+  }
+
+  QueryBuilder<WorkLog, WorkLog, QAfterSortBy> sortByIsReimbursed() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'isReimbursed', Sort.asc);
+    });
+  }
+
+  QueryBuilder<WorkLog, WorkLog, QAfterSortBy> sortByIsReimbursedDesc() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'isReimbursed', Sort.desc);
+    });
+  }
+
+  QueryBuilder<WorkLog, WorkLog, QAfterSortBy> sortByLocation() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'location', Sort.asc);
+    });
+  }
+
+  QueryBuilder<WorkLog, WorkLog, QAfterSortBy> sortByLocationDesc() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'location', Sort.desc);
+    });
+  }
+
+  QueryBuilder<WorkLog, WorkLog, QAfterSortBy> sortByNote() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'note', Sort.asc);
+    });
+  }
+
+  QueryBuilder<WorkLog, WorkLog, QAfterSortBy> sortByNoteDesc() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'note', Sort.desc);
+    });
+  }
+
+  QueryBuilder<WorkLog, WorkLog, QAfterSortBy> sortByOvertimeHours() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'overtimeHours', Sort.asc);
+    });
+  }
+
+  QueryBuilder<WorkLog, WorkLog, QAfterSortBy> sortByOvertimeHoursDesc() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'overtimeHours', Sort.desc);
+    });
+  }
+
+  QueryBuilder<WorkLog, WorkLog, QAfterSortBy> sortByTransport() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'transport', Sort.asc);
+    });
+  }
+
+  QueryBuilder<WorkLog, WorkLog, QAfterSortBy> sortByTransportDesc() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'transport', Sort.desc);
+    });
+  }
+
+  QueryBuilder<WorkLog, WorkLog, QAfterSortBy> sortByType() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'type', Sort.asc);
+    });
+  }
+
+  QueryBuilder<WorkLog, WorkLog, QAfterSortBy> sortByTypeDesc() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'type', Sort.desc);
+    });
+  }
+}
+
+extension WorkLogQuerySortThenBy
+    on QueryBuilder<WorkLog, WorkLog, QSortThenBy> {
+  QueryBuilder<WorkLog, WorkLog, QAfterSortBy> thenByDate() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'date', Sort.asc);
+    });
+  }
+
+  QueryBuilder<WorkLog, WorkLog, QAfterSortBy> thenByDateDesc() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'date', Sort.desc);
+    });
+  }
+
+  QueryBuilder<WorkLog, WorkLog, QAfterSortBy> thenByExpenses() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'expenses', Sort.asc);
+    });
+  }
+
+  QueryBuilder<WorkLog, WorkLog, QAfterSortBy> thenByExpensesDesc() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'expenses', Sort.desc);
+    });
+  }
+
+  QueryBuilder<WorkLog, WorkLog, QAfterSortBy> thenById() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'id', Sort.asc);
+    });
+  }
+
+  QueryBuilder<WorkLog, WorkLog, QAfterSortBy> thenByIdDesc() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'id', Sort.desc);
+    });
+  }
+
+  QueryBuilder<WorkLog, WorkLog, QAfterSortBy> thenByIsReimbursed() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'isReimbursed', Sort.asc);
+    });
+  }
+
+  QueryBuilder<WorkLog, WorkLog, QAfterSortBy> thenByIsReimbursedDesc() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'isReimbursed', Sort.desc);
+    });
+  }
+
+  QueryBuilder<WorkLog, WorkLog, QAfterSortBy> thenByLocation() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'location', Sort.asc);
+    });
+  }
+
+  QueryBuilder<WorkLog, WorkLog, QAfterSortBy> thenByLocationDesc() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'location', Sort.desc);
+    });
+  }
+
+  QueryBuilder<WorkLog, WorkLog, QAfterSortBy> thenByNote() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'note', Sort.asc);
+    });
+  }
+
+  QueryBuilder<WorkLog, WorkLog, QAfterSortBy> thenByNoteDesc() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'note', Sort.desc);
+    });
+  }
+
+  QueryBuilder<WorkLog, WorkLog, QAfterSortBy> thenByOvertimeHours() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'overtimeHours', Sort.asc);
+    });
+  }
+
+  QueryBuilder<WorkLog, WorkLog, QAfterSortBy> thenByOvertimeHoursDesc() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'overtimeHours', Sort.desc);
+    });
+  }
+
+  QueryBuilder<WorkLog, WorkLog, QAfterSortBy> thenByTransport() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'transport', Sort.asc);
+    });
+  }
+
+  QueryBuilder<WorkLog, WorkLog, QAfterSortBy> thenByTransportDesc() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'transport', Sort.desc);
+    });
+  }
+
+  QueryBuilder<WorkLog, WorkLog, QAfterSortBy> thenByType() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'type', Sort.asc);
+    });
+  }
+
+  QueryBuilder<WorkLog, WorkLog, QAfterSortBy> thenByTypeDesc() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'type', Sort.desc);
+    });
+  }
+}
+
+extension WorkLogQueryWhereDistinct
+    on QueryBuilder<WorkLog, WorkLog, QDistinct> {
+  QueryBuilder<WorkLog, WorkLog, QDistinct> distinctByDate() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addDistinctBy(r'date');
+    });
+  }
+
+  QueryBuilder<WorkLog, WorkLog, QDistinct> distinctByExpenses() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addDistinctBy(r'expenses');
+    });
+  }
+
+  QueryBuilder<WorkLog, WorkLog, QDistinct> distinctByIsReimbursed() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addDistinctBy(r'isReimbursed');
+    });
+  }
+
+  QueryBuilder<WorkLog, WorkLog, QDistinct> distinctByLocation(
+      {bool caseSensitive = true}) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addDistinctBy(r'location', caseSensitive: caseSensitive);
+    });
+  }
+
+  QueryBuilder<WorkLog, WorkLog, QDistinct> distinctByNote(
+      {bool caseSensitive = true}) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addDistinctBy(r'note', caseSensitive: caseSensitive);
+    });
+  }
+
+  QueryBuilder<WorkLog, WorkLog, QDistinct> distinctByOvertimeHours() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addDistinctBy(r'overtimeHours');
+    });
+  }
+
+  QueryBuilder<WorkLog, WorkLog, QDistinct> distinctByTransport(
+      {bool caseSensitive = true}) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addDistinctBy(r'transport', caseSensitive: caseSensitive);
+    });
+  }
+
+  QueryBuilder<WorkLog, WorkLog, QDistinct> distinctByType() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addDistinctBy(r'type');
+    });
+  }
+}
+
+extension WorkLogQueryProperty
+    on QueryBuilder<WorkLog, WorkLog, QQueryProperty> {
+  QueryBuilder<WorkLog, int, QQueryOperations> idProperty() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addPropertyName(r'id');
+    });
+  }
+
+  QueryBuilder<WorkLog, DateTime, QQueryOperations> dateProperty() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addPropertyName(r'date');
+    });
+  }
+
+  QueryBuilder<WorkLog, double?, QQueryOperations> expensesProperty() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addPropertyName(r'expenses');
+    });
+  }
+
+  QueryBuilder<WorkLog, bool, QQueryOperations> isReimbursedProperty() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addPropertyName(r'isReimbursed');
+    });
+  }
+
+  QueryBuilder<WorkLog, String?, QQueryOperations> locationProperty() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addPropertyName(r'location');
+    });
+  }
+
+  QueryBuilder<WorkLog, String?, QQueryOperations> noteProperty() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addPropertyName(r'note');
+    });
+  }
+
+  QueryBuilder<WorkLog, double?, QQueryOperations> overtimeHoursProperty() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addPropertyName(r'overtimeHours');
+    });
+  }
+
+  QueryBuilder<WorkLog, String?, QQueryOperations> transportProperty() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addPropertyName(r'transport');
+    });
+  }
+
+  QueryBuilder<WorkLog, LogType, QQueryOperations> typeProperty() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addPropertyName(r'type');
+    });
+  }
+}
