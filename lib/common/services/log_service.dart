@@ -139,7 +139,7 @@ class LogService extends GetxService {
   /// 获取所有日志文本
   String exportLogs() {
     final buffer = StringBuffer();
-    buffer.writeln('=== Life Log 应用日志 ===');
+    buffer.writeln('=== LifeLog 应用日志 ===');
     buffer.writeln('导出时间: ${DateTime.now()}');
     buffer.writeln('日志数量: ${logs.length}');
     buffer.writeln('========================\n');

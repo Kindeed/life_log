@@ -311,6 +311,6 @@ class DeveloperView extends StatelessWidget {
 
   Future<void> _exportLogs(LogService logService) async {
     final text = logService.exportLogs();
-    await Share.share(text, subject: 'Life Log 应用日志');
+    await Share.share(text, subject: 'LifeLog 应用日志');
   }
 }

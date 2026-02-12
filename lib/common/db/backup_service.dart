@@ -35,7 +35,7 @@ class BackupService {
 
       // 3. 调用分享
       final xFile = XFile(backupPath);
-      await Share.shareXFiles([xFile], text: 'Life Log 数据备份');
+      await Share.shareXFiles([xFile], text: 'LifeLog 数据备份');
     } catch (e) {
       Get.snackbar("备份失败", e.toString());
     }

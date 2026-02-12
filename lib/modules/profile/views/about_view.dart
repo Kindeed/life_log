@@ -46,7 +46,7 @@ class AboutView extends StatelessWidget {
             ),
             SizedBox(height: 16.h),
             Text(
-              'Life Log',
+              'LifeLog',
               style: TextStyle(
                 fontSize: 24.sp,
                 fontWeight: FontWeight.bold,
@@ -90,7 +90,7 @@ class AboutView extends StatelessWidget {
                   ),
                   SizedBox(height: 12.h),
                   Text(
-                    'Life Log 是一款个人生活记录应用，帮助你管理工时、追踪支出、记录项目照片。',
+                    'LifeLog 是一款个人生活记录应用，帮助你管理工时、追踪支出、记录项目照片。',
                     style: TextStyle(
                       fontSize: 14.sp,
                       color: textSecondary,
@@ -114,7 +114,7 @@ class AboutView extends StatelessWidget {
 
             // 版权信息
             Text(
-              '© 2024 Life Log. All rights reserved.',
+              '© 2024 LifeLog. All rights reserved.',
               style: TextStyle(fontSize: 12.sp, color: textSecondary),
             ),
           ],

@@ -63,7 +63,7 @@ class MyApp extends StatelessWidget {
         return Obx(
           () => GetMaterialApp(
             debugShowCheckedModeBanner: false,
-            title: 'Life Log',
+            title: 'LifeLog',
             theme: AppTheme.light,
             darkTheme: AppTheme.dark,
             themeMode: themeController.flutterThemeMode,

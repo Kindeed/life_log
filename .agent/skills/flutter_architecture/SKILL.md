@@ -1,11 +1,11 @@
 ---
-name: Life Log Flutter Architecture Guide
+name: LifeLog Flutter Architecture Guide
 description: |
-  Life Log 项目的架构规范和设计约定。所有代码修改必须遵守本规范。
+  LifeLog 项目的架构规范和设计约定。所有代码修改必须遵守本规范。
   本文件是项目的"架构宪法"，任何 AI 助手在修改代码前必须阅读并严格遵守。
 ---
 
-# Life Log Flutter Architecture Guide
+# LifeLog Flutter Architecture Guide
 
 > **⚠️ 重要：所有 AI 助手在修改本项目代码前，必须阅读并遵守本规范。违反规范的修改将导致架构退化。**
 
