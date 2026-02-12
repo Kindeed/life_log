@@ -1,10 +1,13 @@
 import 'dart:io';
 import 'package:device_info_plus/device_info_plus.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/rendering.dart';
 import 'package:get/get.dart';
 import 'package:life_log/common/db/db_service.dart';
 import 'package:life_log/modules/photo/photo_model.dart';
+import 'package:life_log/modules/photo/views/capture_dialog.dart';
 import 'package:path_provider/path_provider.dart';
+import '../../common/services/log_service.dart';
 import 'package:intl/intl.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:image_picker/image_picker.dart';
@@ -15,6 +18,7 @@ class PhotoController extends GetxController {
   // Observable state
   final photos = <PhotoItem>[].obs;
   final isLoading = false.obs;
+  final isFabVisible = true.obs;
 
   // Device info
   String _deviceName = "UnknownDevice";
@@ -24,6 +28,15 @@ class PhotoController extends GetxController {
     super.onInit();
     _initDeviceInfo();
     loadPhotos();
+  }
+
+  // --- 滚动监听 ---
+  void onScroll(UserScrollNotification notification) {
+    if (notification.direction == ScrollDirection.forward) {
+      if (!isFabVisible.value) isFabVisible.value = true;
+    } else if (notification.direction == ScrollDirection.reverse) {
+      if (isFabVisible.value) isFabVisible.value = false;
+    }
   }
 
   Future<void> _initDeviceInfo() async {
@@ -59,238 +72,17 @@ class PhotoController extends GetxController {
       );
 
       if (image != null) {
-        _showCaptureDialog(image.path, initialProject);
+        showCaptureDialog(
+          tempPath: image.path,
+          initialProject: initialProject,
+          onConfirm: (projectName, description) {
+            _processAndSavePhoto(image.path, projectName, description);
+          },
+        );
       }
     } catch (e) {
-      Get.snackbar("Error", "Failed to open system camera: $e");
+      Get.snackbar("错误", "无法打开系统相机: $e");
     }
-  }
-
-  void _showCaptureDialog(String tempPath, String? initialProject) {
-    final projectCtrl = TextEditingController(
-      text: initialProject ?? "DefaultProject",
-    );
-    final descCtrl = TextEditingController();
-
-    Get.bottomSheet(
-      Container(
-        padding: const EdgeInsets.fromLTRB(24, 24, 24, 40),
-        decoration: const BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.vertical(top: Radius.circular(32)),
-        ),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
-              children: [
-                Container(
-                  padding: const EdgeInsets.all(12),
-                  decoration: BoxDecoration(
-                    color: const Color(0xFF1A73E8).withValues(alpha: 0.1),
-                    shape: BoxShape.circle,
-                  ),
-                  child: const Icon(
-                    Icons.auto_fix_high_rounded,
-                    color: Color(0xFF1A73E8),
-                  ),
-                ),
-                const SizedBox(width: 16),
-                const Text(
-                  "归档照片",
-                  style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
-                ),
-              ],
-            ),
-            const SizedBox(height: 24),
-
-            // Project Selector (Instagram Style)
-            GestureDetector(
-              onTap: () => _showProjectPicker(projectCtrl),
-              child: AbsorbPointer(
-                child: TextField(
-                  controller: projectCtrl,
-                  decoration: InputDecoration(
-                    labelText: "选择归档项目",
-                    prefixIcon: const Icon(Icons.folder_special_rounded),
-                    suffixIcon: const Icon(
-                      Icons.arrow_drop_down_circle_outlined,
-                    ),
-                    border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(16),
-                    ),
-                    filled: true,
-                    fillColor: const Color(0xFFF7F9FC),
-                  ),
-                ),
-              ),
-            ),
-            const SizedBox(height: 16),
-
-            // Description Input
-            TextField(
-              controller: descCtrl,
-              decoration: InputDecoration(
-                labelText: "添加备注 (可选)",
-                prefixIcon: const Icon(Icons.edit_note_rounded),
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(16),
-                ),
-                filled: true,
-                fillColor: const Color(0xFFF7F9FC),
-              ),
-            ),
-            const SizedBox(height: 32),
-
-            // Confirm Button
-            SizedBox(
-              width: double.infinity,
-              height: 56,
-              child: ElevatedButton(
-                onPressed: () {
-                  final projectName = projectCtrl.text.trim();
-                  if (projectName.isEmpty) {
-                    Get.snackbar("错误", "项目名称不能为空");
-                    return;
-                  }
-                  Get.back(); // Close bottom sheet
-                  _processAndSavePhoto(
-                    tempPath,
-                    projectName,
-                    descCtrl.text.trim(),
-                  );
-                },
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: const Color(0xFF1A73E8),
-                  foregroundColor: Colors.white,
-                  shape: const RoundedRectangleBorder(
-                    borderRadius: BorderRadius.all(Radius.circular(16)),
-                  ),
-                  elevation: 0,
-                ),
-                child: const Text(
-                  "确认录入",
-                  style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
-                ),
-              ),
-            ),
-          ],
-        ),
-      ),
-      isScrollControlled: true,
-      backgroundColor: Colors.transparent,
-    );
-  }
-
-  void _showProjectPicker(TextEditingController controller) {
-    final searchCtrl = TextEditingController();
-    final allProjects = groupedPhotos.keys.toList();
-    final filteredProjects = <String>[...allProjects].obs;
-
-    Get.bottomSheet(
-      Container(
-        height: Get.height * 0.7,
-        padding: const EdgeInsets.fromLTRB(20, 20, 20, 0),
-        decoration: const BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
-        ),
-        child: Column(
-          children: [
-            // Handle bar
-            Container(
-              width: 40,
-              height: 4,
-              decoration: BoxDecoration(
-                color: Colors.grey[300],
-                borderRadius: BorderRadius.circular(2),
-              ),
-            ),
-            const SizedBox(height: 20),
-
-            // Search Bar
-            TextField(
-              controller: searchCtrl,
-              autofocus: true,
-              decoration: InputDecoration(
-                hintText: "搜索或创建新项目...",
-                prefixIcon: const Icon(Icons.search),
-                filled: true,
-                fillColor: Colors.grey[100],
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(12),
-                  borderSide: BorderSide.none,
-                ),
-                contentPadding: const EdgeInsets.symmetric(horizontal: 16),
-              ),
-              onChanged: (val) {
-                if (val.isEmpty) {
-                  filteredProjects.assignAll(allProjects);
-                } else {
-                  filteredProjects.assignAll(
-                    allProjects
-                        .where(
-                          (p) => p.toLowerCase().contains(val.toLowerCase()),
-                        )
-                        .toList(),
-                  );
-                }
-              },
-            ),
-            const SizedBox(height: 16),
-
-            // List
-            Expanded(
-              child: Obx(() {
-                // Determine if we need to show "Create New"
-                final query = searchCtrl.text.trim();
-                final showCreate =
-                    query.isNotEmpty && !filteredProjects.contains(query);
-
-                if (filteredProjects.isEmpty && !showCreate) {
-                  return const Center(child: Text("暂无项目历史"));
-                }
-
-                return ListView.builder(
-                  itemCount: filteredProjects.length + (showCreate ? 1 : 0),
-                  itemBuilder: (context, index) {
-                    if (showCreate && index == 0) {
-                      return ListTile(
-                        leading: CircleAvatar(
-                          backgroundColor: Colors.blue[50],
-                          child: const Icon(Icons.add, color: Colors.blue),
-                        ),
-                        title: Text("创建新项目: \"$query\""),
-                        onTap: () {
-                          controller.text = query;
-                          Get.back(); // Close picker
-                        },
-                      );
-                    }
-
-                    final dataIndex = showCreate ? index - 1 : index;
-                    final pName = filteredProjects[dataIndex];
-                    return ListTile(
-                      leading: const Icon(Icons.folder, color: Colors.grey),
-                      title: Text(pName),
-                      trailing: controller.text == pName
-                          ? const Icon(Icons.check, color: Colors.blue)
-                          : null,
-                      onTap: () {
-                        controller.text = pName;
-                        Get.back(); // Close picker
-                      },
-                    );
-                  },
-                );
-              }),
-            ),
-          ],
-        ),
-      ),
-      isScrollControlled: true,
-    );
   }
 
   Future<void> _processAndSavePhoto(
@@ -352,8 +144,9 @@ class PhotoController extends GetxController {
         backgroundColor: Colors.green.withValues(alpha: 0.8),
         colorText: Colors.white,
       );
+      LogService.to.info('Photo', '保存照片: $fileName ($projectName)');
     } catch (e) {
-      Get.snackbar("Error", "Failed to save photo: $e");
+      Get.snackbar("错误", "保存照片失败: $e");
     } finally {
       isLoading.value = false;
     }
@@ -394,6 +187,7 @@ class PhotoController extends GetxController {
         photos.remove(photo);
       }
       Get.snackbar("已删除", "成功删除 ${itemsToDelete.length} 张照片");
+      LogService.to.info('Photo', '删除 ${itemsToDelete.length} 张照片');
     } catch (e) {
       Get.snackbar("删除失败", e.toString());
     } finally {
@@ -489,12 +283,13 @@ class PhotoController extends GetxController {
       }
 
       Get.snackbar(
-        "Export Success",
-        "Successfully exported $successCount photos to $selectedDirectory",
+        "导出成功",
+        "成功导出 $successCount 张照片至 $selectedDirectory",
         snackPosition: SnackPosition.BOTTOM,
       );
+      LogService.to.info('Photo', '导出 $successCount 张照片至 $selectedDirectory');
     } catch (e) {
-      Get.snackbar("Export Error", "Failed to export photos: $e");
+      Get.snackbar("导出错误", "导出照片失败: $e");
     } finally {
       isLoading.value = false;
     }

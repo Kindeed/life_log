@@ -4,6 +4,7 @@ import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:get/get.dart';
 import 'package:life_log/modules/photo/photo_controller.dart';
 import 'package:life_log/modules/photo/photo_model.dart';
+import 'package:life_log/common/theme/app_colors.dart';
 
 class ProjectGalleryView extends StatefulWidget {
   final String projectName;
@@ -20,6 +21,14 @@ class _ProjectGalleryViewState extends State<ProjectGalleryView> {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
+    final cardColor = theme.cardColor;
+    final textPrimary = isDark
+        ? AppColors.darkTextPrimary
+        : AppColors.lightTextPrimary;
+    final textSecondary = isDark ? Colors.grey[400]! : Colors.grey[700]!;
+
     return Scaffold(
       appBar: AppBar(
         title: Text(widget.projectName),
@@ -78,7 +87,9 @@ class _ProjectGalleryViewState extends State<ProjectGalleryView> {
             controller.groupedPhotos[widget.projectName] ?? [];
 
         if (projectPhotos.isEmpty) {
-          return const Center(child: Text("此项目下暂无照片"));
+          return Center(
+            child: Text("此项目下暂无照片", style: TextStyle(color: textSecondary)),
+          );
         }
 
         return GridView.builder(
@@ -86,8 +97,8 @@ class _ProjectGalleryViewState extends State<ProjectGalleryView> {
           gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
             crossAxisCount: 3,
             crossAxisSpacing: 8.w,
-            mainAxisSpacing: 12.h, // Increased spacing for text
-            childAspectRatio: 0.75, // Adjusted for text space
+            mainAxisSpacing: 12.h,
+            childAspectRatio: 0.75,
           ),
           itemCount: projectPhotos.length,
           itemBuilder: (context, index) {
@@ -103,7 +114,13 @@ class _ProjectGalleryViewState extends State<ProjectGalleryView> {
                       selectedPhotos.add(photo);
                     }
                   } else {
-                    _showPhotoDetail(photo);
+                    _showPhotoDetail(
+                      photo,
+                      isDark,
+                      cardColor,
+                      textPrimary,
+                      textSecondary,
+                    );
                   }
                 },
                 onLongPress: () {
@@ -124,8 +141,12 @@ class _ProjectGalleryViewState extends State<ProjectGalleryView> {
                             child: Image.file(
                               File(photo.filePath),
                               fit: BoxFit.cover,
-                              errorBuilder: (ctx, err, stack) =>
-                                  const Center(child: Icon(Icons.broken_image)),
+                              errorBuilder: (ctx, err, stack) => Center(
+                                child: Icon(
+                                  Icons.broken_image,
+                                  color: textSecondary,
+                                ),
+                              ),
                             ),
                           ),
                           if (isMultiSelectMode.value)
@@ -135,7 +156,7 @@ class _ProjectGalleryViewState extends State<ProjectGalleryView> {
                               child: Container(
                                 decoration: BoxDecoration(
                                   color: isSelected
-                                      ? Colors.blue
+                                      ? AppColors.primaryBlue
                                       : Colors.black26,
                                   shape: BoxShape.circle,
                                   border: Border.all(
@@ -160,10 +181,7 @@ class _ProjectGalleryViewState extends State<ProjectGalleryView> {
                           : "无标题",
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
-                      style: TextStyle(
-                        fontSize: 11.sp,
-                        color: Colors.grey[700],
-                      ),
+                      style: TextStyle(fontSize: 11.sp, color: textSecondary),
                       textAlign: TextAlign.center,
                     ),
                   ],
@@ -180,10 +198,12 @@ class _ProjectGalleryViewState extends State<ProjectGalleryView> {
         return Container(
           padding: EdgeInsets.fromLTRB(20.w, 10.h, 20.w, 30.h),
           decoration: BoxDecoration(
-            color: Colors.white,
+            color: cardColor,
             boxShadow: [
               BoxShadow(
-                color: Colors.black.withValues(alpha: 0.05),
+                color: isDark
+                    ? Colors.black.withValues(alpha: 0.3)
+                    : Colors.black.withValues(alpha: 0.05),
                 blurRadius: 10,
                 offset: const Offset(0, -5),
               ),
@@ -191,7 +211,10 @@ class _ProjectGalleryViewState extends State<ProjectGalleryView> {
           ),
           child: Row(
             children: [
-              Text("选择了 ${selectedPhotos.length} 张"),
+              Text(
+                "选择了 ${selectedPhotos.length} 张",
+                style: TextStyle(color: textPrimary),
+              ),
               const Spacer(),
               ElevatedButton.icon(
                 onPressed: () {
@@ -203,8 +226,7 @@ class _ProjectGalleryViewState extends State<ProjectGalleryView> {
                     textCancel: "取消",
                     confirmTextColor: Colors.white,
                     onConfirm: () async {
-                      Get.back(); // close dialog
-                      // Store list copy because selectedPhotos will be cleared
+                      Get.back();
                       final photosToDelete = selectedPhotos.toList();
                       isMultiSelectMode.value = false;
                       selectedPhotos.clear();
@@ -215,8 +237,8 @@ class _ProjectGalleryViewState extends State<ProjectGalleryView> {
                 icon: const Icon(Icons.delete, size: 18),
                 label: const Text("删除"),
                 style: ElevatedButton.styleFrom(
-                  backgroundColor: Colors.red[50],
-                  foregroundColor: Colors.red,
+                  backgroundColor: theme.colorScheme.errorContainer,
+                  foregroundColor: theme.colorScheme.onErrorContainer,
                   elevation: 0,
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(20),
@@ -230,7 +252,7 @@ class _ProjectGalleryViewState extends State<ProjectGalleryView> {
                 icon: const Icon(Icons.ios_share, size: 18),
                 label: const Text("导出"),
                 style: ElevatedButton.styleFrom(
-                  backgroundColor: Colors.blue,
+                  backgroundColor: AppColors.primaryBlue,
                   foregroundColor: Colors.white,
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(20),
@@ -244,26 +266,34 @@ class _ProjectGalleryViewState extends State<ProjectGalleryView> {
       floatingActionButton: Obx(() {
         if (isMultiSelectMode.value) return const SizedBox.shrink();
         return FloatingActionButton(
+          backgroundColor: AppColors.primaryBlue,
           onPressed: () => controller.captureWithSystemCamera(
             initialProject: widget.projectName,
           ),
-          child: const Icon(Icons.camera_alt),
+          child: const Icon(Icons.camera_alt, color: Colors.white),
         );
       }),
     );
   }
 
-  void _showPhotoDetail(PhotoItem photo) {
+  void _showPhotoDetail(
+    PhotoItem photo,
+    bool isDark,
+    Color cardColor,
+    Color textPrimary,
+    Color textSecondary,
+  ) {
     final TextEditingController descEditController = TextEditingController(
       text: photo.description,
     );
+    final theme = Theme.of(context);
 
     Get.bottomSheet(
       Container(
         padding: EdgeInsets.all(20.w),
-        decoration: const BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+        decoration: BoxDecoration(
+          color: cardColor,
+          borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
         ),
         child: SingleChildScrollView(
           child: Column(
@@ -273,12 +303,16 @@ class _ProjectGalleryViewState extends State<ProjectGalleryView> {
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  const Text(
+                  Text(
                     "照片详情",
-                    style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                    style: TextStyle(
+                      fontSize: 18,
+                      fontWeight: FontWeight.bold,
+                      color: textPrimary,
+                    ),
                   ),
                   IconButton(
-                    icon: const Icon(Icons.close),
+                    icon: Icon(Icons.close, color: textSecondary),
                     onPressed: () => Get.back(),
                   ),
                 ],
@@ -295,23 +329,43 @@ class _ProjectGalleryViewState extends State<ProjectGalleryView> {
                 ),
               ),
               SizedBox(height: 20.h),
-              _buildInfoRow("项目名称", photo.projectName ?? "Default"),
-              _buildInfoRow("设备名称", photo.deviceName ?? "Unknown"),
+              _buildInfoRow(
+                "项目名称",
+                photo.projectName ?? "Default",
+                textPrimary,
+                textSecondary,
+              ),
+              _buildInfoRow(
+                "设备名称",
+                photo.deviceName ?? "Unknown",
+                textPrimary,
+                textSecondary,
+              ),
               _buildInfoRow(
                 "拍摄时间",
                 photo.createdAt.toString().substring(0, 19),
+                textPrimary,
+                textSecondary,
               ),
-              _buildInfoRow("保存路径", photo.filePath),
+              _buildInfoRow("保存路径", photo.filePath, textPrimary, textSecondary),
               SizedBox(height: 16.h),
-              const Text("补充说明", style: TextStyle(fontWeight: FontWeight.bold)),
+              Text(
+                "补充说明",
+                style: TextStyle(
+                  fontWeight: FontWeight.bold,
+                  color: textPrimary,
+                ),
+              ),
               SizedBox(height: 8.h),
               TextField(
                 controller: descEditController,
                 maxLines: 3,
+                style: TextStyle(color: textPrimary),
                 decoration: InputDecoration(
                   hintText: "添加补充说明...",
+                  hintStyle: TextStyle(color: textSecondary),
                   filled: true,
-                  fillColor: Colors.grey[100],
+                  fillColor: isDark ? Colors.grey[850] : Colors.grey[100],
                   border: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(12),
                     borderSide: BorderSide.none,
@@ -336,29 +390,31 @@ class _ProjectGalleryViewState extends State<ProjectGalleryView> {
                               ),
                               TextButton(
                                 onPressed: () async {
-                                  Get.back(); // Check dialog
+                                  Get.back();
                                   await controller.deletePhoto(photo);
                                 },
-                                child: const Text(
+                                child: Text(
                                   "删除",
-                                  style: TextStyle(color: Colors.red),
+                                  style: TextStyle(
+                                    color: theme.colorScheme.error,
+                                  ),
                                 ),
                               ),
                             ],
                           ),
                         );
                       },
-                      icon: const Icon(
+                      icon: Icon(
                         Icons.delete_outline,
-                        color: Colors.red,
+                        color: theme.colorScheme.error,
                         size: 20,
                       ),
-                      label: const Text(
+                      label: Text(
                         "删除",
-                        style: TextStyle(color: Colors.red),
+                        style: TextStyle(color: theme.colorScheme.error),
                       ),
                       style: OutlinedButton.styleFrom(
-                        side: const BorderSide(color: Colors.red),
+                        side: BorderSide(color: theme.colorScheme.error),
                         padding: EdgeInsets.symmetric(vertical: 12.h),
                         shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(12),
@@ -376,7 +432,7 @@ class _ProjectGalleryViewState extends State<ProjectGalleryView> {
                       icon: const Icon(Icons.save, size: 20),
                       label: const Text("保存修改"),
                       style: ElevatedButton.styleFrom(
-                        backgroundColor: Colors.blue,
+                        backgroundColor: AppColors.primaryBlue,
                         foregroundColor: Colors.white,
                         padding: EdgeInsets.symmetric(vertical: 12.h),
                         shape: RoundedRectangleBorder(
@@ -396,7 +452,12 @@ class _ProjectGalleryViewState extends State<ProjectGalleryView> {
     );
   }
 
-  Widget _buildInfoRow(String label, String value) {
+  Widget _buildInfoRow(
+    String label,
+    String value,
+    Color textPrimary,
+    Color textSecondary,
+  ) {
     return Padding(
       padding: EdgeInsets.symmetric(vertical: 4.h),
       child: Row(
@@ -406,10 +467,15 @@ class _ProjectGalleryViewState extends State<ProjectGalleryView> {
             width: 80.w,
             child: Text(
               label,
-              style: const TextStyle(color: Colors.grey, fontSize: 13),
+              style: TextStyle(color: textSecondary, fontSize: 13),
             ),
           ),
-          Expanded(child: Text(value, style: const TextStyle(fontSize: 13))),
+          Expanded(
+            child: Text(
+              value,
+              style: TextStyle(fontSize: 13, color: textPrimary),
+            ),
+          ),
         ],
       ),
     );

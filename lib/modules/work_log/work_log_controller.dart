@@ -1,8 +1,9 @@
 import 'package:get/get.dart';
-import 'package:life_log/modules/statistics/statistics_controller.dart';
 import 'package:table_calendar/table_calendar.dart';
 import '../../common/db/db_service.dart';
+import '../../common/services/event_bus.dart';
 import 'log_model.dart';
+import '../../common/services/log_service.dart';
 // 记得引入 StatisticsController 以便联动刷新统计
 
 class WorkLogController extends GetxController {
@@ -11,11 +12,14 @@ class WorkLogController extends GetxController {
   // --- 1. 日历状态 ---
   final focusedDay = DateTime.now().obs;
   final selectedDay = DateTime.now().obs;
-  final calendarFormat = CalendarFormat.month.obs; 
+  final calendarFormat = CalendarFormat.month.obs;
 
   // --- 2. 数据源 ---
   final logsMap = <DateTime, List<WorkLog>>{}.obs;
-  
+  final isLoading = true.obs;
+  // 版本号：用于强制刷新日历（因为 logsMap.length 不变时 TableCalendar 不会重绘）
+  final dataVersion = 0.obs;
+
   // 统计数据
   final monthStatsDays = 0.obs;
   final monthStatsHours = 0.0.obs;
@@ -23,7 +27,11 @@ class WorkLogController extends GetxController {
   @override
   void onInit() {
     super.onInit();
-    loadData();
+    _initData();
+  }
+
+  Future<void> _initData() async {
+    await loadData();
   }
 
   // --- 核心操作 ---
@@ -52,8 +60,12 @@ class WorkLogController extends GetxController {
 
   // 加载数据
   Future<void> loadData() async {
+    isLoading.value = true;
+    LogService.to.debug('WorkLog', '开始加载数据...');
+
     final allLogs = await DbService.to.getAllLogs();
-    
+    LogService.to.debug('WorkLog', '从数据库获取到 ${allLogs.length} 条记录');
+
     final newMap = <DateTime, List<WorkLog>>{};
     for (var log in allLogs) {
       final date = log.date;
@@ -61,29 +73,30 @@ class WorkLogController extends GetxController {
       if (newMap[key] == null) newMap[key] = [];
       newMap[key]!.add(log);
     }
-    
-    logsMap.value = newMap;
+
+    logsMap.assignAll(newMap);
+    dataVersion.value++; // 强制刷新日历
+    LogService.to.info('WorkLog', '数据已更新，共 ${logsMap.length} 天有记录');
     _calculateMonthStats();
+
+    isLoading.value = false;
+    LogService.to.debug('WorkLog', '数据加载完成');
   }
 
   // 添加/修改日志
   Future<void> addLog(WorkLog log) async {
     await DbService.to.addLog(log);
-    await loadData(); // 刷新日历
-    // 尝试刷新统计页面的数据 (如果有的话)
-    if (Get.isRegistered<StatisticsController>()) {
-      Get.find<StatisticsController>().refreshStats();
-    }
+    await loadData();
+    LogService.to.info('WorkLog', '添加/修改日志: ${log.date}');
+    EventBus.instance.fire(const WorkLogChangedEvent());
   }
 
-  // --- 【新增】删除日志 ---
+  // 删除日志
   Future<void> deleteLog(int id) async {
     await DbService.to.deleteLog(id);
-    await loadData(); // 刷新日历
-    // 联动刷新统计
-    if (Get.isRegistered<StatisticsController>()) {
-      Get.find<StatisticsController>().refreshStats();
-    }
+    await loadData();
+    LogService.to.info('WorkLog', '删除日志 ID: $id');
+    EventBus.instance.fire(const WorkLogChangedEvent());
   }
 
   void _calculateMonthStats() {

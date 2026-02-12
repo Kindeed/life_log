@@ -2,10 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:get/get.dart';
 import 'work_log_controller.dart';
-import 'log_model.dart'; // 确保引入了你最新的 LogModel
-
-const Color kPrimaryColor = Color(0xFF1A73E8);
-const Color kBgColor = Color(0xFFF7F9FC);
+import 'log_model.dart';
+import '../../common/theme/app_colors.dart';
 
 class AddLogSheet extends StatefulWidget {
   final DateTime selectedDate;
@@ -42,7 +40,6 @@ class _AddLogSheetState extends State<AddLogSheet> {
       _selectedType = log.type;
       _noteController.text = log.note ?? "";
 
-      // --- 回显逻辑 ---
       if (log.type == LogType.work) {
         _overtime = log.overtimeHours ?? 0.0;
       } else if (log.type == LogType.businessTrip) {
@@ -51,7 +48,6 @@ class _AddLogSheetState extends State<AddLogSheet> {
         _expenseController.text = log.expenses?.toString() ?? "";
         _isReimbursed = log.isReimbursed;
       } else if (log.type == LogType.leave) {
-        // 判断旧数据是不是标准类型
         if (["年假", "事假", "病假", "调休"].contains(log.location)) {
           _selectedLeaveType = log.location!;
         } else {
@@ -59,7 +55,6 @@ class _AddLogSheetState extends State<AddLogSheet> {
           _customLeaveController.text = log.location ?? "";
         }
       }
-      // LogType.rest 不需要特殊回显
     } else {
       _selectedType = LogType.work;
     }
@@ -76,11 +71,20 @@ class _AddLogSheetState extends State<AddLogSheet> {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
+    final cardColor = theme.cardColor;
+    final bgColor = isDark ? Colors.grey[850]! : AppColors.lightBackground;
+    final textPrimary = isDark
+        ? AppColors.darkTextPrimary
+        : AppColors.lightTextPrimary;
+    final textSecondary = isDark ? Colors.grey[400]! : Colors.grey[600]!;
+
     return Container(
       height: 650.h,
-      decoration: const BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+      decoration: BoxDecoration(
+        color: cardColor,
+        borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
       ),
       child: Column(
         children: [
@@ -89,7 +93,7 @@ class _AddLogSheetState extends State<AddLogSheet> {
             width: 40.w,
             height: 4.h,
             decoration: BoxDecoration(
-              color: Colors.grey[300],
+              color: isDark ? Colors.grey[700] : Colors.grey[300],
               borderRadius: BorderRadius.circular(2),
             ),
           ),
@@ -97,12 +101,16 @@ class _AddLogSheetState extends State<AddLogSheet> {
 
           Text(
             widget.existingLog != null ? "修改记录" : "记录一下",
-            style: TextStyle(fontSize: 18.sp, fontWeight: FontWeight.bold),
+            style: TextStyle(
+              fontSize: 18.sp,
+              fontWeight: FontWeight.bold,
+              color: textPrimary,
+            ),
           ),
 
           SizedBox(height: 20.h),
 
-          _buildTypeSelector(),
+          _buildTypeSelector(isDark, bgColor, textPrimary, textSecondary),
 
           Expanded(
             child: SingleChildScrollView(
@@ -110,18 +118,29 @@ class _AddLogSheetState extends State<AddLogSheet> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  if (_selectedType == LogType.work) _buildWorkForm(),
-                  if (_selectedType == LogType.businessTrip) _buildTripForm(),
-                  if (_selectedType == LogType.leave) _buildLeaveForm(),
-                  if (_selectedType == LogType.rest) _buildRestForm(),
+                  if (_selectedType == LogType.work)
+                    _buildWorkForm(isDark, bgColor, textPrimary),
+                  if (_selectedType == LogType.businessTrip)
+                    _buildTripForm(isDark, bgColor, textPrimary),
+                  if (_selectedType == LogType.leave)
+                    _buildLeaveForm(
+                      isDark,
+                      bgColor,
+                      textPrimary,
+                      textSecondary,
+                    ),
+                  if (_selectedType == LogType.rest)
+                    _buildRestForm(isDark, textSecondary),
 
                   SizedBox(height: 20.h),
                   TextField(
                     controller: _noteController,
+                    style: TextStyle(color: textPrimary),
                     decoration: InputDecoration(
                       hintText: "备注 (可选)...",
+                      hintStyle: TextStyle(color: textSecondary),
                       filled: true,
-                      fillColor: kBgColor,
+                      fillColor: bgColor,
                       border: OutlineInputBorder(
                         borderRadius: BorderRadius.circular(12),
                         borderSide: BorderSide.none,
@@ -136,17 +155,81 @@ class _AddLogSheetState extends State<AddLogSheet> {
 
           Padding(
             padding: EdgeInsets.fromLTRB(24.w, 0, 24.w, 30.h),
-            child: _buildBottomActions(),
+            child: _buildBottomActions(isDark),
           ),
         ],
       ),
     );
   }
 
-  // --- 底部按钮 ---
-  Widget _buildBottomActions() {
-    // ... 保持原有代码不变，只是调用 _saveLog ...
-    // 为节省篇幅，此处逻辑与上一版相同，直接调用下面的 _saveLog 即可
+  Widget _buildTypeSelector(
+    bool isDark,
+    Color bgColor,
+    Color textPrimary,
+    Color textSecondary,
+  ) {
+    return Container(
+      margin: EdgeInsets.symmetric(horizontal: 24.w),
+      padding: EdgeInsets.all(4.w),
+      decoration: BoxDecoration(
+        color: bgColor,
+        borderRadius: BorderRadius.circular(12),
+      ),
+      child: Row(
+        children: [
+          _buildTypeItem("工作", LogType.work, isDark, textPrimary),
+          _buildTypeItem("出差", LogType.businessTrip, isDark, textPrimary),
+          _buildTypeItem("请假", LogType.leave, isDark, textPrimary),
+          _buildTypeItem("休息", LogType.rest, isDark, textPrimary),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildTypeItem(
+    String label,
+    LogType type,
+    bool isDark,
+    Color textPrimary,
+  ) {
+    final isSelected = _selectedType == type;
+    return Expanded(
+      child: GestureDetector(
+        onTap: () => setState(() => _selectedType = type),
+        child: Container(
+          padding: EdgeInsets.symmetric(vertical: 10.h),
+          decoration: BoxDecoration(
+            color: isSelected
+                ? (isDark ? Colors.grey[700] : Colors.white)
+                : Colors.transparent,
+            borderRadius: BorderRadius.circular(10),
+            boxShadow: isSelected
+                ? [
+                    BoxShadow(
+                      color: Colors.black.withValues(
+                        alpha: isDark ? 0.3 : 0.05,
+                      ),
+                      blurRadius: 4,
+                    ),
+                  ]
+                : [],
+          ),
+          alignment: Alignment.center,
+          child: Text(
+            label,
+            style: TextStyle(
+              fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
+              color: isSelected
+                  ? textPrimary
+                  : (isDark ? Colors.grey[500] : Colors.grey[600]),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildBottomActions(bool isDark) {
     if (widget.existingLog == null) {
       return SizedBox(
         width: double.infinity,
@@ -154,7 +237,7 @@ class _AddLogSheetState extends State<AddLogSheet> {
         child: ElevatedButton(
           onPressed: _saveLog,
           style: ElevatedButton.styleFrom(
-            backgroundColor: kPrimaryColor,
+            backgroundColor: AppColors.primaryBlue,
             shape: RoundedRectangleBorder(
               borderRadius: BorderRadius.circular(16),
             ),
@@ -179,7 +262,9 @@ class _AddLogSheetState extends State<AddLogSheet> {
               child: TextButton(
                 onPressed: _deleteLog,
                 style: TextButton.styleFrom(
-                  backgroundColor: Colors.red.withValues(alpha: 0.08),
+                  backgroundColor: Colors.red.withValues(
+                    alpha: isDark ? 0.15 : 0.08,
+                  ),
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(16),
                   ),
@@ -202,7 +287,7 @@ class _AddLogSheetState extends State<AddLogSheet> {
               child: ElevatedButton(
                 onPressed: _saveLog,
                 style: ElevatedButton.styleFrom(
-                  backgroundColor: kPrimaryColor,
+                  backgroundColor: AppColors.primaryBlue,
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(16),
                   ),
@@ -251,7 +336,6 @@ class _AddLogSheetState extends State<AddLogSheet> {
     );
   }
 
-  // --- 核心修复：保存逻辑 ---
   void _saveLog() {
     final log = WorkLog()
       ..date = widget.existingLog?.date ?? widget.selectedDate
@@ -262,12 +346,9 @@ class _AddLogSheetState extends State<AddLogSheet> {
       log.id = widget.existingLog!.id;
     }
 
-    // 根据你的 LogModel 严格清洗数据
-    // 必须将不属于当前类型的字段设为 null，防止 Isar 数据库中残留旧数据
     switch (_selectedType) {
       case LogType.work:
         log.overtimeHours = _overtime;
-        // 清洗无关字段
         log.location = null;
         log.transport = null;
         log.expenses = null;
@@ -276,7 +357,6 @@ class _AddLogSheetState extends State<AddLogSheet> {
 
       case LogType.rest:
         log.overtimeHours = null;
-        // 休息必须清空 location，否则日历可能因为 location 有值而误判为出差/请假
         log.location = null;
         log.transport = null;
         log.expenses = null;
@@ -285,7 +365,6 @@ class _AddLogSheetState extends State<AddLogSheet> {
 
       case LogType.leave:
         log.overtimeHours = null;
-        // 复用 location 字段存储请假类型
         if (_selectedLeaveType == "其他") {
           log.location = _customLeaveController.text.isEmpty
               ? "请假"
@@ -300,7 +379,6 @@ class _AddLogSheetState extends State<AddLogSheet> {
 
       case LogType.businessTrip:
         log.overtimeHours = null;
-        // 复用 location 字段存储城市
         log.location = _tripCityController.text;
         log.transport = _transport;
         log.expenses = double.tryParse(_expenseController.text);
@@ -308,93 +386,48 @@ class _AddLogSheetState extends State<AddLogSheet> {
         break;
     }
 
+    // 标记为需要同步
+    log.isDirty = true;
+
     WorkLogController.to.addLog(log);
     Get.back();
   }
 
-  // --- UI 构建方法 (保持原样，仅确保 LogType 匹配) ---
-
-  Widget _buildTypeSelector() {
-    return Container(
-      margin: EdgeInsets.symmetric(horizontal: 24.w),
-      padding: EdgeInsets.all(4.w),
-      decoration: BoxDecoration(
-        color: kBgColor,
-        borderRadius: BorderRadius.circular(12),
-      ),
-      child: Row(
-        children: [
-          _buildTypeItem("工作", LogType.work),
-          _buildTypeItem("出差", LogType.businessTrip),
-          _buildTypeItem("请假", LogType.leave),
-          _buildTypeItem("休息", LogType.rest),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildTypeItem(String label, LogType type) {
-    final isSelected = _selectedType == type;
-    return Expanded(
-      child: GestureDetector(
-        onTap: () => setState(() => _selectedType = type),
-        child: Container(
-          padding: EdgeInsets.symmetric(vertical: 10.h),
-          decoration: BoxDecoration(
-            color: isSelected ? Colors.white : Colors.transparent,
-            borderRadius: BorderRadius.circular(10),
-            boxShadow: isSelected
-                ? [
-                    BoxShadow(
-                      color: Colors.black.withValues(alpha: 0.05),
-                      blurRadius: 4,
-                    ),
-                  ]
-                : [],
-          ),
-          alignment: Alignment.center,
-          child: Text(
-            label,
-            style: TextStyle(
-              fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
-              color: isSelected ? Colors.black87 : Colors.grey[600],
-            ),
-          ),
-        ),
-      ),
-    );
-  }
-
-  // ... (WorkForm, TripForm, LeaveForm 代码与上一版相同，此处省略以节省空间) ...
-  // 请直接复用上方代码块中的 _buildWorkForm, _buildTripForm, _buildLeaveForm
-
-  // 补上之前省略的表单代码，确保完整性
-  Widget _buildWorkForm() {
+  Widget _buildWorkForm(bool isDark, Color bgColor, Color textPrimary) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(
           "加班时长",
-          style: TextStyle(fontSize: 14.sp, fontWeight: FontWeight.bold),
+          style: TextStyle(
+            fontSize: 14.sp,
+            fontWeight: FontWeight.bold,
+            color: textPrimary,
+          ),
         ),
         SizedBox(height: 12.h),
         Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
-            _buildOvertimeOption(0.0),
-            _buildOvertimeOption(1.0),
-            _buildOvertimeOption(2.0),
-            _buildOvertimeOption(4.0),
+            _buildOvertimeOption(0.0, isDark, bgColor),
+            _buildOvertimeOption(1.0, isDark, bgColor),
+            _buildOvertimeOption(2.0, isDark, bgColor),
+            _buildOvertimeOption(4.0, isDark, bgColor),
           ],
         ),
         SizedBox(height: 12.h),
         TextField(
           keyboardType: const TextInputType.numberWithOptions(decimal: true),
+          style: TextStyle(color: textPrimary),
           decoration: InputDecoration(
-            prefixIcon: const Icon(Icons.access_time),
+            prefixIcon: Icon(
+              Icons.access_time,
+              color: isDark ? Colors.grey[400] : null,
+            ),
             hintText: "自定义时长 (小时)",
+            hintStyle: TextStyle(color: isDark ? Colors.grey[500] : null),
             filled: true,
-            fillColor: kBgColor,
+            fillColor: bgColor,
             border: OutlineInputBorder(
               borderRadius: BorderRadius.circular(12),
               borderSide: BorderSide.none,
@@ -410,7 +443,7 @@ class _AddLogSheetState extends State<AddLogSheet> {
     );
   }
 
-  Widget _buildOvertimeOption(double value) {
+  Widget _buildOvertimeOption(double value, bool isDark, Color bgColor) {
     final isSelected = _overtime == value;
     return GestureDetector(
       onTap: () => setState(() => _overtime = value),
@@ -418,17 +451,21 @@ class _AddLogSheetState extends State<AddLogSheet> {
         width: 70.w,
         padding: EdgeInsets.symmetric(vertical: 8.h),
         decoration: BoxDecoration(
-          color: isSelected ? kPrimaryColor.withValues(alpha: 0.1) : kBgColor,
+          color: isSelected
+              ? AppColors.primaryBlue.withValues(alpha: isDark ? 0.2 : 0.1)
+              : bgColor,
           borderRadius: BorderRadius.circular(8),
           border: Border.all(
-            color: isSelected ? kPrimaryColor : Colors.transparent,
+            color: isSelected ? AppColors.primaryBlue : Colors.transparent,
           ),
         ),
         alignment: Alignment.center,
         child: Text(
           value == 0 ? "无" : "$value h",
           style: TextStyle(
-            color: isSelected ? kPrimaryColor : Colors.black87,
+            color: isSelected
+                ? AppColors.primaryBlue
+                : (isDark ? Colors.white : Colors.black87),
             fontWeight: FontWeight.bold,
           ),
         ),
@@ -436,7 +473,7 @@ class _AddLogSheetState extends State<AddLogSheet> {
     );
   }
 
-  Widget _buildTripForm() {
+  Widget _buildTripForm(bool isDark, Color bgColor, Color textPrimary) {
     return Column(
       children: [
         Row(
@@ -444,11 +481,16 @@ class _AddLogSheetState extends State<AddLogSheet> {
             Expanded(
               child: TextField(
                 controller: _tripCityController,
+                style: TextStyle(color: textPrimary),
                 decoration: InputDecoration(
-                  prefixIcon: const Icon(Icons.location_on_outlined),
+                  prefixIcon: Icon(
+                    Icons.location_on_outlined,
+                    color: isDark ? Colors.grey[400] : null,
+                  ),
                   hintText: "城市/地点",
+                  hintStyle: TextStyle(color: isDark ? Colors.grey[500] : null),
                   filled: true,
-                  fillColor: kBgColor,
+                  fillColor: bgColor,
                   border: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(12),
                     borderSide: BorderSide.none,
@@ -460,12 +502,14 @@ class _AddLogSheetState extends State<AddLogSheet> {
             Container(
               padding: EdgeInsets.symmetric(horizontal: 12.w),
               decoration: BoxDecoration(
-                color: kBgColor,
+                color: bgColor,
                 borderRadius: BorderRadius.circular(12),
               ),
               child: DropdownButtonHideUnderline(
                 child: DropdownButton<String>(
                   value: _transport,
+                  dropdownColor: isDark ? Colors.grey[800] : Colors.white,
+                  style: TextStyle(color: textPrimary),
                   items: ["飞机", "高铁", "火车", "打车", "自驾"]
                       .map((e) => DropdownMenuItem(value: e, child: Text(e)))
                       .toList(),
@@ -479,11 +523,16 @@ class _AddLogSheetState extends State<AddLogSheet> {
         TextField(
           controller: _expenseController,
           keyboardType: TextInputType.number,
+          style: TextStyle(color: textPrimary),
           decoration: InputDecoration(
-            prefixIcon: const Icon(Icons.attach_money),
+            prefixIcon: Icon(
+              Icons.attach_money,
+              color: isDark ? Colors.grey[400] : null,
+            ),
             hintText: "垫付金额 (¥)",
+            hintStyle: TextStyle(color: isDark ? Colors.grey[500] : null),
             filled: true,
-            fillColor: kBgColor,
+            fillColor: bgColor,
             border: OutlineInputBorder(
               borderRadius: BorderRadius.circular(12),
               borderSide: BorderSide.none,
@@ -494,7 +543,7 @@ class _AddLogSheetState extends State<AddLogSheet> {
         Container(
           padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 8.h),
           decoration: BoxDecoration(
-            color: kBgColor,
+            color: bgColor,
             borderRadius: BorderRadius.circular(12),
           ),
           child: Row(
@@ -504,7 +553,7 @@ class _AddLogSheetState extends State<AddLogSheet> {
                 children: [
                   Icon(
                     _isReimbursed ? Icons.check_circle : Icons.pending_outlined,
-                    color: _isReimbursed ? Colors.green : Colors.orange,
+                    color: _isReimbursed ? AppColors.green : AppColors.orange,
                     size: 20.sp,
                   ),
                   SizedBox(width: 8.w),
@@ -513,13 +562,14 @@ class _AddLogSheetState extends State<AddLogSheet> {
                     style: TextStyle(
                       fontSize: 14.sp,
                       fontWeight: FontWeight.w500,
+                      color: textPrimary,
                     ),
                   ),
                 ],
               ),
               Switch(
                 value: _isReimbursed,
-                activeThumbColor: Colors.green,
+                activeThumbColor: AppColors.green,
                 onChanged: (val) => setState(() => _isReimbursed = val),
               ),
             ],
@@ -529,14 +579,23 @@ class _AddLogSheetState extends State<AddLogSheet> {
     );
   }
 
-  Widget _buildLeaveForm() {
+  Widget _buildLeaveForm(
+    bool isDark,
+    Color bgColor,
+    Color textPrimary,
+    Color textSecondary,
+  ) {
     final types = ["年假", "事假", "病假", "调休", "其他"];
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(
           "请假类型",
-          style: TextStyle(fontSize: 14.sp, fontWeight: FontWeight.bold),
+          style: TextStyle(
+            fontSize: 14.sp,
+            fontWeight: FontWeight.bold,
+            color: textPrimary,
+          ),
         ),
         SizedBox(height: 12.h),
         Wrap(
@@ -550,17 +609,19 @@ class _AddLogSheetState extends State<AddLogSheet> {
                 padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 8.h),
                 decoration: BoxDecoration(
                   color: isSelected
-                      ? Colors.purple.withValues(alpha: 0.1)
-                      : kBgColor,
+                      ? AppColors.purple.withValues(alpha: isDark ? 0.2 : 0.1)
+                      : bgColor,
                   borderRadius: BorderRadius.circular(20),
                   border: Border.all(
-                    color: isSelected ? Colors.purple : Colors.transparent,
+                    color: isSelected ? AppColors.purple : Colors.transparent,
                   ),
                 ),
                 child: Text(
                   type,
                   style: TextStyle(
-                    color: isSelected ? Colors.purple : Colors.grey[700],
+                    color: isSelected
+                        ? AppColors.purple
+                        : (isDark ? Colors.grey[400] : Colors.grey[700]),
                     fontWeight: isSelected
                         ? FontWeight.bold
                         : FontWeight.normal,
@@ -575,11 +636,16 @@ class _AddLogSheetState extends State<AddLogSheet> {
           SizedBox(height: 16.h),
           TextField(
             controller: _customLeaveController,
+            style: TextStyle(color: textPrimary),
             decoration: InputDecoration(
-              prefixIcon: const Icon(Icons.edit_note),
+              prefixIcon: Icon(
+                Icons.edit_note,
+                color: isDark ? Colors.grey[400] : null,
+              ),
               hintText: "请输入请假原因...",
+              hintStyle: TextStyle(color: isDark ? Colors.grey[500] : null),
               filled: true,
-              fillColor: kBgColor,
+              fillColor: bgColor,
               border: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(12),
                 borderSide: BorderSide.none,
@@ -591,15 +657,15 @@ class _AddLogSheetState extends State<AddLogSheet> {
     );
   }
 
-  Widget _buildRestForm() {
+  Widget _buildRestForm(bool isDark, Color textSecondary) {
     return Center(
       child: Column(
         children: [
-          Icon(Icons.snooze, size: 40.sp, color: Colors.orange),
+          Icon(Icons.snooze, size: 40.sp, color: AppColors.orange),
           SizedBox(height: 8.h),
           Text(
             "好好休息，补充能量",
-            style: TextStyle(color: Colors.grey[600], fontSize: 14.sp),
+            style: TextStyle(color: textSecondary, fontSize: 14.sp),
           ),
         ],
       ),

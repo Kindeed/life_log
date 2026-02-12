@@ -1,22 +1,49 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:get/get.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
+import 'package:get_storage/get_storage.dart';
 import 'package:intl/date_symbol_data_local.dart';
 import 'package:life_log/modules/tabs/tabs_view.dart';
 import 'package:life_log/modules/work_log/work_log_controller.dart';
 import 'package:life_log/modules/photo/photo_controller.dart';
-import 'package:life_log/common/db/db_service.dart'; // Import DbService
+import 'package:life_log/modules/subscription/subscription_controller.dart';
+import 'package:life_log/common/db/db_service.dart';
+import 'package:life_log/common/theme/app_theme.dart';
+import 'package:life_log/common/theme/theme_controller.dart';
+import 'package:life_log/common/services/log_service.dart';
+import 'package:life_log/common/services/auth_service.dart';
+import 'package:life_log/common/services/sync_service.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
+
+  // 0. 基础设施：存储和国际化
+  // Supabase Init — 通过 --dart-define 注入密钥，避免硬编码
+  const supabaseUrl = String.fromEnvironment(
+    'SUPABASE_URL',
+    defaultValue: 'https://ikaoktfmytsnximtijjg.supabase.co',
+  );
+  const supabaseAnonKey = String.fromEnvironment(
+    'SUPABASE_ANON_KEY',
+    defaultValue: 'sb_publishable_SnUTjnXNxYUGXBqSrzBqfw_SR-eLNTG',
+  );
+  await Supabase.initialize(url: supabaseUrl, anonKey: supabaseAnonKey);
+
+  await GetStorage.init();
   await initializeDateFormatting('zh_CN', null);
 
-  // 1. Initialize DB Service first (Async)
+  // 1. 核心服务（必须在启动时初始化）
   await Get.putAsync(() => DbService().init());
+  Get.put(ThemeController());
+  await Get.putAsync(() => LogService().init());
+  Get.put(AuthService());
+  Get.put(SyncService());
 
-  // 2. Initialize Controllers
-  Get.put(WorkLogController());
-  Get.put(PhotoController()); // Inject PhotoController
+  // 2. 模块控制器（懒加载，首次访问 Tab 时才初始化，fenix 确保回收后可自动重建）
+  Get.lazyPut(() => WorkLogController(), fenix: true);
+  Get.lazyPut(() => PhotoController(), fenix: true);
+  Get.lazyPut(() => SubscriptionController(), fenix: true);
 
   runApp(const MyApp());
 }
@@ -26,35 +53,22 @@ class MyApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final themeController = Get.find<ThemeController>();
+
     return ScreenUtilInit(
-      designSize: const Size(375, 812), // Standard iPhone X design size
+      designSize: const Size(375, 812),
       minTextAdapt: true,
       splitScreenMode: true,
       builder: (context, child) {
-        return GetMaterialApp(
-          debugShowCheckedModeBanner: false,
-          title: 'Life Log',
-          theme: ThemeData(
-            colorScheme: ColorScheme.fromSeed(
-              seedColor: const Color(0xFF1A73E8),
-              primary: const Color(0xFF1A73E8),
-              surface: Colors.white,
-            ),
-            useMaterial3: true,
-            scaffoldBackgroundColor: const Color(0xFFF7F9FC),
-            appBarTheme: const AppBarTheme(
-              centerTitle: true,
-              backgroundColor: Colors.white,
-              elevation: 0,
-              scrolledUnderElevation: 0,
-              titleTextStyle: TextStyle(
-                color: Color(0xFF1C1B1F),
-                fontSize: 18,
-                fontWeight: FontWeight.bold,
-              ),
-            ),
+        return Obx(
+          () => GetMaterialApp(
+            debugShowCheckedModeBanner: false,
+            title: 'Life Log',
+            theme: AppTheme.light,
+            darkTheme: AppTheme.dark,
+            themeMode: themeController.flutterThemeMode,
+            home: const TabsView(),
           ),
-          home: const TabsView(),
         );
       },
     );

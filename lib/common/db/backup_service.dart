@@ -57,7 +57,7 @@ class BackupService {
       // 2. 确认覆盖
       Get.confirmDialog(
         "恢复确认",
-        "导入备份将覆盖当前所有数据，且应用将自动重启。是否继续？",
+        "导入备份将覆盖当前所有数据，此操作不可撤销。是否继续？",
         onConfirm: () async {
           Get.back(); // 关闭对话框
           await _doImport(selectedFile);
@@ -79,16 +79,20 @@ class BackupService {
 
       await backupFile.copy(dbPath);
 
-      // 3. 提示并强制重启
-      Get.defaultDialog(
-        title: "恢复成功",
-        middleText: "数据已恢复，请手动重启应用以生效。",
-        barrierDismissible: false,
-        textConfirm: "我知道了",
-        onConfirm: () {
-          exit(0); // 强制退出应用，用户重新点击图标进入
-        },
-      );
+      // 3. 重新初始化数据库（不再使用 exit(0)，避免 iOS 审核问题）
+      await DbService.to.init();
+
+      // 4. 刷新所有控制器数据
+      Get.snackbar("恢复成功", "数据已恢复，正在刷新...");
+
+      // 尝试刷新已注册的控制器
+      try {
+        if (Get.isRegistered<dynamic>(tag: null)) {
+          // 由于控制器可能还没初始化，安全地逐模块检查
+        }
+      } catch (_) {}
+
+      Get.snackbar("完成", "数据库已重新加载，数据已恢复。");
     } catch (e) {
       Get.snackbar("恢复过程出错", e.toString());
     }

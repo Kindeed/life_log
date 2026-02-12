@@ -5,13 +5,16 @@ import '../subscription/subscription_view.dart';
 import '../statistics/statistics_view.dart';
 import 'tabs_controller.dart';
 import '../photo/views/photo_view.dart';
+import '../profile/profile_view.dart';
 
 class TabsView extends StatelessWidget {
   const TabsView({super.key});
 
   @override
   Widget build(BuildContext context) {
-    final controller = Get.put(TabsController());
+    final controller = Get.put(TabsController(), permanent: true);
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
 
     return Scaffold(
       body: Obx(() {
@@ -42,10 +45,12 @@ class TabsView extends StatelessWidget {
       bottomNavigationBar: Obx(
         () => Container(
           decoration: BoxDecoration(
-            color: Colors.white,
+            color: theme.cardColor,
             boxShadow: [
               BoxShadow(
-                color: Colors.black.withValues(alpha: 0.05),
+                color: isDark
+                    ? Colors.black.withValues(alpha: 0.3)
+                    : Colors.black.withValues(alpha: 0.05),
                 blurRadius: 10,
                 offset: const Offset(0, -2),
               ),
@@ -54,10 +59,10 @@ class TabsView extends StatelessWidget {
           child: BottomNavigationBar(
             currentIndex: controller.currentIndex.value,
             onTap: controller.changePage,
-            backgroundColor: Colors.white,
+            backgroundColor: theme.cardColor,
             elevation: 0,
-            selectedItemColor: const Color(0xFF1A73E8), // 谷歌蓝
-            unselectedItemColor: Colors.grey[400],
+            selectedItemColor: theme.colorScheme.primary,
+            unselectedItemColor: isDark ? Colors.grey[600] : Colors.grey[400],
             type: BottomNavigationBarType.fixed,
             showUnselectedLabels: true,
             selectedLabelStyle: const TextStyle(fontWeight: FontWeight.bold),
@@ -78,6 +83,10 @@ class TabsView extends StatelessWidget {
                 icon: Icon(Icons.analytics_rounded),
                 label: "面板",
               ),
+              BottomNavigationBarItem(
+                icon: Icon(Icons.person_rounded),
+                label: "我的",
+              ),
             ],
           ),
         ),
@@ -95,6 +104,8 @@ class TabsView extends StatelessWidget {
         return const PhotoView();
       case 3:
         return const StatisticsView();
+      case 4:
+        return const ProfileView();
       default:
         return const SizedBox.shrink();
     }

@@ -27,33 +27,48 @@ const WorkLogSchema = CollectionSchema(
       name: r'expenses',
       type: IsarType.double,
     ),
-    r'isReimbursed': PropertySchema(
+    r'isDirty': PropertySchema(
       id: 2,
+      name: r'isDirty',
+      type: IsarType.bool,
+    ),
+    r'isReimbursed': PropertySchema(
+      id: 3,
       name: r'isReimbursed',
       type: IsarType.bool,
     ),
     r'location': PropertySchema(
-      id: 3,
+      id: 4,
       name: r'location',
       type: IsarType.string,
     ),
     r'note': PropertySchema(
-      id: 4,
+      id: 5,
       name: r'note',
       type: IsarType.string,
     ),
     r'overtimeHours': PropertySchema(
-      id: 5,
+      id: 6,
       name: r'overtimeHours',
       type: IsarType.double,
     ),
+    r'remoteId': PropertySchema(
+      id: 7,
+      name: r'remoteId',
+      type: IsarType.long,
+    ),
+    r'syncedAt': PropertySchema(
+      id: 8,
+      name: r'syncedAt',
+      type: IsarType.dateTime,
+    ),
     r'transport': PropertySchema(
-      id: 6,
+      id: 9,
       name: r'transport',
       type: IsarType.string,
     ),
     r'type': PropertySchema(
-      id: 7,
+      id: 10,
       name: r'type',
       type: IsarType.byte,
       enumMap: _WorkLogtypeEnumValueMap,
@@ -108,12 +123,15 @@ void _workLogSerialize(
 ) {
   writer.writeDateTime(offsets[0], object.date);
   writer.writeDouble(offsets[1], object.expenses);
-  writer.writeBool(offsets[2], object.isReimbursed);
-  writer.writeString(offsets[3], object.location);
-  writer.writeString(offsets[4], object.note);
-  writer.writeDouble(offsets[5], object.overtimeHours);
-  writer.writeString(offsets[6], object.transport);
-  writer.writeByte(offsets[7], object.type.index);
+  writer.writeBool(offsets[2], object.isDirty);
+  writer.writeBool(offsets[3], object.isReimbursed);
+  writer.writeString(offsets[4], object.location);
+  writer.writeString(offsets[5], object.note);
+  writer.writeDouble(offsets[6], object.overtimeHours);
+  writer.writeLong(offsets[7], object.remoteId);
+  writer.writeDateTime(offsets[8], object.syncedAt);
+  writer.writeString(offsets[9], object.transport);
+  writer.writeByte(offsets[10], object.type.index);
 }
 
 WorkLog _workLogDeserialize(
@@ -126,12 +144,15 @@ WorkLog _workLogDeserialize(
   object.date = reader.readDateTime(offsets[0]);
   object.expenses = reader.readDoubleOrNull(offsets[1]);
   object.id = id;
-  object.isReimbursed = reader.readBool(offsets[2]);
-  object.location = reader.readStringOrNull(offsets[3]);
-  object.note = reader.readStringOrNull(offsets[4]);
-  object.overtimeHours = reader.readDoubleOrNull(offsets[5]);
-  object.transport = reader.readStringOrNull(offsets[6]);
-  object.type = _WorkLogtypeValueEnumMap[reader.readByteOrNull(offsets[7])] ??
+  object.isDirty = reader.readBool(offsets[2]);
+  object.isReimbursed = reader.readBool(offsets[3]);
+  object.location = reader.readStringOrNull(offsets[4]);
+  object.note = reader.readStringOrNull(offsets[5]);
+  object.overtimeHours = reader.readDoubleOrNull(offsets[6]);
+  object.remoteId = reader.readLongOrNull(offsets[7]);
+  object.syncedAt = reader.readDateTimeOrNull(offsets[8]);
+  object.transport = reader.readStringOrNull(offsets[9]);
+  object.type = _WorkLogtypeValueEnumMap[reader.readByteOrNull(offsets[10])] ??
       LogType.work;
   return object;
 }
@@ -150,14 +171,20 @@ P _workLogDeserializeProp<P>(
     case 2:
       return (reader.readBool(offset)) as P;
     case 3:
-      return (reader.readStringOrNull(offset)) as P;
+      return (reader.readBool(offset)) as P;
     case 4:
       return (reader.readStringOrNull(offset)) as P;
     case 5:
-      return (reader.readDoubleOrNull(offset)) as P;
-    case 6:
       return (reader.readStringOrNull(offset)) as P;
+    case 6:
+      return (reader.readDoubleOrNull(offset)) as P;
     case 7:
+      return (reader.readLongOrNull(offset)) as P;
+    case 8:
+      return (reader.readDateTimeOrNull(offset)) as P;
+    case 9:
+      return (reader.readStringOrNull(offset)) as P;
+    case 10:
       return (_WorkLogtypeValueEnumMap[reader.readByteOrNull(offset)] ??
           LogType.work) as P;
     default:
@@ -446,6 +473,16 @@ extension WorkLogQueryFilter
         includeLower: includeLower,
         upper: upper,
         includeUpper: includeUpper,
+      ));
+    });
+  }
+
+  QueryBuilder<WorkLog, WorkLog, QAfterFilterCondition> isDirtyEqualTo(
+      bool value) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.equalTo(
+        property: r'isDirty',
+        value: value,
       ));
     });
   }
@@ -832,6 +869,144 @@ extension WorkLogQueryFilter
     });
   }
 
+  QueryBuilder<WorkLog, WorkLog, QAfterFilterCondition> remoteIdIsNull() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(const FilterCondition.isNull(
+        property: r'remoteId',
+      ));
+    });
+  }
+
+  QueryBuilder<WorkLog, WorkLog, QAfterFilterCondition> remoteIdIsNotNull() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(const FilterCondition.isNotNull(
+        property: r'remoteId',
+      ));
+    });
+  }
+
+  QueryBuilder<WorkLog, WorkLog, QAfterFilterCondition> remoteIdEqualTo(
+      int? value) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.equalTo(
+        property: r'remoteId',
+        value: value,
+      ));
+    });
+  }
+
+  QueryBuilder<WorkLog, WorkLog, QAfterFilterCondition> remoteIdGreaterThan(
+    int? value, {
+    bool include = false,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.greaterThan(
+        include: include,
+        property: r'remoteId',
+        value: value,
+      ));
+    });
+  }
+
+  QueryBuilder<WorkLog, WorkLog, QAfterFilterCondition> remoteIdLessThan(
+    int? value, {
+    bool include = false,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.lessThan(
+        include: include,
+        property: r'remoteId',
+        value: value,
+      ));
+    });
+  }
+
+  QueryBuilder<WorkLog, WorkLog, QAfterFilterCondition> remoteIdBetween(
+    int? lower,
+    int? upper, {
+    bool includeLower = true,
+    bool includeUpper = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.between(
+        property: r'remoteId',
+        lower: lower,
+        includeLower: includeLower,
+        upper: upper,
+        includeUpper: includeUpper,
+      ));
+    });
+  }
+
+  QueryBuilder<WorkLog, WorkLog, QAfterFilterCondition> syncedAtIsNull() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(const FilterCondition.isNull(
+        property: r'syncedAt',
+      ));
+    });
+  }
+
+  QueryBuilder<WorkLog, WorkLog, QAfterFilterCondition> syncedAtIsNotNull() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(const FilterCondition.isNotNull(
+        property: r'syncedAt',
+      ));
+    });
+  }
+
+  QueryBuilder<WorkLog, WorkLog, QAfterFilterCondition> syncedAtEqualTo(
+      DateTime? value) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.equalTo(
+        property: r'syncedAt',
+        value: value,
+      ));
+    });
+  }
+
+  QueryBuilder<WorkLog, WorkLog, QAfterFilterCondition> syncedAtGreaterThan(
+    DateTime? value, {
+    bool include = false,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.greaterThan(
+        include: include,
+        property: r'syncedAt',
+        value: value,
+      ));
+    });
+  }
+
+  QueryBuilder<WorkLog, WorkLog, QAfterFilterCondition> syncedAtLessThan(
+    DateTime? value, {
+    bool include = false,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.lessThan(
+        include: include,
+        property: r'syncedAt',
+        value: value,
+      ));
+    });
+  }
+
+  QueryBuilder<WorkLog, WorkLog, QAfterFilterCondition> syncedAtBetween(
+    DateTime? lower,
+    DateTime? upper, {
+    bool includeLower = true,
+    bool includeUpper = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.between(
+        property: r'syncedAt',
+        lower: lower,
+        includeLower: includeLower,
+        upper: upper,
+        includeUpper: includeUpper,
+      ));
+    });
+  }
+
   QueryBuilder<WorkLog, WorkLog, QAfterFilterCondition> transportIsNull() {
     return QueryBuilder.apply(this, (query) {
       return query.addFilterCondition(const FilterCondition.isNull(
@@ -1063,6 +1238,18 @@ extension WorkLogQuerySortBy on QueryBuilder<WorkLog, WorkLog, QSortBy> {
     });
   }
 
+  QueryBuilder<WorkLog, WorkLog, QAfterSortBy> sortByIsDirty() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'isDirty', Sort.asc);
+    });
+  }
+
+  QueryBuilder<WorkLog, WorkLog, QAfterSortBy> sortByIsDirtyDesc() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'isDirty', Sort.desc);
+    });
+  }
+
   QueryBuilder<WorkLog, WorkLog, QAfterSortBy> sortByIsReimbursed() {
     return QueryBuilder.apply(this, (query) {
       return query.addSortBy(r'isReimbursed', Sort.asc);
@@ -1108,6 +1295,30 @@ extension WorkLogQuerySortBy on QueryBuilder<WorkLog, WorkLog, QSortBy> {
   QueryBuilder<WorkLog, WorkLog, QAfterSortBy> sortByOvertimeHoursDesc() {
     return QueryBuilder.apply(this, (query) {
       return query.addSortBy(r'overtimeHours', Sort.desc);
+    });
+  }
+
+  QueryBuilder<WorkLog, WorkLog, QAfterSortBy> sortByRemoteId() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'remoteId', Sort.asc);
+    });
+  }
+
+  QueryBuilder<WorkLog, WorkLog, QAfterSortBy> sortByRemoteIdDesc() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'remoteId', Sort.desc);
+    });
+  }
+
+  QueryBuilder<WorkLog, WorkLog, QAfterSortBy> sortBySyncedAt() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'syncedAt', Sort.asc);
+    });
+  }
+
+  QueryBuilder<WorkLog, WorkLog, QAfterSortBy> sortBySyncedAtDesc() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'syncedAt', Sort.desc);
     });
   }
 
@@ -1174,6 +1385,18 @@ extension WorkLogQuerySortThenBy
     });
   }
 
+  QueryBuilder<WorkLog, WorkLog, QAfterSortBy> thenByIsDirty() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'isDirty', Sort.asc);
+    });
+  }
+
+  QueryBuilder<WorkLog, WorkLog, QAfterSortBy> thenByIsDirtyDesc() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'isDirty', Sort.desc);
+    });
+  }
+
   QueryBuilder<WorkLog, WorkLog, QAfterSortBy> thenByIsReimbursed() {
     return QueryBuilder.apply(this, (query) {
       return query.addSortBy(r'isReimbursed', Sort.asc);
@@ -1222,6 +1445,30 @@ extension WorkLogQuerySortThenBy
     });
   }
 
+  QueryBuilder<WorkLog, WorkLog, QAfterSortBy> thenByRemoteId() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'remoteId', Sort.asc);
+    });
+  }
+
+  QueryBuilder<WorkLog, WorkLog, QAfterSortBy> thenByRemoteIdDesc() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'remoteId', Sort.desc);
+    });
+  }
+
+  QueryBuilder<WorkLog, WorkLog, QAfterSortBy> thenBySyncedAt() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'syncedAt', Sort.asc);
+    });
+  }
+
+  QueryBuilder<WorkLog, WorkLog, QAfterSortBy> thenBySyncedAtDesc() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'syncedAt', Sort.desc);
+    });
+  }
+
   QueryBuilder<WorkLog, WorkLog, QAfterSortBy> thenByTransport() {
     return QueryBuilder.apply(this, (query) {
       return query.addSortBy(r'transport', Sort.asc);
@@ -1261,6 +1508,12 @@ extension WorkLogQueryWhereDistinct
     });
   }
 
+  QueryBuilder<WorkLog, WorkLog, QDistinct> distinctByIsDirty() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addDistinctBy(r'isDirty');
+    });
+  }
+
   QueryBuilder<WorkLog, WorkLog, QDistinct> distinctByIsReimbursed() {
     return QueryBuilder.apply(this, (query) {
       return query.addDistinctBy(r'isReimbursed');
@@ -1284,6 +1537,18 @@ extension WorkLogQueryWhereDistinct
   QueryBuilder<WorkLog, WorkLog, QDistinct> distinctByOvertimeHours() {
     return QueryBuilder.apply(this, (query) {
       return query.addDistinctBy(r'overtimeHours');
+    });
+  }
+
+  QueryBuilder<WorkLog, WorkLog, QDistinct> distinctByRemoteId() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addDistinctBy(r'remoteId');
+    });
+  }
+
+  QueryBuilder<WorkLog, WorkLog, QDistinct> distinctBySyncedAt() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addDistinctBy(r'syncedAt');
     });
   }
 
@@ -1321,6 +1586,12 @@ extension WorkLogQueryProperty
     });
   }
 
+  QueryBuilder<WorkLog, bool, QQueryOperations> isDirtyProperty() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addPropertyName(r'isDirty');
+    });
+  }
+
   QueryBuilder<WorkLog, bool, QQueryOperations> isReimbursedProperty() {
     return QueryBuilder.apply(this, (query) {
       return query.addPropertyName(r'isReimbursed');
@@ -1342,6 +1613,18 @@ extension WorkLogQueryProperty
   QueryBuilder<WorkLog, double?, QQueryOperations> overtimeHoursProperty() {
     return QueryBuilder.apply(this, (query) {
       return query.addPropertyName(r'overtimeHours');
+    });
+  }
+
+  QueryBuilder<WorkLog, int?, QQueryOperations> remoteIdProperty() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addPropertyName(r'remoteId');
+    });
+  }
+
+  QueryBuilder<WorkLog, DateTime?, QQueryOperations> syncedAtProperty() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addPropertyName(r'syncedAt');
     });
   }
 

@@ -1,12 +1,15 @@
+import 'dart:async';
 import 'package:get/get.dart';
 import '../../common/db/db_service.dart';
+import '../../common/services/event_bus.dart';
+import '../../common/services/log_service.dart';
 import '../work_log/log_model.dart';
-import '../subscription/subscription_model.dart'; 
+import '../subscription/subscription_model.dart';
 
 class StatisticsController extends GetxController {
   // --- 1. 基础数据 ---
   final currentMonth = DateTime.now().month.obs;
-  final nextMonth = 0.obs; 
+  final nextMonth = 0.obs;
 
   // --- 2. 工时/天数 (依然只看本月) ---
   final workHours = 0.0.obs;
@@ -17,16 +20,43 @@ class StatisticsController extends GetxController {
   // --- 3. 财务统计 ---
   final nextMonthSubCost = 0.0.obs;
   final yearSubCost = 0.0.obs;
-  
+
   // 【修改】这两个变量现在代表“全部历史累计”
-  final reimbursedAmount = 0.0.obs;   
-  final unreimbursedAmount = 0.0.obs; 
+  final reimbursedAmount = 0.0.obs;
+  final unreimbursedAmount = 0.0.obs;
+
+  StreamSubscription? _logSub;
+  StreamSubscription? _subSub;
+
+  // --- 4. 调试/验证 ---
+  final lastUpdated = "".obs;
 
   @override
   void onInit() {
     super.onInit();
+    LogService.to.debug('Stats', 'Controller Init');
     _updateMonthLabels();
     refreshStats();
+
+    // 监听工时变化
+    _logSub = EventBus.instance.on<WorkLogChangedEvent>((event) {
+      LogService.to.debug('Stats', 'Received WorkLogChangedEvent');
+      refreshStats();
+    });
+
+    // 监听订阅变化
+    _subSub = EventBus.instance.on<SubscriptionChangedEvent>((event) {
+      LogService.to.debug('Stats', 'Received SubscriptionChangedEvent');
+      refreshStats();
+    });
+  }
+
+  @override
+  void onClose() {
+    LogService.to.debug('Stats', 'Controller Close');
+    _logSub?.cancel();
+    _subSub?.cancel();
+    super.onClose();
   }
 
   void refreshStats() async {
@@ -45,13 +75,16 @@ class StatisticsController extends GetxController {
 
   void _calculateStats(List<WorkLog> logs, List<Subscription> subs) {
     final now = DateTime.now();
+    lastUpdated.value =
+        "${now.hour}:${now.minute.toString().padLeft(2, '0')}:${now.second.toString().padLeft(2, '0')}";
+    LogService.to.debug('Stats', 'Recalculated at ${lastUpdated.value}');
     _updateMonthLabels();
 
     double hours = 0.0;
     int wDays = 0;
     int tDays = 0;
     int rDays = 0;
-    
+
     double reimbursed = 0.0;
     double unreimbursed = 0.0;
 
@@ -59,9 +92,9 @@ class StatisticsController extends GetxController {
       // --- 【修改点 1】报销统计移到最外层 (不分月份，统计所有) ---
       if (log.expenses != null && log.expenses! > 0) {
         if (log.isReimbursed) {
-          reimbursed += log.expenses!; 
+          reimbursed += log.expenses!;
         } else {
-          unreimbursed += log.expenses!; 
+          unreimbursed += log.expenses!;
         }
       }
       // ----------------------------------------------------
@@ -89,14 +122,14 @@ class StatisticsController extends GetxController {
     // --- 订阅逻辑不变 ---
     double nextMonthCost = 0.0;
     double yearTotal = 0.0;
-    
+
     for (var sub in subs) {
-      double price = sub.price ?? 0.0; 
+      double price = sub.price ?? 0.0;
       double yearlyPrice = price;
-      
+
       if (sub.cycle == SubscriptionCycle.monthly) {
         yearlyPrice = price * 12;
-        nextMonthCost += price; 
+        nextMonthCost += price;
       } else {
         if (sub.nextPaymentDate.month == nextMonth.value) {
           nextMonthCost += price;

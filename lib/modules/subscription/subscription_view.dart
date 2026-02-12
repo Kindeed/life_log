@@ -4,24 +4,28 @@ import 'package:get/get.dart';
 import 'subscription_controller.dart';
 import 'subscription_model.dart';
 import 'add_subscription_sheet.dart';
-
-// 统一的设计常量
-const Color kPrimaryColor = Color(0xFF1A73E8);
-const Color kBgColor = Color(0xFFF7F9FC);
+import '../../common/theme/app_colors.dart';
 
 class SubscriptionView extends StatelessWidget {
   const SubscriptionView({super.key});
 
   @override
   Widget build(BuildContext context) {
-    final logic = Get.put(SubscriptionController());
+    final logic = Get.find<SubscriptionController>();
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
+    final cardColor = theme.cardColor;
+    final textPrimary = isDark
+        ? AppColors.darkTextPrimary
+        : AppColors.lightTextPrimary;
+    final textSecondary = isDark ? Colors.grey[400]! : Colors.grey[500]!;
 
     return Scaffold(
-      backgroundColor: kBgColor,
+      backgroundColor: theme.scaffoldBackgroundColor,
       body: SafeArea(
         child: Column(
           children: [
-            // 1. 自定义标题栏 (Modern Header)
+            // 1. 自定义标题栏
             Padding(
               padding: EdgeInsets.fromLTRB(24.w, 24.h, 24.w, 10.h),
               child: Row(
@@ -32,26 +36,25 @@ class SubscriptionView extends StatelessWidget {
                     style: TextStyle(
                       fontSize: 24.sp,
                       fontWeight: FontWeight.bold,
-                      color: Colors.black87,
+                      color: textPrimary,
                     ),
                   ),
-                  // 排序按钮变成圆形图标
                   Container(
                     decoration: BoxDecoration(
-                      color: Colors.white,
+                      color: cardColor,
                       shape: BoxShape.circle,
                       boxShadow: [
                         BoxShadow(
-                          color: Colors.black.withValues(alpha: 0.05),
+                          color: isDark
+                              ? Colors.black.withValues(alpha: 0.3)
+                              : Colors.black.withValues(alpha: 0.05),
                           blurRadius: 10,
                         ),
                       ],
                     ),
                     child: PopupMenuButton<String>(
-                      icon: const Icon(
-                        Icons.sort_rounded,
-                        color: Colors.black87,
-                      ),
+                      icon: Icon(Icons.sort_rounded, color: textPrimary),
+                      color: cardColor,
                       shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(16),
                       ),
@@ -60,13 +63,19 @@ class SubscriptionView extends StatelessWidget {
                         if (value == 'date') logic.sortByDate();
                       },
                       itemBuilder: (context) => [
-                        const PopupMenuItem(
+                        PopupMenuItem(
                           value: 'price',
-                          child: Text("按价格排序"),
+                          child: Text(
+                            "按价格排序",
+                            style: TextStyle(color: textPrimary),
+                          ),
                         ),
-                        const PopupMenuItem(
+                        PopupMenuItem(
                           value: 'date',
-                          child: Text("按日期排序"),
+                          child: Text(
+                            "按日期排序",
+                            style: TextStyle(color: textPrimary),
+                          ),
                         ),
                       ],
                     ),
@@ -77,71 +86,112 @@ class SubscriptionView extends StatelessWidget {
 
             // 2. 列表区域
             Expanded(
-              child: Obx(() {
-                if (logic.subs.isEmpty) {
-                  return Center(
-                    child: Column(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        Icon(
-                          Icons.subscriptions_outlined,
-                          size: 60.sp,
-                          color: Colors.grey[300],
-                        ),
-                        SizedBox(height: 10.h),
-                        Text(
-                          "还没有订阅服务",
-                          style: TextStyle(color: Colors.grey[400]),
-                        ),
-                      ],
-                    ),
-                  );
-                }
+              child: NotificationListener<UserScrollNotification>(
+                onNotification: (notification) {
+                  logic.onScroll(notification);
+                  return true;
+                },
+                child: Obx(() {
+                  if (logic.subs.isEmpty) {
+                    return Center(
+                      child: Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Icon(
+                            Icons.subscriptions_outlined,
+                            size: 60.sp,
+                            color: isDark ? Colors.grey[700] : Colors.grey[300],
+                          ),
+                          SizedBox(height: 10.h),
+                          Text(
+                            "还没有订阅服务",
+                            style: TextStyle(color: textSecondary),
+                          ),
+                        ],
+                      ),
+                    );
+                  }
 
-                return ReorderableListView.builder(
-                  padding: EdgeInsets.symmetric(
-                    horizontal: 16.w,
-                    vertical: 10.h,
-                  ),
-                  itemCount: logic.subs.length,
-                  onReorder: (oldIndex, newIndex) =>
-                      logic.reorderSub(oldIndex, newIndex),
-                  itemBuilder: (context, index) {
-                    final sub = logic.subs[index];
-                    return _buildSubCard(sub, logic);
-                  },
-                );
-              }),
+                  return ReorderableListView.builder(
+                    padding: EdgeInsets.fromLTRB(16.w, 10.h, 16.w, 80.h),
+                    itemCount: logic.subs.length,
+                    onReorder: (oldIndex, newIndex) =>
+                        logic.reorderSub(oldIndex, newIndex),
+                    itemBuilder: (context, index) {
+                      final sub = logic.subs[index];
+                      return _buildSubCard(
+                        sub,
+                        logic,
+                        isDark,
+                        cardColor,
+                        textPrimary,
+                        textSecondary,
+                      );
+                    },
+                  );
+                }),
+              ),
             ),
           ],
         ),
       ),
-      floatingActionButton: FloatingActionButton(
-        backgroundColor: kPrimaryColor,
-        elevation: 4,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-        child: const Icon(Icons.add, size: 28),
-        onPressed: () {
-          Get.bottomSheet(
-            const AddSubscriptionSheet(),
-            isScrollControlled: true,
-            backgroundColor: Colors.transparent,
-          );
-        },
+      floatingActionButtonLocation: FloatingActionButtonLocation.centerFloat,
+      floatingActionButton: Obx(
+        () => AnimatedSlide(
+          duration: const Duration(milliseconds: 300),
+          offset: logic.isFabVisible.value ? Offset.zero : const Offset(0, 2),
+          child: AnimatedOpacity(
+            duration: const Duration(milliseconds: 300),
+            opacity: logic.isFabVisible.value ? 1 : 0,
+            child: FloatingActionButton.extended(
+              backgroundColor: AppColors.primaryBlue,
+              elevation: 4,
+              icon: const Icon(
+                Icons.add_rounded,
+                size: 24,
+                color: Colors.white,
+              ),
+              label: Text(
+                "记一笔",
+                style: TextStyle(
+                  fontSize: 16.sp,
+                  fontWeight: FontWeight.bold,
+                  color: Colors.white,
+                ),
+              ),
+              onPressed: () {
+                Get.bottomSheet(
+                  const AddSubscriptionSheet(),
+                  isScrollControlled: true,
+                  backgroundColor: Colors.transparent,
+                );
+              },
+            ),
+          ),
+        ),
       ),
     );
   }
 
-  Widget _buildSubCard(Subscription sub, SubscriptionController logic) {
+  Widget _buildSubCard(
+    Subscription sub,
+    SubscriptionController logic,
+    bool isDark,
+    Color cardColor,
+    Color textPrimary,
+    Color textSecondary,
+  ) {
     return Container(
       key: ValueKey(sub.id),
       margin: EdgeInsets.only(bottom: 12.h),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: cardColor,
         borderRadius: BorderRadius.circular(24),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withValues(alpha: 0.03),
+            color: isDark
+                ? Colors.black.withValues(alpha: 0.3)
+                : Colors.black.withValues(alpha: 0.03),
             blurRadius: 20,
             offset: const Offset(0, 8),
           ),
@@ -167,7 +217,9 @@ class SubscriptionView extends StatelessWidget {
                   width: 50.w,
                   height: 50.w,
                   decoration: BoxDecoration(
-                    color: kPrimaryColor.withValues(alpha: 0.1), // 统一用蓝色底
+                    color: AppColors.primaryBlue.withValues(
+                      alpha: isDark ? 0.2 : 0.1,
+                    ),
                     borderRadius: BorderRadius.circular(12),
                   ),
                   alignment: Alignment.center,
@@ -175,7 +227,7 @@ class SubscriptionView extends StatelessWidget {
                     sub.name.isNotEmpty ? sub.name.substring(0, 1) : "?",
                     style: TextStyle(
                       fontSize: 22.sp,
-                      color: kPrimaryColor,
+                      color: AppColors.primaryBlue,
                       fontWeight: FontWeight.bold,
                     ),
                   ),
@@ -192,15 +244,13 @@ class SubscriptionView extends StatelessWidget {
                         style: TextStyle(
                           fontSize: 17.sp,
                           fontWeight: FontWeight.bold,
+                          color: textPrimary,
                         ),
                       ),
                       SizedBox(height: 4.h),
                       Text(
                         "下次: ${sub.nextPaymentDate.toString().split(' ')[0]}",
-                        style: TextStyle(
-                          fontSize: 13.sp,
-                          color: Colors.grey[500],
-                        ),
+                        style: TextStyle(fontSize: 13.sp, color: textSecondary),
                       ),
                     ],
                   ),
@@ -216,15 +266,12 @@ class SubscriptionView extends StatelessWidget {
                         fontSize: 18.sp,
                         fontWeight: FontWeight.bold,
                         fontFamily: "Roboto",
-                        color: Colors.black87,
+                        color: textPrimary,
                       ),
                     ),
                     Text(
                       sub.cycle == SubscriptionCycle.monthly ? '/月' : '/年',
-                      style: TextStyle(
-                        fontSize: 12.sp,
-                        color: Colors.grey[400],
-                      ),
+                      style: TextStyle(fontSize: 12.sp, color: textSecondary),
                     ),
                   ],
                 ),
@@ -232,7 +279,7 @@ class SubscriptionView extends StatelessWidget {
                 IconButton(
                   icon: Icon(
                     Icons.delete_outline,
-                    color: Colors.grey[300],
+                    color: isDark ? Colors.grey[600] : Colors.grey[300],
                     size: 20.sp,
                   ),
                   onPressed: () => logic.deleteSub(sub.id),

@@ -2,23 +2,25 @@ import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:get/get.dart';
 import 'statistics_controller.dart';
-import '../../common/db/backup_service.dart';
-
-const Color kPrimaryColor = Color(0xFF1A73E8);
-const Color kOrangeColor = Color(0xFFFF6D00);
-const Color kPurpleColor = Color(0xFF65558F);
-const Color kGreenColor = Color(0xFF2E7D32);
-const Color kBgColor = Color(0xFFF7F9FC);
+import '../../common/theme/app_colors.dart';
 
 class StatisticsView extends StatelessWidget {
   const StatisticsView({super.key});
 
   @override
   Widget build(BuildContext context) {
-    final logic = Get.put(StatisticsController());
+    // 使用 Get.find 获取已初始化常驻的 Controller
+    final logic = Get.find<StatisticsController>();
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
+    final cardColor = theme.cardColor;
+    final textPrimary = isDark
+        ? AppColors.darkTextPrimary
+        : AppColors.lightTextPrimary;
+    final textSecondary = isDark ? Colors.grey[400]! : Colors.grey[500]!;
 
     return Scaffold(
-      backgroundColor: kBgColor,
+      backgroundColor: theme.scaffoldBackgroundColor,
       appBar: AppBar(
         title: const Text("数据面板"),
         actions: [
@@ -34,254 +36,35 @@ class StatisticsView extends StatelessWidget {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              // 2. 工时卡片
-              Container(
-                padding: EdgeInsets.all(24.w),
-                decoration: _cardDecoration(),
-                child: Column(
-                  children: [
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        Obx(
-                          () => Text(
-                            "${logic.currentMonth.value}月工时",
-                            style: TextStyle(
-                              fontSize: 16.sp,
-                              fontWeight: FontWeight.bold,
-                              color: Colors.black87,
-                            ),
-                          ),
-                        ),
-                        _buildIconContainer(
-                          Icons.timelapse_rounded,
-                          kPrimaryColor,
-                        ),
-                      ],
-                    ),
-                    SizedBox(height: 24.h),
-                    Center(
-                      child: Obx(
-                        () => Column(
-                          children: [
-                            Text(
-                              logic.workHours.value.toStringAsFixed(1),
-                              style: TextStyle(
-                                fontSize: 52.sp,
-                                fontWeight: FontWeight.bold,
-                                color: kPrimaryColor,
-                                fontFamily: "Roboto",
-                                height: 1.0,
-                              ),
-                            ),
-                            SizedBox(height: 8.h),
-                            Container(
-                              padding: EdgeInsets.symmetric(
-                                horizontal: 10.w,
-                                vertical: 4.h,
-                              ),
-                              decoration: BoxDecoration(
-                                color: kPrimaryColor.withValues(alpha: 0.1),
-                                borderRadius: BorderRadius.circular(8),
-                              ),
-                              child: Text(
-                                "累计加班 (小时)",
-                                style: TextStyle(
-                                  fontSize: 12.sp,
-                                  color: kPrimaryColor,
-                                  fontWeight: FontWeight.bold,
-                                ),
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                    ),
-                    SizedBox(height: 30.h),
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceAround,
-                      children: [
-                        Obx(
-                          () => _buildStatItem(
-                            "工作",
-                            "${logic.workDays.value}天",
-                            kPrimaryColor,
-                          ),
-                        ),
-                        Container(
-                          width: 1,
-                          height: 20,
-                          color: Colors.grey[200],
-                        ),
-                        Obx(
-                          () => _buildStatItem(
-                            "出差",
-                            "${logic.tripDays.value}天",
-                            kOrangeColor,
-                          ),
-                        ),
-                        Container(
-                          width: 1,
-                          height: 20,
-                          color: Colors.grey[200],
-                        ),
-                        Obx(
-                          () => _buildStatItem(
-                            "休息",
-                            "${logic.restDays.value}天",
-                            Colors.green,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ],
-                ),
+              // 1. 工时卡片
+              _buildWorkCard(
+                logic,
+                isDark,
+                cardColor,
+                textPrimary,
+                textSecondary,
               ),
 
               SizedBox(height: 20.h),
 
-              // 3. 财务卡片 (UI 优化：居中对齐)
-              Container(
-                padding: EdgeInsets.all(24.w),
-                decoration: _cardDecoration(),
-                child: Column(
-                  children: [
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        Text(
-                          "财务概览",
-                          style: TextStyle(
-                            fontSize: 16.sp,
-                            fontWeight: FontWeight.bold,
-                            color: Colors.black87,
-                          ),
-                        ),
-                        _buildIconContainer(
-                          Icons.account_balance_wallet_rounded,
-                          kPurpleColor,
-                        ),
-                      ],
-                    ),
-                    SizedBox(height: 24.h),
-
-                    Row(
-                      children: [
-                        // 左上：待报销 (总额)
-                        Expanded(
-                          child: Obx(
-                            () => _buildExpenseItem(
-                              "待报销总额", // 文案改为总额
-                              "¥${logic.unreimbursedAmount.value.toStringAsFixed(0)}",
-                              color: kOrangeColor,
-                              isBold: true,
-                            ),
-                          ),
-                        ),
-                        SizedBox(width: 16.w),
-                        // 右上：已报销
-                        Expanded(
-                          child: Obx(
-                            () => _buildExpenseItem(
-                              "累计已报销",
-                              "¥${logic.reimbursedAmount.value.toStringAsFixed(0)}",
-                              color: kGreenColor,
-                            ),
-                          ),
-                        ),
-                      ],
-                    ),
-
-                    SizedBox(height: 24.h),
-                    Divider(color: Colors.grey[100], height: 1),
-                    SizedBox(height: 24.h),
-
-                    Row(
-                      children: [
-                        // 左下：下月订阅
-                        Expanded(
-                          child: Obx(
-                            () => _buildExpenseItem(
-                              "${logic.nextMonth.value}月订阅",
-                              "¥${logic.nextMonthSubCost.value.toStringAsFixed(0)}",
-                              color: kPurpleColor,
-                            ),
-                          ),
-                        ),
-                        SizedBox(width: 16.w),
-                        // 右下：固定年支
-                        Expanded(
-                          child: Obx(
-                            () => _buildExpenseItem(
-                              "固定年支",
-                              "¥${logic.yearSubCost.value.toStringAsFixed(0)}",
-                              color: Colors.grey[600]!,
-                            ),
-                          ),
-                        ),
-                      ],
-                    ),
-                  ],
-                ),
+              // 2. 财务卡片
+              _buildFinanceCard(
+                logic,
+                isDark,
+                cardColor,
+                textPrimary,
+                textSecondary,
               ),
 
               SizedBox(height: 20.h),
-
-              // 5. 数据管理面板 (备份与恢复)
-              Container(
-                padding: EdgeInsets.all(24.w),
-                decoration: _cardDecoration(),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        Text(
-                          "数据管理",
-                          style: TextStyle(
-                            fontSize: 16.sp,
-                            fontWeight: FontWeight.bold,
-                            color: Colors.black87,
-                          ),
-                        ),
-                        _buildIconContainer(Icons.storage_rounded, Colors.grey),
-                      ],
-                    ),
-                    SizedBox(height: 16.h),
-                    Text(
-                      "定期备份数据，防止手机丢失或误删导致记录丢失。",
-                      style: TextStyle(
-                        fontSize: 12.sp,
-                        color: Colors.grey[500],
-                      ),
-                    ),
-                    SizedBox(height: 24.h),
-                    Row(
-                      children: [
-                        Expanded(
-                          child: _buildActionButton(
-                            label: "导出全部备份",
-                            icon: Icons.cloud_upload_outlined,
-                            color: kPrimaryColor,
-                            onTap: () => BackupService.exportBackup(),
-                          ),
-                        ),
-                        SizedBox(width: 12.w),
-                        Expanded(
-                          child: _buildActionButton(
-                            label: "恢复本地数据",
-                            icon: Icons.cloud_download_outlined,
-                            color: kOrangeColor,
-                            onTap: () => BackupService.importBackup(),
-                          ),
-                        ),
-                      ],
-                    ),
-                  ],
+              Center(
+                child: Obx(
+                  () => Text(
+                    "上次刷新: ${logic.lastUpdated.value}",
+                    style: TextStyle(color: Colors.grey, fontSize: 12.sp),
+                  ),
                 ),
               ),
-
               SizedBox(height: 40.h),
             ],
           ),
@@ -290,14 +73,229 @@ class StatisticsView extends StatelessWidget {
     );
   }
 
+  Widget _buildWorkCard(
+    StatisticsController logic,
+    bool isDark,
+    Color cardColor,
+    Color textPrimary,
+    Color textSecondary,
+  ) {
+    return Container(
+      padding: EdgeInsets.all(24.w),
+      decoration: _cardDecoration(isDark, cardColor),
+      child: Column(
+        children: [
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Obx(
+                () => Text(
+                  "${logic.currentMonth.value}月工时",
+                  style: TextStyle(
+                    fontSize: 16.sp,
+                    fontWeight: FontWeight.bold,
+                    color: textPrimary,
+                  ),
+                ),
+              ),
+              _buildIconContainer(
+                Icons.timelapse_rounded,
+                AppColors.primaryBlue,
+                isDark,
+              ),
+            ],
+          ),
+          SizedBox(height: 24.h),
+          Center(
+            child: Obx(
+              () => Column(
+                children: [
+                  Text(
+                    logic.workHours.value.toStringAsFixed(1),
+                    style: TextStyle(
+                      fontSize: 52.sp,
+                      fontWeight: FontWeight.bold,
+                      color: AppColors.primaryBlue,
+                      fontFamily: "Roboto",
+                      height: 1.0,
+                    ),
+                  ),
+                  SizedBox(height: 8.h),
+                  Container(
+                    padding: EdgeInsets.symmetric(
+                      horizontal: 10.w,
+                      vertical: 4.h,
+                    ),
+                    decoration: BoxDecoration(
+                      color: AppColors.primaryBlue.withValues(
+                        alpha: isDark ? 0.2 : 0.1,
+                      ),
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    child: Text(
+                      "累计加班 (小时)",
+                      style: TextStyle(
+                        fontSize: 12.sp,
+                        color: AppColors.primaryBlue,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+          SizedBox(height: 30.h),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceAround,
+            children: [
+              Obx(
+                () => _buildStatItem(
+                  "工作",
+                  "${logic.workDays.value}天",
+                  AppColors.primaryBlue,
+                  textPrimary,
+                  textSecondary,
+                ),
+              ),
+              Container(
+                width: 1,
+                height: 20,
+                color: isDark ? Colors.grey[700] : Colors.grey[200],
+              ),
+              Obx(
+                () => _buildStatItem(
+                  "出差",
+                  "${logic.tripDays.value}天",
+                  AppColors.orange,
+                  textPrimary,
+                  textSecondary,
+                ),
+              ),
+              Container(
+                width: 1,
+                height: 20,
+                color: isDark ? Colors.grey[700] : Colors.grey[200],
+              ),
+              Obx(
+                () => _buildStatItem(
+                  "休息",
+                  "${logic.restDays.value}天",
+                  AppColors.green,
+                  textPrimary,
+                  textSecondary,
+                ),
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildFinanceCard(
+    StatisticsController logic,
+    bool isDark,
+    Color cardColor,
+    Color textPrimary,
+    Color textSecondary,
+  ) {
+    return Container(
+      padding: EdgeInsets.all(24.w),
+      decoration: _cardDecoration(isDark, cardColor),
+      child: Column(
+        children: [
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Text(
+                "财务概览",
+                style: TextStyle(
+                  fontSize: 16.sp,
+                  fontWeight: FontWeight.bold,
+                  color: textPrimary,
+                ),
+              ),
+              _buildIconContainer(
+                Icons.account_balance_wallet_rounded,
+                AppColors.purple,
+                isDark,
+              ),
+            ],
+          ),
+          SizedBox(height: 24.h),
+          Row(
+            children: [
+              Expanded(
+                child: Obx(
+                  () => _buildExpenseItem(
+                    "待报销总额",
+                    "¥${logic.unreimbursedAmount.value.toStringAsFixed(0)}",
+                    color: AppColors.orange,
+                    isBold: true,
+                    textSecondary: textSecondary,
+                  ),
+                ),
+              ),
+              SizedBox(width: 16.w),
+              Expanded(
+                child: Obx(
+                  () => _buildExpenseItem(
+                    "累计已报销",
+                    "¥${logic.reimbursedAmount.value.toStringAsFixed(0)}",
+                    color: AppColors.green,
+                    textSecondary: textSecondary,
+                  ),
+                ),
+              ),
+            ],
+          ),
+          SizedBox(height: 24.h),
+          Divider(
+            color: isDark ? Colors.grey[800] : Colors.grey[100],
+            height: 1,
+          ),
+          SizedBox(height: 24.h),
+          Row(
+            children: [
+              Expanded(
+                child: Obx(
+                  () => _buildExpenseItem(
+                    "${logic.nextMonth.value}月订阅",
+                    "¥${logic.nextMonthSubCost.value.toStringAsFixed(0)}",
+                    color: AppColors.purple,
+                    textSecondary: textSecondary,
+                  ),
+                ),
+              ),
+              SizedBox(width: 16.w),
+              Expanded(
+                child: Obx(
+                  () => _buildExpenseItem(
+                    "固定年支",
+                    "¥${logic.yearSubCost.value.toStringAsFixed(0)}",
+                    color: isDark ? Colors.grey[400]! : Colors.grey[600]!,
+                    textSecondary: textSecondary,
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+
   // --- 样式辅助方法 ---
-  BoxDecoration _cardDecoration() {
+  BoxDecoration _cardDecoration(bool isDark, Color cardColor) {
     return BoxDecoration(
-      color: Colors.white,
+      color: cardColor,
       borderRadius: BorderRadius.circular(24),
       boxShadow: [
         BoxShadow(
-          color: Colors.black.withValues(alpha: 0.03),
+          color: isDark
+              ? Colors.black.withValues(alpha: 0.3)
+              : Colors.black.withValues(alpha: 0.03),
           blurRadius: 20,
           offset: const Offset(0, 8),
         ),
@@ -305,18 +303,24 @@ class StatisticsView extends StatelessWidget {
     );
   }
 
-  Widget _buildIconContainer(IconData icon, Color color) {
+  Widget _buildIconContainer(IconData icon, Color color, bool isDark) {
     return Container(
       padding: EdgeInsets.all(10.w),
       decoration: BoxDecoration(
-        color: color.withValues(alpha: 0.1),
+        color: color.withValues(alpha: isDark ? 0.2 : 0.1),
         borderRadius: BorderRadius.circular(12),
       ),
       child: Icon(icon, color: color, size: 22.sp),
     );
   }
 
-  Widget _buildStatItem(String label, String value, Color color) {
+  Widget _buildStatItem(
+    String label,
+    String value,
+    Color color,
+    Color textPrimary,
+    Color textSecondary,
+  ) {
     return Column(
       children: [
         Text(
@@ -324,7 +328,7 @@ class StatisticsView extends StatelessWidget {
           style: TextStyle(
             fontSize: 18.sp,
             fontWeight: FontWeight.bold,
-            color: Colors.black87,
+            color: textPrimary,
           ),
         ),
         SizedBox(height: 4.h),
@@ -339,7 +343,7 @@ class StatisticsView extends StatelessWidget {
             SizedBox(width: 6.w),
             Text(
               label,
-              style: TextStyle(fontSize: 12.sp, color: Colors.grey[500]),
+              style: TextStyle(fontSize: 12.sp, color: textSecondary),
             ),
           ],
         ),
@@ -347,19 +351,19 @@ class StatisticsView extends StatelessWidget {
     );
   }
 
-  // 【核心修改】CrossAxisAlignment.center 居中对齐
   Widget _buildExpenseItem(
     String label,
     String value, {
     required Color color,
     bool isBold = false,
+    required Color textSecondary,
   }) {
     return Column(
-      crossAxisAlignment: CrossAxisAlignment.center, // 改为居中
+      crossAxisAlignment: CrossAxisAlignment.center,
       children: [
         FittedBox(
           fit: BoxFit.scaleDown,
-          alignment: Alignment.center, // 改为居中
+          alignment: Alignment.center,
           child: Text(
             value,
             style: TextStyle(
@@ -373,42 +377,9 @@ class StatisticsView extends StatelessWidget {
         SizedBox(height: 4.h),
         Text(
           label,
-          style: TextStyle(fontSize: 12.sp, color: Colors.grey[500]),
+          style: TextStyle(fontSize: 12.sp, color: textSecondary),
         ),
       ],
-    );
-  }
-
-  Widget _buildActionButton({
-    required String label,
-    required IconData icon,
-    required Color color,
-    required VoidCallback onTap,
-  }) {
-    return Material(
-      color: color.withValues(alpha: 0.1),
-      borderRadius: BorderRadius.circular(16),
-      child: InkWell(
-        onTap: onTap,
-        borderRadius: BorderRadius.circular(16),
-        child: Container(
-          padding: EdgeInsets.symmetric(vertical: 16.h),
-          child: Column(
-            children: [
-              Icon(icon, color: color, size: 24.sp),
-              SizedBox(height: 8.h),
-              Text(
-                label,
-                style: TextStyle(
-                  fontSize: 12.sp,
-                  fontWeight: FontWeight.bold,
-                  color: color,
-                ),
-              ),
-            ],
-          ),
-        ),
-      ),
     );
   }
 }

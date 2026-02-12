@@ -1,0 +1,316 @@
+import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
+import 'package:flutter_screenutil/flutter_screenutil.dart';
+import 'package:get/get.dart';
+import 'package:share_plus/share_plus.dart';
+import '../../../common/theme/app_colors.dart';
+import '../../../common/theme/custom_colors.dart';
+import '../../../common/services/log_service.dart';
+
+/// 开发者选项页面
+class DeveloperView extends StatelessWidget {
+  const DeveloperView({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    final logService = Get.find<LogService>();
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
+    final cardColor = theme.cardColor;
+    final textPrimary = isDark
+        ? AppColors.darkTextPrimary
+        : AppColors.lightTextPrimary;
+    final textSecondary = isDark ? Colors.grey[400]! : Colors.grey[600]!;
+
+    return Scaffold(
+      backgroundColor: theme.scaffoldBackgroundColor,
+      appBar: AppBar(
+        title: const Text('开发者选项'),
+        centerTitle: true,
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.delete_outline),
+            tooltip: '清空日志',
+            onPressed: () => _confirmClearLogs(logService),
+          ),
+          IconButton(
+            icon: const Icon(Icons.share_outlined),
+            tooltip: '导出日志',
+            onPressed: () => _exportLogs(logService),
+          ),
+        ],
+      ),
+      body: Column(
+        children: [
+          // 设置区域
+          _buildSettingsSection(
+            logService,
+            isDark,
+            cardColor,
+            textPrimary,
+            textSecondary,
+            theme,
+          ),
+
+          // 日志列表标题
+          Padding(
+            padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 8.h),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Text(
+                  '应用日志',
+                  style: TextStyle(
+                    fontSize: 14.sp,
+                    fontWeight: FontWeight.w600,
+                    color: textPrimary,
+                  ),
+                ),
+                Obx(
+                  () => Text(
+                    '共 ${logService.logs.length} 条',
+                    style: TextStyle(fontSize: 12.sp, color: textSecondary),
+                  ),
+                ),
+              ],
+            ),
+          ),
+
+          // 日志列表
+          Expanded(
+            child: Obx(() {
+              if (logService.logs.isEmpty) {
+                return Center(
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Icon(
+                        Icons.article_outlined,
+                        size: 48.sp,
+                        color: textSecondary,
+                      ),
+                      SizedBox(height: 12.h),
+                      Text(
+                        '暂无日志',
+                        style: TextStyle(fontSize: 14.sp, color: textSecondary),
+                      ),
+                    ],
+                  ),
+                );
+              }
+
+              return ListView.builder(
+                padding: EdgeInsets.symmetric(horizontal: 16.w),
+                itemCount: logService.logs.length,
+                itemBuilder: (context, index) {
+                  // 显示最新的日志在顶部
+                  final log =
+                      logService.logs[logService.logs.length - 1 - index];
+                  return _buildLogItem(log, isDark, textPrimary, textSecondary);
+                },
+              );
+            }),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildSettingsSection(
+    LogService logService,
+    bool isDark,
+    Color cardColor,
+    Color textPrimary,
+    Color textSecondary,
+    ThemeData theme,
+  ) {
+    return Container(
+      margin: EdgeInsets.all(16.w),
+      decoration: BoxDecoration(
+        color: cardColor,
+        borderRadius: BorderRadius.circular(16.r),
+        boxShadow: [
+          BoxShadow(
+            color: isDark
+                ? Colors.black.withValues(alpha: 0.3)
+                : Colors.black.withValues(alpha: 0.05),
+            blurRadius: 10,
+            offset: const Offset(0, 4),
+          ),
+        ],
+      ),
+      child: Column(
+        children: [
+          // Debug 日志开关
+          Obx(() {
+            final isEnabled = logService.enableDebug.value;
+            return SwitchListTile(
+              title: Text(
+                'Debug 日志',
+                style: TextStyle(
+                  fontSize: 15.sp,
+                  fontWeight: FontWeight.w500,
+                  color: textPrimary,
+                ),
+              ),
+              subtitle: Text(
+                isEnabled ? '已开启：记录详细调试信息' : '已关闭：仅记录重要信息',
+                style: TextStyle(
+                  fontSize: 12.sp,
+                  color: isEnabled ? AppColors.green : textSecondary,
+                  fontWeight: isEnabled ? FontWeight.bold : FontWeight.normal,
+                ),
+              ),
+              value: isEnabled,
+              onChanged: (value) => logService.enableDebug.value = value,
+              activeThumbColor: Colors.white,
+              activeTrackColor:
+                  theme.extension<LogColors>()?.success ?? AppColors.green,
+              inactiveThumbColor: theme.colorScheme.onSurfaceVariant,
+              inactiveTrackColor: theme.colorScheme.surfaceContainerHighest,
+              trackOutlineColor: WidgetStateProperty.all(Colors.transparent),
+            );
+          }),
+          Divider(
+            height: 1,
+            indent: 16.w,
+            endIndent: 16.w,
+            color: isDark ? Colors.grey[800] : Colors.grey[200],
+          ),
+          // 复制日志
+          ListTile(
+            leading: Icon(Icons.copy_outlined, color: textSecondary),
+            title: Text(
+              '复制全部日志',
+              style: TextStyle(
+                fontSize: 15.sp,
+                fontWeight: FontWeight.w500,
+                color: textPrimary,
+              ),
+            ),
+            trailing: Icon(Icons.chevron_right_rounded, color: textSecondary),
+            onTap: () => _copyLogs(logService),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildLogItem(
+    LogEntry log,
+    bool isDark,
+    Color textPrimary,
+    Color textSecondary,
+  ) {
+    Color levelColor;
+    switch (log.level) {
+      case LogLevel.debug:
+        levelColor = Colors.grey;
+      case LogLevel.info:
+        levelColor = AppColors.primaryBlue;
+      case LogLevel.warning:
+        levelColor = AppColors.orange;
+      case LogLevel.error:
+        levelColor = Colors.red;
+    }
+
+    return Container(
+      margin: EdgeInsets.only(bottom: 8.h),
+      padding: EdgeInsets.all(12.w),
+      decoration: BoxDecoration(
+        color: isDark ? Colors.grey[850] : Colors.grey[50],
+        borderRadius: BorderRadius.circular(8.r),
+        border: Border(left: BorderSide(color: levelColor, width: 3)),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Text(log.levelIcon, style: TextStyle(fontSize: 12.sp)),
+              SizedBox(width: 6.w),
+              Container(
+                padding: EdgeInsets.symmetric(horizontal: 6.w, vertical: 2.h),
+                decoration: BoxDecoration(
+                  color: levelColor.withValues(alpha: 0.1),
+                  borderRadius: BorderRadius.circular(4.r),
+                ),
+                child: Text(
+                  log.tag,
+                  style: TextStyle(
+                    fontSize: 10.sp,
+                    fontWeight: FontWeight.w600,
+                    color: levelColor,
+                  ),
+                ),
+              ),
+              const Spacer(),
+              Text(
+                '${log.timestamp.hour.toString().padLeft(2, '0')}:${log.timestamp.minute.toString().padLeft(2, '0')}:${log.timestamp.second.toString().padLeft(2, '0')}',
+                style: TextStyle(fontSize: 10.sp, color: textSecondary),
+              ),
+            ],
+          ),
+          SizedBox(height: 6.h),
+          Text(
+            log.message,
+            style: TextStyle(fontSize: 13.sp, color: textPrimary, height: 1.4),
+          ),
+          if (log.stackTrace != null) ...[
+            SizedBox(height: 8.h),
+            Container(
+              padding: EdgeInsets.all(8.w),
+              decoration: BoxDecoration(
+                color: isDark ? Colors.black38 : Colors.grey[200],
+                borderRadius: BorderRadius.circular(4.r),
+              ),
+              child: Text(
+                log.stackTrace!,
+                style: TextStyle(
+                  fontSize: 10.sp,
+                  color: textSecondary,
+                  fontFamily: 'monospace',
+                ),
+              ),
+            ),
+          ],
+        ],
+      ),
+    );
+  }
+
+  void _confirmClearLogs(LogService logService) {
+    Get.dialog(
+      AlertDialog(
+        title: const Text('清空日志'),
+        content: const Text('确定要清空所有日志吗？'),
+        actions: [
+          TextButton(onPressed: () => Get.back(), child: const Text('取消')),
+          TextButton(
+            onPressed: () {
+              logService.clearLogs();
+              Get.back();
+              Get.snackbar(
+                '已清空',
+                '所有日志已清空',
+                snackPosition: SnackPosition.BOTTOM,
+              );
+            },
+            child: const Text('确定'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _copyLogs(LogService logService) {
+    final text = logService.exportLogs();
+    Clipboard.setData(ClipboardData(text: text));
+    Get.snackbar('已复制', '日志已复制到剪贴板', snackPosition: SnackPosition.BOTTOM);
+  }
+
+  Future<void> _exportLogs(LogService logService) async {
+    final text = logService.exportLogs();
+    await Share.share(text, subject: 'Life Log 应用日志');
+  }
+}
