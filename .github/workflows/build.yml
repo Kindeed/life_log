@@ -12,6 +12,9 @@ on:
     tags:
       - 'v*'
 
+permissions:
+  contents: write
+
 # 防止同时运行多个构建
 concurrency:
   group: release-${{ github.ref }}
