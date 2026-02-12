@@ -47,7 +47,7 @@ jobs:
       # ── 4. 恢复签名密钥（从 GitHub Secrets 解码）────────
       - name: Decode keystore
         run: |
-          echo "${{ secrets.KEYSTORE_BASE64 }}" | base64 --decode > android/app/upload-keystore.jks
+          echo "${{ secrets.KEYSTORE_BASE64 }}" | tr -d '\n ' | base64 --decode > android/app/upload-keystore.jks
 
       - name: Create key.properties
         run: |
