@@ -1,0 +1,108 @@
+# ============================================================
+# Life Log — 自动打包 & 发布 APK
+# ============================================================
+# 触发条件：推送 v* 格式的 tag（如 v1.1.0）
+# 产出物：arm64 APK 上传到 GitHub Release
+# ============================================================
+
+name: Build & Release APK
+
+on:
+  push:
+    tags:
+      - 'v*'
+
+# 防止同时运行多个构建
+concurrency:
+  group: release-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build:
+    name: 📦 Build Release APK
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+
+    steps:
+      # ── 1. 拉取代码 ──────────────────────────────────
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      # ── 2. 安装 Java 17（Gradle 需要）──────────────────
+      - name: Set up JDK 17
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'temurin'
+          java-version: '17'
+          cache: 'gradle'
+
+      # ── 3. 安装 Flutter ───────────────────────────────
+      - name: Set up Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          flutter-version: '3.38.5'
+          channel: 'stable'
+          cache: true
+
+      # ── 4. 恢复签名密钥（从 GitHub Secrets 解码）────────
+      - name: Decode keystore
+        run: |
+          echo "${{ secrets.KEYSTORE_BASE64 }}" | base64 --decode > android/app/upload-keystore.jks
+
+      - name: Create key.properties
+        run: |
+          cat > android/key.properties << EOF
+          storePassword=${{ secrets.STORE_PASSWORD }}
+          keyPassword=${{ secrets.KEY_PASSWORD }}
+          keyAlias=${{ secrets.KEY_ALIAS }}
+          storeFile=upload-keystore.jks
+          EOF
+
+      # ── 5. 安装依赖 ──────────────────────────────────
+      - name: Install dependencies
+        run: flutter pub get
+
+      # ── 6. 代码生成（Isar .g.dart）────────────────────
+      - name: Run build_runner
+        run: dart run build_runner build --delete-conflicting-outputs
+
+      # ── 7. 静态分析 ──────────────────────────────────
+      - name: Analyze code
+        run: flutter analyze --no-fatal-infos
+
+      # ── 8. 打包 APK（分架构）──────────────────────────
+      - name: Build APK (split per ABI)
+        run: flutter build apk --release --split-per-abi
+
+      # ── 9. 提取版本号用于 Release 标题 ────────────────
+      - name: Extract version from tag
+        id: version
+        run: echo "TAG_NAME=${GITHUB_REF#refs/tags/}" >> $GITHUB_OUTPUT
+
+      # ── 10. 创建 GitHub Release 并上传 APK ────────────
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          name: "Life Log ${{ steps.version.outputs.TAG_NAME }}"
+          body: |
+            ## 📱 Life Log ${{ steps.version.outputs.TAG_NAME }}
+
+            ### 下载安装包
+            - **arm64-v8a** (推荐，适用于绝大多数现代手机)
+            - **armeabi-v7a** (旧款32位手机)
+            - **x86_64** (模拟器/特殊设备)
+
+            ### 安装方式
+            1. 下载对应你手机架构的 APK 文件
+            2. 传输到手机并安装（可能需要允许"未知来源"）
+
+            ---
+            *此版本由 GitHub Actions 自动构建*
+          draft: false
+          prerelease: false
+          files: |
+            build/app/outputs/flutter-apk/app-arm64-v8a-release.apk
+            build/app/outputs/flutter-apk/app-armeabi-v7a-release.apk
+            build/app/outputs/flutter-apk/app-x86_64-release.apk
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
