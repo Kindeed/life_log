@@ -7,6 +7,10 @@ import 'package:path_provider/path_provider.dart';
 import 'package:share_plus/share_plus.dart';
 import 'package:path/path.dart' as p;
 
+/// 备份/恢复工具类。
+///
+/// 设计说明：与其他 Service（GetxService）不同，BackupService 是纯静态工具类，
+/// 因为它没有需要管理的状态，仅执行一次性的文件操作。
 class BackupService {
   static Future<void> exportBackup() async {
     try {

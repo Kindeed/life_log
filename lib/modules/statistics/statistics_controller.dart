@@ -3,7 +3,7 @@ import 'package:get/get.dart';
 import '../../common/db/db_service.dart';
 import '../../common/services/event_bus.dart';
 import '../../common/services/log_service.dart';
-import '../work_log/log_model.dart';
+import '../work_log/work_log_model.dart';
 import '../subscription/subscription_model.dart';
 
 class StatisticsController extends GetxController {

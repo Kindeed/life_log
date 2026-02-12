@@ -2,7 +2,7 @@ import 'package:get/get.dart';
 import 'package:table_calendar/table_calendar.dart';
 import '../../common/db/db_service.dart';
 import '../../common/services/event_bus.dart';
-import 'log_model.dart';
+import 'work_log_model.dart';
 import '../../common/services/log_service.dart';
 // 记得引入 StatisticsController 以便联动刷新统计
 

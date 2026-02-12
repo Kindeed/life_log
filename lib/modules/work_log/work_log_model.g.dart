@@ -1,6 +1,6 @@
 // GENERATED CODE - DO NOT MODIFY BY HAND
 
-part of 'log_model.dart';
+part of 'work_log_model.dart';
 
 // **************************************************************************
 // IsarCollectionGenerator

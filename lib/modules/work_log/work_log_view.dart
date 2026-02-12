@@ -6,7 +6,7 @@ import 'package:life_log/modules/work_log/widgets/calendar_header.dart';
 import 'package:life_log/modules/work_log/widgets/day_cell.dart';
 import 'package:life_log/modules/work_log/widgets/log_detail_card.dart';
 import 'work_log_controller.dart';
-import 'log_model.dart';
+import 'work_log_model.dart';
 import 'add_log_sheet.dart';
 import '../../common/theme/app_colors.dart';
 

@@ -5,7 +5,7 @@ import 'package:lunar/lunar.dart';
 import 'package:life_log/common/theme/app_colors.dart';
 import 'package:life_log/common/theme/custom_colors.dart';
 import '../work_log_controller.dart';
-import '../log_model.dart';
+import '../work_log_model.dart';
 // If HolidayUtil is not in lunar package, this might fail, but existing code uses it.
 // Assuming it's available via imports or same package structure.
 // Since strict mode is on, I'll assume it's imported via lunar or other.

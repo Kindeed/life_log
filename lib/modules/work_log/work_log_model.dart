@@ -1,6 +1,6 @@
 import 'package:isar/isar.dart';
 
-part 'log_model.g.dart';
+part 'work_log_model.g.dart';
 
 @collection
 class WorkLog {

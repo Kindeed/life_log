@@ -1,7 +1,7 @@
 import 'package:get/get.dart';
 import 'package:isar/isar.dart';
 import 'package:path_provider/path_provider.dart';
-import '../../modules/work_log/log_model.dart';
+import '../../modules/work_log/work_log_model.dart';
 import '../../modules/subscription/subscription_model.dart';
 import '../../modules/photo/photo_model.dart'; // Import PhotoModel
 import '../services/sync_service.dart';
@@ -90,6 +90,10 @@ class DbService extends GetxService {
     await isar.writeTxn(() async {
       await isar.subscriptions.put(sub);
     });
+    // Trigger Sync (Fire and forget)
+    try {
+      SyncService.to.pushSubscription(sub);
+    } catch (_) {}
   }
 
   // 3. 删除订阅

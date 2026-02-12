@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:get/get.dart';
 import 'work_log_controller.dart';
-import 'log_model.dart';
+import 'work_log_model.dart';
 import '../../common/theme/app_colors.dart';
 
 class AddLogSheet extends StatefulWidget {

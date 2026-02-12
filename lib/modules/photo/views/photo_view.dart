@@ -6,11 +6,12 @@ import 'package:life_log/modules/photo/photo_controller.dart';
 import 'package:life_log/modules/photo/views/project_gallery_view.dart';
 import 'package:life_log/common/theme/app_colors.dart';
 
-class PhotoView extends GetView<PhotoController> {
+class PhotoView extends StatelessWidget {
   const PhotoView({super.key});
 
   @override
   Widget build(BuildContext context) {
+    final controller = Get.find<PhotoController>();
     final theme = Theme.of(context);
     final isDark = theme.brightness == Brightness.dark;
     final cardColor = theme.cardColor;

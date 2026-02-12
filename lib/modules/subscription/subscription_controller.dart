@@ -7,6 +7,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
 
 class SubscriptionController extends GetxController {
+  static SubscriptionController get to => Get.find();
+
   final subs = <Subscription>[].obs;
   // 控制 FAB 显示/隐藏
   final isFabVisible = true.obs;

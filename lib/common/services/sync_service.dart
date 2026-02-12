@@ -1,7 +1,7 @@
 import 'package:get/get.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:get_storage/get_storage.dart';
-import '../../modules/work_log/log_model.dart';
+import '../../modules/work_log/work_log_model.dart';
 import '../../modules/subscription/subscription_model.dart';
 import '../db/db_service.dart';
 import '../services/auth_service.dart';

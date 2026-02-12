@@ -4,7 +4,7 @@ import 'package:get/get.dart';
 import 'package:lunar/lunar.dart';
 import 'package:life_log/common/theme/app_colors.dart';
 import '../work_log_controller.dart';
-import '../log_model.dart';
+import '../work_log_model.dart';
 import '../add_log_sheet.dart';
 
 const double kRadius = 24.0;
