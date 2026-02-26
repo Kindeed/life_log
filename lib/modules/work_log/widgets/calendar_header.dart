@@ -3,6 +3,7 @@ import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:get/get.dart';
 import 'package:intl/intl.dart';
 import 'package:table_calendar/table_calendar.dart';
+import '../../../common/theme/app_colors.dart';
 import '../work_log_controller.dart';
 
 class CalendarHeader extends StatelessWidget {
@@ -51,7 +52,9 @@ class CalendarHeader extends StatelessWidget {
                 ),
                 Icon(
                   Icons.arrow_drop_down,
-                  color: isDark ? Colors.grey[400] : Colors.black54,
+                  color: isDark
+                      ? AppColors.darkTextSecondary
+                      : AppColors.lightTextSecondary,
                 ),
               ],
             ),
@@ -61,17 +64,19 @@ class CalendarHeader extends StatelessWidget {
             return Container(
               padding: const EdgeInsets.all(4),
               decoration: BoxDecoration(
-                color: isDark ? Colors.grey[800] : Colors.grey[200],
+                color: Theme.of(context).colorScheme.surfaceContainerHighest,
                 borderRadius: BorderRadius.circular(20),
               ),
               child: Row(
                 children: [
                   _buildToggleItem(
+                    context,
                     "月",
                     isMonth,
                     () => logic.onFormatChanged(CalendarFormat.month),
                   ),
                   _buildToggleItem(
+                    context,
                     "周",
                     !isMonth,
                     () => logic.onFormatChanged(CalendarFormat.week),
@@ -85,21 +90,26 @@ class CalendarHeader extends StatelessWidget {
     );
   }
 
-  Widget _buildToggleItem(String text, bool isActive, VoidCallback onTap) {
+  Widget _buildToggleItem(
+    BuildContext context,
+    String text,
+    bool isActive,
+    VoidCallback onTap,
+  ) {
     return GestureDetector(
       onTap: onTap,
       child: AnimatedContainer(
         duration: const Duration(milliseconds: 200),
         padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 6.h),
         decoration: BoxDecoration(
-          color: isActive
-              ? (isDark ? Colors.grey[700] : Colors.white)
-              : Colors.transparent,
+          color: isActive ? Theme.of(context).cardColor : Colors.transparent,
           borderRadius: BorderRadius.circular(16),
           boxShadow: isActive
               ? [
                   BoxShadow(
-                    color: Colors.black.withValues(alpha: isDark ? 0.3 : 0.1),
+                    color: Theme.of(
+                      context,
+                    ).shadowColor.withValues(alpha: isDark ? 0.3 : 0.1),
                     blurRadius: 4,
                   ),
                 ]
@@ -109,8 +119,12 @@ class CalendarHeader extends StatelessWidget {
           text,
           style: TextStyle(
             color: isActive
-                ? (isDark ? Colors.white : Colors.black87)
-                : (isDark ? Colors.grey[500] : Colors.grey[600]),
+                ? (isDark
+                      ? AppColors.darkTextPrimary
+                      : AppColors.lightTextPrimary)
+                : (isDark
+                      ? AppColors.darkTextSecondary
+                      : AppColors.lightTextSecondary),
             fontWeight: isActive ? FontWeight.bold : FontWeight.normal,
             fontSize: 13.sp,
           ),

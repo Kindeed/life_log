@@ -65,7 +65,7 @@ class LogDetailCard extends StatelessWidget {
         _buildTag(
           log.location ?? "未填写地点",
           Icons.location_on_outlined,
-          Colors.blue,
+          AppColors.primaryBlue,
           isDark,
         ),
       );
@@ -74,7 +74,7 @@ class LogDetailCard extends StatelessWidget {
           _buildTag(
             log.transport!,
             Icons.directions_transit_filled_outlined,
-            Colors.teal,
+            AppColors.green,
             isDark,
           ),
         );
@@ -84,7 +84,7 @@ class LogDetailCard extends StatelessWidget {
           _buildTag(
             "¥${log.expenses}",
             Icons.account_balance_wallet_outlined,
-            Colors.deepOrange,
+            AppColors.orange,
             isDark,
           ),
         );
@@ -117,9 +117,9 @@ class LogDetailCard extends StatelessWidget {
         borderRadius: BorderRadius.circular(kRadius),
         boxShadow: [
           BoxShadow(
-            color: isDark
-                ? Colors.black.withValues(alpha: 0.3)
-                : Colors.black.withValues(alpha: 0.03),
+            color: Theme.of(
+              context,
+            ).shadowColor.withValues(alpha: isDark ? 0.3 : 0.03),
             blurRadius: 20,
             offset: const Offset(0, 8),
           ),
@@ -157,7 +157,9 @@ class LogDetailCard extends StatelessWidget {
                     Text(
                       "${date.month}月${date.day}日 · 农历${lunar.getMonthInChinese()}${lunar.getDayInChinese()}",
                       style: TextStyle(
-                        color: isDark ? Colors.grey[500] : Colors.grey[400],
+                        color: isDark
+                            ? AppColors.darkTextSecondary
+                            : AppColors.lightTextSecondary,
                         fontSize: 12.sp,
                       ),
                     ),
@@ -169,8 +171,12 @@ class LogDetailCard extends StatelessWidget {
                 children: [
                   _buildActionButton(
                     icon: Icons.delete_outline_rounded,
-                    color: Colors.red.withValues(alpha: 0.8),
-                    bgColor: Colors.red.withValues(alpha: isDark ? 0.15 : 0.05),
+                    color: Theme.of(
+                      context,
+                    ).colorScheme.error.withValues(alpha: 0.8),
+                    bgColor: Theme.of(
+                      context,
+                    ).colorScheme.error.withValues(alpha: isDark ? 0.15 : 0.05),
                     onTap: () => _confirmDelete(context, logic, log.id),
                   ),
                   SizedBox(width: 12.w),
@@ -194,16 +200,22 @@ class LogDetailCard extends StatelessWidget {
               width: double.infinity,
               padding: EdgeInsets.symmetric(horizontal: 12.w, vertical: 8.h),
               decoration: BoxDecoration(
-                color: isDark ? Colors.grey[850] : Colors.grey[50],
+                color: Theme.of(
+                  context,
+                ).colorScheme.onSurface.withValues(alpha: 0.05),
                 borderRadius: BorderRadius.circular(8),
                 border: Border.all(
-                  color: isDark ? Colors.grey[800]! : Colors.grey[100]!,
+                  color: isDark
+                      ? AppColors.darkDivider
+                      : AppColors.lightDivider,
                 ),
               ),
               child: Text(
                 log.note!,
                 style: TextStyle(
-                  color: isDark ? Colors.grey[400] : Colors.grey[600],
+                  color: isDark
+                      ? AppColors.darkTextSecondary
+                      : AppColors.lightTextSecondary,
                   fontSize: 13.sp,
                   height: 1.4,
                 ),
@@ -273,16 +285,26 @@ class LogDetailCard extends StatelessWidget {
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(ctx),
-            child: const Text("取消", style: TextStyle(color: Colors.grey)),
+            child: Text(
+              "取消",
+              style: TextStyle(
+                color: isDark
+                    ? AppColors.darkTextSecondary
+                    : AppColors.lightTextSecondary,
+              ),
+            ),
           ),
           TextButton(
             onPressed: () {
               Navigator.pop(ctx);
               logic.deleteLog(id);
             },
-            child: const Text(
+            child: Text(
               "删除",
-              style: TextStyle(color: Colors.red, fontWeight: FontWeight.bold),
+              style: TextStyle(
+                color: Theme.of(context).colorScheme.error,
+                fontWeight: FontWeight.bold,
+              ),
             ),
           ),
         ],

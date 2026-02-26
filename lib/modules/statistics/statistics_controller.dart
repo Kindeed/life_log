@@ -88,6 +88,8 @@ class StatisticsController extends GetxController {
     double reimbursed = 0.0;
     double unreimbursed = 0.0;
 
+    final monthLogsByDate = <DateTime, List<WorkLog>>{};
+
     for (var log in logs) {
       // --- 【修改点 1】报销统计移到最外层 (不分月份，统计所有) ---
       if (log.expenses != null && log.expenses! > 0) {
@@ -101,16 +103,40 @@ class StatisticsController extends GetxController {
 
       // --- 【修改点 2】工时统计依然限制在“本月” ---
       if (log.date.year == now.year && log.date.month == now.month) {
-        if (log.type == LogType.work) {
-          wDays++;
-          if (log.overtimeHours != null) hours += log.overtimeHours!;
-        } else if (log.type == LogType.businessTrip) {
-          tDays++;
-        } else {
-          rDays++;
+        final dateKey = DateTime(log.date.year, log.date.month, log.date.day);
+        if (monthLogsByDate[dateKey] == null) {
+          monthLogsByDate[dateKey] = [];
         }
+        monthLogsByDate[dateKey]!.add(log);
       }
     }
+
+    // 按天进行去重统计
+    monthLogsByDate.forEach((date, dailyLogs) {
+      bool hasWork = false;
+      bool hasTrip = false;
+      bool hasRestOrLeave = false;
+
+      for (var log in dailyLogs) {
+        if (log.type == LogType.work) {
+          hasWork = true;
+          if (log.overtimeHours != null) hours += log.overtimeHours!;
+        } else if (log.type == LogType.businessTrip) {
+          hasTrip = true;
+        } else {
+          hasRestOrLeave = true;
+        }
+      }
+
+      // 一天只记为一种类型（优先级：工作 > 出差 > 休息/请假），避免总天数超量
+      if (hasWork) {
+        wDays++;
+      } else if (hasTrip) {
+        tDays++;
+      } else if (hasRestOrLeave) {
+        rDays++;
+      }
+    });
 
     workHours.value = hours;
     workDays.value = wDays;

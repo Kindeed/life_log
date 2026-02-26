@@ -115,7 +115,10 @@ class PhotoController extends GetxController {
       final dateStr = DateFormat('yyyyMMdd_HHmmss').format(now);
 
       // Filename: {Description}_{Date} or {Project}_{Date}
-      final filePrefix = safeDesc.isNotEmpty ? safeDesc : safeProjectName;
+      String filePrefix = safeDesc.isNotEmpty ? safeDesc : safeProjectName;
+      if (filePrefix.length > 50) {
+        filePrefix = filePrefix.substring(0, 50);
+      }
       final fileName = "${filePrefix}_$dateStr.jpg";
 
       final savePath = "${folderPath.path}/$fileName";
@@ -221,7 +224,10 @@ class PhotoController extends GetxController {
       );
 
       // Use description if available, otherwise project name
-      final prefix = safeDesc.isNotEmpty ? safeDesc : safeProject;
+      String prefix = safeDesc.isNotEmpty ? safeDesc : safeProject;
+      if (prefix.length > 50) {
+        prefix = prefix.substring(0, 50);
+      }
       final dateStr = DateFormat('yyyyMMdd_HHmmss').format(photo.createdAt);
       final newFileName = "${prefix}_$dateStr.jpg";
 

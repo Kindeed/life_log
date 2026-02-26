@@ -8,6 +8,7 @@ import 'package:life_log/modules/tabs/tabs_view.dart';
 import 'package:life_log/modules/work_log/work_log_controller.dart';
 import 'package:life_log/modules/photo/photo_controller.dart';
 import 'package:life_log/modules/subscription/subscription_controller.dart';
+import 'package:life_log/modules/statistics/statistics_controller.dart';
 import 'package:life_log/common/db/db_service.dart';
 import 'package:life_log/common/theme/app_theme.dart';
 import 'package:life_log/common/theme/theme_controller.dart';
@@ -39,6 +40,7 @@ void main() async {
   await Get.putAsync(() => LogService().init());
   Get.put(AuthService());
   Get.put(SyncService());
+  Get.put(StatisticsController());
 
   // 2. 模块控制器（懒加载，首次访问 Tab 时才初始化，fenix 确保回收后可自动重建）
   Get.lazyPut(() => WorkLogController(), fenix: true);

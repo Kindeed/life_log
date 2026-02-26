@@ -176,6 +176,15 @@ class DbService extends GetxService {
       // 3. Create new if still null
       log ??= WorkLog();
 
+      // 冲突检测：如果本地数据处于脏标记，优先保留本地修改等待 Push，防止被旧数据覆盖
+      if (log.isDirty) {
+        if (log.remoteId != remoteId) {
+          log.remoteId = remoteId;
+          await isar.workLogs.put(log); // 只修补 remoteId
+        }
+        return;
+      }
+
       // 4. Update fields
       log.remoteId = remoteId;
       log.syncedAt = DateTime.parse(data['updated_at']);
@@ -214,6 +223,15 @@ class DbService extends GetxService {
           .remoteIdEqualTo(remoteId)
           .findFirst();
       sub ??= Subscription();
+
+      // 冲突检测：如果本地数据处于脏标记，优先保留本地修改等待 Push
+      if (sub.isDirty) {
+        if (sub.remoteId != remoteId) {
+          sub.remoteId = remoteId;
+          await isar.subscriptions.put(sub);
+        }
+        return;
+      }
 
       sub.remoteId = remoteId;
       sub.syncedAt = DateTime.parse(data['updated_at']);

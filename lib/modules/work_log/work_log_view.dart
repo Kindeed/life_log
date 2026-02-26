@@ -24,7 +24,9 @@ class WorkLogView extends StatelessWidget {
     final textPrimary = isDark
         ? AppColors.darkTextPrimary
         : AppColors.lightTextPrimary;
-    final textSecondary = isDark ? Colors.grey[400]! : Colors.grey[600]!;
+    final textSecondary = isDark
+        ? AppColors.darkTextSecondary
+        : AppColors.lightTextSecondary;
 
     return Scaffold(
       backgroundColor: theme.scaffoldBackgroundColor,
@@ -49,9 +51,9 @@ class WorkLogView extends StatelessWidget {
                       borderRadius: BorderRadius.circular(kRadius),
                       boxShadow: [
                         BoxShadow(
-                          color: isDark
-                              ? Colors.black.withValues(alpha: 0.3)
-                              : Colors.black.withValues(alpha: 0.03),
+                          color: theme.shadowColor.withValues(
+                            alpha: isDark ? 0.3 : 0.03,
+                          ),
                           blurRadius: 20,
                           offset: const Offset(0, 8),
                         ),
@@ -150,9 +152,9 @@ class WorkLogView extends StatelessWidget {
         borderRadius: BorderRadius.circular(kRadius),
         boxShadow: [
           BoxShadow(
-            color: isDark
-                ? Colors.black.withValues(alpha: 0.3)
-                : Colors.black.withValues(alpha: 0.03),
+            color: Theme.of(
+              context,
+            ).shadowColor.withValues(alpha: isDark ? 0.3 : 0.03),
             blurRadius: 20,
             offset: const Offset(0, 8),
           ),
@@ -165,13 +167,15 @@ class WorkLogView extends StatelessWidget {
           Icon(
             Icons.edit_calendar_rounded,
             size: 48.sp,
-            color: isDark ? Colors.grey[700] : Colors.grey[200],
+            color: isDark ? AppColors.darkDivider : AppColors.lightDivider,
           ),
           SizedBox(height: 8.h),
           Text(
             "今天还没有记录哦",
             style: TextStyle(
-              color: isDark ? Colors.grey[500] : Colors.grey[400],
+              color: isDark
+                  ? AppColors.darkTextSecondary
+                  : AppColors.lightTextSecondary,
               fontSize: 13.sp,
             ),
           ),
@@ -180,13 +184,17 @@ class WorkLogView extends StatelessWidget {
             height: 44.h,
             child: ElevatedButton.icon(
               onPressed: () => _showAddSheet(logic),
-              icon: Icon(Icons.add, color: Colors.white, size: 20.sp),
+              icon: Icon(
+                Icons.add,
+                color: Theme.of(context).colorScheme.onPrimary,
+                size: 20.sp,
+              ),
               label: Text(
                 "记一笔",
                 style: TextStyle(
                   fontSize: 15.sp,
                   fontWeight: FontWeight.bold,
-                  color: Colors.white,
+                  color: Theme.of(context).colorScheme.onPrimary,
                 ),
               ),
               style: ElevatedButton.styleFrom(

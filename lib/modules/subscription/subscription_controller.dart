@@ -58,6 +58,10 @@ class SubscriptionController extends GetxController {
 
   // --- 核心：拖拽排序逻辑 ---
   Future<void> reorderSub(int oldIndex, int newIndex) async {
+    if (oldIndex < 0 || oldIndex >= subs.length) return;
+    if (newIndex < 0) newIndex = 0;
+    if (newIndex > subs.length) newIndex = subs.length;
+
     if (oldIndex < newIndex) {
       newIndex -= 1;
     }

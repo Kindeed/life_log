@@ -42,7 +42,9 @@ class DayCell extends StatelessWidget {
     final holiday = HolidayUtil.getHoliday(dateStr);
 
     String bottomText = lunar.getDayInChinese();
-    Color bottomColor = isDark ? Colors.grey[500]! : Colors.grey[400]!;
+    Color bottomColor = isDark
+        ? AppColors.darkTextSecondary
+        : AppColors.lightTextSecondary;
     FontWeight bottomWeight = FontWeight.normal;
     bool isSpecial = false;
 
@@ -52,7 +54,7 @@ class DayCell extends StatelessWidget {
     }
     if (festivals.isNotEmpty) {
       bottomText = festivals[0];
-      bottomColor = Colors.green;
+      bottomColor = AppColors.green;
     }
 
     // 获取自定义颜色扩展
@@ -94,8 +96,10 @@ class DayCell extends StatelessWidget {
           ),
         ],
       );
-      dayColor = Colors.white;
-      bottomColor = Colors.white.withValues(alpha: 0.9);
+      dayColor = Theme.of(context).colorScheme.onPrimary;
+      bottomColor = Theme.of(
+        context,
+      ).colorScheme.onPrimary.withValues(alpha: 0.9);
     } else if (isToday) {
       decoration = BoxDecoration(
         border: Border.all(color: AppColors.primaryBlue, width: 1.5),
@@ -107,8 +111,8 @@ class DayCell extends StatelessWidget {
     if (logic.calendarFormat.value == CalendarFormat.month &&
         day.month != focusedDay.month &&
         !isSelected) {
-      dayColor = isDark ? Colors.grey[700]! : Colors.grey.shade200;
-      bottomColor = isDark ? Colors.grey[700]! : Colors.grey.shade200;
+      dayColor = isDark ? AppColors.darkDivider : AppColors.lightDivider;
+      bottomColor = isDark ? AppColors.darkDivider : AppColors.lightDivider;
       if (isSpecial) {
         bottomColor = bottomColor.withValues(alpha: 0.5);
       }
