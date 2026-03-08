@@ -1,7 +1,6 @@
 import 'dart:async';
 import 'package:get/get.dart';
 import '../../common/db/db_service.dart';
-import '../../common/services/event_bus.dart';
 import '../../common/services/log_service.dart';
 import '../work_log/work_log_model.dart';
 import '../subscription/subscription_model.dart';
@@ -39,14 +38,14 @@ class StatisticsController extends GetxController {
     refreshStats();
 
     // 监听工时变化
-    _logSub = EventBus.instance.on<WorkLogChangedEvent>((event) {
-      LogService.to.debug('Stats', 'Received WorkLogChangedEvent');
+    _logSub = DbService.to.watchWorkLogs().listen((_) {
+      LogService.to.debug('Stats', 'WorkLogs Changed');
       refreshStats();
     });
 
     // 监听订阅变化
-    _subSub = EventBus.instance.on<SubscriptionChangedEvent>((event) {
-      LogService.to.debug('Stats', 'Received SubscriptionChangedEvent');
+    _subSub = DbService.to.watchSubscriptions().listen((_) {
+      LogService.to.debug('Stats', 'Subscriptions Changed');
       refreshStats();
     });
   }
@@ -80,90 +79,19 @@ class StatisticsController extends GetxController {
     LogService.to.debug('Stats', 'Recalculated at ${lastUpdated.value}');
     _updateMonthLabels();
 
-    double hours = 0.0;
-    int wDays = 0;
-    int tDays = 0;
-    int rDays = 0;
+    // 1. 报销统计
+    reimbursedAmount.value = logs.totalReimbursedAmount;
+    unreimbursedAmount.value = logs.totalUnreimbursedAmount;
 
-    double reimbursed = 0.0;
-    double unreimbursed = 0.0;
+    // 2. 工时统计
+    final monthStats = logs.getMonthStats(now);
+    workHours.value = monthStats.workHours;
+    workDays.value = monthStats.workDays;
+    tripDays.value = monthStats.tripDays;
+    restDays.value = monthStats.restDays;
 
-    final monthLogsByDate = <DateTime, List<WorkLog>>{};
-
-    for (var log in logs) {
-      // --- 【修改点 1】报销统计移到最外层 (不分月份，统计所有) ---
-      if (log.expenses != null && log.expenses! > 0) {
-        if (log.isReimbursed) {
-          reimbursed += log.expenses!;
-        } else {
-          unreimbursed += log.expenses!;
-        }
-      }
-      // ----------------------------------------------------
-
-      // --- 【修改点 2】工时统计依然限制在“本月” ---
-      if (log.date.year == now.year && log.date.month == now.month) {
-        final dateKey = DateTime(log.date.year, log.date.month, log.date.day);
-        if (monthLogsByDate[dateKey] == null) {
-          monthLogsByDate[dateKey] = [];
-        }
-        monthLogsByDate[dateKey]!.add(log);
-      }
-    }
-
-    // 按天进行去重统计
-    monthLogsByDate.forEach((date, dailyLogs) {
-      bool hasWork = false;
-      bool hasTrip = false;
-      bool hasRestOrLeave = false;
-
-      for (var log in dailyLogs) {
-        if (log.type == LogType.work) {
-          hasWork = true;
-          if (log.overtimeHours != null) hours += log.overtimeHours!;
-        } else if (log.type == LogType.businessTrip) {
-          hasTrip = true;
-        } else {
-          hasRestOrLeave = true;
-        }
-      }
-
-      // 一天只记为一种类型（优先级：工作 > 出差 > 休息/请假），避免总天数超量
-      if (hasWork) {
-        wDays++;
-      } else if (hasTrip) {
-        tDays++;
-      } else if (hasRestOrLeave) {
-        rDays++;
-      }
-    });
-
-    workHours.value = hours;
-    workDays.value = wDays;
-    tripDays.value = tDays;
-    restDays.value = rDays;
-    reimbursedAmount.value = reimbursed;
-    unreimbursedAmount.value = unreimbursed;
-
-    // --- 订阅逻辑不变 ---
-    double nextMonthCost = 0.0;
-    double yearTotal = 0.0;
-
-    for (var sub in subs) {
-      double price = sub.price ?? 0.0;
-      double yearlyPrice = price;
-
-      if (sub.cycle == SubscriptionCycle.monthly) {
-        yearlyPrice = price * 12;
-        nextMonthCost += price;
-      } else {
-        if (sub.nextPaymentDate.month == nextMonth.value) {
-          nextMonthCost += price;
-        }
-      }
-      yearTotal += yearlyPrice;
-    }
-    nextMonthSubCost.value = nextMonthCost;
-    yearSubCost.value = yearTotal;
+    // 3. 订阅统计
+    nextMonthSubCost.value = subs.totalCostForMonth(nextMonth.value);
+    yearSubCost.value = subs.totalYearlyCost;
   }
 }

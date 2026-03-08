@@ -12,7 +12,11 @@ class SyncService extends GetxService {
 
   final _client = Supabase.instance.client;
   final _storage = GetStorage();
-  final _lastSyncKey = 'last_sync_time';
+
+  String get _lastSyncKey {
+    final user = AuthService.to.currentUser.value;
+    return user != null ? 'last_sync_time_${user.id}' : 'last_sync_time';
+  }
 
   @override
   void onInit() {
@@ -47,6 +51,9 @@ class SyncService extends GetxService {
         'project_name': log.type == LogType.businessTrip
             ? log.location
             : null, // Reuse location as project/loc
+        'transport': log.transport,
+        'expenses': log.expenses,
+        'is_reimbursed': log.isReimbursed,
         'notes': log.note,
         'updated_at': DateTime.now().toUtc().toIso8601String(),
       };
@@ -54,6 +61,9 @@ class SyncService extends GetxService {
       if (log.remoteId != null) {
         // Update
         await _client.from('work_logs').update(data).eq('id', log.remoteId!);
+        log.syncedAt = DateTime.now();
+        log.isDirty = false;
+        await DbService.to.updateWorkLogRemoteId(log);
       } else {
         // Insert
         final response = await _client
@@ -100,6 +110,7 @@ class SyncService extends GetxService {
       final user = AuthService.to.currentUser.value!;
       final data = {
         'user_id': user.id,
+        'local_id': sub.id,
         'name': sub.name,
         'price': sub.price,
         'cycle': sub.cycle.name,
@@ -115,6 +126,9 @@ class SyncService extends GetxService {
             .from('subscriptions')
             .update(data)
             .eq('id', sub.remoteId!);
+        sub.syncedAt = DateTime.now();
+        sub.isDirty = false;
+        await DbService.to.updateSubscriptionRemoteId(sub);
       } else {
         final response = await _client
             .from('subscriptions')
@@ -170,10 +184,14 @@ class SyncService extends GetxService {
         : DateTime(1970);
 
     try {
+      final user = AuthService.to.currentUser.value;
+      if (user == null) return false;
+
       // 1. Pull Work Logs
       final logsData = await _client
           .from('work_logs')
           .select()
+          .eq('user_id', user.id)
           .gt('updated_at', lastSync.toIso8601String());
 
       for (var map in logsData) {
@@ -184,6 +202,7 @@ class SyncService extends GetxService {
       final subsData = await _client
           .from('subscriptions')
           .select()
+          .eq('user_id', user.id)
           .gt('updated_at', lastSync.toIso8601String());
 
       for (var map in subsData) {

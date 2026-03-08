@@ -12,7 +12,7 @@ class TabsView extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final controller = Get.put(TabsController(), permanent: true);
+    final controller = Get.find<TabsController>();
     final theme = Theme.of(context);
     final isDark = theme.brightness == Brightness.dark;
 

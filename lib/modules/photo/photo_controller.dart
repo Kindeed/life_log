@@ -1,14 +1,13 @@
+import 'dart:async';
 import 'dart:io';
 import 'package:device_info_plus/device_info_plus.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
 import 'package:get/get.dart';
-import 'package:life_log/common/db/db_service.dart';
 import 'package:life_log/modules/photo/photo_model.dart';
+import 'package:life_log/modules/photo/photo_repository.dart';
 import 'package:life_log/modules/photo/views/capture_dialog.dart';
-import 'package:path_provider/path_provider.dart';
 import '../../common/services/log_service.dart';
-import 'package:intl/intl.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:image_picker/image_picker.dart';
 
@@ -23,11 +22,22 @@ class PhotoController extends GetxController {
   // Device info
   String _deviceName = "UnknownDevice";
 
+  StreamSubscription? _dbSub;
+
   @override
   void onInit() {
     super.onInit();
     _initDeviceInfo();
     loadPhotos();
+    _dbSub = PhotoRepository.to.watchPhotos().listen((_) {
+      loadPhotos();
+    });
+  }
+
+  @override
+  void onClose() {
+    _dbSub?.cancel();
+    super.onClose();
   }
 
   // --- 滚动监听 ---
@@ -53,7 +63,7 @@ class PhotoController extends GetxController {
   Future<void> loadPhotos() async {
     isLoading.value = true;
     try {
-      final allPhotos = await DbService.to.getAllPhotos();
+      final allPhotos = await PhotoRepository.to.getAllPhotos();
       photos.assignAll(allPhotos);
     } catch (e) {
       debugPrint("Load photos error: $e");
@@ -92,62 +102,24 @@ class PhotoController extends GetxController {
   ) async {
     try {
       isLoading.value = true;
-      final appDir = await getApplicationDocumentsDirectory();
-
-      final safeProjectName = projectName.replaceAll(
-        RegExp(r'[<>:"/\\|?*]'),
-        '_',
+      final photoItem = await PhotoRepository.to.processAndSavePhoto(
+        tempPath: tempPath,
+        projectName: projectName,
+        description: description,
+        deviceName: _deviceName,
       );
-      final safeDeviceName = _deviceName.replaceAll(
-        RegExp(r'[<>:"/\\|?*]'),
-        '_',
-      );
-      final safeDesc = description.replaceAll(RegExp(r'[<>:"/\\|?*]'), '_');
-
-      final folderPath = Directory(
-        '${appDir.path}/$safeProjectName/$safeDeviceName',
-      );
-      if (!await folderPath.exists()) {
-        await folderPath.create(recursive: true);
-      }
-
-      final now = DateTime.now();
-      final dateStr = DateFormat('yyyyMMdd_HHmmss').format(now);
-
-      // Filename: {Description}_{Date} or {Project}_{Date}
-      String filePrefix = safeDesc.isNotEmpty ? safeDesc : safeProjectName;
-      if (filePrefix.length > 50) {
-        filePrefix = filePrefix.substring(0, 50);
-      }
-      final fileName = "${filePrefix}_$dateStr.jpg";
-
-      final savePath = "${folderPath.path}/$fileName";
-
-      // Move file from temp to project folder
-      await File(tempPath).copy(savePath);
-      await File(tempPath).delete(); // Clean up
-
-      // Save to DB
-      final photoItem = PhotoItem()
-        ..createdAt = now
-        ..fileName = fileName
-        ..filePath = savePath
-        ..deviceName = _deviceName
-        ..projectName = projectName
-        ..description = description
-        ..dateIndexed = DateTime(now.year, now.month, now.day);
-
-      await DbService.to.addPhoto(photoItem);
-      photos.add(photoItem);
 
       Get.snackbar(
         "归档成功",
-        "照片已保存至: $safeProjectName",
+        "照片已保存至: ${photoItem.projectName}",
         snackPosition: SnackPosition.BOTTOM,
         backgroundColor: Colors.green.withValues(alpha: 0.8),
         colorText: Colors.white,
       );
-      LogService.to.info('Photo', '保存照片: $fileName ($projectName)');
+      LogService.to.info(
+        'Photo',
+        '保存照片 ${photoItem.fileName} (${photoItem.projectName})',
+      );
     } catch (e) {
       Get.snackbar("错误", "保存照片失败: $e");
     } finally {
@@ -178,17 +150,7 @@ class PhotoController extends GetxController {
   Future<void> deletePhotos(List<PhotoItem> itemsToDelete) async {
     try {
       isLoading.value = true;
-      for (var photo in itemsToDelete) {
-        // 1. Delete file
-        final file = File(photo.filePath);
-        if (await file.exists()) {
-          await file.delete();
-        }
-        // 2. Delete from DB
-        await DbService.to.deletePhoto(photo.id);
-        // 3. Update state
-        photos.remove(photo);
-      }
+      await PhotoRepository.to.deletePhotos(itemsToDelete);
       Get.snackbar("已删除", "成功删除 ${itemsToDelete.length} 张照片");
       LogService.to.info('Photo', '删除 ${itemsToDelete.length} 张照片');
     } catch (e) {
@@ -204,54 +166,19 @@ class PhotoController extends GetxController {
     String newDescription,
   ) async {
     try {
-      final oldFile = File(photo.filePath);
-      if (!await oldFile.exists()) {
-        // Just update DB if file missing
-        photo.description = newDescription;
-        await DbService.to.addPhoto(photo); // addPhoto works for update in Isar
-        photos.refresh();
-        return;
-      }
-
-      // Generate new filename: {Desc}_{Date}.jpg
-      final safeDesc = newDescription.trim().replaceAll(
-        RegExp(r'[<>:"/\\|?*]'),
-        '_',
+      final oldPathToEvict = await PhotoRepository.to.updatePhotoDescription(
+        photo,
+        newDescription,
       );
-      final safeProject = (photo.projectName ?? "Doc").replaceAll(
-        RegExp(r'[<>:"/\\|?*]'),
-        '_',
-      );
-
-      // Use description if available, otherwise project name
-      String prefix = safeDesc.isNotEmpty ? safeDesc : safeProject;
-      if (prefix.length > 50) {
-        prefix = prefix.substring(0, 50);
+      if (oldPathToEvict != null) {
+        imageCache.evict(FileImage(File(photo.filePath)));
+        imageCache.evict(FileImage(File(oldPathToEvict)));
       }
-      final dateStr = DateFormat('yyyyMMdd_HHmmss').format(photo.createdAt);
-      final newFileName = "${prefix}_$dateStr.jpg";
-
-      final newPath = "${oldFile.parent.path}/$newFileName";
-
-      if (newPath != photo.filePath) {
-        // Rename file
-        await oldFile.rename(newPath);
-        photo.fileName = newFileName;
-        photo.filePath = newPath;
-
-        // Evict from cache to refresh UI
-        imageCache.evict(FileImage(File(newPath)));
-        imageCache.evict(FileImage(oldFile));
-      }
-
-      photo.description = newDescription;
-      await DbService.to.addPhoto(photo);
-      photos.refresh();
 
       Get.back();
       Get.snackbar("成功", "照片信息已更新");
     } catch (e) {
-      Get.snackbar("更新失败", "无法重命名文件: $e");
+      Get.snackbar("更新失败", "照片信息更新失败: $e");
     }
   }
 
@@ -270,23 +197,10 @@ class PhotoController extends GetxController {
         return;
       }
 
-      int successCount = 0;
-      for (var photo in photosToExport) {
-        final sourceFile = File(photo.filePath);
-        if (await sourceFile.exists()) {
-          // Keep structure: selectedDir / ProjectName / FileName
-          final projectDir = Directory(
-            '$selectedDirectory/${photo.projectName ?? "Exported"}',
-          );
-          if (!await projectDir.exists()) {
-            await projectDir.create(recursive: true);
-          }
-
-          final targetPath = '${projectDir.path}/${photo.fileName}';
-          await sourceFile.copy(targetPath);
-          successCount++;
-        }
-      }
+      final successCount = await PhotoRepository.to.exportPhotos(
+        photosToExport,
+        selectedDirectory,
+      );
 
       Get.snackbar(
         "导出成功",

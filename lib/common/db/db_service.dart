@@ -4,7 +4,7 @@ import 'package:path_provider/path_provider.dart';
 import '../../modules/work_log/work_log_model.dart';
 import '../../modules/subscription/subscription_model.dart';
 import '../../modules/photo/photo_model.dart'; // Import PhotoModel
-import '../services/sync_service.dart';
+// import '../services/sync_service.dart'; // Removed cyclic dependency
 
 class DbService extends GetxService {
   // 单例模式：确保整个App只有一个仓库管理员
@@ -28,14 +28,11 @@ class DbService extends GetxService {
   }
 
   // --- 2. 增加一条日志 (入库) ---
-  Future<void> addLog(WorkLog log) async {
-    await isar.writeTxn(() async {
-      await isar.workLogs.put(log);
+  Future<int> addLog(WorkLog log) async {
+    final id = await isar.writeTxn(() async {
+      return await isar.workLogs.put(log); // Insert or update
     });
-    // Trigger Sync (Fire and forget)
-    try {
-      SyncService.to.pushWorkLog(log);
-    } catch (_) {}
+    return id;
   }
 
   // --- 3. 查询某个月的日志 (盘点) ---
@@ -60,22 +57,19 @@ class DbService extends GetxService {
         .findAll();
   }
 
+  // --- 5. 获取单条记录 (供 Repository 查询使用) ---
+  Future<WorkLog?> getWorkLog(int id) async {
+    return await isar.workLogs.get(id);
+  }
+
+  // 获取日志变更流
+  Stream<void> watchWorkLogs() => isar.workLogs.watchLazy();
+
   // --- 5. 删除日志 (出库) ---
   Future<void> deleteLog(int id) async {
-    // 先查询 remoteId，以便同步删除
-    final log = await isar.workLogs.get(id);
-    final remoteId = log?.remoteId;
-
     await isar.writeTxn(() async {
       await isar.workLogs.delete(id);
     });
-
-    // 同步删除到云端
-    if (remoteId != null) {
-      try {
-        SyncService.to.deleteWorkLog(remoteId);
-      } catch (_) {}
-    }
   }
 
   // --- 订阅管理相关 ---
@@ -85,33 +79,27 @@ class DbService extends GetxService {
     return await isar.subscriptions.where().sortByNextPaymentDate().findAll();
   }
 
+  // 2. 获取单条订阅
+  Future<Subscription?> getSubscription(int id) async {
+    return await isar.subscriptions.get(id);
+  }
+
+  // 获取订阅变更流
+  Stream<void> watchSubscriptions() => isar.subscriptions.watchLazy();
+
   // 2. 添加/修改订阅
-  Future<void> addSubscription(Subscription sub) async {
-    await isar.writeTxn(() async {
-      await isar.subscriptions.put(sub);
+  Future<int> addSubscription(Subscription sub) async {
+    final id = await isar.writeTxn(() async {
+      return await isar.subscriptions.put(sub); // Insert or update
     });
-    // Trigger Sync (Fire and forget)
-    try {
-      SyncService.to.pushSubscription(sub);
-    } catch (_) {}
+    return id;
   }
 
   // 3. 删除订阅
   Future<void> deleteSubscription(int id) async {
-    // 先查询 remoteId，以便同步删除
-    final sub = await isar.subscriptions.get(id);
-    final remoteId = sub?.remoteId;
-
     await isar.writeTxn(() async {
       await isar.subscriptions.delete(id);
     });
-
-    // 同步删除到云端
-    if (remoteId != null) {
-      try {
-        SyncService.to.deleteSubscription(remoteId);
-      } catch (_) {}
-    }
   }
 
   // 4. Update Subscription Order
@@ -129,6 +117,13 @@ class DbService extends GetxService {
   Future<List<PhotoItem>> getAllPhotos() async {
     return await isar.photoItems.where().sortByCreatedAtDesc().findAll();
   }
+
+  Future<PhotoItem?> getPhoto(int id) async {
+    return await isar.photoItems.get(id);
+  }
+
+  // 获取照片变更流
+  Stream<void> watchPhotos() => isar.photoItems.watchLazy();
 
   Future<void> addPhoto(PhotoItem photo) async {
     await isar.writeTxn(() async {
@@ -200,6 +195,9 @@ class DbService extends GetxService {
 
       log.overtimeHours = (data['duration'] as num?)?.toDouble();
       log.note = data['notes'];
+      log.transport = data['transport'];
+      log.expenses = (data['expenses'] as num?)?.toDouble();
+      log.isReimbursed = data['is_reimbursed'] ?? false;
 
       if (log.type == LogType.businessTrip) {
         log.location =
@@ -216,12 +214,21 @@ class DbService extends GetxService {
   // Sync Remote -> Local (Subscription)
   Future<void> syncRemoteSubscriptionToLocal(Map<String, dynamic> data) async {
     final remoteId = data['id'] as int;
-    // ... logic similar to WorkLog
+    final localId = data['local_id'] as int?;
+
     await isar.writeTxn(() async {
+      // 1. Try find by Remote ID
       Subscription? sub = await isar.subscriptions
           .filter()
           .remoteIdEqualTo(remoteId)
           .findFirst();
+
+      // 2. If not found, try find by Local ID (Linkage recovery)
+      if (sub == null && localId != null) {
+        sub = await isar.subscriptions.get(localId);
+      }
+
+      // 3. Create new if still null
       sub ??= Subscription();
 
       // 冲突检测：如果本地数据处于脏标记，优先保留本地修改等待 Push

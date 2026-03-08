@@ -6,7 +6,6 @@ import 'views/appearance_view.dart';
 import 'views/data_management_view.dart';
 import 'views/developer_view.dart';
 import 'views/about_view.dart';
-import 'views/login_view.dart';
 import '../../common/theme/app_colors.dart';
 
 /// "我的"页面主视图
@@ -15,7 +14,7 @@ class ProfileView extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    Get.put(ProfileController());
+    Get.find<ProfileController>();
     final theme = Theme.of(context);
     final isDark = theme.brightness == Brightness.dark;
     final cardColor = theme.cardColor;
@@ -66,7 +65,7 @@ class ProfileView extends StatelessWidget {
       final userName = controller.userName.value;
 
       return GestureDetector(
-        onTap: isLoggedIn ? null : () => Get.to(() => const LoginView()),
+        onTap: isLoggedIn ? null : () => Get.toNamed('/login'),
         child: Container(
           padding: EdgeInsets.all(20.w),
           decoration: BoxDecoration(

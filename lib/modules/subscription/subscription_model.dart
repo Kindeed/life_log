@@ -33,3 +33,28 @@ enum SubscriptionCycle {
   yearly,
   oneTime, // 保留了你原有的 oneTime
 }
+
+extension SubscriptionDomainLogic on Subscription {
+  /// 计算单个订阅的年均花费
+  double get yearlyCost {
+    final p = price ?? 0.0;
+    return cycle == SubscriptionCycle.monthly ? p * 12 : p;
+  }
+
+  /// 判断该订阅在指定月份是否需要扣费，并返回费用
+  double costForMonth(int targetMonth) {
+    final p = price ?? 0.0;
+    if (cycle == SubscriptionCycle.monthly) return p;
+    if (nextPaymentDate.month == targetMonth) return p;
+    return 0.0;
+  }
+}
+
+extension SubscriptionListDomainLogic on Iterable<Subscription> {
+  /// 计算所有订阅的年均花费总计
+  double get totalYearlyCost => fold(0.0, (sum, sub) => sum + sub.yearlyCost);
+
+  /// 计算所有订阅在指定月份的花费总计
+  double totalCostForMonth(int targetMonth) =>
+      fold(0.0, (sum, sub) => sum + sub.costForMonth(targetMonth));
+}

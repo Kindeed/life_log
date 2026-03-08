@@ -1,10 +1,9 @@
+import 'dart:async';
 import 'package:get/get.dart';
 import 'package:table_calendar/table_calendar.dart';
-import '../../common/db/db_service.dart';
-import '../../common/services/event_bus.dart';
 import 'work_log_model.dart';
 import '../../common/services/log_service.dart';
-// 记得引入 StatisticsController 以便联动刷新统计
+import 'work_log_repository.dart';
 
 class WorkLogController extends GetxController {
   static WorkLogController get to => Get.find();
@@ -17,21 +16,28 @@ class WorkLogController extends GetxController {
   // --- 2. 数据源 ---
   final logsMap = <DateTime, List<WorkLog>>{}.obs;
   final isLoading = true.obs;
-  // 版本号：用于强制刷新日历（因为 logsMap.length 不变时 TableCalendar 不会重绘）
+  // 版本号：用于强制刷新日历
   final dataVersion = 0.obs;
 
   // 统计数据
   final monthStatsDays = 0.obs;
   final monthStatsHours = 0.0.obs;
 
+  StreamSubscription? _dbSub;
+
   @override
   void onInit() {
     super.onInit();
-    _initData();
+    loadData();
+    _dbSub = WorkLogRepository.to.watchLogs().listen((_) {
+      loadData();
+    });
   }
 
-  Future<void> _initData() async {
-    await loadData();
+  @override
+  void onClose() {
+    _dbSub?.cancel();
+    super.onClose();
   }
 
   // --- 核心操作 ---
@@ -63,7 +69,7 @@ class WorkLogController extends GetxController {
     isLoading.value = true;
     LogService.to.debug('WorkLog', '开始加载数据...');
 
-    final allLogs = await DbService.to.getAllLogs();
+    final allLogs = await WorkLogRepository.to.getAllLogs();
     LogService.to.debug('WorkLog', '从数据库获取到 ${allLogs.length} 条记录');
 
     final newMap = <DateTime, List<WorkLog>>{};
@@ -85,18 +91,14 @@ class WorkLogController extends GetxController {
 
   // 添加/修改日志
   Future<void> addLog(WorkLog log) async {
-    await DbService.to.addLog(log);
-    await loadData();
+    await WorkLogRepository.to.saveLog(log);
     LogService.to.info('WorkLog', '添加/修改日志: ${log.date}');
-    EventBus.instance.fire(const WorkLogChangedEvent());
   }
 
   // 删除日志
   Future<void> deleteLog(int id) async {
-    await DbService.to.deleteLog(id);
-    await loadData();
+    await WorkLogRepository.to.deleteLog(id);
     LogService.to.info('WorkLog', '删除日志 ID: $id');
-    EventBus.instance.fire(const WorkLogChangedEvent());
   }
 
   void _calculateMonthStats() {

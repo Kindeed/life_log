@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import '../../../common/theme/app_colors.dart';
 import '../../../common/db/backup_service.dart';
+import 'package:get/get.dart';
 
 /// 数据管理页面
 class DataManagementView extends StatelessWidget {
@@ -192,12 +193,35 @@ class DataManagementView extends StatelessWidget {
   }
 
   Future<void> _handleBackup(BuildContext context) async {
-    // BackupService.exportBackup() 内部已处理 snackbar 和分享
-    await BackupService.exportBackup();
+    try {
+      await BackupService.exportBackup();
+    } catch (e) {
+      Get.snackbar("导出失败", e.toString());
+    }
   }
 
   Future<void> _handleRestore(BuildContext context) async {
-    // BackupService.importBackup() 内部已处理确认对话框和 snackbar
-    await BackupService.importBackup();
+    try {
+      final file = await BackupService.pickBackupFile();
+      if (file == null) return;
+
+      final confirmed = await Get.defaultDialog<bool>(
+        title: "恢复确认",
+        middleText: "导入备份将覆盖当前所有数据，此操作不可撤销。是否继续？",
+        textConfirm: "确认",
+        textCancel: "取消",
+        confirmTextColor: Colors.white,
+        onConfirm: () => Get.back(result: true),
+        onCancel: () => Get.back(result: false),
+      );
+
+      if (confirmed == true) {
+        await BackupService.restoreFromBackup(file);
+        Get.offAllNamed('/');
+        Get.snackbar("恢复成功", "数据已恢复，应用已刷新。");
+      }
+    } catch (e) {
+      Get.snackbar("恢复失败", e.toString());
+    }
   }
 }

@@ -1,10 +1,11 @@
+import 'dart:async';
 import 'package:get/get.dart';
-import '../../common/db/db_service.dart';
 import '../../common/services/log_service.dart';
 import 'subscription_model.dart';
-import '../../common/services/event_bus.dart';
+import 'subscription_repository.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
+import '../../common/db/db_service.dart';
 
 class SubscriptionController extends GetxController {
   static SubscriptionController get to => Get.find();
@@ -13,15 +14,26 @@ class SubscriptionController extends GetxController {
   // 控制 FAB 显示/隐藏
   final isFabVisible = true.obs;
 
+  StreamSubscription? _dbSub;
+
   @override
   void onInit() {
     super.onInit();
     loadData();
+    _dbSub = SubscriptionRepository.to.watchSubscriptions().listen((_) {
+      loadData();
+    });
+  }
+
+  @override
+  void onClose() {
+    _dbSub?.cancel();
+    super.onClose();
   }
 
   // --- 加载数据 (按 sortIndex 排序) ---
   Future<void> loadData() async {
-    final list = await DbService.to.getAllSubscriptions();
+    final list = await SubscriptionRepository.to.getAllSubscriptions();
     // 排序逻辑：如果 sortIndex 为 null，默认为 0
     list.sort((a, b) => (a.sortIndex ?? 0).compareTo(b.sortIndex ?? 0));
     subs.value = list;
@@ -31,18 +43,13 @@ class SubscriptionController extends GetxController {
   Future<void> addSub(Subscription sub) async {
     // 如果是新增（没有 sortIndex），把它排到最后
     sub.sortIndex ??= subs.length;
-    await DbService.to.addSubscription(sub);
-    await loadData();
-    EventBus.instance.fire(const SubscriptionChangedEvent());
+    await SubscriptionRepository.to.saveSubscription(sub, subs.length);
     LogService.to.info('Subscription', '添加/更新订阅: ${sub.name}');
-    //Get.snackbar("成功", "已保存订阅");
   }
 
   // --- 删除订阅 ---
   Future<void> deleteSub(int id) async {
-    await DbService.to.deleteSubscription(id);
-    await loadData();
-    EventBus.instance.fire(const SubscriptionChangedEvent());
+    await SubscriptionRepository.to.deleteSubscription(id);
     LogService.to.info('Subscription', '删除订阅 ID: $id');
   }
 
@@ -70,7 +77,6 @@ class SubscriptionController extends GetxController {
 
     // 重新写入数据库中的顺序
     await DbService.to.reorderSubscriptions(subs);
-    EventBus.instance.fire(const SubscriptionChangedEvent());
     LogService.to.info('Subscription', '重新排序订阅');
   }
 

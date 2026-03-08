@@ -340,6 +340,8 @@ class _AddSubscriptionSheetState extends State<AddSubscriptionSheet> {
     if (widget.sub != null) {
       sub.id = widget.sub!.id;
       sub.sortIndex = widget.sub!.sortIndex;
+      sub.remoteId = widget.sub!.remoteId;
+      sub.syncedAt = widget.sub!.syncedAt;
     }
 
     // 标记为需要同步

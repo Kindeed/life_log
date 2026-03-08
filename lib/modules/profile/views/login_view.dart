@@ -9,8 +9,7 @@ class LoginView extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    // Inject controller specific to this view
-    final controller = Get.put(LoginController());
+    final controller = Get.find<LoginController>();
     final theme = Theme.of(context);
 
     return Obx(

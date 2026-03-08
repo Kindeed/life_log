@@ -5,10 +5,10 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:get_storage/get_storage.dart';
 import 'package:intl/date_symbol_data_local.dart';
 import 'package:life_log/modules/tabs/tabs_view.dart';
-import 'package:life_log/modules/work_log/work_log_controller.dart';
-import 'package:life_log/modules/photo/photo_controller.dart';
-import 'package:life_log/modules/subscription/subscription_controller.dart';
-import 'package:life_log/modules/statistics/statistics_controller.dart';
+import 'package:life_log/common/bindings/app_binding.dart';
+import 'package:life_log/common/bindings/tabs_binding.dart';
+import 'package:life_log/common/bindings/login_binding.dart';
+import 'package:life_log/modules/profile/views/login_view.dart';
 import 'package:life_log/common/db/db_service.dart';
 import 'package:life_log/common/theme/app_theme.dart';
 import 'package:life_log/common/theme/theme_controller.dart';
@@ -40,12 +40,6 @@ void main() async {
   await Get.putAsync(() => LogService().init());
   Get.put(AuthService());
   Get.put(SyncService());
-  Get.put(StatisticsController());
-
-  // 2. 模块控制器（懒加载，首次访问 Tab 时才初始化，fenix 确保回收后可自动重建）
-  Get.lazyPut(() => WorkLogController(), fenix: true);
-  Get.lazyPut(() => PhotoController(), fenix: true);
-  Get.lazyPut(() => SubscriptionController(), fenix: true);
 
   runApp(const MyApp());
 }
@@ -69,7 +63,20 @@ class MyApp extends StatelessWidget {
             theme: AppTheme.light,
             darkTheme: AppTheme.dark,
             themeMode: themeController.flutterThemeMode,
-            home: const TabsView(),
+            initialBinding: AppBinding(),
+            initialRoute: '/',
+            getPages: [
+              GetPage(
+                name: '/',
+                page: () => const TabsView(),
+                binding: TabsBinding(),
+              ),
+              GetPage(
+                name: '/login',
+                page: () => const LoginView(),
+                binding: LoginBinding(),
+              ),
+            ],
           ),
         );
       },
