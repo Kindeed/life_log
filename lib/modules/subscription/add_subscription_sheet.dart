@@ -341,7 +341,12 @@ class _AddSubscriptionSheetState extends State<AddSubscriptionSheet> {
       sub.id = widget.sub!.id;
       sub.sortIndex = widget.sub!.sortIndex;
       sub.remoteId = widget.sub!.remoteId;
+      sub.syncId = widget.sub!.syncId;
+      sub.remoteVersion = widget.sub!.remoteVersion;
+      sub.remoteUpdatedAt = widget.sub!.remoteUpdatedAt;
       sub.syncedAt = widget.sub!.syncedAt;
+      sub.deletedAt = widget.sub!.deletedAt;
+      sub.pendingDelete = widget.sub!.pendingDelete;
     }
 
     // 标记为需要同步

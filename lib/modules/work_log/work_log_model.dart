@@ -8,8 +8,13 @@ class WorkLog {
 
   // Sync fields
   int? remoteId;
+  String? syncId;
+  int remoteVersion = 0;
+  DateTime? remoteUpdatedAt;
   DateTime? syncedAt;
   bool isDirty = false;
+  DateTime? deletedAt;
+  bool pendingDelete = false;
 
   late DateTime date; // 日期
 

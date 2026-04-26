@@ -23,48 +23,73 @@ const SubscriptionSchema = CollectionSchema(
       type: IsarType.byte,
       enumMap: _SubscriptioncycleEnumValueMap,
     ),
-    r'isDirty': PropertySchema(
+    r'deletedAt': PropertySchema(
       id: 1,
+      name: r'deletedAt',
+      type: IsarType.dateTime,
+    ),
+    r'isDirty': PropertySchema(
+      id: 2,
       name: r'isDirty',
       type: IsarType.bool,
     ),
     r'name': PropertySchema(
-      id: 2,
+      id: 3,
       name: r'name',
       type: IsarType.string,
     ),
     r'nextPaymentDate': PropertySchema(
-      id: 3,
+      id: 4,
       name: r'nextPaymentDate',
       type: IsarType.dateTime,
     ),
     r'note': PropertySchema(
-      id: 4,
+      id: 5,
       name: r'note',
       type: IsarType.string,
     ),
+    r'pendingDelete': PropertySchema(
+      id: 6,
+      name: r'pendingDelete',
+      type: IsarType.bool,
+    ),
     r'price': PropertySchema(
-      id: 5,
+      id: 7,
       name: r'price',
       type: IsarType.double,
     ),
     r'reminderDays': PropertySchema(
-      id: 6,
+      id: 8,
       name: r'reminderDays',
       type: IsarType.long,
     ),
     r'remoteId': PropertySchema(
-      id: 7,
+      id: 9,
       name: r'remoteId',
       type: IsarType.long,
     ),
+    r'remoteUpdatedAt': PropertySchema(
+      id: 10,
+      name: r'remoteUpdatedAt',
+      type: IsarType.dateTime,
+    ),
+    r'remoteVersion': PropertySchema(
+      id: 11,
+      name: r'remoteVersion',
+      type: IsarType.long,
+    ),
     r'sortIndex': PropertySchema(
-      id: 8,
+      id: 12,
       name: r'sortIndex',
       type: IsarType.long,
     ),
+    r'syncId': PropertySchema(
+      id: 13,
+      name: r'syncId',
+      type: IsarType.string,
+    ),
     r'syncedAt': PropertySchema(
-      id: 9,
+      id: 14,
       name: r'syncedAt',
       type: IsarType.dateTime,
     )
@@ -96,6 +121,12 @@ int _subscriptionEstimateSize(
       bytesCount += 3 + value.length * 3;
     }
   }
+  {
+    final value = object.syncId;
+    if (value != null) {
+      bytesCount += 3 + value.length * 3;
+    }
+  }
   return bytesCount;
 }
 
@@ -106,15 +137,20 @@ void _subscriptionSerialize(
   Map<Type, List<int>> allOffsets,
 ) {
   writer.writeByte(offsets[0], object.cycle.index);
-  writer.writeBool(offsets[1], object.isDirty);
-  writer.writeString(offsets[2], object.name);
-  writer.writeDateTime(offsets[3], object.nextPaymentDate);
-  writer.writeString(offsets[4], object.note);
-  writer.writeDouble(offsets[5], object.price);
-  writer.writeLong(offsets[6], object.reminderDays);
-  writer.writeLong(offsets[7], object.remoteId);
-  writer.writeLong(offsets[8], object.sortIndex);
-  writer.writeDateTime(offsets[9], object.syncedAt);
+  writer.writeDateTime(offsets[1], object.deletedAt);
+  writer.writeBool(offsets[2], object.isDirty);
+  writer.writeString(offsets[3], object.name);
+  writer.writeDateTime(offsets[4], object.nextPaymentDate);
+  writer.writeString(offsets[5], object.note);
+  writer.writeBool(offsets[6], object.pendingDelete);
+  writer.writeDouble(offsets[7], object.price);
+  writer.writeLong(offsets[8], object.reminderDays);
+  writer.writeLong(offsets[9], object.remoteId);
+  writer.writeDateTime(offsets[10], object.remoteUpdatedAt);
+  writer.writeLong(offsets[11], object.remoteVersion);
+  writer.writeLong(offsets[12], object.sortIndex);
+  writer.writeString(offsets[13], object.syncId);
+  writer.writeDateTime(offsets[14], object.syncedAt);
 }
 
 Subscription _subscriptionDeserialize(
@@ -127,16 +163,21 @@ Subscription _subscriptionDeserialize(
   object.cycle =
       _SubscriptioncycleValueEnumMap[reader.readByteOrNull(offsets[0])] ??
           SubscriptionCycle.monthly;
+  object.deletedAt = reader.readDateTimeOrNull(offsets[1]);
   object.id = id;
-  object.isDirty = reader.readBool(offsets[1]);
-  object.name = reader.readString(offsets[2]);
-  object.nextPaymentDate = reader.readDateTime(offsets[3]);
-  object.note = reader.readStringOrNull(offsets[4]);
-  object.price = reader.readDoubleOrNull(offsets[5]);
-  object.reminderDays = reader.readLong(offsets[6]);
-  object.remoteId = reader.readLongOrNull(offsets[7]);
-  object.sortIndex = reader.readLongOrNull(offsets[8]);
-  object.syncedAt = reader.readDateTimeOrNull(offsets[9]);
+  object.isDirty = reader.readBool(offsets[2]);
+  object.name = reader.readString(offsets[3]);
+  object.nextPaymentDate = reader.readDateTime(offsets[4]);
+  object.note = reader.readStringOrNull(offsets[5]);
+  object.pendingDelete = reader.readBool(offsets[6]);
+  object.price = reader.readDoubleOrNull(offsets[7]);
+  object.reminderDays = reader.readLong(offsets[8]);
+  object.remoteId = reader.readLongOrNull(offsets[9]);
+  object.remoteUpdatedAt = reader.readDateTimeOrNull(offsets[10]);
+  object.remoteVersion = reader.readLong(offsets[11]);
+  object.sortIndex = reader.readLongOrNull(offsets[12]);
+  object.syncId = reader.readStringOrNull(offsets[13]);
+  object.syncedAt = reader.readDateTimeOrNull(offsets[14]);
   return object;
 }
 
@@ -151,22 +192,32 @@ P _subscriptionDeserializeProp<P>(
       return (_SubscriptioncycleValueEnumMap[reader.readByteOrNull(offset)] ??
           SubscriptionCycle.monthly) as P;
     case 1:
-      return (reader.readBool(offset)) as P;
+      return (reader.readDateTimeOrNull(offset)) as P;
     case 2:
-      return (reader.readString(offset)) as P;
+      return (reader.readBool(offset)) as P;
     case 3:
-      return (reader.readDateTime(offset)) as P;
+      return (reader.readString(offset)) as P;
     case 4:
-      return (reader.readStringOrNull(offset)) as P;
+      return (reader.readDateTime(offset)) as P;
     case 5:
-      return (reader.readDoubleOrNull(offset)) as P;
+      return (reader.readStringOrNull(offset)) as P;
     case 6:
-      return (reader.readLong(offset)) as P;
+      return (reader.readBool(offset)) as P;
     case 7:
-      return (reader.readLongOrNull(offset)) as P;
+      return (reader.readDoubleOrNull(offset)) as P;
     case 8:
-      return (reader.readLongOrNull(offset)) as P;
+      return (reader.readLong(offset)) as P;
     case 9:
+      return (reader.readLongOrNull(offset)) as P;
+    case 10:
+      return (reader.readDateTimeOrNull(offset)) as P;
+    case 11:
+      return (reader.readLong(offset)) as P;
+    case 12:
+      return (reader.readLongOrNull(offset)) as P;
+    case 13:
+      return (reader.readStringOrNull(offset)) as P;
+    case 14:
       return (reader.readDateTimeOrNull(offset)) as P;
     default:
       throw IsarError('Unknown property with id $propertyId');
@@ -324,6 +375,80 @@ extension SubscriptionQueryFilter
     return QueryBuilder.apply(this, (query) {
       return query.addFilterCondition(FilterCondition.between(
         property: r'cycle',
+        lower: lower,
+        includeLower: includeLower,
+        upper: upper,
+        includeUpper: includeUpper,
+      ));
+    });
+  }
+
+  QueryBuilder<Subscription, Subscription, QAfterFilterCondition>
+      deletedAtIsNull() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(const FilterCondition.isNull(
+        property: r'deletedAt',
+      ));
+    });
+  }
+
+  QueryBuilder<Subscription, Subscription, QAfterFilterCondition>
+      deletedAtIsNotNull() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(const FilterCondition.isNotNull(
+        property: r'deletedAt',
+      ));
+    });
+  }
+
+  QueryBuilder<Subscription, Subscription, QAfterFilterCondition>
+      deletedAtEqualTo(DateTime? value) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.equalTo(
+        property: r'deletedAt',
+        value: value,
+      ));
+    });
+  }
+
+  QueryBuilder<Subscription, Subscription, QAfterFilterCondition>
+      deletedAtGreaterThan(
+    DateTime? value, {
+    bool include = false,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.greaterThan(
+        include: include,
+        property: r'deletedAt',
+        value: value,
+      ));
+    });
+  }
+
+  QueryBuilder<Subscription, Subscription, QAfterFilterCondition>
+      deletedAtLessThan(
+    DateTime? value, {
+    bool include = false,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.lessThan(
+        include: include,
+        property: r'deletedAt',
+        value: value,
+      ));
+    });
+  }
+
+  QueryBuilder<Subscription, Subscription, QAfterFilterCondition>
+      deletedAtBetween(
+    DateTime? lower,
+    DateTime? upper, {
+    bool includeLower = true,
+    bool includeUpper = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.between(
+        property: r'deletedAt',
         lower: lower,
         includeLower: includeLower,
         upper: upper,
@@ -737,6 +862,16 @@ extension SubscriptionQueryFilter
   }
 
   QueryBuilder<Subscription, Subscription, QAfterFilterCondition>
+      pendingDeleteEqualTo(bool value) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.equalTo(
+        property: r'pendingDelete',
+        value: value,
+      ));
+    });
+  }
+
+  QueryBuilder<Subscription, Subscription, QAfterFilterCondition>
       priceIsNull() {
     return QueryBuilder.apply(this, (query) {
       return query.addFilterCondition(const FilterCondition.isNull(
@@ -948,6 +1083,136 @@ extension SubscriptionQueryFilter
   }
 
   QueryBuilder<Subscription, Subscription, QAfterFilterCondition>
+      remoteUpdatedAtIsNull() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(const FilterCondition.isNull(
+        property: r'remoteUpdatedAt',
+      ));
+    });
+  }
+
+  QueryBuilder<Subscription, Subscription, QAfterFilterCondition>
+      remoteUpdatedAtIsNotNull() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(const FilterCondition.isNotNull(
+        property: r'remoteUpdatedAt',
+      ));
+    });
+  }
+
+  QueryBuilder<Subscription, Subscription, QAfterFilterCondition>
+      remoteUpdatedAtEqualTo(DateTime? value) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.equalTo(
+        property: r'remoteUpdatedAt',
+        value: value,
+      ));
+    });
+  }
+
+  QueryBuilder<Subscription, Subscription, QAfterFilterCondition>
+      remoteUpdatedAtGreaterThan(
+    DateTime? value, {
+    bool include = false,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.greaterThan(
+        include: include,
+        property: r'remoteUpdatedAt',
+        value: value,
+      ));
+    });
+  }
+
+  QueryBuilder<Subscription, Subscription, QAfterFilterCondition>
+      remoteUpdatedAtLessThan(
+    DateTime? value, {
+    bool include = false,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.lessThan(
+        include: include,
+        property: r'remoteUpdatedAt',
+        value: value,
+      ));
+    });
+  }
+
+  QueryBuilder<Subscription, Subscription, QAfterFilterCondition>
+      remoteUpdatedAtBetween(
+    DateTime? lower,
+    DateTime? upper, {
+    bool includeLower = true,
+    bool includeUpper = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.between(
+        property: r'remoteUpdatedAt',
+        lower: lower,
+        includeLower: includeLower,
+        upper: upper,
+        includeUpper: includeUpper,
+      ));
+    });
+  }
+
+  QueryBuilder<Subscription, Subscription, QAfterFilterCondition>
+      remoteVersionEqualTo(int value) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.equalTo(
+        property: r'remoteVersion',
+        value: value,
+      ));
+    });
+  }
+
+  QueryBuilder<Subscription, Subscription, QAfterFilterCondition>
+      remoteVersionGreaterThan(
+    int value, {
+    bool include = false,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.greaterThan(
+        include: include,
+        property: r'remoteVersion',
+        value: value,
+      ));
+    });
+  }
+
+  QueryBuilder<Subscription, Subscription, QAfterFilterCondition>
+      remoteVersionLessThan(
+    int value, {
+    bool include = false,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.lessThan(
+        include: include,
+        property: r'remoteVersion',
+        value: value,
+      ));
+    });
+  }
+
+  QueryBuilder<Subscription, Subscription, QAfterFilterCondition>
+      remoteVersionBetween(
+    int lower,
+    int upper, {
+    bool includeLower = true,
+    bool includeUpper = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.between(
+        property: r'remoteVersion',
+        lower: lower,
+        includeLower: includeLower,
+        upper: upper,
+        includeUpper: includeUpper,
+      ));
+    });
+  }
+
+  QueryBuilder<Subscription, Subscription, QAfterFilterCondition>
       sortIndexIsNull() {
     return QueryBuilder.apply(this, (query) {
       return query.addFilterCondition(const FilterCondition.isNull(
@@ -1017,6 +1282,159 @@ extension SubscriptionQueryFilter
         includeLower: includeLower,
         upper: upper,
         includeUpper: includeUpper,
+      ));
+    });
+  }
+
+  QueryBuilder<Subscription, Subscription, QAfterFilterCondition>
+      syncIdIsNull() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(const FilterCondition.isNull(
+        property: r'syncId',
+      ));
+    });
+  }
+
+  QueryBuilder<Subscription, Subscription, QAfterFilterCondition>
+      syncIdIsNotNull() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(const FilterCondition.isNotNull(
+        property: r'syncId',
+      ));
+    });
+  }
+
+  QueryBuilder<Subscription, Subscription, QAfterFilterCondition> syncIdEqualTo(
+    String? value, {
+    bool caseSensitive = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.equalTo(
+        property: r'syncId',
+        value: value,
+        caseSensitive: caseSensitive,
+      ));
+    });
+  }
+
+  QueryBuilder<Subscription, Subscription, QAfterFilterCondition>
+      syncIdGreaterThan(
+    String? value, {
+    bool include = false,
+    bool caseSensitive = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.greaterThan(
+        include: include,
+        property: r'syncId',
+        value: value,
+        caseSensitive: caseSensitive,
+      ));
+    });
+  }
+
+  QueryBuilder<Subscription, Subscription, QAfterFilterCondition>
+      syncIdLessThan(
+    String? value, {
+    bool include = false,
+    bool caseSensitive = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.lessThan(
+        include: include,
+        property: r'syncId',
+        value: value,
+        caseSensitive: caseSensitive,
+      ));
+    });
+  }
+
+  QueryBuilder<Subscription, Subscription, QAfterFilterCondition> syncIdBetween(
+    String? lower,
+    String? upper, {
+    bool includeLower = true,
+    bool includeUpper = true,
+    bool caseSensitive = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.between(
+        property: r'syncId',
+        lower: lower,
+        includeLower: includeLower,
+        upper: upper,
+        includeUpper: includeUpper,
+        caseSensitive: caseSensitive,
+      ));
+    });
+  }
+
+  QueryBuilder<Subscription, Subscription, QAfterFilterCondition>
+      syncIdStartsWith(
+    String value, {
+    bool caseSensitive = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.startsWith(
+        property: r'syncId',
+        value: value,
+        caseSensitive: caseSensitive,
+      ));
+    });
+  }
+
+  QueryBuilder<Subscription, Subscription, QAfterFilterCondition>
+      syncIdEndsWith(
+    String value, {
+    bool caseSensitive = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.endsWith(
+        property: r'syncId',
+        value: value,
+        caseSensitive: caseSensitive,
+      ));
+    });
+  }
+
+  QueryBuilder<Subscription, Subscription, QAfterFilterCondition>
+      syncIdContains(String value, {bool caseSensitive = true}) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.contains(
+        property: r'syncId',
+        value: value,
+        caseSensitive: caseSensitive,
+      ));
+    });
+  }
+
+  QueryBuilder<Subscription, Subscription, QAfterFilterCondition> syncIdMatches(
+      String pattern,
+      {bool caseSensitive = true}) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.matches(
+        property: r'syncId',
+        wildcard: pattern,
+        caseSensitive: caseSensitive,
+      ));
+    });
+  }
+
+  QueryBuilder<Subscription, Subscription, QAfterFilterCondition>
+      syncIdIsEmpty() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.equalTo(
+        property: r'syncId',
+        value: '',
+      ));
+    });
+  }
+
+  QueryBuilder<Subscription, Subscription, QAfterFilterCondition>
+      syncIdIsNotEmpty() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.greaterThan(
+        property: r'syncId',
+        value: '',
       ));
     });
   }
@@ -1116,6 +1534,18 @@ extension SubscriptionQuerySortBy
     });
   }
 
+  QueryBuilder<Subscription, Subscription, QAfterSortBy> sortByDeletedAt() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'deletedAt', Sort.asc);
+    });
+  }
+
+  QueryBuilder<Subscription, Subscription, QAfterSortBy> sortByDeletedAtDesc() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'deletedAt', Sort.desc);
+    });
+  }
+
   QueryBuilder<Subscription, Subscription, QAfterSortBy> sortByIsDirty() {
     return QueryBuilder.apply(this, (query) {
       return query.addSortBy(r'isDirty', Sort.asc);
@@ -1166,6 +1596,19 @@ extension SubscriptionQuerySortBy
     });
   }
 
+  QueryBuilder<Subscription, Subscription, QAfterSortBy> sortByPendingDelete() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'pendingDelete', Sort.asc);
+    });
+  }
+
+  QueryBuilder<Subscription, Subscription, QAfterSortBy>
+      sortByPendingDeleteDesc() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'pendingDelete', Sort.desc);
+    });
+  }
+
   QueryBuilder<Subscription, Subscription, QAfterSortBy> sortByPrice() {
     return QueryBuilder.apply(this, (query) {
       return query.addSortBy(r'price', Sort.asc);
@@ -1203,6 +1646,33 @@ extension SubscriptionQuerySortBy
     });
   }
 
+  QueryBuilder<Subscription, Subscription, QAfterSortBy>
+      sortByRemoteUpdatedAt() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'remoteUpdatedAt', Sort.asc);
+    });
+  }
+
+  QueryBuilder<Subscription, Subscription, QAfterSortBy>
+      sortByRemoteUpdatedAtDesc() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'remoteUpdatedAt', Sort.desc);
+    });
+  }
+
+  QueryBuilder<Subscription, Subscription, QAfterSortBy> sortByRemoteVersion() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'remoteVersion', Sort.asc);
+    });
+  }
+
+  QueryBuilder<Subscription, Subscription, QAfterSortBy>
+      sortByRemoteVersionDesc() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'remoteVersion', Sort.desc);
+    });
+  }
+
   QueryBuilder<Subscription, Subscription, QAfterSortBy> sortBySortIndex() {
     return QueryBuilder.apply(this, (query) {
       return query.addSortBy(r'sortIndex', Sort.asc);
@@ -1212,6 +1682,18 @@ extension SubscriptionQuerySortBy
   QueryBuilder<Subscription, Subscription, QAfterSortBy> sortBySortIndexDesc() {
     return QueryBuilder.apply(this, (query) {
       return query.addSortBy(r'sortIndex', Sort.desc);
+    });
+  }
+
+  QueryBuilder<Subscription, Subscription, QAfterSortBy> sortBySyncId() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'syncId', Sort.asc);
+    });
+  }
+
+  QueryBuilder<Subscription, Subscription, QAfterSortBy> sortBySyncIdDesc() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'syncId', Sort.desc);
     });
   }
 
@@ -1239,6 +1721,18 @@ extension SubscriptionQuerySortThenBy
   QueryBuilder<Subscription, Subscription, QAfterSortBy> thenByCycleDesc() {
     return QueryBuilder.apply(this, (query) {
       return query.addSortBy(r'cycle', Sort.desc);
+    });
+  }
+
+  QueryBuilder<Subscription, Subscription, QAfterSortBy> thenByDeletedAt() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'deletedAt', Sort.asc);
+    });
+  }
+
+  QueryBuilder<Subscription, Subscription, QAfterSortBy> thenByDeletedAtDesc() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'deletedAt', Sort.desc);
     });
   }
 
@@ -1304,6 +1798,19 @@ extension SubscriptionQuerySortThenBy
     });
   }
 
+  QueryBuilder<Subscription, Subscription, QAfterSortBy> thenByPendingDelete() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'pendingDelete', Sort.asc);
+    });
+  }
+
+  QueryBuilder<Subscription, Subscription, QAfterSortBy>
+      thenByPendingDeleteDesc() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'pendingDelete', Sort.desc);
+    });
+  }
+
   QueryBuilder<Subscription, Subscription, QAfterSortBy> thenByPrice() {
     return QueryBuilder.apply(this, (query) {
       return query.addSortBy(r'price', Sort.asc);
@@ -1341,6 +1848,33 @@ extension SubscriptionQuerySortThenBy
     });
   }
 
+  QueryBuilder<Subscription, Subscription, QAfterSortBy>
+      thenByRemoteUpdatedAt() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'remoteUpdatedAt', Sort.asc);
+    });
+  }
+
+  QueryBuilder<Subscription, Subscription, QAfterSortBy>
+      thenByRemoteUpdatedAtDesc() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'remoteUpdatedAt', Sort.desc);
+    });
+  }
+
+  QueryBuilder<Subscription, Subscription, QAfterSortBy> thenByRemoteVersion() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'remoteVersion', Sort.asc);
+    });
+  }
+
+  QueryBuilder<Subscription, Subscription, QAfterSortBy>
+      thenByRemoteVersionDesc() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'remoteVersion', Sort.desc);
+    });
+  }
+
   QueryBuilder<Subscription, Subscription, QAfterSortBy> thenBySortIndex() {
     return QueryBuilder.apply(this, (query) {
       return query.addSortBy(r'sortIndex', Sort.asc);
@@ -1350,6 +1884,18 @@ extension SubscriptionQuerySortThenBy
   QueryBuilder<Subscription, Subscription, QAfterSortBy> thenBySortIndexDesc() {
     return QueryBuilder.apply(this, (query) {
       return query.addSortBy(r'sortIndex', Sort.desc);
+    });
+  }
+
+  QueryBuilder<Subscription, Subscription, QAfterSortBy> thenBySyncId() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'syncId', Sort.asc);
+    });
+  }
+
+  QueryBuilder<Subscription, Subscription, QAfterSortBy> thenBySyncIdDesc() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'syncId', Sort.desc);
     });
   }
 
@@ -1371,6 +1917,12 @@ extension SubscriptionQueryWhereDistinct
   QueryBuilder<Subscription, Subscription, QDistinct> distinctByCycle() {
     return QueryBuilder.apply(this, (query) {
       return query.addDistinctBy(r'cycle');
+    });
+  }
+
+  QueryBuilder<Subscription, Subscription, QDistinct> distinctByDeletedAt() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addDistinctBy(r'deletedAt');
     });
   }
 
@@ -1401,6 +1953,13 @@ extension SubscriptionQueryWhereDistinct
     });
   }
 
+  QueryBuilder<Subscription, Subscription, QDistinct>
+      distinctByPendingDelete() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addDistinctBy(r'pendingDelete');
+    });
+  }
+
   QueryBuilder<Subscription, Subscription, QDistinct> distinctByPrice() {
     return QueryBuilder.apply(this, (query) {
       return query.addDistinctBy(r'price');
@@ -1419,9 +1978,30 @@ extension SubscriptionQueryWhereDistinct
     });
   }
 
+  QueryBuilder<Subscription, Subscription, QDistinct>
+      distinctByRemoteUpdatedAt() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addDistinctBy(r'remoteUpdatedAt');
+    });
+  }
+
+  QueryBuilder<Subscription, Subscription, QDistinct>
+      distinctByRemoteVersion() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addDistinctBy(r'remoteVersion');
+    });
+  }
+
   QueryBuilder<Subscription, Subscription, QDistinct> distinctBySortIndex() {
     return QueryBuilder.apply(this, (query) {
       return query.addDistinctBy(r'sortIndex');
+    });
+  }
+
+  QueryBuilder<Subscription, Subscription, QDistinct> distinctBySyncId(
+      {bool caseSensitive = true}) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addDistinctBy(r'syncId', caseSensitive: caseSensitive);
     });
   }
 
@@ -1444,6 +2024,12 @@ extension SubscriptionQueryProperty
       cycleProperty() {
     return QueryBuilder.apply(this, (query) {
       return query.addPropertyName(r'cycle');
+    });
+  }
+
+  QueryBuilder<Subscription, DateTime?, QQueryOperations> deletedAtProperty() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addPropertyName(r'deletedAt');
     });
   }
 
@@ -1472,6 +2058,12 @@ extension SubscriptionQueryProperty
     });
   }
 
+  QueryBuilder<Subscription, bool, QQueryOperations> pendingDeleteProperty() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addPropertyName(r'pendingDelete');
+    });
+  }
+
   QueryBuilder<Subscription, double?, QQueryOperations> priceProperty() {
     return QueryBuilder.apply(this, (query) {
       return query.addPropertyName(r'price');
@@ -1490,9 +2082,28 @@ extension SubscriptionQueryProperty
     });
   }
 
+  QueryBuilder<Subscription, DateTime?, QQueryOperations>
+      remoteUpdatedAtProperty() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addPropertyName(r'remoteUpdatedAt');
+    });
+  }
+
+  QueryBuilder<Subscription, int, QQueryOperations> remoteVersionProperty() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addPropertyName(r'remoteVersion');
+    });
+  }
+
   QueryBuilder<Subscription, int?, QQueryOperations> sortIndexProperty() {
     return QueryBuilder.apply(this, (query) {
       return query.addPropertyName(r'sortIndex');
+    });
+  }
+
+  QueryBuilder<Subscription, String?, QQueryOperations> syncIdProperty() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addPropertyName(r'syncId');
     });
   }
 

@@ -36,6 +36,10 @@ class StatisticsView extends StatelessWidget {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
+              _buildMonthSelector(logic, isDark, cardColor, textPrimary),
+
+              SizedBox(height: 16.h),
+
               // 1. 工时卡片
               _buildWorkCard(
                 logic,
@@ -73,6 +77,142 @@ class StatisticsView extends StatelessWidget {
     );
   }
 
+  Widget _buildMonthSelector(
+    StatisticsController logic,
+    bool isDark,
+    Color cardColor,
+    Color textPrimary,
+  ) {
+    return Container(
+      padding: EdgeInsets.symmetric(horizontal: 14.w, vertical: 12.h),
+      decoration: _cardDecoration(isDark, cardColor),
+      child: Row(
+        children: [
+          _buildMonthNavButton(
+            icon: Icons.chevron_left_rounded,
+            tooltip: "上个月",
+            onPressed: logic.previousMonth,
+            isDark: isDark,
+          ),
+          Expanded(
+            child: Obx(
+              () => Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Text(
+                    logic.selectedMonthLabel,
+                    textAlign: TextAlign.center,
+                    style: TextStyle(
+                      fontSize: 18.sp,
+                      fontWeight: FontWeight.w800,
+                      color: textPrimary,
+                      height: 1.1,
+                    ),
+                  ),
+                  SizedBox(height: 6.h),
+                  AnimatedSwitcher(
+                    duration: const Duration(milliseconds: 180),
+                    child: logic.isCurrentMonth
+                        ? _buildCurrentMonthBadge(isDark)
+                        : _buildBackToCurrentButton(logic, isDark),
+                  ),
+                ],
+              ),
+            ),
+          ),
+          _buildMonthNavButton(
+            icon: Icons.chevron_right_rounded,
+            tooltip: "下个月",
+            onPressed: logic.nextMonth,
+            isDark: isDark,
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildMonthNavButton({
+    required IconData icon,
+    required String tooltip,
+    required VoidCallback onPressed,
+    required bool isDark,
+  }) {
+    return Tooltip(
+      message: tooltip,
+      child: InkWell(
+        onTap: onPressed,
+        borderRadius: BorderRadius.circular(12),
+        child: Container(
+          width: 42.w,
+          height: 42.w,
+          alignment: Alignment.center,
+          decoration: BoxDecoration(
+            color: isDark
+                ? Colors.white.withValues(alpha: 0.06)
+                : AppColors.primaryBlue.withValues(alpha: 0.08),
+            borderRadius: BorderRadius.circular(12),
+          ),
+          child: Icon(
+            icon,
+            size: 24.sp,
+            color: isDark ? AppColors.darkTextPrimary : AppColors.primaryBlue,
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildCurrentMonthBadge(bool isDark) {
+    return Container(
+      key: const ValueKey("current-month-badge"),
+      padding: EdgeInsets.symmetric(horizontal: 10.w, vertical: 4.h),
+      decoration: BoxDecoration(
+        color: AppColors.green.withValues(alpha: isDark ? 0.22 : 0.12),
+        borderRadius: BorderRadius.circular(999),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(Icons.today_rounded, size: 13.sp, color: AppColors.green),
+          SizedBox(width: 4.w),
+          Text(
+            "本月",
+            style: TextStyle(
+              fontSize: 11.sp,
+              fontWeight: FontWeight.w700,
+              color: AppColors.green,
+              height: 1,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildBackToCurrentButton(StatisticsController logic, bool isDark) {
+    return InkWell(
+      key: const ValueKey("back-to-current-month"),
+      onTap: logic.resetToCurrentMonth,
+      borderRadius: BorderRadius.circular(999),
+      child: Container(
+        padding: EdgeInsets.symmetric(horizontal: 10.w, vertical: 4.h),
+        decoration: BoxDecoration(
+          color: AppColors.primaryBlue.withValues(alpha: isDark ? 0.2 : 0.1),
+          borderRadius: BorderRadius.circular(999),
+        ),
+        child: Text(
+          "回到本月",
+          style: TextStyle(
+            fontSize: 11.sp,
+            fontWeight: FontWeight.w700,
+            color: AppColors.primaryBlue,
+            height: 1,
+          ),
+        ),
+      ),
+    );
+  }
+
   Widget _buildWorkCard(
     StatisticsController logic,
     bool isDark,
@@ -90,7 +230,7 @@ class StatisticsView extends StatelessWidget {
             children: [
               Obx(
                 () => Text(
-                  "${logic.currentMonth.value}月工时",
+                  "${logic.selectedMonthLabel}工时",
                   style: TextStyle(
                     fontSize: 16.sp,
                     fontWeight: FontWeight.bold,
@@ -229,7 +369,7 @@ class StatisticsView extends StatelessWidget {
               Expanded(
                 child: Obx(
                   () => _buildExpenseItem(
-                    "待报销总额",
+                    "待报销",
                     "¥${logic.unreimbursedAmount.value.toStringAsFixed(0)}",
                     color: AppColors.orange,
                     isBold: true,
@@ -241,7 +381,7 @@ class StatisticsView extends StatelessWidget {
               Expanded(
                 child: Obx(
                   () => _buildExpenseItem(
-                    "累计已报销",
+                    "已报销",
                     "¥${logic.reimbursedAmount.value.toStringAsFixed(0)}",
                     color: AppColors.green,
                     textSecondary: textSecondary,
@@ -261,8 +401,8 @@ class StatisticsView extends StatelessWidget {
               Expanded(
                 child: Obx(
                   () => _buildExpenseItem(
-                    "${logic.nextMonth.value}月订阅",
-                    "¥${logic.nextMonthSubCost.value.toStringAsFixed(0)}",
+                    "本月订阅",
+                    "¥${logic.selectedMonthSubCost.value.toStringAsFixed(0)}",
                     color: AppColors.purple,
                     textSecondary: textSecondary,
                   ),
@@ -290,7 +430,7 @@ class StatisticsView extends StatelessWidget {
   BoxDecoration _cardDecoration(bool isDark, Color cardColor) {
     return BoxDecoration(
       color: cardColor,
-      borderRadius: BorderRadius.circular(24),
+      borderRadius: BorderRadius.circular(18),
       boxShadow: [
         BoxShadow(
           color: isDark

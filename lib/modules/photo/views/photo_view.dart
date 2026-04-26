@@ -191,18 +191,55 @@ class PhotoView extends StatelessWidget {
               backgroundColor: AppColors.primaryBlue,
               icon: const Icon(Icons.camera_alt_rounded, color: Colors.white),
               label: Text(
-                "拍项目",
+                "添加照片",
                 style: TextStyle(
                   fontSize: 16.sp,
                   fontWeight: FontWeight.bold,
                   color: Colors.white,
                 ),
               ),
-              onPressed: () => controller.captureWithSystemCamera(),
+              onPressed: () => _showAddPhotoActions(context, controller),
             ),
           ),
         ),
       ),
+    );
+  }
+
+  void _showAddPhotoActions(BuildContext context, PhotoController controller) {
+    Get.bottomSheet(
+      SafeArea(
+        child: Container(
+          padding: EdgeInsets.fromLTRB(16.w, 12.h, 16.w, 20.h),
+          decoration: BoxDecoration(
+            color: Theme.of(context).cardColor,
+            borderRadius: BorderRadius.vertical(top: Radius.circular(20.r)),
+          ),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              ListTile(
+                leading: const Icon(Icons.camera_alt_rounded),
+                title: const Text("拍摄照片"),
+                onTap: () {
+                  Get.back();
+                  controller.captureWithSystemCamera();
+                },
+              ),
+              ListTile(
+                leading: const Icon(Icons.photo_library_rounded),
+                title: const Text("从相册导入"),
+                subtitle: const Text("导入后请求删除系统相册原图"),
+                onTap: () {
+                  Get.back();
+                  controller.importFromGallery();
+                },
+              ),
+            ],
+          ),
+        ),
+      ),
+      backgroundColor: Colors.transparent,
     );
   }
 }

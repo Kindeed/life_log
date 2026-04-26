@@ -7,9 +7,11 @@ import 'package:get/get.dart';
 import 'package:life_log/modules/photo/photo_model.dart';
 import 'package:life_log/modules/photo/photo_repository.dart';
 import 'package:life_log/modules/photo/views/capture_dialog.dart';
+import 'package:life_log/modules/photo/views/gallery_import_view.dart';
 import '../../common/services/log_service.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:image_picker/image_picker.dart';
+import 'package:photo_manager/photo_manager.dart';
 
 class PhotoController extends GetxController {
   static PhotoController get to => Get.find();
@@ -95,11 +97,36 @@ class PhotoController extends GetxController {
     }
   }
 
+  Future<void> importFromGallery({String? initialProject}) async {
+    try {
+      final result = await Get.to<GalleryImportResult>(
+        () => const GalleryImportView(),
+      );
+      if (result == null) return;
+
+      showCaptureDialog(
+        tempPath: result.file.path,
+        initialProject: initialProject,
+        onConfirm: (projectName, description) {
+          _processAndSavePhoto(
+            result.file.path,
+            projectName,
+            description,
+            sourceAssetId: result.asset.id,
+          );
+        },
+      );
+    } catch (e) {
+      Get.snackbar("错误", "无法导入相册照片: $e");
+    }
+  }
+
   Future<void> _processAndSavePhoto(
     String tempPath,
     String projectName,
-    String description,
-  ) async {
+    String description, {
+    String? sourceAssetId,
+  }) async {
     try {
       isLoading.value = true;
       final photoItem = await PhotoRepository.to.processAndSavePhoto(
@@ -107,7 +134,12 @@ class PhotoController extends GetxController {
         projectName: projectName,
         description: description,
         deviceName: _deviceName,
+        deleteSource: sourceAssetId == null,
       );
+
+      if (sourceAssetId != null) {
+        await _deleteSourceGalleryAsset(sourceAssetId);
+      }
 
       Get.snackbar(
         "归档成功",
@@ -124,6 +156,27 @@ class PhotoController extends GetxController {
       Get.snackbar("错误", "保存照片失败: $e");
     } finally {
       isLoading.value = false;
+    }
+  }
+
+  Future<void> _deleteSourceGalleryAsset(String sourceAssetId) async {
+    try {
+      final deletedIds = await PhotoManager.editor.deleteWithIds([
+        sourceAssetId,
+      ]);
+      if (deletedIds.isEmpty) {
+        Get.snackbar(
+          "原图未删除",
+          "照片已归档，但系统相册原图仍保留",
+          snackPosition: SnackPosition.BOTTOM,
+        );
+      }
+    } catch (e) {
+      Get.snackbar(
+        "原图未删除",
+        "照片已归档，但删除系统相册原图失败: $e",
+        snackPosition: SnackPosition.BOTTOM,
+      );
     }
   }
 

@@ -361,7 +361,12 @@ class _AddLogSheetState extends State<AddLogSheet> {
     if (widget.existingLog != null) {
       log.id = widget.existingLog!.id;
       log.remoteId = widget.existingLog!.remoteId;
+      log.syncId = widget.existingLog!.syncId;
+      log.remoteVersion = widget.existingLog!.remoteVersion;
+      log.remoteUpdatedAt = widget.existingLog!.remoteUpdatedAt;
       log.syncedAt = widget.existingLog!.syncedAt;
+      log.deletedAt = widget.existingLog!.deletedAt;
+      log.pendingDelete = widget.existingLog!.pendingDelete;
     }
 
     switch (_selectedType) {

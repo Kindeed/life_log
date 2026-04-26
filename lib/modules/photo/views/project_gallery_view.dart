@@ -267,12 +267,51 @@ class _ProjectGalleryViewState extends State<ProjectGalleryView> {
         if (isMultiSelectMode.value) return const SizedBox.shrink();
         return FloatingActionButton(
           backgroundColor: AppColors.primaryBlue,
-          onPressed: () => controller.captureWithSystemCamera(
-            initialProject: widget.projectName,
-          ),
-          child: const Icon(Icons.camera_alt, color: Colors.white),
+          onPressed: () => _showAddPhotoActions(),
+          child: const Icon(Icons.add_photo_alternate, color: Colors.white),
         );
       }),
+    );
+  }
+
+  void _showAddPhotoActions() {
+    Get.bottomSheet(
+      SafeArea(
+        child: Container(
+          padding: EdgeInsets.fromLTRB(16.w, 12.h, 16.w, 20.h),
+          decoration: BoxDecoration(
+            color: Theme.of(context).cardColor,
+            borderRadius: BorderRadius.vertical(top: Radius.circular(20.r)),
+          ),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              ListTile(
+                leading: const Icon(Icons.camera_alt_rounded),
+                title: const Text("拍摄照片"),
+                onTap: () {
+                  Get.back();
+                  controller.captureWithSystemCamera(
+                    initialProject: widget.projectName,
+                  );
+                },
+              ),
+              ListTile(
+                leading: const Icon(Icons.photo_library_rounded),
+                title: const Text("从相册导入"),
+                subtitle: const Text("导入后请求删除系统相册原图"),
+                onTap: () {
+                  Get.back();
+                  controller.importFromGallery(
+                    initialProject: widget.projectName,
+                  );
+                },
+              ),
+            ],
+          ),
+        ),
+      ),
+      backgroundColor: Colors.transparent,
     );
   }
 

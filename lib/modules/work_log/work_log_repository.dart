@@ -22,12 +22,17 @@ class WorkLogRepository extends GetxService {
 
   // --- 修改业务 ---
   Future<void> saveLog(WorkLog log) async {
+    log.syncId ??= SyncService.to.newSyncId();
+
     // 1. 本地存储 (包含产生 dirty/remoteId)
     await DbService.to.addLog(log);
 
     // 2. 触发云端同步 (不抛出异常以保证离线可用)
     try {
-      await SyncService.to.pushWorkLog(log);
+      final success = await SyncService.to.pushWorkLog(log);
+      if (!success) {
+        LogService.to.error('WorkLogRepository', '云端同步未完成，保留待同步状态');
+      }
     } catch (e) {
       LogService.to.error('WorkLogRepository', '云端同步失败: $e');
     }
@@ -35,20 +40,19 @@ class WorkLogRepository extends GetxService {
 
   // 删除业务逻辑
   Future<void> deleteLog(int id) async {
-    // 1. 获取 remoteId 以便云端删除
-    final log = await DbService.to.getWorkLog(id);
-    final remoteId = log?.remoteId;
+    final log = await DbService.to.markLogDeleted(id);
 
-    // 2. 本地删除
-    await DbService.to.deleteLog(id);
-
-    // 3. 远端删除
-    if (remoteId != null) {
-      try {
-        await SyncService.to.deleteWorkLog(remoteId);
-      } catch (e) {
-        LogService.to.error('WorkLogRepository', '云端删除失败: $e');
+    try {
+      if (log == null || log.remoteId == null) {
+        await DbService.to.purgeDeletedLog(id);
+      } else {
+        final success = await SyncService.to.deleteWorkLog(log);
+        if (success) {
+          await DbService.to.purgeDeletedLog(id);
+        }
       }
+    } catch (e) {
+      LogService.to.error('WorkLogRepository', '云端删除失败: $e');
     }
   }
 }

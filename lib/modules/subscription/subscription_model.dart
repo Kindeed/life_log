@@ -8,8 +8,13 @@ class Subscription {
 
   // Sync fields
   int? remoteId;
+  String? syncId;
+  int remoteVersion = 0;
+  DateTime? remoteUpdatedAt;
   DateTime? syncedAt;
   bool isDirty = false;
+  DateTime? deletedAt;
+  bool pendingDelete = false;
 
   late String name;
 
@@ -42,10 +47,18 @@ extension SubscriptionDomainLogic on Subscription {
   }
 
   /// 判断该订阅在指定月份是否需要扣费，并返回费用
-  double costForMonth(int targetMonth) {
+  double costForMonth(DateTime targetMonth) {
     final p = price ?? 0.0;
     if (cycle == SubscriptionCycle.monthly) return p;
-    if (nextPaymentDate.month == targetMonth) return p;
+    if (cycle == SubscriptionCycle.yearly &&
+        nextPaymentDate.month == targetMonth.month) {
+      return p;
+    }
+    if (cycle == SubscriptionCycle.oneTime &&
+        nextPaymentDate.year == targetMonth.year &&
+        nextPaymentDate.month == targetMonth.month) {
+      return p;
+    }
     return 0.0;
   }
 }
@@ -55,6 +68,6 @@ extension SubscriptionListDomainLogic on Iterable<Subscription> {
   double get totalYearlyCost => fold(0.0, (sum, sub) => sum + sub.yearlyCost);
 
   /// 计算所有订阅在指定月份的花费总计
-  double totalCostForMonth(int targetMonth) =>
+  double totalCostForMonth(DateTime targetMonth) =>
       fold(0.0, (sum, sub) => sum + sub.costForMonth(targetMonth));
 }

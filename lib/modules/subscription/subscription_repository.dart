@@ -18,6 +18,8 @@ class SubscriptionRepository extends GetxService {
 
   // --- 修改业务 ---
   Future<void> saveSubscription(Subscription sub, int currentCount) async {
+    sub.syncId ??= SyncService.to.newSyncId();
+
     // 如果是新增（没有 sortIndex），把它排到最后
     sub.sortIndex ??= currentCount;
 
@@ -26,7 +28,10 @@ class SubscriptionRepository extends GetxService {
 
     // 2. 云端同步
     try {
-      await SyncService.to.pushSubscription(sub);
+      final success = await SyncService.to.pushSubscription(sub);
+      if (!success) {
+        LogService.to.error('SubscriptionRepository', '云端同步未完成，保留待同步状态');
+      }
     } catch (e) {
       LogService.to.error('SubscriptionRepository', '云端同步失败: $e');
     }
@@ -34,20 +39,19 @@ class SubscriptionRepository extends GetxService {
 
   // 删除业务逻辑
   Future<void> deleteSubscription(int id) async {
-    // 1. 尝试获取 remoteId
-    final sub = await DbService.to.getSubscription(id);
-    final remoteId = sub?.remoteId;
+    final sub = await DbService.to.markSubscriptionDeleted(id);
 
-    // 2. 本地删除
-    await DbService.to.deleteSubscription(id);
-
-    // 3. 云端删除
-    if (remoteId != null) {
-      try {
-        await SyncService.to.deleteSubscription(remoteId);
-      } catch (e) {
-        LogService.to.error('SubscriptionRepository', '云端删除失败: $e');
+    try {
+      if (sub == null || sub.remoteId == null) {
+        await DbService.to.purgeDeletedSubscription(id);
+      } else {
+        final success = await SyncService.to.deleteSubscription(sub);
+        if (success) {
+          await DbService.to.purgeDeletedSubscription(id);
+        }
       }
+    } catch (e) {
+      LogService.to.error('SubscriptionRepository', '云端删除失败: $e');
     }
   }
 

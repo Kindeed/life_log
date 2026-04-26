@@ -7,8 +7,7 @@ import '../subscription/subscription_model.dart';
 
 class StatisticsController extends GetxController {
   // --- 1. 基础数据 ---
-  final currentMonth = DateTime.now().month.obs;
-  final nextMonth = 0.obs;
+  final selectedMonth = DateTime(DateTime.now().year, DateTime.now().month).obs;
 
   // --- 2. 工时/天数 (依然只看本月) ---
   final workHours = 0.0.obs;
@@ -17,10 +16,9 @@ class StatisticsController extends GetxController {
   final restDays = 0.obs;
 
   // --- 3. 财务统计 ---
-  final nextMonthSubCost = 0.0.obs;
+  final selectedMonthSubCost = 0.0.obs;
   final yearSubCost = 0.0.obs;
 
-  // 【修改】这两个变量现在代表“全部历史累计”
   final reimbursedAmount = 0.0.obs;
   final unreimbursedAmount = 0.0.obs;
 
@@ -34,7 +32,6 @@ class StatisticsController extends GetxController {
   void onInit() {
     super.onInit();
     LogService.to.debug('Stats', 'Controller Init');
-    _updateMonthLabels();
     refreshStats();
 
     // 监听工时变化
@@ -64,12 +61,33 @@ class StatisticsController extends GetxController {
     _calculateStats(allLogs, allSubs);
   }
 
-  void _updateMonthLabels() {
+  String get selectedMonthLabel {
+    final month = selectedMonth.value;
+    return "${month.year}年${month.month}月";
+  }
+
+  bool get isCurrentMonth {
     final now = DateTime.now();
-    currentMonth.value = now.month;
-    int next = now.month + 1;
-    if (next > 12) next = 1;
-    nextMonth.value = next;
+    final month = selectedMonth.value;
+    return month.year == now.year && month.month == now.month;
+  }
+
+  void previousMonth() {
+    final month = selectedMonth.value;
+    selectedMonth.value = DateTime(month.year, month.month - 1);
+    refreshStats();
+  }
+
+  void nextMonth() {
+    final month = selectedMonth.value;
+    selectedMonth.value = DateTime(month.year, month.month + 1);
+    refreshStats();
+  }
+
+  void resetToCurrentMonth() {
+    final now = DateTime.now();
+    selectedMonth.value = DateTime(now.year, now.month);
+    refreshStats();
   }
 
   void _calculateStats(List<WorkLog> logs, List<Subscription> subs) {
@@ -77,21 +95,23 @@ class StatisticsController extends GetxController {
     lastUpdated.value =
         "${now.hour}:${now.minute.toString().padLeft(2, '0')}:${now.second.toString().padLeft(2, '0')}";
     LogService.to.debug('Stats', 'Recalculated at ${lastUpdated.value}');
-    _updateMonthLabels();
+
+    final month = selectedMonth.value;
+    final monthLogs = logs.inMonth(month).toList();
 
     // 1. 报销统计
-    reimbursedAmount.value = logs.totalReimbursedAmount;
-    unreimbursedAmount.value = logs.totalUnreimbursedAmount;
+    reimbursedAmount.value = monthLogs.totalReimbursedAmount;
+    unreimbursedAmount.value = monthLogs.totalUnreimbursedAmount;
 
     // 2. 工时统计
-    final monthStats = logs.getMonthStats(now);
+    final monthStats = logs.getMonthStats(month);
     workHours.value = monthStats.workHours;
     workDays.value = monthStats.workDays;
     tripDays.value = monthStats.tripDays;
     restDays.value = monthStats.restDays;
 
     // 3. 订阅统计
-    nextMonthSubCost.value = subs.totalCostForMonth(nextMonth.value);
+    selectedMonthSubCost.value = subs.totalCostForMonth(month);
     yearSubCost.value = subs.totalYearlyCost;
   }
 }

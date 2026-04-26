@@ -23,6 +23,7 @@ class PhotoRepository extends GetxService {
     required String projectName,
     required String description,
     required String deviceName,
+    bool deleteSource = true,
   }) async {
     final appDir = await getApplicationDocumentsDirectory();
 
@@ -50,9 +51,12 @@ class PhotoRepository extends GetxService {
     final fileName = "${filePrefix}_$dateStr.jpg";
     final savePath = "${folderPath.path}/$fileName";
 
-    // Move file
+    // Copy into the app-private archive. Gallery imports must keep the source
+    // until the platform media delete request has completed.
     await File(tempPath).copy(savePath);
-    await File(tempPath).delete();
+    if (deleteSource) {
+      await File(tempPath).delete();
+    }
 
     // Save to DB
     final photoItem = PhotoItem()

@@ -33,6 +33,9 @@ class ProfileController extends GetxController {
   }
 
   Future<bool> syncData() async {
-    return await SyncService.to.syncAll();
+    return await SyncService.to.syncAll(
+      reason: 'manual',
+      forceFullRefresh: true,
+    );
   }
 }
