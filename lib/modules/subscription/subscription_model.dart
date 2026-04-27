@@ -7,6 +7,7 @@ class Subscription {
   Id id = Isar.autoIncrement;
 
   // Sync fields
+  String? ownerUserId;
   int? remoteId;
   String? syncId;
   int remoteVersion = 0;

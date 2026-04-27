@@ -157,9 +157,7 @@ class LogDetailCard extends StatelessWidget {
                     Text(
                       "${date.month}月${date.day}日 · 农历${lunar.getMonthInChinese()}${lunar.getDayInChinese()}",
                       style: TextStyle(
-                        color: isDark
-                            ? AppColors.darkTextSecondary
-                            : AppColors.lightTextSecondary,
+                        color: Theme.of(context).colorScheme.onSurfaceVariant,
                         fontSize: 12.sp,
                       ),
                     ),
@@ -213,9 +211,7 @@ class LogDetailCard extends StatelessWidget {
               child: Text(
                 log.note!,
                 style: TextStyle(
-                  color: isDark
-                      ? AppColors.darkTextSecondary
-                      : AppColors.lightTextSecondary,
+                  color: Theme.of(context).colorScheme.onSurfaceVariant,
                   fontSize: 13.sp,
                   height: 1.4,
                 ),
@@ -288,9 +284,7 @@ class LogDetailCard extends StatelessWidget {
             child: Text(
               "取消",
               style: TextStyle(
-                color: isDark
-                    ? AppColors.darkTextSecondary
-                    : AppColors.lightTextSecondary,
+                color: Theme.of(context).colorScheme.onSurfaceVariant,
               ),
             ),
           ),

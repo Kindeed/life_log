@@ -1,0 +1,83 @@
+import 'package:flutter/material.dart';
+
+class AppSemanticColors extends ThemeExtension<AppSemanticColors> {
+  final Color work;
+  final Color expense;
+  final Color project;
+  final Color stats;
+  final Color success;
+  final Color warning;
+  final Color mutedSurface;
+  final Color border;
+
+  const AppSemanticColors({
+    required this.work,
+    required this.expense,
+    required this.project,
+    required this.stats,
+    required this.success,
+    required this.warning,
+    required this.mutedSurface,
+    required this.border,
+  });
+
+  static const light = AppSemanticColors(
+    work: Color(0xFF1A73E8),
+    expense: Color(0xFF6750A4),
+    project: Color(0xFF2E7D32),
+    stats: Color(0xFF006A6A),
+    success: Color(0xFF2E7D32),
+    warning: Color(0xFFFF6D00),
+    mutedSurface: Color(0xFFF7F9FC),
+    border: Color(0xFFE0E0E0),
+  );
+
+  static const dark = AppSemanticColors(
+    work: Color(0xFF8AB4F8),
+    expense: Color(0xFFD0BCFF),
+    project: Color(0xFFA5D6A7),
+    stats: Color(0xFF80CBC4),
+    success: Color(0xFFA5D6A7),
+    warning: Color(0xFFFFB74D),
+    mutedSurface: Color(0xFF1E1E1E),
+    border: Color(0xFF2C2C2C),
+  );
+
+  @override
+  AppSemanticColors copyWith({
+    Color? work,
+    Color? expense,
+    Color? project,
+    Color? stats,
+    Color? success,
+    Color? warning,
+    Color? mutedSurface,
+    Color? border,
+  }) {
+    return AppSemanticColors(
+      work: work ?? this.work,
+      expense: expense ?? this.expense,
+      project: project ?? this.project,
+      stats: stats ?? this.stats,
+      success: success ?? this.success,
+      warning: warning ?? this.warning,
+      mutedSurface: mutedSurface ?? this.mutedSurface,
+      border: border ?? this.border,
+    );
+  }
+
+  @override
+  AppSemanticColors lerp(ThemeExtension<AppSemanticColors>? other, double t) {
+    if (other is! AppSemanticColors) return this;
+    return AppSemanticColors(
+      work: Color.lerp(work, other.work, t)!,
+      expense: Color.lerp(expense, other.expense, t)!,
+      project: Color.lerp(project, other.project, t)!,
+      stats: Color.lerp(stats, other.stats, t)!,
+      success: Color.lerp(success, other.success, t)!,
+      warning: Color.lerp(warning, other.warning, t)!,
+      mutedSurface: Color.lerp(mutedSurface, other.mutedSurface, t)!,
+      border: Color.lerp(border, other.border, t)!,
+    );
+  }
+}

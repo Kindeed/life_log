@@ -39,10 +39,8 @@ class _AddSubscriptionSheetState extends State<AddSubscriptionSheet> {
     final isDark = theme.brightness == Brightness.dark;
     final cardColor = theme.cardColor;
     final bgColor = isDark ? Colors.grey[850]! : Colors.grey[50]!;
-    final textPrimary = isDark
-        ? AppColors.darkTextPrimary
-        : AppColors.lightTextPrimary;
-    final textSecondary = isDark ? Colors.grey[400]! : Colors.grey[700]!;
+    final textPrimary = theme.colorScheme.onSurface;
+    final textSecondary = theme.colorScheme.onSurfaceVariant;
     final borderColor = isDark ? Colors.grey[700]! : Colors.grey[200]!;
 
     final double sheetHeight = MediaQuery.of(context).size.height * 0.85;
@@ -339,6 +337,7 @@ class _AddSubscriptionSheetState extends State<AddSubscriptionSheet> {
 
     if (widget.sub != null) {
       sub.id = widget.sub!.id;
+      sub.ownerUserId = widget.sub!.ownerUserId;
       sub.sortIndex = widget.sub!.sortIndex;
       sub.remoteId = widget.sub!.remoteId;
       sub.syncId = widget.sub!.syncId;

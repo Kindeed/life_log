@@ -42,9 +42,7 @@ class DayCell extends StatelessWidget {
     final holiday = HolidayUtil.getHoliday(dateStr);
 
     String bottomText = lunar.getDayInChinese();
-    Color bottomColor = isDark
-        ? AppColors.darkTextSecondary
-        : AppColors.lightTextSecondary;
+    Color bottomColor = Theme.of(context).colorScheme.onSurfaceVariant;
     FontWeight bottomWeight = FontWeight.normal;
     bool isSpecial = false;
 

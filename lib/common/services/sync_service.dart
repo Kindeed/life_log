@@ -107,7 +107,9 @@ class SyncService extends GetxService {
     });
 
     if (AuthService.to.isLoggedIn) {
-      syncAll(reason: 'startup');
+      DbService.to.claimUnownedRecordsForCurrentUser().then((_) {
+        syncAll(reason: 'startup');
+      });
     }
   }
 

@@ -77,12 +77,8 @@ class _AddLogSheetState extends State<AddLogSheet> {
     final bgColor = isDark
         ? AppColors.darkBackground
         : AppColors.lightBackground;
-    final textPrimary = isDark
-        ? AppColors.darkTextPrimary
-        : AppColors.lightTextPrimary;
-    final textSecondary = isDark
-        ? AppColors.darkTextSecondary
-        : AppColors.lightTextSecondary;
+    final textPrimary = theme.colorScheme.onSurface;
+    final textSecondary = theme.colorScheme.onSurfaceVariant;
 
     return Container(
       height: 650.h,
@@ -225,9 +221,7 @@ class _AddLogSheetState extends State<AddLogSheet> {
               fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
               color: isSelected
                   ? textPrimary
-                  : (isDark
-                        ? AppColors.darkTextSecondary
-                        : AppColors.lightTextSecondary),
+                  : Theme.of(context).colorScheme.onSurfaceVariant,
             ),
           ),
         ),
@@ -360,6 +354,7 @@ class _AddLogSheetState extends State<AddLogSheet> {
 
     if (widget.existingLog != null) {
       log.id = widget.existingLog!.id;
+      log.ownerUserId = widget.existingLog!.ownerUserId;
       log.remoteId = widget.existingLog!.remoteId;
       log.syncId = widget.existingLog!.syncId;
       log.remoteVersion = widget.existingLog!.remoteVersion;
@@ -445,11 +440,11 @@ class _AddLogSheetState extends State<AddLogSheet> {
           decoration: InputDecoration(
             prefixIcon: Icon(
               Icons.access_time,
-              color: isDark ? AppColors.darkTextSecondary : null,
+              color: Theme.of(context).colorScheme.onSurfaceVariant,
             ),
             hintText: "自定义时长 (小时)",
             hintStyle: TextStyle(
-              color: isDark ? AppColors.darkTextSecondary : null,
+              color: Theme.of(context).colorScheme.onSurfaceVariant,
             ),
             filled: true,
             fillColor: bgColor,
@@ -490,9 +485,7 @@ class _AddLogSheetState extends State<AddLogSheet> {
           style: TextStyle(
             color: isSelected
                 ? AppColors.primaryBlue
-                : (isDark
-                      ? AppColors.darkTextPrimary
-                      : AppColors.lightTextPrimary),
+                : Theme.of(context).colorScheme.onSurface,
             fontWeight: FontWeight.bold,
           ),
         ),
@@ -512,11 +505,11 @@ class _AddLogSheetState extends State<AddLogSheet> {
                 decoration: InputDecoration(
                   prefixIcon: Icon(
                     Icons.location_on_outlined,
-                    color: isDark ? AppColors.darkTextSecondary : null,
+                    color: Theme.of(context).colorScheme.onSurfaceVariant,
                   ),
                   hintText: "城市/地点",
                   hintStyle: TextStyle(
-                    color: isDark ? AppColors.darkTextSecondary : null,
+                    color: Theme.of(context).colorScheme.onSurfaceVariant,
                   ),
                   filled: true,
                   fillColor: bgColor,
@@ -558,11 +551,11 @@ class _AddLogSheetState extends State<AddLogSheet> {
           decoration: InputDecoration(
             prefixIcon: Icon(
               Icons.attach_money,
-              color: isDark ? AppColors.darkTextSecondary : null,
+              color: Theme.of(context).colorScheme.onSurfaceVariant,
             ),
             hintText: "垫付金额 (¥)",
             hintStyle: TextStyle(
-              color: isDark ? AppColors.darkTextSecondary : null,
+              color: Theme.of(context).colorScheme.onSurfaceVariant,
             ),
             filled: true,
             fillColor: bgColor,
@@ -654,9 +647,7 @@ class _AddLogSheetState extends State<AddLogSheet> {
                   style: TextStyle(
                     color: isSelected
                         ? AppColors.purple
-                        : (isDark
-                              ? AppColors.darkTextSecondary
-                              : AppColors.lightTextSecondary),
+                        : Theme.of(context).colorScheme.onSurfaceVariant,
                     fontWeight: isSelected
                         ? FontWeight.bold
                         : FontWeight.normal,
@@ -675,11 +666,11 @@ class _AddLogSheetState extends State<AddLogSheet> {
             decoration: InputDecoration(
               prefixIcon: Icon(
                 Icons.edit_note,
-                color: isDark ? AppColors.darkTextSecondary : null,
+                color: Theme.of(context).colorScheme.onSurfaceVariant,
               ),
               hintText: "请输入请假原因...",
               hintStyle: TextStyle(
-                color: isDark ? AppColors.darkTextSecondary : null,
+                color: Theme.of(context).colorScheme.onSurfaceVariant,
               ),
               filled: true,
               fillColor: bgColor,

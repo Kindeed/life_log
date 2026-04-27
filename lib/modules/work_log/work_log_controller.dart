@@ -11,7 +11,7 @@ class WorkLogController extends GetxController {
   // --- 1. 日历状态 ---
   final focusedDay = DateTime.now().obs;
   final selectedDay = DateTime.now().obs;
-  final calendarFormat = CalendarFormat.month.obs;
+  final calendarFormat = CalendarFormat.week.obs;
 
   // --- 2. 数据源 ---
   final logsMap = <DateTime, List<WorkLog>>{}.obs;

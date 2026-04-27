@@ -4,6 +4,7 @@ import 'package:path_provider/path_provider.dart';
 import '../../modules/work_log/work_log_model.dart';
 import '../../modules/subscription/subscription_model.dart';
 import '../../modules/photo/photo_model.dart'; // Import PhotoModel
+import '../services/auth_service.dart';
 // import '../services/sync_service.dart'; // Removed cyclic dependency
 
 class DbService extends GetxService {
@@ -11,6 +12,52 @@ class DbService extends GetxService {
   static DbService get to => Get.find();
 
   late Isar isar; // 数据库实例
+
+  String? get currentOwnerUserId =>
+      Get.isRegistered<AuthService>() ? AuthService.to.userId : null;
+
+  bool _belongsToCurrentUser(String? ownerUserId) {
+    final currentUserId = currentOwnerUserId;
+    return currentUserId == null
+        ? ownerUserId == null
+        : ownerUserId == currentUserId;
+  }
+
+  void _stampWorkLogOwner(WorkLog log) {
+    log.ownerUserId ??= currentOwnerUserId;
+  }
+
+  void _stampSubscriptionOwner(Subscription sub) {
+    sub.ownerUserId ??= currentOwnerUserId;
+  }
+
+  Future<void> claimUnownedRecordsForCurrentUser() async {
+    final currentUserId = currentOwnerUserId;
+    if (currentUserId == null) return;
+
+    await isar.writeTxn(() async {
+      final logs = await isar.workLogs.filter().ownerUserIdIsNull().findAll();
+      for (final log in logs) {
+        log.ownerUserId = currentUserId;
+        log.isDirty = true;
+      }
+      if (logs.isNotEmpty) {
+        await isar.workLogs.putAll(logs);
+      }
+
+      final subs = await isar.subscriptions
+          .filter()
+          .ownerUserIdIsNull()
+          .findAll();
+      for (final sub in subs) {
+        sub.ownerUserId = currentUserId;
+        sub.isDirty = true;
+      }
+      if (subs.isNotEmpty) {
+        await isar.subscriptions.putAll(subs);
+      }
+    });
+  }
 
   // --- 1. 初始化数据库 (开门) ---
   Future<DbService> init() async {
@@ -30,6 +77,7 @@ class DbService extends GetxService {
   // --- 2. 增加一条日志 (入库) ---
   Future<int> addLog(WorkLog log) async {
     final id = await isar.writeTxn(() async {
+      _stampWorkLogOwner(log);
       return await isar.workLogs.put(log); // Insert or update
     });
     return id;
@@ -47,7 +95,12 @@ class DbService extends GetxService {
         .dateLessThan(end, include: false)
         .sortByDate()
         .findAll();
-    return logs.where((log) => log.deletedAt == null).toList();
+    return logs
+        .where(
+          (log) =>
+              log.deletedAt == null && _belongsToCurrentUser(log.ownerUserId),
+        )
+        .toList();
   }
 
   // --- 【新增】4. 获取所有日志 (供日历初始化使用) ---
@@ -56,16 +109,24 @@ class DbService extends GetxService {
         .where()
         .sortByDate() // 按日期排序，保证日历加载顺序
         .findAll();
-    return logs.where((log) => log.deletedAt == null).toList();
+    return logs
+        .where(
+          (log) =>
+              log.deletedAt == null && _belongsToCurrentUser(log.ownerUserId),
+        )
+        .toList();
   }
 
   Future<List<WorkLog>> getAllLogsForSync() async {
-    return await isar.workLogs.where().sortByDate().findAll();
+    final logs = await isar.workLogs.where().sortByDate().findAll();
+    return logs.where((log) => _belongsToCurrentUser(log.ownerUserId)).toList();
   }
 
   // --- 5. 获取单条记录 (供 Repository 查询使用) ---
   Future<WorkLog?> getWorkLog(int id) async {
-    return await isar.workLogs.get(id);
+    final log = await isar.workLogs.get(id);
+    if (log == null || !_belongsToCurrentUser(log.ownerUserId)) return null;
+    return log;
   }
 
   // 获取日志变更流
@@ -82,6 +143,7 @@ class DbService extends GetxService {
     return await isar.writeTxn(() async {
       final log = await isar.workLogs.get(id);
       if (log == null) return null;
+      if (!_belongsToCurrentUser(log.ownerUserId)) return null;
       log.deletedAt = DateTime.now().toUtc();
       log.pendingDelete = true;
       log.isDirty = true;
@@ -104,16 +166,27 @@ class DbService extends GetxService {
         .where()
         .sortByNextPaymentDate()
         .findAll();
-    return subs.where((sub) => sub.deletedAt == null).toList();
+    return subs
+        .where(
+          (sub) =>
+              sub.deletedAt == null && _belongsToCurrentUser(sub.ownerUserId),
+        )
+        .toList();
   }
 
   Future<List<Subscription>> getAllSubscriptionsForSync() async {
-    return await isar.subscriptions.where().sortByNextPaymentDate().findAll();
+    final subs = await isar.subscriptions
+        .where()
+        .sortByNextPaymentDate()
+        .findAll();
+    return subs.where((sub) => _belongsToCurrentUser(sub.ownerUserId)).toList();
   }
 
   // 2. 获取单条订阅
   Future<Subscription?> getSubscription(int id) async {
-    return await isar.subscriptions.get(id);
+    final sub = await isar.subscriptions.get(id);
+    if (sub == null || !_belongsToCurrentUser(sub.ownerUserId)) return null;
+    return sub;
   }
 
   // 获取订阅变更流
@@ -122,6 +195,7 @@ class DbService extends GetxService {
   // 2. 添加/修改订阅
   Future<int> addSubscription(Subscription sub) async {
     final id = await isar.writeTxn(() async {
+      _stampSubscriptionOwner(sub);
       return await isar.subscriptions.put(sub); // Insert or update
     });
     return id;
@@ -138,6 +212,7 @@ class DbService extends GetxService {
     return await isar.writeTxn(() async {
       final sub = await isar.subscriptions.get(id);
       if (sub == null) return null;
+      if (!_belongsToCurrentUser(sub.ownerUserId)) return null;
       sub.deletedAt = DateTime.now().toUtc();
       sub.pendingDelete = true;
       sub.isDirty = true;
@@ -156,6 +231,7 @@ class DbService extends GetxService {
   Future<void> reorderSubscriptions(List<Subscription> subs) async {
     await isar.writeTxn(() async {
       for (int i = 0; i < subs.length; i++) {
+        _stampSubscriptionOwner(subs[i]);
         subs[i].sortIndex = i;
         subs[i].isDirty = true;
         await isar.subscriptions.put(subs[i]);
@@ -232,6 +308,7 @@ class DbService extends GetxService {
             return;
           }
           log.deletedAt = remoteDeletedAt;
+          log.ownerUserId = currentOwnerUserId;
           log.pendingDelete = false;
           log.remoteId = remoteId;
           log.syncId = remoteSyncId ?? log.syncId;
@@ -249,6 +326,7 @@ class DbService extends GetxService {
 
       // 冲突检测：如果本地数据处于脏标记，优先保留本地修改等待 Push，防止被旧数据覆盖
       if (log.isDirty) {
+        log.ownerUserId = currentOwnerUserId;
         if (log.remoteId != remoteId) {
           log.remoteId = remoteId;
         }
@@ -261,6 +339,7 @@ class DbService extends GetxService {
 
       // 4. Update fields
       log.remoteId = remoteId;
+      log.ownerUserId = currentOwnerUserId;
       log.syncId = remoteSyncId ?? log.syncId;
       log.remoteVersion = remoteVersion;
       log.remoteUpdatedAt = remoteUpdatedAt;
@@ -325,6 +404,7 @@ class DbService extends GetxService {
             return;
           }
           sub.deletedAt = remoteDeletedAt;
+          sub.ownerUserId = currentOwnerUserId;
           sub.pendingDelete = false;
           sub.remoteId = remoteId;
           sub.syncId = remoteSyncId ?? sub.syncId;
@@ -342,6 +422,7 @@ class DbService extends GetxService {
 
       // 冲突检测：如果本地数据处于脏标记，优先保留本地修改等待 Push
       if (sub.isDirty) {
+        sub.ownerUserId = currentOwnerUserId;
         if (sub.remoteId != remoteId) {
           sub.remoteId = remoteId;
         }
@@ -353,6 +434,7 @@ class DbService extends GetxService {
       }
 
       sub.remoteId = remoteId;
+      sub.ownerUserId = currentOwnerUserId;
       sub.syncId = remoteSyncId ?? sub.syncId;
       sub.remoteVersion = remoteVersion;
       sub.remoteUpdatedAt = remoteUpdatedAt;

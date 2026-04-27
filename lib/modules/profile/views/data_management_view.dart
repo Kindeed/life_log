@@ -1,144 +1,147 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
-import '../../../common/theme/app_colors.dart';
-import '../../../common/db/backup_service.dart';
 import 'package:get/get.dart';
 
-/// 数据管理页面
+import '../../../common/db/backup_service.dart';
+import '../../../common/layout/constrained_page.dart';
+import '../../../common/theme/app_semantic_colors.dart';
+import '../../../common/theme/app_spacing.dart';
+import '../../../common/widgets/app_card.dart';
+import '../../../common/widgets/app_confirm_dialog.dart';
+import '../../../common/widgets/app_section_header.dart';
+
 class DataManagementView extends StatelessWidget {
   const DataManagementView({super.key});
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    final isDark = theme.brightness == Brightness.dark;
-    final cardColor = theme.cardColor;
-    final textPrimary = isDark
-        ? AppColors.darkTextPrimary
-        : AppColors.lightTextPrimary;
-    final textSecondary = isDark ? Colors.grey[400]! : Colors.grey[600]!;
+    final semantic = Theme.of(context).extension<AppSemanticColors>()!;
 
     return Scaffold(
-      backgroundColor: theme.scaffoldBackgroundColor,
-      appBar: AppBar(title: const Text('数据管理'), centerTitle: true),
-      body: SingleChildScrollView(
-        padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 16.h),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            // 备份恢复卡片
-            _buildBackupCard(
-              context,
-              isDark,
-              cardColor,
-              textPrimary,
-              textSecondary,
-            ),
-
-            SizedBox(height: 20.h),
-
-            // 提示信息
-            Container(
-              padding: EdgeInsets.all(16.w),
-              decoration: BoxDecoration(
-                color: isDark
-                    ? Colors.orange.withValues(alpha: 0.1)
-                    : Colors.orange.withValues(alpha: 0.08),
-                borderRadius: BorderRadius.circular(12.r),
-                border: Border.all(color: Colors.orange.withValues(alpha: 0.3)),
-              ),
-              child: Row(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Icon(
-                    Icons.info_outline_rounded,
-                    color: Colors.orange,
-                    size: 20.sp,
-                  ),
-                  SizedBox(width: 12.w),
-                  Expanded(
-                    child: Text(
-                      '备份文件将保存到手机的 "文档" 文件夹中，请定期备份以防数据丢失。',
-                      style: TextStyle(
-                        fontSize: 13.sp,
-                        color: textSecondary,
-                        height: 1.4,
+      appBar: AppBar(title: const Text('数据管理')),
+      body: SafeArea(
+        child: ConstrainedPage(
+          child: SingleChildScrollView(
+            padding: EdgeInsets.fromLTRB(16.w, 16.h, 16.w, 32.h),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const AppSectionHeader(title: '备份与恢复'),
+                const SizedBox(height: AppSpacing.sm),
+                AppCard(
+                  padding: EdgeInsets.zero,
+                  child: Column(
+                    children: [
+                      _DataActionTile(
+                        icon: Icons.backup_outlined,
+                        iconColor: semantic.work,
+                        title: '导出备份',
+                        subtitle: '将本地数据库导出为备份文件',
+                        onTap: _handleBackup,
                       ),
-                    ),
+                      Divider(
+                        height: 1,
+                        color: Theme.of(context).colorScheme.outlineVariant,
+                      ),
+                      _DataActionTile(
+                        icon: Icons.restore_rounded,
+                        iconColor: semantic.warning,
+                        title: '恢复数据',
+                        subtitle: '从备份文件覆盖当前本地数据',
+                        onTap: _handleRestore,
+                      ),
+                    ],
                   ),
-                ],
-              ),
+                ),
+                SizedBox(height: 18.h),
+                AppCard(
+                  child: Row(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Icon(
+                        Icons.warning_amber_rounded,
+                        color: semantic.warning,
+                        size: 22.sp,
+                      ),
+                      SizedBox(width: 12.w),
+                      Expanded(
+                        child: Text(
+                          '恢复备份会覆盖当前本地数据库。请先确认备份文件来源可靠，必要时先导出当前数据。',
+                          style: TextStyle(
+                            fontSize: 13.sp,
+                            color: Theme.of(
+                              context,
+                            ).colorScheme.onSurfaceVariant,
+                            height: 1.4,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
             ),
-          ],
+          ),
         ),
       ),
     );
   }
 
-  Widget _buildBackupCard(
-    BuildContext context,
-    bool isDark,
-    Color cardColor,
-    Color textPrimary,
-    Color textSecondary,
-  ) {
-    return Container(
-      decoration: BoxDecoration(
-        color: cardColor,
-        borderRadius: BorderRadius.circular(16.r),
-        boxShadow: [
-          BoxShadow(
-            color: isDark
-                ? Colors.black.withValues(alpha: 0.3)
-                : Colors.black.withValues(alpha: 0.05),
-            blurRadius: 10,
-            offset: const Offset(0, 4),
-          ),
-        ],
-      ),
-      child: Column(
-        children: [
-          _buildActionTile(
-            icon: Icons.backup_outlined,
-            iconColor: AppColors.primaryBlue,
-            title: '导出备份',
-            subtitle: '将所有数据导出为备份文件',
-            onTap: () => _handleBackup(context),
-            isDark: isDark,
-            textPrimary: textPrimary,
-            textSecondary: textSecondary,
-          ),
-          _buildDivider(isDark),
-          _buildActionTile(
-            icon: Icons.restore_rounded,
-            iconColor: AppColors.green,
-            title: '恢复数据',
-            subtitle: '从备份文件恢复数据',
-            onTap: () => _handleRestore(context),
-            isDark: isDark,
-            textPrimary: textPrimary,
-            textSecondary: textSecondary,
-          ),
-        ],
-      ),
-    );
+  Future<void> _handleBackup() async {
+    try {
+      await BackupService.exportBackup();
+    } catch (e) {
+      Get.snackbar("导出失败", e.toString());
+    }
   }
 
-  Widget _buildActionTile({
-    required IconData icon,
-    required Color iconColor,
-    required String title,
-    required String subtitle,
-    required VoidCallback onTap,
-    required bool isDark,
-    required Color textPrimary,
-    required Color textSecondary,
-  }) {
+  Future<void> _handleRestore() async {
+    try {
+      final file = await BackupService.pickBackupFile();
+      if (file == null) return;
+
+      final confirmed = await AppConfirmDialog.show(
+        title: "恢复确认",
+        message: "导入备份将覆盖当前所有本地数据。建议先导出当前数据，再继续恢复。",
+        confirmLabel: "恢复",
+        destructive: true,
+      );
+
+      if (confirmed) {
+        await BackupService.restoreFromBackup(file);
+        Get.offAllNamed('/');
+        Get.snackbar("恢复成功", "数据已恢复，应用已刷新。");
+      }
+    } catch (e) {
+      Get.snackbar("恢复失败", e.toString());
+    }
+  }
+}
+
+class _DataActionTile extends StatelessWidget {
+  final IconData icon;
+  final Color iconColor;
+  final String title;
+  final String subtitle;
+  final VoidCallback onTap;
+
+  const _DataActionTile({
+    required this.icon,
+    required this.iconColor,
+    required this.title,
+    required this.subtitle,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final textSecondary = Theme.of(context).colorScheme.onSurfaceVariant;
+
     return InkWell(
       onTap: onTap,
-      borderRadius: BorderRadius.circular(16.r),
+      borderRadius: BorderRadius.circular(8),
       child: Padding(
-        padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 14.h),
+        padding: EdgeInsets.symmetric(horizontal: 14.w, vertical: 14.h),
         child: Row(
           children: [
             Container(
@@ -159,69 +162,23 @@ class DataManagementView extends StatelessWidget {
                     title,
                     style: TextStyle(
                       fontSize: 15.sp,
-                      fontWeight: FontWeight.w500,
-                      color: textPrimary,
+                      fontWeight: FontWeight.w700,
                     ),
                   ),
                   SizedBox(height: 2.h),
                   Text(
                     subtitle,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
                     style: TextStyle(fontSize: 12.sp, color: textSecondary),
                   ),
                 ],
               ),
             ),
-            Icon(
-              Icons.chevron_right_rounded,
-              color: textSecondary,
-              size: 22.sp,
-            ),
+            Icon(Icons.chevron_right_rounded, color: textSecondary),
           ],
         ),
       ),
     );
-  }
-
-  Widget _buildDivider(bool isDark) {
-    return Padding(
-      padding: EdgeInsets.symmetric(horizontal: 16.w),
-      child: Divider(
-        height: 1,
-        color: isDark ? Colors.grey[800] : Colors.grey[200],
-      ),
-    );
-  }
-
-  Future<void> _handleBackup(BuildContext context) async {
-    try {
-      await BackupService.exportBackup();
-    } catch (e) {
-      Get.snackbar("导出失败", e.toString());
-    }
-  }
-
-  Future<void> _handleRestore(BuildContext context) async {
-    try {
-      final file = await BackupService.pickBackupFile();
-      if (file == null) return;
-
-      final confirmed = await Get.defaultDialog<bool>(
-        title: "恢复确认",
-        middleText: "导入备份将覆盖当前所有数据，此操作不可撤销。是否继续？",
-        textConfirm: "确认",
-        textCancel: "取消",
-        confirmTextColor: Colors.white,
-        onConfirm: () => Get.back(result: true),
-        onCancel: () => Get.back(result: false),
-      );
-
-      if (confirmed == true) {
-        await BackupService.restoreFromBackup(file);
-        Get.offAllNamed('/');
-        Get.snackbar("恢复成功", "数据已恢复，应用已刷新。");
-      }
-    } catch (e) {
-      Get.snackbar("恢复失败", e.toString());
-    }
   }
 }

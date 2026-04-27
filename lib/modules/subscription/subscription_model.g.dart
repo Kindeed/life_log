@@ -48,48 +48,53 @@ const SubscriptionSchema = CollectionSchema(
       name: r'note',
       type: IsarType.string,
     ),
-    r'pendingDelete': PropertySchema(
+    r'ownerUserId': PropertySchema(
       id: 6,
+      name: r'ownerUserId',
+      type: IsarType.string,
+    ),
+    r'pendingDelete': PropertySchema(
+      id: 7,
       name: r'pendingDelete',
       type: IsarType.bool,
     ),
     r'price': PropertySchema(
-      id: 7,
+      id: 8,
       name: r'price',
       type: IsarType.double,
     ),
     r'reminderDays': PropertySchema(
-      id: 8,
+      id: 9,
       name: r'reminderDays',
       type: IsarType.long,
     ),
     r'remoteId': PropertySchema(
-      id: 9,
+      id: 10,
       name: r'remoteId',
       type: IsarType.long,
     ),
     r'remoteUpdatedAt': PropertySchema(
-      id: 10,
+      id: 11,
       name: r'remoteUpdatedAt',
       type: IsarType.dateTime,
     ),
     r'remoteVersion': PropertySchema(
-      id: 11,
+      id: 12,
       name: r'remoteVersion',
       type: IsarType.long,
     ),
     r'sortIndex': PropertySchema(
-      id: 12,
+      id: 13,
       name: r'sortIndex',
       type: IsarType.long,
     ),
     r'syncId': PropertySchema(
-      id: 13,
+      id: 14,
       name: r'syncId',
       type: IsarType.string,
     ),
     r'syncedAt': PropertySchema(
-      id: 14,
+      id: 15,
       name: r'syncedAt',
       type: IsarType.dateTime,
     )
@@ -122,6 +127,12 @@ int _subscriptionEstimateSize(
     }
   }
   {
+    final value = object.ownerUserId;
+    if (value != null) {
+      bytesCount += 3 + value.length * 3;
+    }
+  }
+  {
     final value = object.syncId;
     if (value != null) {
       bytesCount += 3 + value.length * 3;
@@ -142,15 +153,16 @@ void _subscriptionSerialize(
   writer.writeString(offsets[3], object.name);
   writer.writeDateTime(offsets[4], object.nextPaymentDate);
   writer.writeString(offsets[5], object.note);
-  writer.writeBool(offsets[6], object.pendingDelete);
-  writer.writeDouble(offsets[7], object.price);
-  writer.writeLong(offsets[8], object.reminderDays);
-  writer.writeLong(offsets[9], object.remoteId);
-  writer.writeDateTime(offsets[10], object.remoteUpdatedAt);
-  writer.writeLong(offsets[11], object.remoteVersion);
-  writer.writeLong(offsets[12], object.sortIndex);
-  writer.writeString(offsets[13], object.syncId);
-  writer.writeDateTime(offsets[14], object.syncedAt);
+  writer.writeString(offsets[6], object.ownerUserId);
+  writer.writeBool(offsets[7], object.pendingDelete);
+  writer.writeDouble(offsets[8], object.price);
+  writer.writeLong(offsets[9], object.reminderDays);
+  writer.writeLong(offsets[10], object.remoteId);
+  writer.writeDateTime(offsets[11], object.remoteUpdatedAt);
+  writer.writeLong(offsets[12], object.remoteVersion);
+  writer.writeLong(offsets[13], object.sortIndex);
+  writer.writeString(offsets[14], object.syncId);
+  writer.writeDateTime(offsets[15], object.syncedAt);
 }
 
 Subscription _subscriptionDeserialize(
@@ -169,15 +181,16 @@ Subscription _subscriptionDeserialize(
   object.name = reader.readString(offsets[3]);
   object.nextPaymentDate = reader.readDateTime(offsets[4]);
   object.note = reader.readStringOrNull(offsets[5]);
-  object.pendingDelete = reader.readBool(offsets[6]);
-  object.price = reader.readDoubleOrNull(offsets[7]);
-  object.reminderDays = reader.readLong(offsets[8]);
-  object.remoteId = reader.readLongOrNull(offsets[9]);
-  object.remoteUpdatedAt = reader.readDateTimeOrNull(offsets[10]);
-  object.remoteVersion = reader.readLong(offsets[11]);
-  object.sortIndex = reader.readLongOrNull(offsets[12]);
-  object.syncId = reader.readStringOrNull(offsets[13]);
-  object.syncedAt = reader.readDateTimeOrNull(offsets[14]);
+  object.ownerUserId = reader.readStringOrNull(offsets[6]);
+  object.pendingDelete = reader.readBool(offsets[7]);
+  object.price = reader.readDoubleOrNull(offsets[8]);
+  object.reminderDays = reader.readLong(offsets[9]);
+  object.remoteId = reader.readLongOrNull(offsets[10]);
+  object.remoteUpdatedAt = reader.readDateTimeOrNull(offsets[11]);
+  object.remoteVersion = reader.readLong(offsets[12]);
+  object.sortIndex = reader.readLongOrNull(offsets[13]);
+  object.syncId = reader.readStringOrNull(offsets[14]);
+  object.syncedAt = reader.readDateTimeOrNull(offsets[15]);
   return object;
 }
 
@@ -202,22 +215,24 @@ P _subscriptionDeserializeProp<P>(
     case 5:
       return (reader.readStringOrNull(offset)) as P;
     case 6:
-      return (reader.readBool(offset)) as P;
-    case 7:
-      return (reader.readDoubleOrNull(offset)) as P;
-    case 8:
-      return (reader.readLong(offset)) as P;
-    case 9:
-      return (reader.readLongOrNull(offset)) as P;
-    case 10:
-      return (reader.readDateTimeOrNull(offset)) as P;
-    case 11:
-      return (reader.readLong(offset)) as P;
-    case 12:
-      return (reader.readLongOrNull(offset)) as P;
-    case 13:
       return (reader.readStringOrNull(offset)) as P;
+    case 7:
+      return (reader.readBool(offset)) as P;
+    case 8:
+      return (reader.readDoubleOrNull(offset)) as P;
+    case 9:
+      return (reader.readLong(offset)) as P;
+    case 10:
+      return (reader.readLongOrNull(offset)) as P;
+    case 11:
+      return (reader.readDateTimeOrNull(offset)) as P;
+    case 12:
+      return (reader.readLong(offset)) as P;
+    case 13:
+      return (reader.readLongOrNull(offset)) as P;
     case 14:
+      return (reader.readStringOrNull(offset)) as P;
+    case 15:
       return (reader.readDateTimeOrNull(offset)) as P;
     default:
       throw IsarError('Unknown property with id $propertyId');
@@ -856,6 +871,160 @@ extension SubscriptionQueryFilter
     return QueryBuilder.apply(this, (query) {
       return query.addFilterCondition(FilterCondition.greaterThan(
         property: r'note',
+        value: '',
+      ));
+    });
+  }
+
+  QueryBuilder<Subscription, Subscription, QAfterFilterCondition>
+      ownerUserIdIsNull() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(const FilterCondition.isNull(
+        property: r'ownerUserId',
+      ));
+    });
+  }
+
+  QueryBuilder<Subscription, Subscription, QAfterFilterCondition>
+      ownerUserIdIsNotNull() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(const FilterCondition.isNotNull(
+        property: r'ownerUserId',
+      ));
+    });
+  }
+
+  QueryBuilder<Subscription, Subscription, QAfterFilterCondition>
+      ownerUserIdEqualTo(
+    String? value, {
+    bool caseSensitive = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.equalTo(
+        property: r'ownerUserId',
+        value: value,
+        caseSensitive: caseSensitive,
+      ));
+    });
+  }
+
+  QueryBuilder<Subscription, Subscription, QAfterFilterCondition>
+      ownerUserIdGreaterThan(
+    String? value, {
+    bool include = false,
+    bool caseSensitive = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.greaterThan(
+        include: include,
+        property: r'ownerUserId',
+        value: value,
+        caseSensitive: caseSensitive,
+      ));
+    });
+  }
+
+  QueryBuilder<Subscription, Subscription, QAfterFilterCondition>
+      ownerUserIdLessThan(
+    String? value, {
+    bool include = false,
+    bool caseSensitive = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.lessThan(
+        include: include,
+        property: r'ownerUserId',
+        value: value,
+        caseSensitive: caseSensitive,
+      ));
+    });
+  }
+
+  QueryBuilder<Subscription, Subscription, QAfterFilterCondition>
+      ownerUserIdBetween(
+    String? lower,
+    String? upper, {
+    bool includeLower = true,
+    bool includeUpper = true,
+    bool caseSensitive = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.between(
+        property: r'ownerUserId',
+        lower: lower,
+        includeLower: includeLower,
+        upper: upper,
+        includeUpper: includeUpper,
+        caseSensitive: caseSensitive,
+      ));
+    });
+  }
+
+  QueryBuilder<Subscription, Subscription, QAfterFilterCondition>
+      ownerUserIdStartsWith(
+    String value, {
+    bool caseSensitive = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.startsWith(
+        property: r'ownerUserId',
+        value: value,
+        caseSensitive: caseSensitive,
+      ));
+    });
+  }
+
+  QueryBuilder<Subscription, Subscription, QAfterFilterCondition>
+      ownerUserIdEndsWith(
+    String value, {
+    bool caseSensitive = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.endsWith(
+        property: r'ownerUserId',
+        value: value,
+        caseSensitive: caseSensitive,
+      ));
+    });
+  }
+
+  QueryBuilder<Subscription, Subscription, QAfterFilterCondition>
+      ownerUserIdContains(String value, {bool caseSensitive = true}) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.contains(
+        property: r'ownerUserId',
+        value: value,
+        caseSensitive: caseSensitive,
+      ));
+    });
+  }
+
+  QueryBuilder<Subscription, Subscription, QAfterFilterCondition>
+      ownerUserIdMatches(String pattern, {bool caseSensitive = true}) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.matches(
+        property: r'ownerUserId',
+        wildcard: pattern,
+        caseSensitive: caseSensitive,
+      ));
+    });
+  }
+
+  QueryBuilder<Subscription, Subscription, QAfterFilterCondition>
+      ownerUserIdIsEmpty() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.equalTo(
+        property: r'ownerUserId',
+        value: '',
+      ));
+    });
+  }
+
+  QueryBuilder<Subscription, Subscription, QAfterFilterCondition>
+      ownerUserIdIsNotEmpty() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.greaterThan(
+        property: r'ownerUserId',
         value: '',
       ));
     });
@@ -1596,6 +1765,19 @@ extension SubscriptionQuerySortBy
     });
   }
 
+  QueryBuilder<Subscription, Subscription, QAfterSortBy> sortByOwnerUserId() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'ownerUserId', Sort.asc);
+    });
+  }
+
+  QueryBuilder<Subscription, Subscription, QAfterSortBy>
+      sortByOwnerUserIdDesc() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'ownerUserId', Sort.desc);
+    });
+  }
+
   QueryBuilder<Subscription, Subscription, QAfterSortBy> sortByPendingDelete() {
     return QueryBuilder.apply(this, (query) {
       return query.addSortBy(r'pendingDelete', Sort.asc);
@@ -1798,6 +1980,19 @@ extension SubscriptionQuerySortThenBy
     });
   }
 
+  QueryBuilder<Subscription, Subscription, QAfterSortBy> thenByOwnerUserId() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'ownerUserId', Sort.asc);
+    });
+  }
+
+  QueryBuilder<Subscription, Subscription, QAfterSortBy>
+      thenByOwnerUserIdDesc() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'ownerUserId', Sort.desc);
+    });
+  }
+
   QueryBuilder<Subscription, Subscription, QAfterSortBy> thenByPendingDelete() {
     return QueryBuilder.apply(this, (query) {
       return query.addSortBy(r'pendingDelete', Sort.asc);
@@ -1953,6 +2148,13 @@ extension SubscriptionQueryWhereDistinct
     });
   }
 
+  QueryBuilder<Subscription, Subscription, QDistinct> distinctByOwnerUserId(
+      {bool caseSensitive = true}) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addDistinctBy(r'ownerUserId', caseSensitive: caseSensitive);
+    });
+  }
+
   QueryBuilder<Subscription, Subscription, QDistinct>
       distinctByPendingDelete() {
     return QueryBuilder.apply(this, (query) {
@@ -2055,6 +2257,12 @@ extension SubscriptionQueryProperty
   QueryBuilder<Subscription, String?, QQueryOperations> noteProperty() {
     return QueryBuilder.apply(this, (query) {
       return query.addPropertyName(r'note');
+    });
+  }
+
+  QueryBuilder<Subscription, String?, QQueryOperations> ownerUserIdProperty() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addPropertyName(r'ownerUserId');
     });
   }
 

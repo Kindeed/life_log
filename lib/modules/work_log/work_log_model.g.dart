@@ -57,43 +57,48 @@ const WorkLogSchema = CollectionSchema(
       name: r'overtimeHours',
       type: IsarType.double,
     ),
-    r'pendingDelete': PropertySchema(
+    r'ownerUserId': PropertySchema(
       id: 8,
+      name: r'ownerUserId',
+      type: IsarType.string,
+    ),
+    r'pendingDelete': PropertySchema(
+      id: 9,
       name: r'pendingDelete',
       type: IsarType.bool,
     ),
     r'remoteId': PropertySchema(
-      id: 9,
+      id: 10,
       name: r'remoteId',
       type: IsarType.long,
     ),
     r'remoteUpdatedAt': PropertySchema(
-      id: 10,
+      id: 11,
       name: r'remoteUpdatedAt',
       type: IsarType.dateTime,
     ),
     r'remoteVersion': PropertySchema(
-      id: 11,
+      id: 12,
       name: r'remoteVersion',
       type: IsarType.long,
     ),
     r'syncId': PropertySchema(
-      id: 12,
+      id: 13,
       name: r'syncId',
       type: IsarType.string,
     ),
     r'syncedAt': PropertySchema(
-      id: 13,
+      id: 14,
       name: r'syncedAt',
       type: IsarType.dateTime,
     ),
     r'transport': PropertySchema(
-      id: 14,
+      id: 15,
       name: r'transport',
       type: IsarType.string,
     ),
     r'type': PropertySchema(
-      id: 15,
+      id: 16,
       name: r'type',
       type: IsarType.byte,
       enumMap: _WorkLogtypeEnumValueMap,
@@ -132,6 +137,12 @@ int _workLogEstimateSize(
     }
   }
   {
+    final value = object.ownerUserId;
+    if (value != null) {
+      bytesCount += 3 + value.length * 3;
+    }
+  }
+  {
     final value = object.syncId;
     if (value != null) {
       bytesCount += 3 + value.length * 3;
@@ -160,14 +171,15 @@ void _workLogSerialize(
   writer.writeString(offsets[5], object.location);
   writer.writeString(offsets[6], object.note);
   writer.writeDouble(offsets[7], object.overtimeHours);
-  writer.writeBool(offsets[8], object.pendingDelete);
-  writer.writeLong(offsets[9], object.remoteId);
-  writer.writeDateTime(offsets[10], object.remoteUpdatedAt);
-  writer.writeLong(offsets[11], object.remoteVersion);
-  writer.writeString(offsets[12], object.syncId);
-  writer.writeDateTime(offsets[13], object.syncedAt);
-  writer.writeString(offsets[14], object.transport);
-  writer.writeByte(offsets[15], object.type.index);
+  writer.writeString(offsets[8], object.ownerUserId);
+  writer.writeBool(offsets[9], object.pendingDelete);
+  writer.writeLong(offsets[10], object.remoteId);
+  writer.writeDateTime(offsets[11], object.remoteUpdatedAt);
+  writer.writeLong(offsets[12], object.remoteVersion);
+  writer.writeString(offsets[13], object.syncId);
+  writer.writeDateTime(offsets[14], object.syncedAt);
+  writer.writeString(offsets[15], object.transport);
+  writer.writeByte(offsets[16], object.type.index);
 }
 
 WorkLog _workLogDeserialize(
@@ -186,14 +198,15 @@ WorkLog _workLogDeserialize(
   object.location = reader.readStringOrNull(offsets[5]);
   object.note = reader.readStringOrNull(offsets[6]);
   object.overtimeHours = reader.readDoubleOrNull(offsets[7]);
-  object.pendingDelete = reader.readBool(offsets[8]);
-  object.remoteId = reader.readLongOrNull(offsets[9]);
-  object.remoteUpdatedAt = reader.readDateTimeOrNull(offsets[10]);
-  object.remoteVersion = reader.readLong(offsets[11]);
-  object.syncId = reader.readStringOrNull(offsets[12]);
-  object.syncedAt = reader.readDateTimeOrNull(offsets[13]);
-  object.transport = reader.readStringOrNull(offsets[14]);
-  object.type = _WorkLogtypeValueEnumMap[reader.readByteOrNull(offsets[15])] ??
+  object.ownerUserId = reader.readStringOrNull(offsets[8]);
+  object.pendingDelete = reader.readBool(offsets[9]);
+  object.remoteId = reader.readLongOrNull(offsets[10]);
+  object.remoteUpdatedAt = reader.readDateTimeOrNull(offsets[11]);
+  object.remoteVersion = reader.readLong(offsets[12]);
+  object.syncId = reader.readStringOrNull(offsets[13]);
+  object.syncedAt = reader.readDateTimeOrNull(offsets[14]);
+  object.transport = reader.readStringOrNull(offsets[15]);
+  object.type = _WorkLogtypeValueEnumMap[reader.readByteOrNull(offsets[16])] ??
       LogType.work;
   return object;
 }
@@ -222,20 +235,22 @@ P _workLogDeserializeProp<P>(
     case 7:
       return (reader.readDoubleOrNull(offset)) as P;
     case 8:
-      return (reader.readBool(offset)) as P;
+      return (reader.readStringOrNull(offset)) as P;
     case 9:
-      return (reader.readLongOrNull(offset)) as P;
+      return (reader.readBool(offset)) as P;
     case 10:
-      return (reader.readDateTimeOrNull(offset)) as P;
+      return (reader.readLongOrNull(offset)) as P;
     case 11:
-      return (reader.readLong(offset)) as P;
-    case 12:
-      return (reader.readStringOrNull(offset)) as P;
-    case 13:
       return (reader.readDateTimeOrNull(offset)) as P;
-    case 14:
+    case 12:
+      return (reader.readLong(offset)) as P;
+    case 13:
       return (reader.readStringOrNull(offset)) as P;
+    case 14:
+      return (reader.readDateTimeOrNull(offset)) as P;
     case 15:
+      return (reader.readStringOrNull(offset)) as P;
+    case 16:
       return (_WorkLogtypeValueEnumMap[reader.readByteOrNull(offset)] ??
           LogType.work) as P;
     default:
@@ -989,6 +1004,153 @@ extension WorkLogQueryFilter
     });
   }
 
+  QueryBuilder<WorkLog, WorkLog, QAfterFilterCondition> ownerUserIdIsNull() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(const FilterCondition.isNull(
+        property: r'ownerUserId',
+      ));
+    });
+  }
+
+  QueryBuilder<WorkLog, WorkLog, QAfterFilterCondition> ownerUserIdIsNotNull() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(const FilterCondition.isNotNull(
+        property: r'ownerUserId',
+      ));
+    });
+  }
+
+  QueryBuilder<WorkLog, WorkLog, QAfterFilterCondition> ownerUserIdEqualTo(
+    String? value, {
+    bool caseSensitive = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.equalTo(
+        property: r'ownerUserId',
+        value: value,
+        caseSensitive: caseSensitive,
+      ));
+    });
+  }
+
+  QueryBuilder<WorkLog, WorkLog, QAfterFilterCondition> ownerUserIdGreaterThan(
+    String? value, {
+    bool include = false,
+    bool caseSensitive = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.greaterThan(
+        include: include,
+        property: r'ownerUserId',
+        value: value,
+        caseSensitive: caseSensitive,
+      ));
+    });
+  }
+
+  QueryBuilder<WorkLog, WorkLog, QAfterFilterCondition> ownerUserIdLessThan(
+    String? value, {
+    bool include = false,
+    bool caseSensitive = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.lessThan(
+        include: include,
+        property: r'ownerUserId',
+        value: value,
+        caseSensitive: caseSensitive,
+      ));
+    });
+  }
+
+  QueryBuilder<WorkLog, WorkLog, QAfterFilterCondition> ownerUserIdBetween(
+    String? lower,
+    String? upper, {
+    bool includeLower = true,
+    bool includeUpper = true,
+    bool caseSensitive = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.between(
+        property: r'ownerUserId',
+        lower: lower,
+        includeLower: includeLower,
+        upper: upper,
+        includeUpper: includeUpper,
+        caseSensitive: caseSensitive,
+      ));
+    });
+  }
+
+  QueryBuilder<WorkLog, WorkLog, QAfterFilterCondition> ownerUserIdStartsWith(
+    String value, {
+    bool caseSensitive = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.startsWith(
+        property: r'ownerUserId',
+        value: value,
+        caseSensitive: caseSensitive,
+      ));
+    });
+  }
+
+  QueryBuilder<WorkLog, WorkLog, QAfterFilterCondition> ownerUserIdEndsWith(
+    String value, {
+    bool caseSensitive = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.endsWith(
+        property: r'ownerUserId',
+        value: value,
+        caseSensitive: caseSensitive,
+      ));
+    });
+  }
+
+  QueryBuilder<WorkLog, WorkLog, QAfterFilterCondition> ownerUserIdContains(
+      String value,
+      {bool caseSensitive = true}) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.contains(
+        property: r'ownerUserId',
+        value: value,
+        caseSensitive: caseSensitive,
+      ));
+    });
+  }
+
+  QueryBuilder<WorkLog, WorkLog, QAfterFilterCondition> ownerUserIdMatches(
+      String pattern,
+      {bool caseSensitive = true}) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.matches(
+        property: r'ownerUserId',
+        wildcard: pattern,
+        caseSensitive: caseSensitive,
+      ));
+    });
+  }
+
+  QueryBuilder<WorkLog, WorkLog, QAfterFilterCondition> ownerUserIdIsEmpty() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.equalTo(
+        property: r'ownerUserId',
+        value: '',
+      ));
+    });
+  }
+
+  QueryBuilder<WorkLog, WorkLog, QAfterFilterCondition>
+      ownerUserIdIsNotEmpty() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.greaterThan(
+        property: r'ownerUserId',
+        value: '',
+      ));
+    });
+  }
+
   QueryBuilder<WorkLog, WorkLog, QAfterFilterCondition> pendingDeleteEqualTo(
       bool value) {
     return QueryBuilder.apply(this, (query) {
@@ -1712,6 +1874,18 @@ extension WorkLogQuerySortBy on QueryBuilder<WorkLog, WorkLog, QSortBy> {
     });
   }
 
+  QueryBuilder<WorkLog, WorkLog, QAfterSortBy> sortByOwnerUserId() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'ownerUserId', Sort.asc);
+    });
+  }
+
+  QueryBuilder<WorkLog, WorkLog, QAfterSortBy> sortByOwnerUserIdDesc() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'ownerUserId', Sort.desc);
+    });
+  }
+
   QueryBuilder<WorkLog, WorkLog, QAfterSortBy> sortByPendingDelete() {
     return QueryBuilder.apply(this, (query) {
       return query.addSortBy(r'pendingDelete', Sort.asc);
@@ -1919,6 +2093,18 @@ extension WorkLogQuerySortThenBy
     });
   }
 
+  QueryBuilder<WorkLog, WorkLog, QAfterSortBy> thenByOwnerUserId() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'ownerUserId', Sort.asc);
+    });
+  }
+
+  QueryBuilder<WorkLog, WorkLog, QAfterSortBy> thenByOwnerUserIdDesc() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'ownerUserId', Sort.desc);
+    });
+  }
+
   QueryBuilder<WorkLog, WorkLog, QAfterSortBy> thenByPendingDelete() {
     return QueryBuilder.apply(this, (query) {
       return query.addSortBy(r'pendingDelete', Sort.asc);
@@ -2068,6 +2254,13 @@ extension WorkLogQueryWhereDistinct
     });
   }
 
+  QueryBuilder<WorkLog, WorkLog, QDistinct> distinctByOwnerUserId(
+      {bool caseSensitive = true}) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addDistinctBy(r'ownerUserId', caseSensitive: caseSensitive);
+    });
+  }
+
   QueryBuilder<WorkLog, WorkLog, QDistinct> distinctByPendingDelete() {
     return QueryBuilder.apply(this, (query) {
       return query.addDistinctBy(r'pendingDelete');
@@ -2172,6 +2365,12 @@ extension WorkLogQueryProperty
   QueryBuilder<WorkLog, double?, QQueryOperations> overtimeHoursProperty() {
     return QueryBuilder.apply(this, (query) {
       return query.addPropertyName(r'overtimeHours');
+    });
+  }
+
+  QueryBuilder<WorkLog, String?, QQueryOperations> ownerUserIdProperty() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addPropertyName(r'ownerUserId');
     });
   }
 

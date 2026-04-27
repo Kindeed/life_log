@@ -1,10 +1,20 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:get/get.dart';
+
+import '../../common/layout/constrained_page.dart';
+import '../../common/theme/app_motion.dart';
+import '../../common/theme/app_semantic_colors.dart';
+import '../../common/utils/formatters.dart';
+import '../../common/widgets/app_card.dart';
+import '../../common/widgets/app_confirm_dialog.dart';
+import '../../common/widgets/app_empty_state.dart';
+import '../../common/widgets/app_filter_chip_bar.dart';
+import '../../common/widgets/app_metric_tile.dart';
+import '../../common/widgets/app_section_header.dart';
+import 'add_subscription_sheet.dart';
 import 'subscription_controller.dart';
 import 'subscription_model.dart';
-import 'add_subscription_sheet.dart';
-import '../../common/theme/app_colors.dart';
 
 class SubscriptionView extends StatelessWidget {
   const SubscriptionView({super.key});
@@ -13,159 +23,127 @@ class SubscriptionView extends StatelessWidget {
   Widget build(BuildContext context) {
     final logic = Get.find<SubscriptionController>();
     final theme = Theme.of(context);
-    final isDark = theme.brightness == Brightness.dark;
-    final cardColor = theme.cardColor;
-    final textPrimary = isDark
-        ? AppColors.darkTextPrimary
-        : AppColors.lightTextPrimary;
-    final textSecondary = isDark ? Colors.grey[400]! : Colors.grey[500]!;
+    final semantic = theme.extension<AppSemanticColors>()!;
+    final textSecondary = theme.colorScheme.onSurfaceVariant;
 
     return Scaffold(
       backgroundColor: theme.scaffoldBackgroundColor,
+      appBar: AppBar(title: const Text("支出管理")),
       body: SafeArea(
-        child: Column(
-          children: [
-            // 1. 自定义标题栏
-            Padding(
-              padding: EdgeInsets.fromLTRB(24.w, 24.h, 24.w, 10.h),
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  Text(
-                    "支出管理",
-                    style: TextStyle(
-                      fontSize: 24.sp,
-                      fontWeight: FontWeight.bold,
-                      color: textPrimary,
+        child: NotificationListener<UserScrollNotification>(
+          onNotification: (notification) {
+            logic.onScroll(notification);
+            return true;
+          },
+          child: Obx(() {
+            if (logic.subs.isEmpty) {
+              return AppEmptyState(
+                icon: Icons.subscriptions_outlined,
+                title: "还没有支出记录",
+                message: "添加订阅或一次性支出后，会在这里看到扣费提醒。",
+                actionLabel: "添加支出",
+                onAction: () => _showAddSheet(),
+              );
+            }
+
+            final visibleSubs = logic.visibleSubs;
+
+            return CustomScrollView(
+              slivers: [
+                SliverToBoxAdapter(
+                  child: ConstrainedPage(
+                    child: _SubscriptionOverview(
+                      logic: logic,
+                      semantic: semantic,
+                      textSecondary: textSecondary,
                     ),
                   ),
-                  Container(
-                    decoration: BoxDecoration(
-                      color: cardColor,
-                      shape: BoxShape.circle,
-                      boxShadow: [
-                        BoxShadow(
-                          color: isDark
-                              ? Colors.black.withValues(alpha: 0.3)
-                              : Colors.black.withValues(alpha: 0.05),
-                          blurRadius: 10,
-                        ),
-                      ],
-                    ),
-                    child: PopupMenuButton<String>(
-                      icon: Icon(Icons.sort_rounded, color: textPrimary),
-                      color: cardColor,
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(16),
+                ),
+                if (visibleSubs.isEmpty)
+                  SliverFillRemaining(
+                    hasScrollBody: false,
+                    child: Center(
+                      child: Text(
+                        "当前分类暂无记录",
+                        style: TextStyle(color: textSecondary, fontSize: 14.sp),
                       ),
-                      onSelected: (value) {
-                        if (value == 'price') logic.sortByPrice();
-                        if (value == 'date') logic.sortByDate();
+                    ),
+                  )
+                else if (_canReorder(logic))
+                  SliverPadding(
+                    padding: EdgeInsets.fromLTRB(16.w, 8.h, 16.w, 88.h),
+                    sliver: SliverReorderableList(
+                      itemCount: visibleSubs.length,
+                      onReorder: logic.reorderSub,
+                      itemBuilder: (context, index) {
+                        final sub = visibleSubs[index];
+                        return ConstrainedPage(
+                          key: ValueKey(sub.id),
+                          child: Padding(
+                            padding: EdgeInsets.only(bottom: 12.h),
+                            child: ReorderableDelayedDragStartListener(
+                              index: index,
+                              child: _SubscriptionCard(
+                                sub: sub,
+                                semantic: semantic,
+                                textSecondary: textSecondary,
+                                showDragHandle: true,
+                                onTap: () => _showAddSheet(sub),
+                                onDelete: () => _deleteSub(logic, sub),
+                              ),
+                            ),
+                          ),
+                        );
                       },
-                      itemBuilder: (context) => [
-                        PopupMenuItem(
-                          value: 'price',
-                          child: Text(
-                            "按价格排序",
-                            style: TextStyle(color: textPrimary),
+                    ),
+                  )
+                else
+                  SliverPadding(
+                    padding: EdgeInsets.fromLTRB(16.w, 8.h, 16.w, 88.h),
+                    sliver: SliverList.separated(
+                      itemCount: visibleSubs.length,
+                      separatorBuilder: (_, _) => SizedBox(height: 12.h),
+                      itemBuilder: (context, index) {
+                        final sub = visibleSubs[index];
+                        return ConstrainedPage(
+                          child: _SubscriptionCard(
+                            sub: sub,
+                            semantic: semantic,
+                            textSecondary: textSecondary,
+                            onTap: () => _showAddSheet(sub),
+                            onDelete: () => _deleteSub(logic, sub),
                           ),
-                        ),
-                        PopupMenuItem(
-                          value: 'date',
-                          child: Text(
-                            "按日期排序",
-                            style: TextStyle(color: textPrimary),
-                          ),
-                        ),
-                      ],
+                        );
+                      },
                     ),
                   ),
-                ],
-              ),
-            ),
-
-            // 2. 列表区域
-            Expanded(
-              child: NotificationListener<UserScrollNotification>(
-                onNotification: (notification) {
-                  logic.onScroll(notification);
-                  return true;
-                },
-                child: Obx(() {
-                  if (logic.subs.isEmpty) {
-                    return Center(
-                      child: Column(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          Icon(
-                            Icons.subscriptions_outlined,
-                            size: 60.sp,
-                            color: isDark ? Colors.grey[700] : Colors.grey[300],
-                          ),
-                          SizedBox(height: 10.h),
-                          Text(
-                            "还没有订阅服务",
-                            style: TextStyle(color: textSecondary),
-                          ),
-                        ],
-                      ),
-                    );
-                  }
-
-                  return ReorderableListView.builder(
-                    padding: EdgeInsets.fromLTRB(16.w, 10.h, 16.w, 80.h),
-                    itemCount: logic.subs.length,
-                    onReorder: (oldIndex, newIndex) =>
-                        logic.reorderSub(oldIndex, newIndex),
-                    itemBuilder: (context, index) {
-                      final sub = logic.subs[index];
-                      return _buildSubCard(
-                        sub,
-                        logic,
-                        isDark,
-                        cardColor,
-                        textPrimary,
-                        textSecondary,
-                      );
-                    },
-                  );
-                }),
-              ),
-            ),
-          ],
+              ],
+            );
+          }),
         ),
       ),
       floatingActionButtonLocation: FloatingActionButtonLocation.centerFloat,
       floatingActionButton: Obx(
         () => AnimatedSlide(
-          duration: const Duration(milliseconds: 300),
+          duration: AppMotion.normal,
+          curve: AppMotion.standardDecelerate,
           offset: logic.isFabVisible.value ? Offset.zero : const Offset(0, 2),
           child: AnimatedOpacity(
-            duration: const Duration(milliseconds: 300),
+            duration: AppMotion.normal,
+            curve: AppMotion.standardDecelerate,
             opacity: logic.isFabVisible.value ? 1 : 0,
             child: FloatingActionButton.extended(
-              backgroundColor: AppColors.primaryBlue,
-              elevation: 4,
-              icon: const Icon(
-                Icons.add_rounded,
-                size: 24,
-                color: Colors.white,
-              ),
+              backgroundColor: semantic.expense,
+              icon: const Icon(Icons.add_rounded, color: Colors.white),
               label: Text(
-                "记一笔",
+                "添加支出",
                 style: TextStyle(
                   fontSize: 16.sp,
                   fontWeight: FontWeight.bold,
                   color: Colors.white,
                 ),
               ),
-              onPressed: () {
-                Get.bottomSheet(
-                  const AddSubscriptionSheet(),
-                  isScrollControlled: true,
-                  backgroundColor: Colors.transparent,
-                );
-              },
+              onPressed: () => _showAddSheet(),
             ),
           ),
         ),
@@ -173,122 +151,343 @@ class SubscriptionView extends StatelessWidget {
     );
   }
 
-  Widget _buildSubCard(
-    Subscription sub,
+  bool _canReorder(SubscriptionController logic) {
+    return logic.filter.value == SubscriptionFilter.all &&
+        logic.sortMode.value == SubscriptionSortMode.manual;
+  }
+
+  void _showAddSheet([Subscription? sub]) {
+    Get.bottomSheet(
+      AddSubscriptionSheet(sub: sub),
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+    );
+  }
+
+  Future<void> _deleteSub(
     SubscriptionController logic,
-    bool isDark,
-    Color cardColor,
-    Color textPrimary,
-    Color textSecondary,
-  ) {
-    return Container(
-      key: ValueKey(sub.id),
-      margin: EdgeInsets.only(bottom: 12.h),
-      decoration: BoxDecoration(
-        color: cardColor,
-        borderRadius: BorderRadius.circular(24),
-        boxShadow: [
-          BoxShadow(
-            color: isDark
-                ? Colors.black.withValues(alpha: 0.3)
-                : Colors.black.withValues(alpha: 0.03),
-            blurRadius: 20,
-            offset: const Offset(0, 8),
+    Subscription sub,
+  ) async {
+    final confirmed = await AppConfirmDialog.show(
+      title: "删除支出",
+      message: "确定删除「${sub.name}」吗？删除后无法恢复。",
+      confirmLabel: "删除",
+      destructive: true,
+    );
+    if (confirmed) {
+      await logic.deleteSub(sub.id);
+    }
+  }
+}
+
+class _SubscriptionOverview extends StatelessWidget {
+  final SubscriptionController logic;
+  final AppSemanticColors semantic;
+  final Color textSecondary;
+
+  const _SubscriptionOverview({
+    required this.logic,
+    required this.semantic,
+    required this.textSecondary,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final warningActive = logic.dueSoonCount > 0;
+
+    return Padding(
+      padding: EdgeInsets.fromLTRB(16.w, 8.h, 16.w, 8.h),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Expanded(
+                child: AppMetricTile(
+                  label: "本月预计",
+                  value: formatMoney(logic.currentMonthCost),
+                  icon: Icons.calendar_month_rounded,
+                  color: semantic.expense,
+                ),
+              ),
+              SizedBox(width: 10.w),
+              Expanded(
+                child: AppMetricTile(
+                  label: "固定年支",
+                  value: formatMoney(logic.yearlyCost),
+                  icon: Icons.account_balance_wallet_rounded,
+                  color: semantic.stats,
+                ),
+              ),
+            ],
           ),
-        ],
-      ),
-      child: Material(
-        color: Colors.transparent,
-        child: InkWell(
-          borderRadius: BorderRadius.circular(24),
-          onTap: () {
-            Get.bottomSheet(
-              AddSubscriptionSheet(sub: sub),
-              isScrollControlled: true,
-              backgroundColor: Colors.transparent,
-            );
-          },
-          child: Padding(
-            padding: EdgeInsets.all(20.w),
+          SizedBox(height: 10.h),
+          AppCard(
+            padding: EdgeInsets.symmetric(horizontal: 14.w, vertical: 12.h),
             child: Row(
               children: [
-                // 图标
-                Container(
-                  width: 50.w,
-                  height: 50.w,
-                  decoration: BoxDecoration(
-                    color: AppColors.primaryBlue.withValues(
-                      alpha: isDark ? 0.2 : 0.1,
-                    ),
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                  alignment: Alignment.center,
-                  child: Text(
-                    sub.name.isNotEmpty ? sub.name.substring(0, 1) : "?",
-                    style: TextStyle(
-                      fontSize: 22.sp,
-                      color: AppColors.primaryBlue,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                ),
-                SizedBox(width: 16.w),
-
-                // 信息
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        sub.name,
-                        style: TextStyle(
-                          fontSize: 17.sp,
-                          fontWeight: FontWeight.bold,
-                          color: textPrimary,
-                        ),
-                      ),
-                      SizedBox(height: 4.h),
-                      Text(
-                        "下次: ${sub.nextPaymentDate.toString().split(' ')[0]}",
-                        style: TextStyle(fontSize: 13.sp, color: textSecondary),
-                      ),
-                    ],
-                  ),
-                ),
-
-                // 价格 & 删除
-                Column(
-                  crossAxisAlignment: CrossAxisAlignment.end,
-                  children: [
-                    Text(
-                      "¥${sub.price ?? 0}",
-                      style: TextStyle(
-                        fontSize: 18.sp,
-                        fontWeight: FontWeight.bold,
-                        fontFamily: "Roboto",
-                        color: textPrimary,
-                      ),
-                    ),
-                    Text(
-                      sub.cycle == SubscriptionCycle.monthly ? '/月' : '/年',
-                      style: TextStyle(fontSize: 12.sp, color: textSecondary),
-                    ),
-                  ],
+                Icon(
+                  warningActive
+                      ? Icons.warning_amber_rounded
+                      : Icons.event_available_rounded,
+                  color: warningActive ? semantic.warning : semantic.success,
+                  size: 22.sp,
                 ),
                 SizedBox(width: 10.w),
-                IconButton(
-                  icon: Icon(
-                    Icons.delete_outline,
-                    color: isDark ? Colors.grey[600] : Colors.grey[300],
-                    size: 20.sp,
+                Expanded(
+                  child: Text(
+                    warningActive
+                        ? "7 天内有 ${logic.dueSoonCount} 项即将扣费"
+                        : "7 天内暂无扣费提醒",
+                    style: TextStyle(
+                      fontSize: 13.sp,
+                      fontWeight: FontWeight.w700,
+                      color: warningActive ? semantic.warning : null,
+                    ),
                   ),
-                  onPressed: () => logic.deleteSub(sub.id),
                 ),
               ],
             ),
           ),
+          SizedBox(height: 14.h),
+          const AppSectionHeader(title: "分类"),
+          SizedBox(height: 8.h),
+          AppFilterChipBar<SubscriptionFilter>(
+            value: logic.filter.value,
+            onChanged: logic.setFilter,
+            items: const [
+              AppFilterChipItem(value: SubscriptionFilter.all, label: "全部"),
+              AppFilterChipItem(
+                value: SubscriptionFilter.monthly,
+                label: "每月",
+                icon: Icons.repeat_rounded,
+              ),
+              AppFilterChipItem(
+                value: SubscriptionFilter.yearly,
+                label: "每年",
+                icon: Icons.event_repeat_rounded,
+              ),
+              AppFilterChipItem(
+                value: SubscriptionFilter.oneTime,
+                label: "一次性",
+                icon: Icons.looks_one_rounded,
+              ),
+            ],
+          ),
+          SizedBox(height: 12.h),
+          const AppSectionHeader(title: "排序"),
+          SizedBox(height: 8.h),
+          AppFilterChipBar<SubscriptionSortMode>(
+            value: logic.sortMode.value,
+            onChanged: logic.setSortMode,
+            items: const [
+              AppFilterChipItem(
+                value: SubscriptionSortMode.manual,
+                label: "手动",
+                icon: Icons.drag_handle_rounded,
+              ),
+              AppFilterChipItem(
+                value: SubscriptionSortMode.date,
+                label: "日期",
+                icon: Icons.schedule_rounded,
+              ),
+              AppFilterChipItem(
+                value: SubscriptionSortMode.price,
+                label: "金额",
+                icon: Icons.payments_outlined,
+              ),
+            ],
+          ),
+          SizedBox(height: 12.h),
+        ],
+      ),
+    );
+  }
+}
+
+class _SubscriptionCard extends StatelessWidget {
+  final Subscription sub;
+  final AppSemanticColors semantic;
+  final Color textSecondary;
+  final bool showDragHandle;
+  final VoidCallback onTap;
+  final VoidCallback onDelete;
+
+  const _SubscriptionCard({
+    required this.sub,
+    required this.semantic,
+    required this.textSecondary,
+    this.showDragHandle = false,
+    required this.onTap,
+    required this.onDelete,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final dueStatus = _dueStatus(sub.nextPaymentDate);
+    final accent = dueStatus.shouldHighlight
+        ? semantic.warning
+        : semantic.expense;
+
+    return AppCard(
+      onTap: onTap,
+      padding: EdgeInsets.all(14.w),
+      child: Row(
+        children: [
+          Container(
+            width: 46.w,
+            height: 46.w,
+            alignment: Alignment.center,
+            decoration: BoxDecoration(
+              color: accent.withValues(alpha: 0.12),
+              borderRadius: BorderRadius.circular(10),
+            ),
+            child: Text(
+              sub.name.trim().isNotEmpty
+                  ? sub.name.trim().substring(0, 1)
+                  : "?",
+              style: TextStyle(
+                color: accent,
+                fontSize: 20.sp,
+                fontWeight: FontWeight.w800,
+              ),
+            ),
+          ),
+          SizedBox(width: 12.w),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  sub.name,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                    fontWeight: FontWeight.w800,
+                  ),
+                ),
+                SizedBox(height: 5.h),
+                Text(
+                  "下次 ${_date(sub.nextPaymentDate)} · ${dueStatus.label}",
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: TextStyle(
+                    fontSize: 12.sp,
+                    color: dueStatus.shouldHighlight
+                        ? semantic.warning
+                        : textSecondary,
+                    fontWeight: dueStatus.shouldHighlight
+                        ? FontWeight.w700
+                        : FontWeight.normal,
+                  ),
+                ),
+                SizedBox(height: 8.h),
+                _CyclePill(cycle: sub.cycle, color: semantic.expense),
+              ],
+            ),
+          ),
+          SizedBox(width: 10.w),
+          Column(
+            crossAxisAlignment: CrossAxisAlignment.end,
+            children: [
+              FittedBox(
+                fit: BoxFit.scaleDown,
+                child: Text(
+                  formatMoney(sub.price ?? 0),
+                  style: TextStyle(
+                    fontSize: 18.sp,
+                    fontWeight: FontWeight.w800,
+                    fontFamily: "Roboto",
+                  ),
+                ),
+              ),
+              SizedBox(height: 6.h),
+              Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  if (showDragHandle)
+                    Icon(
+                      Icons.drag_indicator_rounded,
+                      color: textSecondary,
+                      size: 18.sp,
+                    ),
+                  IconButton(
+                    visualDensity: VisualDensity.compact,
+                    tooltip: "删除",
+                    icon: Icon(
+                      Icons.delete_outline_rounded,
+                      color: textSecondary,
+                      size: 20.sp,
+                    ),
+                    onPressed: onDelete,
+                  ),
+                ],
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+
+  String _date(DateTime date) {
+    final month = date.month.toString().padLeft(2, '0');
+    final day = date.day.toString().padLeft(2, '0');
+    return '${date.year}-$month-$day';
+  }
+
+  _DueStatus _dueStatus(DateTime date) {
+    final now = DateTime.now();
+    final today = DateTime(now.year, now.month, now.day);
+    final target = DateTime(date.year, date.month, date.day);
+    final days = target.difference(today).inDays;
+    if (days < 0) return const _DueStatus("已过期", true);
+    if (days == 0) return const _DueStatus("今天扣费", true);
+    if (days <= 7) return _DueStatus("$days 天后", true);
+    return _DueStatus("$days 天后", false);
+  }
+}
+
+class _CyclePill extends StatelessWidget {
+  final SubscriptionCycle cycle;
+  final Color color;
+
+  const _CyclePill({required this.cycle, required this.color});
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: EdgeInsets.symmetric(horizontal: 8.w, vertical: 4.h),
+      decoration: BoxDecoration(
+        color: color.withValues(alpha: 0.08),
+        borderRadius: BorderRadius.circular(8),
+      ),
+      child: Text(
+        _label(cycle),
+        style: TextStyle(
+          color: color,
+          fontSize: 11.sp,
+          fontWeight: FontWeight.w700,
         ),
       ),
     );
   }
+
+  String _label(SubscriptionCycle cycle) {
+    switch (cycle) {
+      case SubscriptionCycle.monthly:
+        return "每月";
+      case SubscriptionCycle.yearly:
+        return "每年";
+      case SubscriptionCycle.oneTime:
+        return "一次性";
+    }
+  }
+}
+
+class _DueStatus {
+  final String label;
+  final bool shouldHighlight;
+
+  const _DueStatus(this.label, this.shouldHighlight);
 }

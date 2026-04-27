@@ -8,6 +8,29 @@ import 'photo_model.dart';
 class PhotoRepository extends GetxService {
   static PhotoRepository get to => Get.find();
 
+  String _sanitizePathSegment(String value, {String fallback = 'Untitled'}) {
+    final sanitized = value
+        .trim()
+        .replaceAll(RegExp(r'[<>:"/\\|?*\x00-\x1F]'), '_')
+        .replaceAll(RegExp(r'\s+'), ' ');
+    if (sanitized.isEmpty) return fallback;
+    return sanitized;
+  }
+
+  Future<String> _availablePath(String directory, String fileName) async {
+    final dotIndex = fileName.lastIndexOf('.');
+    final baseName = dotIndex <= 0 ? fileName : fileName.substring(0, dotIndex);
+    final extension = dotIndex <= 0 ? '' : fileName.substring(dotIndex);
+
+    var candidate = '$directory/$fileName';
+    var suffix = 1;
+    while (await File(candidate).exists()) {
+      candidate = '$directory/${baseName}_$suffix$extension';
+      suffix++;
+    }
+    return candidate;
+  }
+
   // --- 查询业务 ---
   Future<List<PhotoItem>> getAllPhotos() async {
     return await DbService.to.getAllPhotos();
@@ -27,12 +50,15 @@ class PhotoRepository extends GetxService {
   }) async {
     final appDir = await getApplicationDocumentsDirectory();
 
-    final safeProjectName = projectName.replaceAll(
-      RegExp(r'[<>:"/\\|?*]'),
-      '_',
+    final safeProjectName = _sanitizePathSegment(
+      projectName,
+      fallback: 'DefaultProject',
     );
-    final safeDeviceName = deviceName.replaceAll(RegExp(r'[<>:"/\\|?*]'), '_');
-    final safeDesc = description.replaceAll(RegExp(r'[<>:"/\\|?*]'), '_');
+    final safeDeviceName = _sanitizePathSegment(
+      deviceName,
+      fallback: 'UnknownDevice',
+    );
+    final safeDesc = _sanitizePathSegment(description, fallback: '');
 
     final folderPath = Directory(
       '${appDir.path}/$safeProjectName/$safeDeviceName',
@@ -49,7 +75,7 @@ class PhotoRepository extends GetxService {
       filePrefix = filePrefix.substring(0, 50);
     }
     final fileName = "${filePrefix}_$dateStr.jpg";
-    final savePath = "${folderPath.path}/$fileName";
+    final savePath = await _availablePath(folderPath.path, fileName);
 
     // Copy into the app-private archive. Gallery imports must keep the source
     // until the platform media delete request has completed.
@@ -98,13 +124,10 @@ class PhotoRepository extends GetxService {
       return null;
     }
 
-    final safeDesc = newDescription.trim().replaceAll(
-      RegExp(r'[<>:"/\\|?*]'),
-      '_',
-    );
-    final safeProject = (photo.projectName ?? "Doc").replaceAll(
-      RegExp(r'[<>:"/\\|?*]'),
-      '_',
+    final safeDesc = _sanitizePathSegment(newDescription, fallback: '');
+    final safeProject = _sanitizePathSegment(
+      photo.projectName ?? "Doc",
+      fallback: 'Doc',
     );
 
     String prefix = safeDesc.isNotEmpty ? safeDesc : safeProject;
@@ -114,7 +137,9 @@ class PhotoRepository extends GetxService {
     final dateStr = DateFormat('yyyyMMdd_HHmmss').format(photo.createdAt);
     final newFileName = "${prefix}_$dateStr.jpg";
 
-    final newPath = "${oldFile.parent.path}/$newFileName";
+    final newPath = photo.fileName == newFileName
+        ? photo.filePath
+        : await _availablePath(oldFile.parent.path, newFileName);
     String? oldPathToEvict;
 
     if (newPath != photo.filePath) {
@@ -138,13 +163,16 @@ class PhotoRepository extends GetxService {
       final sourceFile = File(photo.filePath);
       if (await sourceFile.exists()) {
         final projectDir = Directory(
-          '$targetDirectory/${photo.projectName ?? "Exported"}',
+          '$targetDirectory/${_sanitizePathSegment(photo.projectName ?? "Exported", fallback: "Exported")}',
         );
         if (!await projectDir.exists()) {
           await projectDir.create(recursive: true);
         }
 
-        final targetPath = '${projectDir.path}/${photo.fileName}';
+        final targetPath = await _availablePath(
+          projectDir.path,
+          photo.fileName,
+        );
         await sourceFile.copy(targetPath);
         successCount++;
       }

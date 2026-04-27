@@ -56,21 +56,60 @@ class BackupService {
   }
 
   static Future<void> restoreFromBackup(File backupFile) async {
-    // 1. 关闭现有数据库
-    await DbService.to.isar.close();
-
-    // 2. 覆盖文件
     final dir = await getApplicationDocumentsDirectory();
     final dbPath = p.join(dir.path, 'default.isar');
-
     final existingDb = File(dbPath);
-    if (await existingDb.exists()) {
-      await existingDb.delete();
+    final tempDir = await getTemporaryDirectory();
+    final rollbackPath = p.join(
+      tempDir.path,
+      'LifeLog_Rollback_${DateTime.now().millisecondsSinceEpoch}.isar',
+    );
+    final candidatePath = p.join(
+      tempDir.path,
+      'LifeLog_Restore_${DateTime.now().millisecondsSinceEpoch}.isar',
+    );
+    final rollbackFile = File(rollbackPath);
+    final candidateFile = File(candidatePath);
+
+    if (!await backupFile.exists()) {
+      throw Exception("备份文件不存在");
     }
 
-    await backupFile.copy(dbPath);
+    if (await existingDb.exists()) {
+      await DbService.to.isar.copyToFile(rollbackPath);
+    }
+    await backupFile.copy(candidatePath);
 
-    // 3. 重新初始化数据库
-    await DbService.to.init();
+    try {
+      await DbService.to.isar.close();
+
+      if (await existingDb.exists()) {
+        await existingDb.delete();
+      }
+      await candidateFile.copy(dbPath);
+
+      await DbService.to.init();
+    } catch (e) {
+      try {
+        if (await rollbackFile.exists()) {
+          if (await existingDb.exists()) {
+            await existingDb.delete();
+          }
+          await rollbackFile.copy(dbPath);
+          await DbService.to.init();
+        }
+      } catch (_) {
+        // Keep the original error visible; the app may need a restart if the
+        // platform still holds a database file handle.
+      }
+      throw Exception("恢复备份失败，已尝试回滚: $e");
+    } finally {
+      if (await candidateFile.exists()) {
+        await candidateFile.delete();
+      }
+      if (await rollbackFile.exists()) {
+        await rollbackFile.delete();
+      }
+    }
   }
 }

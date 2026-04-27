@@ -17,10 +17,8 @@ void showProjectPicker({
       builder: (context) {
         final theme = Theme.of(context);
         final isDark = theme.brightness == Brightness.dark;
-        final textColor = isDark
-            ? AppColors.darkTextPrimary
-            : AppColors.lightTextPrimary;
-        final hintColor = isDark ? Colors.grey[400]! : Colors.grey[600]!;
+        final textColor = theme.colorScheme.onSurface;
+        final hintColor = theme.colorScheme.onSurfaceVariant;
         final fillColor = isDark ? theme.cardColor : Colors.grey[100]!;
 
         return Container(

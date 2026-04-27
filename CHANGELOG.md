@@ -1,5 +1,37 @@
 # Changelog
 
+## [1.3.0] - 2026-04-27
+
+### 🎨 架构级重构：UI 系统全面现代化升级
+
+将应用 UI 从早期的“各页面独立硬编码样式”全面升级为一套现代、语义化、高一致性的设计体系，并完成了核心业务页面的彻底重构。
+
+#### 新增 (Added)
+- **统一 Design Token 系统**：引入了 `AppSemanticColors` (语义化配色)、`AppSpacing`、`AppRadius`、`AppMotion` 和 `AppElevations`。支持深浅色模式平滑切换，彻底告别硬编码色值。
+- **纯粹的低耦合基础组件库**：新增 `AppCard`、`AppButton`、`AppTextField`、`AppMetricTile`、`AppConfirmDialog`、`AppFilterChipBar` 等 10+ 基础通用组件，所有公共组件严格遵循**纯 UI 无状态/无 Controller 依赖**原则。
+- **响应式布局架构**：实现 `ConstrainedPage` 和 `AppBreakpoints` 容器体系，保证在折叠屏/平板设备上的宽屏体验约束，手机端则保持沉浸式体验。
+- **全局格式化工具**：在 `lib/common/utils/formatters.dart` 中统一定义金额等格式化函数，减少各业务面重复定义。
+- **开发者 UI 画廊 (Design Gallery)**：在开发者选项新增 UI 画廊入口，供研发实时预览、验证 Design Token 与核心组件库在各主题下的效果。
+
+#### 重构 (Refactored)
+- **支出模块 (Subscription)**：
+  - 重构列表渲染与数据摘要，新增即时警告卡片 (`AppMetricTile` / `AppCard`)。
+  - 实现双维度筛选引擎（支持“按周期过滤”与“按模式排序”解耦，配合双组 `AppFilterChipBar`）。
+  - 完善拖拽排序守卫逻辑，仅在特定排序模式开启拖拽，确保状态不乱。
+  - 过期未付款账单现支持红色强警告高亮 (`_DueStatus.isSoon = true`)。
+- **工时模块 (WorkLog)**：
+  - 将日历默认视图切换为“周视图 (`CalendarFormat.week`)”，释放小屏可用空间。
+  - 重写了当日日志列表组件 `DayLogList`，现已完美支持同一天内同时展示多条“工作/出差/请假/休息”复合记录。
+  - 日志卡片 (`_DayLogCard`) 应用类型化的语义色彩与图标组合，信息辨识度大幅提升；补充了农历及标准空状态界面 (`AppEmptyState`)。
+- **统计模块 (Statistics)**：
+  - 构建了直观的 2×2 `AppMetricTile` 核心指标网格。
+  - 通过轻量化 `LinearProgressIndicator` 开发了双模式 `_ProgressRow` 对比条组件，用极低成本实现了财务与工时的核心图表化表达。
+  - 优化 AppBar 右上角交互，以图标按钮和丝滑切页动画 (`AppMotion.fast`) 取代此前冗余文字状态。
+- **我的与设置 (Profile)**：
+  - 用户选项划分为五大层级分组 (`_SettingsGroup`)，搭配 `AppSectionHeader`，界面清晰易读。
+  - 账号卡片信息强化表达（登录、同步、离线提示）；开发者入口层级作了合理的透明度弱化 (`muted: true`)。
+- **交互与危险操作统一**：所有删除/登出等破坏性动作已全面接入 `AppConfirmDialog` 并绑定震动触觉反馈 (`HapticFeedback`)。
+
 ## [1.2.0] - 2026-04-27
 
 ### 🔄 重构：同步协议升级

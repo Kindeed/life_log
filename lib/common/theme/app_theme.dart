@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'app_colors.dart';
+import 'app_semantic_colors.dart';
 import 'custom_colors.dart';
 
 /// 应用主题配置
@@ -8,7 +9,7 @@ class AppTheme {
   static ThemeData get light => ThemeData(
     useMaterial3: true,
     brightness: Brightness.light,
-    extensions: const [LogColors.light], // 注册自定义颜色扩展
+    extensions: const [LogColors.light, AppSemanticColors.light],
     colorScheme: ColorScheme.fromSeed(
       seedColor: AppColors.primaryBlue,
       brightness: Brightness.light,
@@ -51,7 +52,7 @@ class AppTheme {
   static ThemeData get dark => ThemeData(
     useMaterial3: true,
     brightness: Brightness.dark,
-    extensions: const [LogColors.dark], // 注册自定义颜色扩展
+    extensions: const [LogColors.dark, AppSemanticColors.dark],
     colorScheme: ColorScheme.fromSeed(
       seedColor: AppColors.primaryBlue,
       brightness: Brightness.dark,

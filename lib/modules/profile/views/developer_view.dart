@@ -6,6 +6,7 @@ import 'package:share_plus/share_plus.dart';
 import '../../../common/theme/app_colors.dart';
 import '../../../common/theme/custom_colors.dart';
 import '../../../common/services/log_service.dart';
+import 'design_gallery_view.dart';
 
 /// 开发者选项页面
 class DeveloperView extends StatelessWidget {
@@ -17,9 +18,7 @@ class DeveloperView extends StatelessWidget {
     final theme = Theme.of(context);
     final isDark = theme.brightness == Brightness.dark;
     final cardColor = theme.cardColor;
-    final textPrimary = isDark
-        ? AppColors.darkTextPrimary
-        : AppColors.lightTextPrimary;
+    final textPrimary = theme.colorScheme.onSurface;
     final textSecondary = isDark ? Colors.grey[400]! : Colors.grey[600]!;
 
     return Scaffold(
@@ -190,6 +189,29 @@ class DeveloperView extends StatelessWidget {
             ),
             trailing: Icon(Icons.chevron_right_rounded, color: textSecondary),
             onTap: () => _copyLogs(logService),
+          ),
+          Divider(
+            height: 1,
+            indent: 16.w,
+            endIndent: 16.w,
+            color: isDark ? Colors.grey[800] : Colors.grey[200],
+          ),
+          ListTile(
+            leading: Icon(Icons.palette_outlined, color: textSecondary),
+            title: Text(
+              'UI Gallery',
+              style: TextStyle(
+                fontSize: 15.sp,
+                fontWeight: FontWeight.w500,
+                color: textPrimary,
+              ),
+            ),
+            subtitle: Text(
+              '查看设计 Token 和公共组件',
+              style: TextStyle(fontSize: 12.sp, color: textSecondary),
+            ),
+            trailing: Icon(Icons.chevron_right_rounded, color: textSecondary),
+            onTap: () => Get.to(() => const DesignGalleryView()),
           ),
         ],
       ),

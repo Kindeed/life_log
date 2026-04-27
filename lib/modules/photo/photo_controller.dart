@@ -13,6 +13,26 @@ import 'package:file_picker/file_picker.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:photo_manager/photo_manager.dart';
 
+enum ProjectSortMode { recent, count, name }
+
+class ProjectSummary {
+  final String name;
+  final List<PhotoItem> photos;
+  final PhotoItem latestPhoto;
+  final int deviceCount;
+  final int untitledCount;
+
+  ProjectSummary({
+    required this.name,
+    required this.photos,
+    required this.latestPhoto,
+    required this.deviceCount,
+    required this.untitledCount,
+  });
+
+  int get photoCount => photos.length;
+}
+
 class PhotoController extends GetxController {
   static PhotoController get to => Get.find();
 
@@ -20,6 +40,8 @@ class PhotoController extends GetxController {
   final photos = <PhotoItem>[].obs;
   final isLoading = false.obs;
   final isFabVisible = true.obs;
+  final projectSearchQuery = ''.obs;
+  final projectSortMode = ProjectSortMode.recent.obs;
 
   // Device info
   String _deviceName = "UnknownDevice";
@@ -190,7 +212,72 @@ class PhotoController extends GetxController {
       }
       groups[name]!.add(photo);
     }
+    for (final group in groups.values) {
+      group.sort((a, b) => b.createdAt.compareTo(a.createdAt));
+    }
     return groups;
+  }
+
+  List<ProjectSummary> get projectSummaries {
+    final summaries = groupedPhotos.entries.map((entry) {
+      final projectPhotos = entry.value;
+      final deviceNames = projectPhotos
+          .map((photo) => photo.deviceName)
+          .whereType<String>()
+          .where((name) => name.trim().isNotEmpty)
+          .toSet();
+      final untitledCount = projectPhotos
+          .where((photo) => photo.description?.trim().isNotEmpty != true)
+          .length;
+
+      return ProjectSummary(
+        name: entry.key,
+        photos: projectPhotos,
+        latestPhoto: projectPhotos.first,
+        deviceCount: deviceNames.length,
+        untitledCount: untitledCount,
+      );
+    }).toList();
+
+    switch (projectSortMode.value) {
+      case ProjectSortMode.recent:
+        summaries.sort(
+          (a, b) => b.latestPhoto.createdAt.compareTo(a.latestPhoto.createdAt),
+        );
+        break;
+      case ProjectSortMode.count:
+        summaries.sort((a, b) {
+          final countCompare = b.photoCount.compareTo(a.photoCount);
+          if (countCompare != 0) return countCompare;
+          return a.name.compareTo(b.name);
+        });
+        break;
+      case ProjectSortMode.name:
+        summaries.sort((a, b) => a.name.compareTo(b.name));
+        break;
+    }
+
+    return summaries;
+  }
+
+  List<ProjectSummary> get filteredProjectSummaries {
+    final query = projectSearchQuery.value.trim().toLowerCase();
+    if (query.isEmpty) return projectSummaries;
+    return projectSummaries
+        .where((project) => project.name.toLowerCase().contains(query))
+        .toList();
+  }
+
+  int get totalProjectCount => groupedPhotos.length;
+
+  int get totalPhotoCount => photos.length;
+
+  void updateProjectSearch(String value) {
+    projectSearchQuery.value = value;
+  }
+
+  void setProjectSortMode(ProjectSortMode mode) {
+    projectSortMode.value = mode;
   }
 
   // --- Delete logic (Single) ---

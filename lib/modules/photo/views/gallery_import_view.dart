@@ -3,7 +3,6 @@ import 'dart:typed_data';
 
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
-import 'package:life_log/common/theme/app_colors.dart';
 import 'package:photo_manager/photo_manager.dart';
 
 class GalleryImportView extends StatefulWidget {
@@ -167,9 +166,7 @@ class _GalleryImportViewState extends State<GalleryImportView> {
           "导入成功后会请求删除原相册照片，系统会弹出确认框。",
           textAlign: TextAlign.center,
           style: TextStyle(
-            color: isDark
-                ? AppColors.darkTextSecondary
-                : AppColors.lightTextSecondary,
+            color: theme.colorScheme.onSurfaceVariant,
             fontSize: 12,
           ),
         ),

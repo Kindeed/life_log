@@ -3,7 +3,6 @@ import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:get/get.dart';
 import 'package:intl/intl.dart';
 import 'package:table_calendar/table_calendar.dart';
-import '../../../common/theme/app_colors.dart';
 import '../work_log_controller.dart';
 
 class CalendarHeader extends StatelessWidget {
@@ -52,9 +51,7 @@ class CalendarHeader extends StatelessWidget {
                 ),
                 Icon(
                   Icons.arrow_drop_down,
-                  color: isDark
-                      ? AppColors.darkTextSecondary
-                      : AppColors.lightTextSecondary,
+                  color: Theme.of(context).colorScheme.onSurfaceVariant,
                 ),
               ],
             ),
@@ -119,12 +116,8 @@ class CalendarHeader extends StatelessWidget {
           text,
           style: TextStyle(
             color: isActive
-                ? (isDark
-                      ? AppColors.darkTextPrimary
-                      : AppColors.lightTextPrimary)
-                : (isDark
-                      ? AppColors.darkTextSecondary
-                      : AppColors.lightTextSecondary),
+                ? Theme.of(context).colorScheme.onSurface
+                : Theme.of(context).colorScheme.onSurfaceVariant,
             fontWeight: isActive ? FontWeight.bold : FontWeight.normal,
             fontSize: 13.sp,
           ),

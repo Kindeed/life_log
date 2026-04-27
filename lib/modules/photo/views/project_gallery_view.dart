@@ -24,10 +24,8 @@ class _ProjectGalleryViewState extends State<ProjectGalleryView> {
     final theme = Theme.of(context);
     final isDark = theme.brightness == Brightness.dark;
     final cardColor = theme.cardColor;
-    final textPrimary = isDark
-        ? AppColors.darkTextPrimary
-        : AppColors.lightTextPrimary;
-    final textSecondary = isDark ? Colors.grey[400]! : Colors.grey[700]!;
+    final textPrimary = theme.colorScheme.onSurface;
+    final textSecondary = theme.colorScheme.onSurfaceVariant;
 
     return Scaffold(
       appBar: AppBar(
@@ -35,27 +33,29 @@ class _ProjectGalleryViewState extends State<ProjectGalleryView> {
         actions: [
           Obx(() {
             if (isMultiSelectMode.value) {
+              final projectPhotos =
+                  controller.groupedPhotos[widget.projectName] ?? [];
+              if (projectPhotos.isEmpty) {
+                WidgetsBinding.instance.addPostFrameCallback((_) {
+                  selectedPhotos.clear();
+                  isMultiSelectMode.value = false;
+                });
+                return const SizedBox.shrink();
+              }
+
               return Row(
                 mainAxisSize: MainAxisSize.min,
                 children: [
                   TextButton(
                     onPressed: () {
-                      if (selectedPhotos.length ==
-                          controller
-                              .groupedPhotos[widget.projectName]!
-                              .length) {
+                      if (selectedPhotos.length == projectPhotos.length) {
                         selectedPhotos.clear();
                       } else {
-                        selectedPhotos.assignAll(
-                          controller.groupedPhotos[widget.projectName]!,
-                        );
+                        selectedPhotos.assignAll(projectPhotos);
                       }
                     },
                     child: Text(
-                      selectedPhotos.length ==
-                              controller
-                                  .groupedPhotos[widget.projectName]!
-                                  .length
+                      selectedPhotos.length == projectPhotos.length
                           ? "全不选"
                           : "全选",
                     ),
@@ -87,6 +87,10 @@ class _ProjectGalleryViewState extends State<ProjectGalleryView> {
             controller.groupedPhotos[widget.projectName] ?? [];
 
         if (projectPhotos.isEmpty) {
+          WidgetsBinding.instance.addPostFrameCallback((_) {
+            selectedPhotos.clear();
+            isMultiSelectMode.value = false;
+          });
           return Center(
             child: Text("此项目下暂无照片", style: TextStyle(color: textSecondary)),
           );
