@@ -15,6 +15,22 @@ import 'package:photo_manager/photo_manager.dart';
 
 enum ProjectSortMode { recent, count, name }
 
+enum PhotoUiMessageType { success, warning, error }
+
+class PhotoUiMessage {
+  final String title;
+  final String message;
+  final PhotoUiMessageType type;
+  final bool showAtBottom;
+
+  const PhotoUiMessage({
+    required this.title,
+    required this.message,
+    required this.type,
+    this.showAtBottom = false,
+  });
+}
+
 class ProjectSummary {
   final String name;
   final List<PhotoItem> photos;
@@ -42,6 +58,7 @@ class PhotoController extends GetxController {
   final isFabVisible = true.obs;
   final projectSearchQuery = ''.obs;
   final projectSortMode = ProjectSortMode.recent.obs;
+  final uiMessage = Rxn<PhotoUiMessage>();
 
   // Device info
   String _deviceName = "UnknownDevice";
@@ -115,7 +132,7 @@ class PhotoController extends GetxController {
         );
       }
     } catch (e) {
-      Get.snackbar("错误", "无法打开系统相机: $e");
+      _emitError("错误", "无法打开系统相机: $e");
     }
   }
 
@@ -139,7 +156,7 @@ class PhotoController extends GetxController {
         },
       );
     } catch (e) {
-      Get.snackbar("错误", "无法导入相册照片: $e");
+      _emitError("错误", "无法导入相册照片: $e");
     }
   }
 
@@ -163,19 +180,17 @@ class PhotoController extends GetxController {
         await _deleteSourceGalleryAsset(sourceAssetId);
       }
 
-      Get.snackbar(
+      _emitSuccess(
         "归档成功",
         "照片已保存至: ${photoItem.projectName}",
-        snackPosition: SnackPosition.BOTTOM,
-        backgroundColor: Colors.green.withValues(alpha: 0.8),
-        colorText: Colors.white,
+        showAtBottom: true,
       );
       LogService.to.info(
         'Photo',
         '保存照片 ${photoItem.fileName} (${photoItem.projectName})',
       );
     } catch (e) {
-      Get.snackbar("错误", "保存照片失败: $e");
+      _emitError("错误", "保存照片失败: $e");
     } finally {
       isLoading.value = false;
     }
@@ -187,18 +202,10 @@ class PhotoController extends GetxController {
         sourceAssetId,
       ]);
       if (deletedIds.isEmpty) {
-        Get.snackbar(
-          "原图未删除",
-          "照片已归档，但系统相册原图仍保留",
-          snackPosition: SnackPosition.BOTTOM,
-        );
+        _emitWarning("原图未删除", "照片已归档，但系统相册原图仍保留", showAtBottom: true);
       }
     } catch (e) {
-      Get.snackbar(
-        "原图未删除",
-        "照片已归档，但删除系统相册原图失败: $e",
-        snackPosition: SnackPosition.BOTTOM,
-      );
+      _emitWarning("原图未删除", "照片已归档，但删除系统相册原图失败: $e", showAtBottom: true);
     }
   }
 
@@ -291,10 +298,10 @@ class PhotoController extends GetxController {
     try {
       isLoading.value = true;
       await PhotoRepository.to.deletePhotos(itemsToDelete);
-      Get.snackbar("已删除", "成功删除 ${itemsToDelete.length} 张照片");
+      _emitSuccess("已删除", "成功删除 ${itemsToDelete.length} 张照片");
       LogService.to.info('Photo', '删除 ${itemsToDelete.length} 张照片');
     } catch (e) {
-      Get.snackbar("删除失败", e.toString());
+      _emitError("删除失败", e.toString());
     } finally {
       isLoading.value = false;
     }
@@ -316,9 +323,9 @@ class PhotoController extends GetxController {
       }
 
       Get.back();
-      Get.snackbar("成功", "照片信息已更新");
+      _emitSuccess("成功", "照片信息已更新");
     } catch (e) {
-      Get.snackbar("更新失败", "照片信息更新失败: $e");
+      _emitError("更新失败", "照片信息更新失败: $e");
     }
   }
 
@@ -342,16 +349,43 @@ class PhotoController extends GetxController {
         selectedDirectory,
       );
 
-      Get.snackbar(
+      _emitSuccess(
         "导出成功",
         "成功导出 $successCount 张照片至 $selectedDirectory",
-        snackPosition: SnackPosition.BOTTOM,
+        showAtBottom: true,
       );
       LogService.to.info('Photo', '导出 $successCount 张照片至 $selectedDirectory');
     } catch (e) {
-      Get.snackbar("导出错误", "导出照片失败: $e");
+      _emitError("导出错误", "导出照片失败: $e");
     } finally {
       isLoading.value = false;
     }
+  }
+
+  void _emitSuccess(String title, String message, {bool showAtBottom = false}) {
+    uiMessage.value = PhotoUiMessage(
+      title: title,
+      message: message,
+      type: PhotoUiMessageType.success,
+      showAtBottom: showAtBottom,
+    );
+  }
+
+  void _emitWarning(String title, String message, {bool showAtBottom = false}) {
+    uiMessage.value = PhotoUiMessage(
+      title: title,
+      message: message,
+      type: PhotoUiMessageType.warning,
+      showAtBottom: showAtBottom,
+    );
+  }
+
+  void _emitError(String title, String message, {bool showAtBottom = false}) {
+    uiMessage.value = PhotoUiMessage(
+      title: title,
+      message: message,
+      type: PhotoUiMessageType.error,
+      showAtBottom: showAtBottom,
+    );
   }
 }

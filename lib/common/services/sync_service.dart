@@ -1,10 +1,13 @@
 import 'dart:math';
+import 'dart:io';
 
 import 'package:get/get.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:get_storage/get_storage.dart';
+import 'package:path_provider/path_provider.dart';
 import '../../modules/work_log/work_log_model.dart';
 import '../../modules/subscription/subscription_model.dart';
+import '../../modules/evidence/evidence_model.dart';
 import '../db/db_service.dart';
 import '../services/auth_service.dart';
 import '../services/log_service.dart';
@@ -15,8 +18,11 @@ class SyncService extends GetxService {
   final _client = Supabase.instance.client;
   final _storage = GetStorage();
   final _random = Random.secure();
+  static const _evidenceBucket = 'evidence-files';
   Future<bool>? _activeSync;
   DateTime? _lastSyncStartedAt;
+  Future<void>? _claimUnownedRecordsFuture;
+  String? _claimUnownedRecordsUserId;
 
   String get _lastSyncKey {
     final user = AuthService.to.currentUser.value;
@@ -70,6 +76,21 @@ class SyncService extends GetxService {
     }
   }
 
+  Future<void> _refreshRemoteEvidence(ExpenseEvidence evidence) async {
+    final user = AuthService.to.currentUser.value;
+    if (user == null || evidence.remoteId == null) return;
+
+    final remote = await _client
+        .from('expense_evidence')
+        .select()
+        .eq('id', evidence.remoteId!)
+        .eq('user_id', user.id)
+        .maybeSingle();
+    if (remote != null) {
+      await DbService.to.syncRemoteEvidenceToLocal(remote);
+    }
+  }
+
   void _applyWorkLogSyncResult(WorkLog log, Map<String, dynamic> response) {
     log.remoteId = response['id'] as int;
     log.syncId = response['sync_id'] as String? ?? log.syncId;
@@ -97,20 +118,66 @@ class SyncService extends GetxService {
     sub.pendingDelete = false;
   }
 
+  void _applyEvidenceSyncResult(
+    ExpenseEvidence evidence,
+    Map<String, dynamic> response,
+  ) {
+    evidence.remoteId = response['id'] as int;
+    evidence.syncId = response['sync_id'] as String? ?? evidence.syncId;
+    evidence.remoteVersion = (response['version'] as num?)?.toInt() ?? 0;
+    evidence.remoteUpdatedAt = response['updated_at'] == null
+        ? null
+        : DateTime.parse(response['updated_at'] as String);
+    evidence.syncedAt = DateTime.now();
+    evidence.isDirty = false;
+    evidence.pendingDelete = false;
+  }
+
   @override
   void onInit() {
     super.onInit();
     ever(AuthService.to.currentUser, (user) {
       if (user != null) {
-        syncAll(reason: 'auth');
+        _claimUnownedRecordsThenSync(user.id, reason: 'auth');
+      } else {
+        _claimUnownedRecordsFuture = null;
+        _claimUnownedRecordsUserId = null;
       }
     });
 
     if (AuthService.to.isLoggedIn) {
-      DbService.to.claimUnownedRecordsForCurrentUser().then((_) {
-        syncAll(reason: 'startup');
-      });
+      _claimUnownedRecordsThenSync(
+        AuthService.to.currentUser.value!.id,
+        reason: 'startup',
+      );
     }
+  }
+
+  Future<void> _claimUnownedRecordsThenSync(
+    String userId, {
+    required String reason,
+  }) async {
+    try {
+      await _claimUnownedRecordsForCurrentUser(userId);
+      await syncAll(reason: reason);
+    } catch (e) {
+      LogService.to.error('Sync', '$reason sync bootstrap failed: $e');
+    }
+  }
+
+  Future<void> _claimUnownedRecordsForCurrentUser(String userId) {
+    if (_claimUnownedRecordsUserId != userId) {
+      _claimUnownedRecordsUserId = userId;
+      _claimUnownedRecordsFuture = null;
+    }
+
+    return _claimUnownedRecordsFuture ??= DbService.to
+        .claimUnownedRecordsForCurrentUser()
+        .catchError((Object e) {
+          _claimUnownedRecordsFuture = null;
+          LogService.to.error('Sync', 'Claim unowned records failed: $e');
+          throw e;
+        });
   }
 
   // --- Work Log Sync ---
@@ -354,6 +421,188 @@ class SyncService extends GetxService {
     }
   }
 
+  // --- Evidence Sync ---
+
+  Future<String?> _uploadEvidenceFile(ExpenseEvidence evidence) async {
+    final user = AuthService.to.currentUser.value;
+    final localPath = evidence.localFilePath;
+    if (user == null || localPath == null) return evidence.remoteStoragePath;
+
+    final file = File(localPath);
+    if (!await file.exists()) return evidence.remoteStoragePath;
+
+    evidence.syncId ??= newSyncId();
+    final fileName =
+        evidence.fileName ?? localPath.split(Platform.pathSeparator).last;
+    final storagePath = '${user.id}/${evidence.syncId}/$fileName';
+
+    await _client.storage
+        .from(_evidenceBucket)
+        .upload(
+          storagePath,
+          file,
+          fileOptions: FileOptions(
+            contentType: evidence.mimeType ?? 'image/jpeg',
+            upsert: true,
+          ),
+        );
+
+    evidence.remoteStoragePath = storagePath;
+    evidence.uploadedAt = DateTime.now().toUtc();
+    return storagePath;
+  }
+
+  Future<void> downloadEvidenceFile(ExpenseEvidence evidence) async {
+    final remotePath = evidence.remoteStoragePath;
+    if (remotePath == null || remotePath.isEmpty) return;
+
+    final currentPath = evidence.localFilePath;
+    if (currentPath != null && await File(currentPath).exists()) return;
+
+    final bytes = await _client.storage
+        .from(_evidenceBucket)
+        .download(remotePath);
+    final appDir = await getApplicationDocumentsDirectory();
+    final safeProject = evidence.projectName.trim().replaceAll(
+      RegExp(r'[<>:"/\\|?*\x00-\x1F]'),
+      '_',
+    );
+    final folder = Directory(
+      '${appDir.path}/Evidence/${safeProject.isEmpty ? "DefaultProject" : safeProject}',
+    );
+    if (!await folder.exists()) {
+      await folder.create(recursive: true);
+    }
+
+    final fileName = evidence.fileName ?? remotePath.split('/').last;
+    final localPath = '${folder.path}${Platform.pathSeparator}$fileName';
+    await File(localPath).writeAsBytes(bytes);
+    evidence.localFilePath = localPath;
+    await DbService.to.updateEvidenceRemoteId(evidence);
+  }
+
+  Future<bool> pushEvidence(ExpenseEvidence evidence) async {
+    if (!AuthService.to.isLoggedIn) return false;
+
+    if (evidence.pendingDelete) {
+      if (evidence.remoteId == null) {
+        await DbService.to.purgeDeletedEvidence(evidence.id);
+        return true;
+      }
+      final success = await deleteEvidence(evidence);
+      if (success) {
+        await DbService.to.purgeDeletedEvidence(evidence.id);
+      }
+      return success;
+    }
+
+    try {
+      final user = AuthService.to.currentUser.value!;
+      evidence.syncId ??= newSyncId();
+      await _uploadEvidenceFile(evidence);
+
+      final data = {
+        'user_id': user.id,
+        'local_id': evidence.id,
+        'project_name': evidence.projectName,
+        'evidence_date': evidence.evidenceDate.toIso8601String(),
+        'amount': evidence.amount,
+        'currency': evidence.currency,
+        'category': evidence.category.name,
+        'status': evidence.status.name,
+        'merchant': evidence.merchant,
+        'note': evidence.note,
+        'remote_storage_path': evidence.remoteStoragePath,
+        'file_name': evidence.fileName,
+        'mime_type': evidence.mimeType,
+        'uploaded_at': evidence.uploadedAt?.toIso8601String(),
+        'trip_date': evidence.tripDate?.toIso8601String(),
+        'deleted_at': null,
+        'updated_at': DateTime.now().toUtc().toIso8601String(),
+        'sync_id': evidence.syncId,
+      };
+
+      final operation = evidence.remoteId == null ? 'insert' : 'update';
+      if (evidence.remoteId != null) {
+        var query = _client
+            .from('expense_evidence')
+            .update(data)
+            .eq('id', evidence.remoteId!)
+            .eq('user_id', user.id);
+        if (evidence.remoteVersion > 0) {
+          query = query.eq('version', evidence.remoteVersion);
+        }
+        final response = await query
+            .select('id, sync_id, version, updated_at')
+            .maybeSingle();
+        if (response == null) {
+          await _refreshRemoteEvidence(evidence);
+          throw StateError(
+            'Remote Evidence update conflict or not found: ${evidence.remoteId}',
+          );
+        }
+        _applyEvidenceSyncResult(evidence, response);
+        await DbService.to.updateEvidenceRemoteId(evidence);
+      } else {
+        final response = await _client
+            .from('expense_evidence')
+            .insert(data)
+            .select('id, sync_id, version, updated_at')
+            .single();
+        _applyEvidenceSyncResult(evidence, response);
+        await DbService.to.updateEvidenceRemoteId(evidence);
+      }
+      LogService.to.info('Sync', 'Evidence $operation success: ${evidence.id}');
+      return true;
+    } catch (e) {
+      LogService.to.error('Sync', 'Push Evidence failed: $e');
+      return false;
+    }
+  }
+
+  Future<bool> deleteEvidence(ExpenseEvidence evidence) async {
+    if (!AuthService.to.isLoggedIn) return false;
+    if (evidence.remoteId == null) return true;
+
+    try {
+      final user = AuthService.to.currentUser.value!;
+      var query = _client
+          .from('expense_evidence')
+          .update({
+            'deleted_at': DateTime.now().toUtc().toIso8601String(),
+            'updated_at': DateTime.now().toUtc().toIso8601String(),
+          })
+          .eq('id', evidence.remoteId!)
+          .eq('user_id', user.id);
+      if (evidence.remoteVersion > 0) {
+        query = query.eq('version', evidence.remoteVersion);
+      }
+      final response = await query
+          .select('id, sync_id, version, updated_at')
+          .maybeSingle();
+      if (response == null) {
+        await _refreshRemoteEvidence(evidence);
+        throw StateError(
+          'Remote Evidence delete conflict or not found: ${evidence.remoteId}',
+        );
+      }
+      if (evidence.remoteStoragePath != null) {
+        await _client.storage.from(_evidenceBucket).remove([
+          evidence.remoteStoragePath!,
+        ]);
+      }
+      _applyEvidenceSyncResult(evidence, response);
+      LogService.to.info(
+        'Sync',
+        'Evidence delete success: ${evidence.remoteId}',
+      );
+      return true;
+    } catch (e) {
+      LogService.to.error('Sync', 'Delete Evidence failed: $e');
+      return false;
+    }
+  }
+
   // --- Pull Everything ---
 
   // --- Sync All ---
@@ -460,12 +709,41 @@ class SyncService extends GetxService {
         await DbService.to.syncRemoteSubscriptionToLocal(map);
       }
 
+      // 3. Pull Evidence
+      var evidenceQuery = _client
+          .from('expense_evidence')
+          .select()
+          .eq('user_id', user.id);
+      final evidenceData = fullRefresh
+          ? await evidenceQuery
+          : await evidenceQuery
+                .gte('updated_at', lastCursor.toIso8601String())
+                .lte('updated_at', pullStartedAt.toIso8601String());
+
+      for (var map in evidenceData) {
+        await DbService.to.syncRemoteEvidenceToLocal(map);
+        final syncId = map['sync_id'] as String?;
+        if (map['deleted_at'] == null && syncId != null) {
+          ExpenseEvidence? evidence;
+          for (final item in await DbService.to.getAllEvidence()) {
+            if (item.syncId == syncId) {
+              evidence = item;
+              break;
+            }
+          }
+          if (evidence != null) {
+            await downloadEvidenceFile(evidence);
+          }
+        }
+      }
+
       _storage.write(_lastPullCursorKey, pullStartedAt.toIso8601String());
 
       LogService.to.info(
         'Sync',
         'Pull complete (${fullRefresh ? "full" : "incremental"}): '
-            '${logsData.length} logs, ${subsData.length} subscriptions',
+            '${logsData.length} logs, ${subsData.length} subscriptions, '
+            '${evidenceData.length} evidence',
       );
       return true;
     } catch (e) {
@@ -503,11 +781,24 @@ class SyncService extends GetxService {
         }
       }
 
+      final allEvidence = await DbService.to.getAllEvidenceForSync();
+      var evidenceAttempts = 0;
+      var evidenceFailures = 0;
+      for (var item in allEvidence) {
+        if (item.remoteId == null || item.isDirty || item.pendingDelete) {
+          evidenceAttempts++;
+          final pushed = await pushEvidence(item);
+          if (!pushed) evidenceFailures++;
+          success = pushed && success;
+        }
+      }
+
       LogService.to.info(
         'Sync',
         'Push ${success ? "complete" : "incomplete"}: '
             'workLogs $workLogAttempts attempted/$workLogFailures failed, '
-            'subscriptions $subscriptionAttempts attempted/$subscriptionFailures failed',
+            'subscriptions $subscriptionAttempts attempted/$subscriptionFailures failed, '
+            'evidence $evidenceAttempts attempted/$evidenceFailures failed',
       );
       return success;
     } catch (e) {

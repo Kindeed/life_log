@@ -21,14 +21,14 @@ void main() async {
 
   // 0. 基础设施：存储和国际化
   // Supabase Init — 通过 --dart-define 注入密钥，避免硬编码
-  const supabaseUrl = String.fromEnvironment(
-    'SUPABASE_URL',
-    defaultValue: 'https://ikaoktfmytsnximtijjg.supabase.co',
-  );
-  const supabaseAnonKey = String.fromEnvironment(
-    'SUPABASE_ANON_KEY',
-    defaultValue: 'sb_publishable_SnUTjnXNxYUGXBqSrzBqfw_SR-eLNTG',
-  );
+  const supabaseUrl = String.fromEnvironment('SUPABASE_URL');
+  const supabaseAnonKey = String.fromEnvironment('SUPABASE_ANON_KEY');
+  if (supabaseUrl.isEmpty || supabaseAnonKey.isEmpty) {
+    throw StateError(
+      'Missing SUPABASE_URL or SUPABASE_ANON_KEY. '
+      'Pass them with --dart-define.',
+    );
+  }
   await Supabase.initialize(url: supabaseUrl, anonKey: supabaseAnonKey);
 
   await GetStorage.init();

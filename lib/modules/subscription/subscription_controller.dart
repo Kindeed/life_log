@@ -5,7 +5,6 @@ import 'subscription_model.dart';
 import 'subscription_repository.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
-import '../../common/db/db_service.dart';
 
 enum SubscriptionFilter { all, monthly, yearly, oneTime }
 
@@ -136,7 +135,7 @@ class SubscriptionController extends GetxController {
     subs.insert(newIndex, item);
 
     // 重新写入数据库中的顺序
-    await DbService.to.reorderSubscriptions(subs);
+    await SubscriptionRepository.to.reorderSubscriptions(subs);
     LogService.to.info('Subscription', '重新排序订阅');
   }
 

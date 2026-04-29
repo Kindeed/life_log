@@ -4,6 +4,7 @@ import 'package:get/get.dart';
 import 'work_log_controller.dart';
 import 'work_log_model.dart';
 import '../../common/theme/app_colors.dart';
+import '../../common/widgets/app_confirm_dialog.dart';
 
 class AddLogSheet extends StatefulWidget {
   final DateTime selectedDate;
@@ -309,41 +310,29 @@ class _AddLogSheetState extends State<AddLogSheet> {
     }
   }
 
-  void _deleteLog() {
-    showDialog(
-      context: context,
-      builder: (ctx) => AlertDialog(
-        title: const Text("确认删除"),
-        content: const Text("确定要删除这条记录吗？"),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(ctx),
-            child: Text(
-              "取消",
-              style: TextStyle(
-                color: Theme.of(
-                  context,
-                ).textTheme.bodyMedium?.color?.withValues(alpha: 0.6),
-              ),
-            ),
-          ),
-          TextButton(
-            onPressed: () async {
-              Navigator.pop(ctx);
-              await WorkLogController.to.deleteLog(widget.existingLog!.id);
-              Get.back();
-            },
-            child: Text(
-              "删除",
-              style: TextStyle(
-                color: Theme.of(context).colorScheme.error,
-                fontWeight: FontWeight.bold,
-              ),
-            ),
-          ),
-        ],
-      ),
+  Future<void> _deleteLog() async {
+    final confirmed = await AppConfirmDialog.show(
+      title: "删除记录",
+      message: "确定删除这条记录吗？删除后无法恢复。",
+      confirmLabel: "删除",
+      destructive: true,
     );
+
+    if (!confirmed || !mounted) return;
+
+    await WorkLogController.to.deleteLog(widget.existingLog!.id);
+    Get.back();
+  }
+
+  bool _hasBusinessChanges(WorkLog original, WorkLog next) {
+    return original.date != next.date ||
+        original.type != next.type ||
+        original.note != next.note ||
+        original.overtimeHours != next.overtimeHours ||
+        original.location != next.location ||
+        original.transport != next.transport ||
+        original.expenses != next.expenses ||
+        original.isReimbursed != next.isReimbursed;
   }
 
   void _saveLog() {
@@ -404,8 +393,11 @@ class _AddLogSheetState extends State<AddLogSheet> {
         break;
     }
 
-    // 标记为需要同步
-    log.isDirty = true;
+    final existingLog = widget.existingLog;
+    log.isDirty =
+        existingLog == null ||
+        existingLog.isDirty ||
+        _hasBusinessChanges(existingLog, log);
 
     WorkLogController.to.addLog(log);
     Get.back();

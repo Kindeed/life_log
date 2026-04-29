@@ -196,7 +196,7 @@ class _MetricGrid extends StatelessWidget {
             children: [
               Expanded(
                 child: AppMetricTile(
-                  label: "待报销",
+                  label: "出差待报销",
                   value: formatMoney(logic.unreimbursedAmount.value),
                   icon: Icons.receipt_long_rounded,
                   color: semantic.warning,
@@ -209,6 +209,28 @@ class _MetricGrid extends StatelessWidget {
                   value: formatMoney(logic.selectedMonthSubCost.value),
                   icon: Icons.subscriptions_rounded,
                   color: semantic.expense,
+                ),
+              ),
+            ],
+          ),
+          SizedBox(height: 10.h),
+          Row(
+            children: [
+              Expanded(
+                child: AppMetricTile(
+                  label: "凭证待报销",
+                  value: formatMoney(logic.evidenceUnreimbursedAmount.value),
+                  icon: Icons.pending_actions_rounded,
+                  color: semantic.warning,
+                ),
+              ),
+              SizedBox(width: 10.w),
+              Expanded(
+                child: AppMetricTile(
+                  label: "凭证已报销",
+                  value: formatMoney(logic.evidenceReimbursedAmount.value),
+                  icon: Icons.verified_rounded,
+                  color: semantic.success,
                 ),
               ),
             ],
@@ -284,6 +306,9 @@ class _FinanceOverview extends StatelessWidget {
       child: Obx(() {
         final reimburseTotal =
             logic.reimbursedAmount.value + logic.unreimbursedAmount.value;
+        final evidenceTotal =
+            logic.evidenceReimbursedAmount.value +
+            logic.evidenceUnreimbursedAmount.value;
         final fixedTotal = logic.yearSubCost.value <= 0
             ? logic.selectedMonthSubCost.value
             : logic.yearSubCost.value;
@@ -294,7 +319,7 @@ class _FinanceOverview extends StatelessWidget {
             const AppSectionHeader(title: "财务概览"),
             SizedBox(height: 16.h),
             _ProgressRow(
-              label: "待报销",
+              label: "出差待报销",
               valueLabel: formatMoney(logic.unreimbursedAmount.value),
               progressValue: logic.unreimbursedAmount.value,
               progressTotal: reimburseTotal,
@@ -306,6 +331,22 @@ class _FinanceOverview extends StatelessWidget {
               valueLabel: formatMoney(logic.reimbursedAmount.value),
               progressValue: logic.reimbursedAmount.value,
               progressTotal: reimburseTotal,
+              color: semantic.success,
+            ),
+            SizedBox(height: 12.h),
+            _ProgressRow(
+              label: "凭证待报销",
+              valueLabel: formatMoney(logic.evidenceUnreimbursedAmount.value),
+              progressValue: logic.evidenceUnreimbursedAmount.value,
+              progressTotal: evidenceTotal,
+              color: semantic.warning,
+            ),
+            SizedBox(height: 12.h),
+            _ProgressRow(
+              label: "凭证已报销",
+              valueLabel: formatMoney(logic.evidenceReimbursedAmount.value),
+              progressValue: logic.evidenceReimbursedAmount.value,
+              progressTotal: evidenceTotal,
               color: semantic.success,
             ),
             SizedBox(height: 18.h),

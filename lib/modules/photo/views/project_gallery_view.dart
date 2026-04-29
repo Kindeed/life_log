@@ -1,13 +1,18 @@
 import 'dart:io';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:get/get.dart';
+import 'package:life_log/common/theme/app_semantic_colors.dart';
+import 'package:life_log/common/widgets/app_action_sheet.dart';
+import 'package:life_log/common/widgets/app_empty_state.dart';
+import 'package:life_log/common/widgets/app_safe_bottom_bar.dart';
 import 'package:life_log/modules/photo/photo_controller.dart';
 import 'package:life_log/modules/photo/photo_model.dart';
-import 'package:life_log/common/theme/app_colors.dart';
 
 class ProjectGalleryView extends StatefulWidget {
   final String projectName;
+
   const ProjectGalleryView({super.key, required this.projectName});
 
   @override
@@ -24,17 +29,25 @@ class _ProjectGalleryViewState extends State<ProjectGalleryView> {
     final theme = Theme.of(context);
     final isDark = theme.brightness == Brightness.dark;
     final cardColor = theme.cardColor;
+    final semantic = theme.extension<AppSemanticColors>()!;
     final textPrimary = theme.colorScheme.onSurface;
     final textSecondary = theme.colorScheme.onSurfaceVariant;
 
     return Scaffold(
       appBar: AppBar(
-        title: Text(widget.projectName),
+        title: Obx(
+          () => Text(
+            isMultiSelectMode.value
+                ? "已选 ${selectedPhotos.length} 张"
+                : widget.projectName,
+          ),
+        ),
         actions: [
           Obx(() {
+            final projectPhotos =
+                controller.groupedPhotos[widget.projectName] ?? [];
+
             if (isMultiSelectMode.value) {
-              final projectPhotos =
-                  controller.groupedPhotos[widget.projectName] ?? [];
               if (projectPhotos.isEmpty) {
                 WidgetsBinding.instance.addPostFrameCallback((_) {
                   selectedPhotos.clear();
@@ -61,24 +74,32 @@ class _ProjectGalleryViewState extends State<ProjectGalleryView> {
                     ),
                   ),
                   TextButton(
-                    onPressed: () {
-                      isMultiSelectMode.value = false;
-                      selectedPhotos.clear();
-                    },
-                    child: const Text(
+                    onPressed: _exitSelectionMode,
+                    child: Text(
                       "取消",
-                      style: TextStyle(color: Colors.red),
+                      style: TextStyle(color: theme.colorScheme.error),
                     ),
                   ),
                 ],
               );
-            } else {
-              return IconButton(
-                icon: const Icon(Icons.checklist_rtl_rounded),
-                onPressed: () => isMultiSelectMode.value = true,
-                tooltip: "选择模式",
-              );
             }
+
+            return Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                IconButton(
+                  icon: const Icon(Icons.add_photo_alternate_rounded),
+                  onPressed: _showAddPhotoActions,
+                  tooltip: "添加照片",
+                ),
+                if (projectPhotos.isNotEmpty)
+                  IconButton(
+                    icon: const Icon(Icons.checklist_rtl_rounded),
+                    onPressed: () => isMultiSelectMode.value = true,
+                    tooltip: "选择模式",
+                  ),
+              ],
+            );
           }),
         ],
       ),
@@ -91,107 +112,66 @@ class _ProjectGalleryViewState extends State<ProjectGalleryView> {
             selectedPhotos.clear();
             isMultiSelectMode.value = false;
           });
-          return Center(
-            child: Text("此项目下暂无照片", style: TextStyle(color: textSecondary)),
+          return AppEmptyState(
+            icon: Icons.photo_library_outlined,
+            title: "此项目下暂无照片",
+            message: "继续拍摄或从相册导入后会归档到当前项目",
+            actionLabel: "添加照片",
+            onAction: _showAddPhotoActions,
           );
         }
 
-        return GridView.builder(
-          padding: EdgeInsets.all(12.w),
-          gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-            crossAxisCount: 3,
-            crossAxisSpacing: 8.w,
-            mainAxisSpacing: 12.h,
-            childAspectRatio: 0.75,
-          ),
-          itemCount: projectPhotos.length,
-          itemBuilder: (context, index) {
-            final photo = projectPhotos[index];
-            return Obx(() {
-              final isSelected = selectedPhotos.contains(photo);
-              return GestureDetector(
-                onTap: () {
-                  if (isMultiSelectMode.value) {
-                    if (isSelected) {
-                      selectedPhotos.remove(photo);
-                    } else {
-                      selectedPhotos.add(photo);
-                    }
-                  } else {
-                    _showPhotoDetail(
-                      photo,
-                      isDark,
-                      cardColor,
-                      textPrimary,
-                      textSecondary,
-                    );
-                  }
-                },
-                onLongPress: () {
-                  if (!isMultiSelectMode.value) {
-                    isMultiSelectMode.value = true;
-                    selectedPhotos.add(photo);
-                  }
-                },
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.stretch,
-                  children: [
-                    Expanded(
-                      child: Stack(
-                        fit: StackFit.expand,
-                        children: [
-                          ClipRRect(
-                            borderRadius: BorderRadius.circular(8),
-                            child: Image.file(
-                              File(photo.filePath),
-                              fit: BoxFit.cover,
-                              errorBuilder: (ctx, err, stack) => Center(
-                                child: Icon(
-                                  Icons.broken_image,
-                                  color: textSecondary,
-                                ),
-                              ),
-                            ),
-                          ),
-                          if (isMultiSelectMode.value)
-                            Positioned(
-                              top: 4,
-                              right: 4,
-                              child: Container(
-                                decoration: BoxDecoration(
-                                  color: isSelected
-                                      ? AppColors.primaryBlue
-                                      : Colors.black26,
-                                  shape: BoxShape.circle,
-                                  border: Border.all(
-                                    color: Colors.white,
-                                    width: 1.5,
-                                  ),
-                                ),
-                                child: Icon(
-                                  isSelected ? Icons.check : null,
-                                  size: 18,
-                                  color: Colors.white,
-                                ),
-                              ),
-                            ),
-                        ],
-                      ),
-                    ),
-                    SizedBox(height: 4.h),
-                    Text(
-                      photo.description?.isNotEmpty == true
-                          ? photo.description!
-                          : "无标题",
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                      style: TextStyle(fontSize: 11.sp, color: textSecondary),
-                      textAlign: TextAlign.center,
-                    ),
-                  ],
-                ),
-              );
-            });
+        return LayoutBuilder(
+          builder: (context, constraints) {
+            final rawCount = (constraints.maxWidth / 120.w).floor();
+            final crossAxisCount = rawCount < 3
+                ? 3
+                : rawCount > 6
+                ? 6
+                : rawCount;
+
+            return GridView.builder(
+              padding: EdgeInsets.fromLTRB(12.w, 12.h, 12.w, 96.h),
+              gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+                crossAxisCount: crossAxisCount,
+                crossAxisSpacing: 8.w,
+                mainAxisSpacing: 12.h,
+                childAspectRatio: 0.75,
+              ),
+              itemCount: projectPhotos.length,
+              itemBuilder: (context, index) {
+                final photo = projectPhotos[index];
+                return Obx(() {
+                  final isSelected = selectedPhotos.contains(photo);
+                  return _PhotoTile(
+                    photo: photo,
+                    isSelectionMode: isMultiSelectMode.value,
+                    isSelected: isSelected,
+                    selectedColor: semantic.project,
+                    textSecondary: textSecondary,
+                    onTap: () {
+                      if (isMultiSelectMode.value) {
+                        _togglePhoto(photo);
+                        return;
+                      }
+                      _showPhotoDetail(
+                        photo,
+                        isDark,
+                        cardColor,
+                        textPrimary,
+                        textSecondary,
+                      );
+                    },
+                    onLongPress: () {
+                      if (!isMultiSelectMode.value) {
+                        isMultiSelectMode.value = true;
+                        selectedPhotos.add(photo);
+                      }
+                    },
+                  );
+                });
+              },
+            );
           },
         );
       }),
@@ -199,123 +179,104 @@ class _ProjectGalleryViewState extends State<ProjectGalleryView> {
         if (!isMultiSelectMode.value || selectedPhotos.isEmpty) {
           return const SizedBox.shrink();
         }
-        return Container(
-          padding: EdgeInsets.fromLTRB(20.w, 10.h, 20.w, 30.h),
-          decoration: BoxDecoration(
-            color: cardColor,
-            boxShadow: [
-              BoxShadow(
-                color: isDark
-                    ? Colors.black.withValues(alpha: 0.3)
-                    : Colors.black.withValues(alpha: 0.05),
-                blurRadius: 10,
-                offset: const Offset(0, -5),
-              ),
-            ],
-          ),
+
+        return AppSafeBottomBar(
           child: Row(
             children: [
-              Text(
-                "选择了 ${selectedPhotos.length} 张",
-                style: TextStyle(color: textPrimary),
-              ),
-              const Spacer(),
-              ElevatedButton.icon(
-                onPressed: () {
-                  Get.defaultDialog(
-                    title: "批量删除",
-                    middleText:
-                        "确任删除这 ${selectedPhotos.length} 张照片吗？\n此操作不可撤销。",
-                    textConfirm: "删除",
-                    textCancel: "取消",
-                    confirmTextColor: Colors.white,
-                    onConfirm: () async {
-                      Get.back();
-                      final photosToDelete = selectedPhotos.toList();
-                      isMultiSelectMode.value = false;
-                      selectedPhotos.clear();
-                      await controller.deletePhotos(photosToDelete);
-                    },
-                  );
-                },
-                icon: const Icon(Icons.delete, size: 18),
-                label: const Text("删除"),
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: theme.colorScheme.errorContainer,
-                  foregroundColor: theme.colorScheme.onErrorContainer,
-                  elevation: 0,
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(20),
+              Expanded(
+                child: Text(
+                  "已选择 ${selectedPhotos.length} 张",
+                  style: TextStyle(
+                    color: textPrimary,
+                    fontWeight: FontWeight.w700,
                   ),
                 ),
               ),
-              const SizedBox(width: 8),
-              ElevatedButton.icon(
+              TextButton.icon(
+                onPressed: _confirmDeleteSelected,
+                icon: const Icon(Icons.delete_outline_rounded, size: 18),
+                label: const Text("删除"),
+                style: TextButton.styleFrom(
+                  foregroundColor: theme.colorScheme.error,
+                ),
+              ),
+              SizedBox(width: 8.w),
+              FilledButton.icon(
                 onPressed: () =>
                     controller.exportPhotos(selectedPhotos.toList()),
-                icon: const Icon(Icons.ios_share, size: 18),
+                icon: const Icon(Icons.ios_share_rounded, size: 18),
                 label: const Text("导出"),
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: AppColors.primaryBlue,
-                  foregroundColor: Colors.white,
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(20),
-                  ),
-                ),
               ),
             ],
           ),
         );
       }),
       floatingActionButton: Obx(() {
-        if (isMultiSelectMode.value) return const SizedBox.shrink();
-        return FloatingActionButton(
-          backgroundColor: AppColors.primaryBlue,
-          onPressed: () => _showAddPhotoActions(),
-          child: const Icon(Icons.add_photo_alternate, color: Colors.white),
+        final projectPhotos =
+            controller.groupedPhotos[widget.projectName] ?? [];
+        if (isMultiSelectMode.value || projectPhotos.isEmpty) {
+          return const SizedBox.shrink();
+        }
+
+        return FloatingActionButton.extended(
+          backgroundColor: semantic.project,
+          foregroundColor: Colors.white,
+          onPressed: _showAddPhotoActions,
+          icon: const Icon(Icons.add_photo_alternate_rounded),
+          label: const Text("添加"),
         );
       }),
     );
   }
 
+  void _togglePhoto(PhotoItem photo) {
+    if (selectedPhotos.contains(photo)) {
+      selectedPhotos.remove(photo);
+    } else {
+      selectedPhotos.add(photo);
+    }
+  }
+
+  void _exitSelectionMode() {
+    isMultiSelectMode.value = false;
+    selectedPhotos.clear();
+  }
+
+  void _confirmDeleteSelected() {
+    Get.defaultDialog(
+      title: "批量删除",
+      middleText: "确认删除这 ${selectedPhotos.length} 张照片吗？\n此操作不可撤销。",
+      textConfirm: "删除",
+      textCancel: "取消",
+      confirmTextColor: Colors.white,
+      onConfirm: () async {
+        Get.back();
+        final photosToDelete = selectedPhotos.toList();
+        _exitSelectionMode();
+        await controller.deletePhotos(photosToDelete);
+      },
+    );
+  }
+
   void _showAddPhotoActions() {
-    Get.bottomSheet(
-      SafeArea(
-        child: Container(
-          padding: EdgeInsets.fromLTRB(16.w, 12.h, 16.w, 20.h),
-          decoration: BoxDecoration(
-            color: Theme.of(context).cardColor,
-            borderRadius: BorderRadius.vertical(top: Radius.circular(20.r)),
-          ),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              ListTile(
-                leading: const Icon(Icons.camera_alt_rounded),
-                title: const Text("拍摄照片"),
-                onTap: () {
-                  Get.back();
-                  controller.captureWithSystemCamera(
-                    initialProject: widget.projectName,
-                  );
-                },
-              ),
-              ListTile(
-                leading: const Icon(Icons.photo_library_rounded),
-                title: const Text("从相册导入"),
-                subtitle: const Text("导入后请求删除系统相册原图"),
-                onTap: () {
-                  Get.back();
-                  controller.importFromGallery(
-                    initialProject: widget.projectName,
-                  );
-                },
-              ),
-            ],
+    AppActionSheet.show(
+      title: "添加到 ${widget.projectName}",
+      actions: [
+        AppActionSheetItem(
+          icon: Icons.camera_alt_rounded,
+          title: "拍摄照片",
+          onTap: () => controller.captureWithSystemCamera(
+            initialProject: widget.projectName,
           ),
         ),
-      ),
-      backgroundColor: Colors.transparent,
+        AppActionSheetItem(
+          icon: Icons.photo_library_rounded,
+          title: "从相册导入",
+          subtitle: "导入后请求删除系统相册原图",
+          onTap: () =>
+              controller.importFromGallery(initialProject: widget.projectName),
+        ),
+      ],
     );
   }
 
@@ -326,172 +287,172 @@ class _ProjectGalleryViewState extends State<ProjectGalleryView> {
     Color textPrimary,
     Color textSecondary,
   ) {
-    final TextEditingController descEditController = TextEditingController(
-      text: photo.description,
-    );
+    final descEditController = TextEditingController(text: photo.description);
     final theme = Theme.of(context);
 
     Get.bottomSheet(
-      Container(
-        padding: EdgeInsets.all(20.w),
-        decoration: BoxDecoration(
-          color: cardColor,
-          borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
-        ),
-        child: SingleChildScrollView(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  Text(
-                    "照片详情",
-                    style: TextStyle(
-                      fontSize: 18,
-                      fontWeight: FontWeight.bold,
-                      color: textPrimary,
+      SafeArea(
+        top: false,
+        child: Container(
+          padding: EdgeInsets.all(20.w),
+          decoration: BoxDecoration(
+            color: cardColor,
+            borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
+          ),
+          child: SingleChildScrollView(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Text(
+                      "照片详情",
+                      style: TextStyle(
+                        fontSize: 18,
+                        fontWeight: FontWeight.bold,
+                        color: textPrimary,
+                      ),
                     ),
-                  ),
-                  IconButton(
-                    icon: Icon(Icons.close, color: textSecondary),
-                    onPressed: () => Get.back(),
-                  ),
-                ],
-              ),
-              SizedBox(height: 16.h),
-              Center(
-                child: ClipRRect(
-                  borderRadius: BorderRadius.circular(12),
-                  child: Image.file(
-                    File(photo.filePath),
-                    height: 200.h,
-                    fit: BoxFit.contain,
-                  ),
+                    IconButton(
+                      icon: Icon(Icons.close, color: textSecondary),
+                      onPressed: () => Get.back(),
+                    ),
+                  ],
                 ),
-              ),
-              SizedBox(height: 20.h),
-              _buildInfoRow(
-                "项目名称",
-                photo.projectName ?? "Default",
-                textPrimary,
-                textSecondary,
-              ),
-              _buildInfoRow(
-                "设备名称",
-                photo.deviceName ?? "Unknown",
-                textPrimary,
-                textSecondary,
-              ),
-              _buildInfoRow(
-                "拍摄时间",
-                photo.createdAt.toString().substring(0, 19),
-                textPrimary,
-                textSecondary,
-              ),
-              _buildInfoRow("保存路径", photo.filePath, textPrimary, textSecondary),
-              SizedBox(height: 16.h),
-              Text(
-                "补充说明",
-                style: TextStyle(
-                  fontWeight: FontWeight.bold,
-                  color: textPrimary,
-                ),
-              ),
-              SizedBox(height: 8.h),
-              TextField(
-                controller: descEditController,
-                maxLines: 3,
-                style: TextStyle(color: textPrimary),
-                decoration: InputDecoration(
-                  hintText: "添加补充说明...",
-                  hintStyle: TextStyle(color: textSecondary),
-                  filled: true,
-                  fillColor: isDark ? Colors.grey[850] : Colors.grey[100],
-                  border: OutlineInputBorder(
+                SizedBox(height: 16.h),
+                Center(
+                  child: ClipRRect(
                     borderRadius: BorderRadius.circular(12),
-                    borderSide: BorderSide.none,
+                    child: Image.file(
+                      File(photo.filePath),
+                      height: 200.h,
+                      fit: BoxFit.contain,
+                    ),
                   ),
                 ),
-              ),
-              SizedBox(height: 24.h),
-              SizedBox(height: 24.h),
-              Row(
-                children: [
-                  Expanded(
-                    child: OutlinedButton.icon(
-                      onPressed: () {
-                        Get.dialog(
-                          AlertDialog(
-                            title: const Text("确认删除"),
-                            content: const Text("删除后无法恢复，确定要删除这张照片吗？"),
-                            actions: [
-                              TextButton(
-                                onPressed: () => Get.back(),
-                                child: const Text("取消"),
-                              ),
-                              TextButton(
-                                onPressed: () async {
-                                  Get.back();
-                                  await controller.deletePhoto(photo);
-                                },
-                                child: Text(
-                                  "删除",
-                                  style: TextStyle(
-                                    color: theme.colorScheme.error,
-                                  ),
-                                ),
-                              ),
-                            ],
+                SizedBox(height: 20.h),
+                _buildInfoRow(
+                  "项目名称",
+                  photo.projectName ?? "Default",
+                  textPrimary,
+                  textSecondary,
+                ),
+                _buildInfoRow(
+                  "设备名称",
+                  photo.deviceName ?? "Unknown",
+                  textPrimary,
+                  textSecondary,
+                ),
+                _buildInfoRow(
+                  "拍摄时间",
+                  photo.createdAt.toString().substring(0, 19),
+                  textPrimary,
+                  textSecondary,
+                ),
+                _buildInfoRow(
+                  "保存路径",
+                  photo.filePath,
+                  textPrimary,
+                  textSecondary,
+                ),
+                SizedBox(height: 16.h),
+                Text(
+                  "补充说明",
+                  style: TextStyle(
+                    fontWeight: FontWeight.bold,
+                    color: textPrimary,
+                  ),
+                ),
+                SizedBox(height: 8.h),
+                TextField(
+                  controller: descEditController,
+                  maxLines: 3,
+                  style: TextStyle(color: textPrimary),
+                  decoration: InputDecoration(
+                    hintText: "添加补充说明...",
+                    hintStyle: TextStyle(color: textSecondary),
+                    filled: true,
+                    fillColor: isDark ? Colors.grey[850] : Colors.grey[100],
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(12),
+                      borderSide: BorderSide.none,
+                    ),
+                  ),
+                ),
+                SizedBox(height: 24.h),
+                Row(
+                  children: [
+                    Expanded(
+                      child: OutlinedButton.icon(
+                        onPressed: () => _confirmDeletePhoto(photo),
+                        icon: Icon(
+                          Icons.delete_outline,
+                          color: theme.colorScheme.error,
+                          size: 20,
+                        ),
+                        label: Text(
+                          "删除",
+                          style: TextStyle(color: theme.colorScheme.error),
+                        ),
+                        style: OutlinedButton.styleFrom(
+                          side: BorderSide(color: theme.colorScheme.error),
+                          padding: EdgeInsets.symmetric(vertical: 12.h),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(12),
                           ),
-                        );
-                      },
-                      icon: Icon(
-                        Icons.delete_outline,
-                        color: theme.colorScheme.error,
-                        size: 20,
-                      ),
-                      label: Text(
-                        "删除",
-                        style: TextStyle(color: theme.colorScheme.error),
-                      ),
-                      style: OutlinedButton.styleFrom(
-                        side: BorderSide(color: theme.colorScheme.error),
-                        padding: EdgeInsets.symmetric(vertical: 12.h),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(12),
                         ),
                       ),
                     ),
-                  ),
-                  SizedBox(width: 16.w),
-                  Expanded(
-                    child: ElevatedButton.icon(
-                      onPressed: () => controller.updatePhotoDescription(
-                        photo,
-                        descEditController.text,
-                      ),
-                      icon: const Icon(Icons.save, size: 20),
-                      label: const Text("保存修改"),
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: AppColors.primaryBlue,
-                        foregroundColor: Colors.white,
-                        padding: EdgeInsets.symmetric(vertical: 12.h),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(12),
+                    SizedBox(width: 16.w),
+                    Expanded(
+                      child: ElevatedButton.icon(
+                        onPressed: () => controller.updatePhotoDescription(
+                          photo,
+                          descEditController.text,
+                        ),
+                        icon: const Icon(Icons.save, size: 20),
+                        label: const Text("保存修改"),
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: theme.colorScheme.primary,
+                          foregroundColor: theme.colorScheme.onPrimary,
+                          padding: EdgeInsets.symmetric(vertical: 12.h),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                          elevation: 0,
                         ),
                       ),
                     ),
-                  ),
-                ],
-              ),
-              SizedBox(height: 10.h),
-            ],
+                  ],
+                ),
+              ],
+            ),
           ),
         ),
       ),
       isScrollControlled: true,
+    );
+  }
+
+  void _confirmDeletePhoto(PhotoItem photo) {
+    final theme = Theme.of(context);
+    Get.dialog(
+      AlertDialog(
+        title: const Text("确认删除"),
+        content: const Text("删除后无法恢复，确定要删除这张照片吗？"),
+        actions: [
+          TextButton(onPressed: () => Get.back(), child: const Text("取消")),
+          TextButton(
+            onPressed: () async {
+              Get.back();
+              await controller.deletePhoto(photo);
+            },
+            child: Text("删除", style: TextStyle(color: theme.colorScheme.error)),
+          ),
+        ],
+      ),
     );
   }
 
@@ -518,6 +479,92 @@ class _ProjectGalleryViewState extends State<ProjectGalleryView> {
               value,
               style: TextStyle(fontSize: 13, color: textPrimary),
             ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _PhotoTile extends StatelessWidget {
+  final PhotoItem photo;
+  final bool isSelectionMode;
+  final bool isSelected;
+  final Color selectedColor;
+  final Color textSecondary;
+  final VoidCallback onTap;
+  final VoidCallback onLongPress;
+
+  const _PhotoTile({
+    required this.photo,
+    required this.isSelectionMode,
+    required this.isSelected,
+    required this.selectedColor,
+    required this.textSecondary,
+    required this.onTap,
+    required this.onLongPress,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      onTap: onTap,
+      onLongPress: onLongPress,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          Expanded(
+            child: Stack(
+              fit: StackFit.expand,
+              children: [
+                ClipRRect(
+                  borderRadius: BorderRadius.circular(8),
+                  child: Image.file(
+                    File(photo.filePath),
+                    fit: BoxFit.cover,
+                    errorBuilder: (ctx, err, stack) => Center(
+                      child: Icon(Icons.broken_image, color: textSecondary),
+                    ),
+                  ),
+                ),
+                if (isSelectionMode)
+                  Positioned(
+                    top: 6,
+                    right: 6,
+                    child: Container(
+                      width: 24,
+                      height: 24,
+                      decoration: BoxDecoration(
+                        color: isSelected ? selectedColor : Colors.black38,
+                        shape: BoxShape.circle,
+                        border: Border.all(color: Colors.white, width: 1.5),
+                      ),
+                      child: Icon(
+                        isSelected ? Icons.check : null,
+                        size: 16,
+                        color: Colors.white,
+                      ),
+                    ),
+                  ),
+                if (isSelected)
+                  Positioned.fill(
+                    child: DecoratedBox(
+                      decoration: BoxDecoration(
+                        borderRadius: BorderRadius.circular(8),
+                        border: Border.all(color: selectedColor, width: 2),
+                      ),
+                    ),
+                  ),
+              ],
+            ),
+          ),
+          SizedBox(height: 4.h),
+          Text(
+            photo.description?.isNotEmpty == true ? photo.description! : "无标题",
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+            style: TextStyle(fontSize: 11.sp, color: textSecondary),
+            textAlign: TextAlign.center,
           ),
         ],
       ),

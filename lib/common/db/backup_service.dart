@@ -1,6 +1,13 @@
 import 'dart:io';
 import 'package:file_picker/file_picker.dart';
+import 'package:get/get.dart';
 import 'package:life_log/common/db/db_service.dart';
+import 'package:life_log/modules/photo/photo_controller.dart';
+import 'package:life_log/modules/evidence/evidence_controller.dart';
+import 'package:life_log/modules/statistics/statistics_controller.dart';
+import 'package:life_log/modules/subscription/subscription_controller.dart';
+import 'package:life_log/modules/tabs/tabs_controller.dart';
+import 'package:life_log/modules/work_log/work_log_controller.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:share_plus/share_plus.dart';
 import 'package:path/path.dart' as p;
@@ -89,6 +96,7 @@ class BackupService {
       await candidateFile.copy(dbPath);
 
       await DbService.to.init();
+      await _rebuildDatabaseControllers();
     } catch (e) {
       try {
         if (await rollbackFile.exists()) {
@@ -97,6 +105,7 @@ class BackupService {
           }
           await rollbackFile.copy(dbPath);
           await DbService.to.init();
+          await _rebuildDatabaseControllers();
         }
       } catch (_) {
         // Keep the original error visible; the app may need a restart if the
@@ -110,6 +119,21 @@ class BackupService {
       if (await rollbackFile.exists()) {
         await rollbackFile.delete();
       }
+    }
+  }
+
+  static Future<void> _rebuildDatabaseControllers() async {
+    await _deleteIfRegistered<WorkLogController>();
+    await _deleteIfRegistered<SubscriptionController>();
+    await _deleteIfRegistered<PhotoController>();
+    await _deleteIfRegistered<EvidenceController>();
+    await _deleteIfRegistered<StatisticsController>();
+    await _deleteIfRegistered<TabsController>();
+  }
+
+  static Future<void> _deleteIfRegistered<T>() async {
+    if (Get.isRegistered<T>()) {
+      await Get.delete<T>(force: true);
     }
   }
 }

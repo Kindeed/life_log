@@ -4,6 +4,7 @@ import 'package:path_provider/path_provider.dart';
 import '../../modules/work_log/work_log_model.dart';
 import '../../modules/subscription/subscription_model.dart';
 import '../../modules/photo/photo_model.dart'; // Import PhotoModel
+import '../../modules/evidence/evidence_model.dart';
 import '../services/auth_service.dart';
 // import '../services/sync_service.dart'; // Removed cyclic dependency
 
@@ -31,6 +32,10 @@ class DbService extends GetxService {
     sub.ownerUserId ??= currentOwnerUserId;
   }
 
+  void _stampEvidenceOwner(ExpenseEvidence evidence) {
+    evidence.ownerUserId ??= currentOwnerUserId;
+  }
+
   Future<void> claimUnownedRecordsForCurrentUser() async {
     final currentUserId = currentOwnerUserId;
     if (currentUserId == null) return;
@@ -56,6 +61,18 @@ class DbService extends GetxService {
       if (subs.isNotEmpty) {
         await isar.subscriptions.putAll(subs);
       }
+
+      final evidence = await isar.expenseEvidences
+          .filter()
+          .ownerUserIdIsNull()
+          .findAll();
+      for (final item in evidence) {
+        item.ownerUserId = currentUserId;
+        item.isDirty = true;
+      }
+      if (evidence.isNotEmpty) {
+        await isar.expenseEvidences.putAll(evidence);
+      }
     });
   }
 
@@ -69,6 +86,7 @@ class DbService extends GetxService {
       WorkLogSchema,
       SubscriptionSchema,
       PhotoItemSchema,
+      ExpenseEvidenceSchema,
     ], directory: dir.path);
 
     return this;
@@ -261,6 +279,72 @@ class DbService extends GetxService {
   Future<void> deletePhoto(int id) async {
     await isar.writeTxn(() async {
       await isar.photoItems.delete(id);
+    });
+  }
+
+  // --- 凭证系统 Evidence ---
+
+  Future<List<ExpenseEvidence>> getAllEvidence() async {
+    final items = await isar.expenseEvidences
+        .where()
+        .sortByEvidenceDateDesc()
+        .findAll();
+    return items
+        .where(
+          (item) =>
+              item.deletedAt == null && _belongsToCurrentUser(item.ownerUserId),
+        )
+        .toList();
+  }
+
+  Future<List<ExpenseEvidence>> getAllEvidenceForSync() async {
+    final items = await isar.expenseEvidences
+        .where()
+        .sortByEvidenceDateDesc()
+        .findAll();
+    return items
+        .where((item) => _belongsToCurrentUser(item.ownerUserId))
+        .toList();
+  }
+
+  Future<ExpenseEvidence?> getEvidence(int id) async {
+    final item = await isar.expenseEvidences.get(id);
+    if (item == null || !_belongsToCurrentUser(item.ownerUserId)) return null;
+    return item;
+  }
+
+  Stream<void> watchEvidence() => isar.expenseEvidences.watchLazy();
+
+  Future<int> addEvidence(ExpenseEvidence evidence) async {
+    final id = await isar.writeTxn(() async {
+      _stampEvidenceOwner(evidence);
+      return await isar.expenseEvidences.put(evidence);
+    });
+    return id;
+  }
+
+  Future<ExpenseEvidence?> markEvidenceDeleted(int id) async {
+    return await isar.writeTxn(() async {
+      final item = await isar.expenseEvidences.get(id);
+      if (item == null) return null;
+      if (!_belongsToCurrentUser(item.ownerUserId)) return null;
+      item.deletedAt = DateTime.now().toUtc();
+      item.pendingDelete = true;
+      item.isDirty = true;
+      await isar.expenseEvidences.put(item);
+      return item;
+    });
+  }
+
+  Future<void> purgeDeletedEvidence(int id) async {
+    await isar.writeTxn(() async {
+      await isar.expenseEvidences.delete(id);
+    });
+  }
+
+  Future<void> updateEvidenceRemoteId(ExpenseEvidence evidence) async {
+    await isar.writeTxn(() async {
+      await isar.expenseEvidences.put(evidence);
     });
   }
 
@@ -457,6 +541,99 @@ class DbService extends GetxService {
       sub.sortIndex = data['sort_index'];
 
       await isar.subscriptions.put(sub);
+    });
+  }
+
+  Future<void> syncRemoteEvidenceToLocal(Map<String, dynamic> data) async {
+    final remoteId = data['id'] as int;
+    final remoteSyncId = data['sync_id'] as String?;
+    final remoteVersion = (data['version'] as num?)?.toInt() ?? 0;
+    final remoteUpdatedAt = DateTime.parse(data['updated_at'] as String);
+    final remoteDeletedAt = data['deleted_at'] == null
+        ? null
+        : DateTime.parse(data['deleted_at'] as String);
+
+    await isar.writeTxn(() async {
+      ExpenseEvidence? item;
+      if (remoteSyncId != null) {
+        item = await isar.expenseEvidences
+            .filter()
+            .syncIdEqualTo(remoteSyncId)
+            .findFirst();
+      }
+      item ??= await isar.expenseEvidences
+          .filter()
+          .remoteIdEqualTo(remoteId)
+          .findFirst();
+
+      if (remoteDeletedAt != null) {
+        if (item != null) {
+          if (!item.isDirty || item.pendingDelete) {
+            await isar.expenseEvidences.delete(item.id);
+            return;
+          }
+          item.deletedAt = remoteDeletedAt;
+          item.ownerUserId = currentOwnerUserId;
+          item.pendingDelete = false;
+          item.remoteId = remoteId;
+          item.syncId = remoteSyncId ?? item.syncId;
+          item.remoteVersion = remoteVersion;
+          item.remoteUpdatedAt = remoteUpdatedAt;
+          item.syncedAt = remoteUpdatedAt;
+          await isar.expenseEvidences.put(item);
+        }
+        return;
+      }
+
+      item ??= ExpenseEvidence();
+
+      if (item.isDirty) {
+        item.ownerUserId = currentOwnerUserId;
+        if (item.remoteId != remoteId) {
+          item.remoteId = remoteId;
+        }
+        item.syncId = remoteSyncId ?? item.syncId;
+        item.remoteVersion = remoteVersion;
+        item.remoteUpdatedAt = remoteUpdatedAt;
+        await isar.expenseEvidences.put(item);
+        return;
+      }
+
+      item.remoteId = remoteId;
+      item.ownerUserId = currentOwnerUserId;
+      item.syncId = remoteSyncId ?? item.syncId;
+      item.remoteVersion = remoteVersion;
+      item.remoteUpdatedAt = remoteUpdatedAt;
+      item.syncedAt = remoteUpdatedAt;
+      item.isDirty = false;
+      item.deletedAt = null;
+      item.pendingDelete = false;
+      item.projectName = data['project_name'] ?? 'DefaultProject';
+      item.evidenceDate = DateTime.parse(data['evidence_date']);
+      item.amount = (data['amount'] as num?)?.toDouble();
+      item.currency = data['currency'] ?? 'CNY';
+      item.category = EvidenceCategory.values.firstWhere(
+        (value) => value.name == data['category'],
+        orElse: () => EvidenceCategory.invoice,
+      );
+      item.status = EvidenceStatus.values.firstWhere(
+        (value) => value.name == data['status'],
+        orElse: () => EvidenceStatus.pending,
+      );
+      item.merchant = data['merchant'];
+      item.note = data['note'];
+      item.localFilePath = data['local_file_path'];
+      item.remoteStoragePath = data['remote_storage_path'];
+      item.fileName = data['file_name'];
+      item.mimeType = data['mime_type'];
+      item.uploadedAt = data['uploaded_at'] == null
+          ? null
+          : DateTime.parse(data['uploaded_at'] as String);
+      item.tripDate = data['trip_date'] == null
+          ? null
+          : DateTime.parse(data['trip_date'] as String);
+
+      await isar.expenseEvidences.put(item);
     });
   }
 }
