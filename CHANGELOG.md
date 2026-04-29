@@ -1,5 +1,25 @@
 # Changelog
 
+## [1.3.1] - 2026-04-29
+
+### 新增：项目凭证与报销记录
+
+#### 新增 (Added)
+- 新增独立的项目凭证模块，用于记录发票、付款截图、购买记录和报销状态。
+- “项目资料”页新增“照片 / 凭证”双视图切换，不新增底部导航入口。
+- 凭证支持拍摄、相册导入、手动记录、编辑、删除和导出。
+- 凭证按项目归档，支持搜索、排序、金额汇总和状态展示。
+- 统计页新增“凭证待报销 / 凭证已报销”，并与原出差垫付统计分开，避免重复计算。
+
+#### 同步 (Sync)
+- 新增 `expense_evidence` 本地 Isar collection，并接入现有 owner、syncId、version、dirty、soft delete 同步协议。
+- 新增 Supabase `expense_evidence` 表迁移和 `evidence-files` Storage bucket 策略。
+- 凭证元数据同步到 Supabase，凭证图片上传到 Storage，并支持跨设备下载恢复。
+
+#### 版本 (Release)
+- 应用版本升级到 `1.3.1+2`。
+- 本版本应通过推送 `v1.3.1` tag 触发 GitHub Actions 自动构建 APK。
+
 ## [1.3.0] - 2026-04-27
 
 ### 🎨 架构级重构：UI 系统全面现代化升级
