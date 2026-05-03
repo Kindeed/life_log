@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:life_log/common/theme/app_colors.dart';
+import 'package:life_log/common/widgets/app_sheet_scaffold.dart';
+import 'package:life_log/common/widgets/app_text_field.dart';
 
 /// 项目选择器底部弹窗。
 ///
@@ -16,48 +18,21 @@ void showProjectPicker({
     Builder(
       builder: (context) {
         final theme = Theme.of(context);
-        final isDark = theme.brightness == Brightness.dark;
         final textColor = theme.colorScheme.onSurface;
         final hintColor = theme.colorScheme.onSurfaceVariant;
-        final fillColor = isDark ? theme.cardColor : Colors.grey[100]!;
 
-        return Container(
+        return AppSheetScaffold(
+          title: "选择项目",
           height: Get.height * 0.7,
-          padding: const EdgeInsets.fromLTRB(20, 20, 20, 0),
-          decoration: BoxDecoration(
-            color: theme.scaffoldBackgroundColor,
-            borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
-          ),
+          padding: const EdgeInsets.fromLTRB(20, 0, 20, 0),
           child: Column(
             children: [
-              // Handle bar
-              Container(
-                width: 40,
-                height: 4,
-                decoration: BoxDecoration(
-                  color: isDark ? Colors.grey[600] : Colors.grey[300],
-                  borderRadius: BorderRadius.circular(2),
-                ),
-              ),
-              const SizedBox(height: 20),
-
               // Search Bar
-              TextField(
+              AppTextField(
                 controller: searchCtrl,
                 autofocus: true,
-                style: TextStyle(color: textColor),
-                decoration: InputDecoration(
-                  hintText: "搜索或创建新项目...",
-                  hintStyle: TextStyle(color: hintColor),
-                  prefixIcon: Icon(Icons.search, color: hintColor),
-                  filled: true,
-                  fillColor: fillColor,
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(12),
-                    borderSide: BorderSide.none,
-                  ),
-                  contentPadding: const EdgeInsets.symmetric(horizontal: 16),
-                ),
+                hintText: "搜索或创建新项目...",
+                prefixIcon: Icon(Icons.search, color: hintColor),
                 onChanged: (val) {
                   if (val.isEmpty) {
                     filteredProjects.assignAll(existingProjects);

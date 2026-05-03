@@ -3,14 +3,15 @@ import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:get/get.dart';
 
 import '../../common/layout/constrained_page.dart';
-import '../../common/theme/app_motion.dart';
 import '../../common/theme/app_semantic_colors.dart';
 import '../../common/utils/formatters.dart';
 import '../../common/widgets/app_card.dart';
 import '../../common/widgets/app_confirm_dialog.dart';
 import '../../common/widgets/app_empty_state.dart';
 import '../../common/widgets/app_filter_chip_bar.dart';
+import '../../common/widgets/app_floating_action_pill.dart';
 import '../../common/widgets/app_metric_tile.dart';
+import '../../common/widgets/app_pill.dart';
 import '../../common/widgets/app_section_header.dart';
 import 'add_subscription_sheet.dart';
 import 'subscription_controller.dart';
@@ -124,28 +125,12 @@ class SubscriptionView extends StatelessWidget {
       ),
       floatingActionButtonLocation: FloatingActionButtonLocation.centerFloat,
       floatingActionButton: Obx(
-        () => AnimatedSlide(
-          duration: AppMotion.normal,
-          curve: AppMotion.standardDecelerate,
-          offset: logic.isFabVisible.value ? Offset.zero : const Offset(0, 2),
-          child: AnimatedOpacity(
-            duration: AppMotion.normal,
-            curve: AppMotion.standardDecelerate,
-            opacity: logic.isFabVisible.value ? 1 : 0,
-            child: FloatingActionButton.extended(
-              backgroundColor: semantic.expense,
-              icon: const Icon(Icons.add_rounded, color: Colors.white),
-              label: Text(
-                "添加支出",
-                style: TextStyle(
-                  fontSize: 16.sp,
-                  fontWeight: FontWeight.bold,
-                  color: Colors.white,
-                ),
-              ),
-              onPressed: () => _showAddSheet(),
-            ),
-          ),
+        () => AppFloatingActionPill(
+          label: "添加支出",
+          icon: Icons.add_rounded,
+          color: semantic.expense,
+          visible: logic.isFabVisible.value,
+          onPressed: () => _showAddSheet(),
         ),
       ),
     );
@@ -382,7 +367,7 @@ class _SubscriptionCard extends StatelessWidget {
                   ),
                 ),
                 SizedBox(height: 8.h),
-                _CyclePill(cycle: sub.cycle, color: semantic.expense),
+                AppPill(label: _cycleLabel(sub.cycle), color: semantic.expense),
               ],
             ),
           ),
@@ -446,34 +431,8 @@ class _SubscriptionCard extends StatelessWidget {
     if (days <= 7) return _DueStatus("$days 天后", true);
     return _DueStatus("$days 天后", false);
   }
-}
 
-class _CyclePill extends StatelessWidget {
-  final SubscriptionCycle cycle;
-  final Color color;
-
-  const _CyclePill({required this.cycle, required this.color});
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      padding: EdgeInsets.symmetric(horizontal: 8.w, vertical: 4.h),
-      decoration: BoxDecoration(
-        color: color.withValues(alpha: 0.08),
-        borderRadius: BorderRadius.circular(8),
-      ),
-      child: Text(
-        _label(cycle),
-        style: TextStyle(
-          color: color,
-          fontSize: 11.sp,
-          fontWeight: FontWeight.w700,
-        ),
-      ),
-    );
-  }
-
-  String _label(SubscriptionCycle cycle) {
+  String _cycleLabel(SubscriptionCycle cycle) {
     switch (cycle) {
       case SubscriptionCycle.monthly:
         return "每月";

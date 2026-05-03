@@ -1,6 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:life_log/common/theme/app_colors.dart';
+import 'package:life_log/common/widgets/app_button.dart';
+import 'package:life_log/common/widgets/app_sheet_scaffold.dart';
+import 'package:life_log/common/widgets/app_text_field.dart';
 import 'package:life_log/modules/photo/photo_controller.dart';
 import 'package:life_log/modules/photo/views/project_picker.dart';
 
@@ -21,17 +24,11 @@ void showCaptureDialog({
     Builder(
       builder: (context) {
         final theme = Theme.of(context);
-        final isDark = theme.brightness == Brightness.dark;
         final textColor = theme.colorScheme.onSurface;
         final hintColor = theme.colorScheme.onSurfaceVariant;
-        final fillColor = isDark ? theme.cardColor : const Color(0xFFF7F9FC);
 
-        return Container(
-          padding: const EdgeInsets.fromLTRB(24, 24, 24, 40),
-          decoration: BoxDecoration(
-            color: theme.scaffoldBackgroundColor,
-            borderRadius: const BorderRadius.vertical(top: Radius.circular(32)),
-          ),
+        return AppSheetScaffold(
+          padding: const EdgeInsets.fromLTRB(24, 0, 24, 24),
           child: Column(
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.start,
@@ -71,25 +68,16 @@ void showCaptureDialog({
                       .toList(),
                 ),
                 child: AbsorbPointer(
-                  child: TextField(
+                  child: AppTextField(
                     controller: projectCtrl,
-                    style: TextStyle(color: textColor),
-                    decoration: InputDecoration(
-                      labelText: "选择归档项目",
-                      labelStyle: TextStyle(color: hintColor),
-                      prefixIcon: Icon(
-                        Icons.folder_special_rounded,
-                        color: hintColor,
-                      ),
-                      suffixIcon: Icon(
-                        Icons.arrow_drop_down_circle_outlined,
-                        color: hintColor,
-                      ),
-                      border: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(16),
-                      ),
-                      filled: true,
-                      fillColor: fillColor,
+                    labelText: "选择归档项目",
+                    prefixIcon: Icon(
+                      Icons.folder_special_rounded,
+                      color: hintColor,
+                    ),
+                    suffixIcon: Icon(
+                      Icons.arrow_drop_down_circle_outlined,
+                      color: hintColor,
                     ),
                   ),
                 ),
@@ -97,50 +85,26 @@ void showCaptureDialog({
               const SizedBox(height: 16),
 
               // Description Input
-              TextField(
+              AppTextField(
                 controller: descCtrl,
-                style: TextStyle(color: textColor),
-                decoration: InputDecoration(
-                  labelText: "添加备注 (可选)",
-                  labelStyle: TextStyle(color: hintColor),
-                  prefixIcon: Icon(Icons.edit_note_rounded, color: hintColor),
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(16),
-                  ),
-                  filled: true,
-                  fillColor: fillColor,
-                ),
+                labelText: "添加备注 (可选)",
+                prefixIcon: Icon(Icons.edit_note_rounded, color: hintColor),
               ),
               const SizedBox(height: 32),
 
               // Confirm Button
-              SizedBox(
-                width: double.infinity,
+              AppButton.primary(
+                label: "确认录入",
                 height: 56,
-                child: ElevatedButton(
-                  onPressed: () {
-                    final projectName = projectCtrl.text.trim();
-                    if (projectName.isEmpty) {
-                      Get.snackbar("错误", "项目名称不能为空");
-                      return;
-                    }
-                    Get.back(); // Close bottom sheet
-                    onConfirm(projectName, descCtrl.text.trim());
-                  },
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: AppColors.primaryBlue,
-                    foregroundColor: Colors.white,
-                    shape: const RoundedRectangleBorder(
-                      borderRadius: BorderRadius.all(Radius.circular(16)),
-                    ),
-
-                    elevation: 0,
-                  ),
-                  child: const Text(
-                    "确认录入",
-                    style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
-                  ),
-                ),
+                onPressed: () {
+                  final projectName = projectCtrl.text.trim();
+                  if (projectName.isEmpty) {
+                    Get.snackbar("错误", "项目名称不能为空");
+                    return;
+                  }
+                  Get.back(); // Close bottom sheet
+                  onConfirm(projectName, descCtrl.text.trim());
+                },
               ),
             ],
           ),

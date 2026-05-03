@@ -1,5 +1,25 @@
 # Changelog
 
+## [1.3.2] - 2026-05-03
+
+### 🎨 Apple 视觉化与 UI 控件去重
+
+#### 新增 (Added)
+- 新增 `AppFloatingActionPill`，统一支出和项目页的底部浮动添加入口。
+- 新增 `AppPill`，收敛统计、项目、支出等页面重复的胶囊标签样式。
+- 新增 `AppSheetScaffold`，统一底部弹窗的抓手、标题、圆角、内容区和底部操作区。
+
+#### 变更 (Changed)
+- 应用版本升级到 `1.3.2+3`。
+- 将主色更新为 iOS system blue，并将浅色/深色背景、卡片、边框调整为 Apple grouped 风格。
+- 优化 `AppButton`、`AppTextField`、`AppCard`、`AppActionSheet`、`AppConfirmDialog`、`AppSafeBottomBar`、`AppFilterChipBar` 的视觉层级和交互一致性。
+- 替换工时、支出、项目、图库、登录、拍照归档、项目选择、开发者页中的重复按钮、输入框、弹窗、底栏和确认框实现。
+
+#### 验证 (Validation)
+- `flutter analyze` 通过。
+- `flutter test` 未执行：当前项目没有 `test/` 目录。
+- Android 模拟器环境已安装到 D 盘并创建 `LifeLog_API36`，但本机硬件虚拟化未启用，模拟器无法启动。
+
 ## [1.3.1] - 2026-04-29
 
 ### 新增：项目凭证与报销记录

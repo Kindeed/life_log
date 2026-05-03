@@ -29,23 +29,26 @@ class AppTheme {
     dividerColor: AppColors.lightDivider,
     appBarTheme: const AppBarTheme(
       centerTitle: true,
-      backgroundColor: Colors.white,
+      backgroundColor: AppColors.lightCard,
       elevation: 0,
       scrolledUnderElevation: 0,
-      foregroundColor: Color(0xFF1C1B1F),
+      foregroundColor: AppColors.lightTextPrimary,
       titleTextStyle: TextStyle(
-        color: Color(0xFF1C1B1F),
+        color: AppColors.lightTextPrimary,
         fontSize: 18,
-        fontWeight: FontWeight.bold,
+        fontWeight: FontWeight.w700,
       ),
     ),
     bottomNavigationBarTheme: const BottomNavigationBarThemeData(
-      backgroundColor: Colors.white,
+      backgroundColor: AppColors.lightCard,
       selectedItemColor: AppColors.primaryBlue,
-      unselectedItemColor: Colors.grey,
+      unselectedItemColor: AppColors.lightTextSecondary,
       elevation: 0,
     ),
-    bottomSheetTheme: const BottomSheetThemeData(backgroundColor: Colors.white),
+    bottomSheetTheme: const BottomSheetThemeData(
+      backgroundColor: AppColors.lightCard,
+      surfaceTintColor: Colors.transparent,
+    ),
   );
 
   // --- 深色主题 ---
@@ -75,17 +78,18 @@ class AppTheme {
       titleTextStyle: TextStyle(
         color: Colors.white,
         fontSize: 18,
-        fontWeight: FontWeight.bold,
+        fontWeight: FontWeight.w700,
       ),
     ),
     bottomNavigationBarTheme: const BottomNavigationBarThemeData(
       backgroundColor: AppColors.darkCard,
       selectedItemColor: AppColors.primaryBlue,
-      unselectedItemColor: Colors.grey,
+      unselectedItemColor: AppColors.darkTextSecondary,
       elevation: 0,
     ),
     bottomSheetTheme: const BottomSheetThemeData(
       backgroundColor: AppColors.darkCard,
+      surfaceTintColor: Colors.transparent,
     ),
   );
 }

@@ -1,7 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:get/get.dart';
-import '../../../common/theme/app_colors.dart';
+import '../../../common/widgets/app_button.dart';
+import '../../../common/widgets/app_text_field.dart';
 import '../login_controller.dart';
 
 class LoginView extends StatelessWidget {
@@ -22,51 +23,31 @@ class LoginView extends StatelessWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
-                TextFormField(
+                AppTextField(
                   controller: controller.emailController,
-                  decoration: const InputDecoration(
-                    labelText: '邮箱',
-                    prefixIcon: Icon(Icons.email_outlined),
-                    border: OutlineInputBorder(),
-                  ),
+                  labelText: '邮箱',
+                  prefixIcon: const Icon(Icons.email_outlined),
                   keyboardType: TextInputType.emailAddress,
                   validator: (v) =>
                       v != null && v.contains('@') ? null : '请输入有效的邮箱',
                 ),
                 SizedBox(height: 20.h),
-                TextFormField(
+                AppTextField(
                   controller: controller.passwordController,
-                  decoration: const InputDecoration(
-                    labelText: '密码',
-                    prefixIcon: Icon(Icons.lock_outline),
-                    border: OutlineInputBorder(),
-                  ),
+                  labelText: '密码',
+                  prefixIcon: const Icon(Icons.lock_outline),
                   obscureText: true,
                   validator: (v) =>
                       v != null && v.length >= 6 ? null : '密码至少6位',
                 ),
                 SizedBox(height: 40.h),
-                ElevatedButton(
+                AppButton.primary(
+                  label: controller.isLogin.value ? '登录' : '注册',
                   onPressed: controller.isLoading.value
                       ? null
                       : () => controller.submit(),
-                  style: ElevatedButton.styleFrom(
-                    padding: EdgeInsets.symmetric(vertical: 16.h),
-                    backgroundColor: AppColors.primaryBlue,
-                    foregroundColor: Colors.white,
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                  ),
-                  child: controller.isLoading.value
-                      ? CircularProgressIndicator(
-                          color: theme.colorScheme.onPrimary,
-                          strokeWidth: 2,
-                        )
-                      : Text(
-                          controller.isLogin.value ? '登录' : '注册',
-                          style: TextStyle(fontSize: 16.sp),
-                        ),
+                  isLoading: controller.isLoading.value,
+                  height: 52.h,
                 ),
                 SizedBox(height: 20.h),
                 TextButton(

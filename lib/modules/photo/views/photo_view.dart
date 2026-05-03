@@ -10,8 +10,10 @@ import 'package:life_log/common/widgets/app_action_sheet.dart';
 import 'package:life_log/common/widgets/app_card.dart';
 import 'package:life_log/common/widgets/app_empty_state.dart';
 import 'package:life_log/common/widgets/app_filter_chip_bar.dart';
+import 'package:life_log/common/widgets/app_floating_action_pill.dart';
 import 'package:life_log/common/widgets/app_loading.dart';
 import 'package:life_log/common/widgets/app_metric_tile.dart';
+import 'package:life_log/common/widgets/app_pill.dart';
 import 'package:life_log/common/widgets/app_text_field.dart';
 import 'package:life_log/modules/evidence/evidence_controller.dart';
 import 'package:life_log/modules/evidence/views/evidence_list_view.dart';
@@ -164,32 +166,12 @@ class _PhotoViewState extends State<PhotoView> {
         }
         if (controller.photos.isEmpty) return const SizedBox.shrink();
 
-        final isVisible = controller.isFabVisible.value;
-        return IgnorePointer(
-          ignoring: !isVisible,
-          child: AnimatedSlide(
-            duration: AppMotion.normal,
-            curve: AppMotion.standardDecelerate,
-            offset: isVisible ? Offset.zero : const Offset(0, 2),
-            child: AnimatedOpacity(
-              duration: AppMotion.normal,
-              curve: AppMotion.standardDecelerate,
-              opacity: isVisible ? 1 : 0,
-              child: FloatingActionButton.extended(
-                backgroundColor: semantic.project,
-                icon: const Icon(Icons.camera_alt_rounded, color: Colors.white),
-                label: Text(
-                  "添加照片",
-                  style: TextStyle(
-                    fontSize: 16.sp,
-                    fontWeight: FontWeight.bold,
-                    color: Colors.white,
-                  ),
-                ),
-                onPressed: () => _showAddPhotoActions(context, controller),
-              ),
-            ),
-          ),
+        return AppFloatingActionPill(
+          label: "添加照片",
+          icon: Icons.camera_alt_rounded,
+          color: semantic.project,
+          visible: controller.isFabVisible.value,
+          onPressed: () => _showAddPhotoActions(context, controller),
         );
       }),
     );
@@ -455,18 +437,18 @@ class _ProjectCard extends StatelessWidget {
                   spacing: 6.w,
                   runSpacing: 6.h,
                   children: [
-                    _MetaPill(
+                    AppPill(
                       icon: Icons.photo_outlined,
                       label: "${summary.photoCount} 张",
                       color: semantic.project,
                     ),
-                    _MetaPill(
+                    AppPill(
                       icon: Icons.devices_rounded,
                       label: "${summary.deviceCount} 台",
                       color: semantic.stats,
                     ),
                     if (summary.untitledCount > 0)
-                      _MetaPill(
+                      AppPill(
                         icon: Icons.edit_note_rounded,
                         label: "${summary.untitledCount} 未命名",
                         color: semantic.warning,
@@ -538,40 +520,6 @@ class _ProjectCover extends StatelessWidget {
             );
           },
         ),
-      ),
-    );
-  }
-}
-
-class _MetaPill extends StatelessWidget {
-  final IconData icon;
-  final String label;
-  final Color color;
-
-  const _MetaPill({
-    required this.icon,
-    required this.label,
-    required this.color,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      padding: EdgeInsets.symmetric(horizontal: 8.w, vertical: 5.h),
-      decoration: BoxDecoration(
-        color: color.withValues(alpha: 0.08),
-        borderRadius: BorderRadius.circular(8),
-      ),
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Icon(icon, size: 13.sp, color: color),
-          SizedBox(width: 4.w),
-          Text(
-            label,
-            style: TextStyle(fontSize: 11.sp, color: color),
-          ),
-        ],
       ),
     );
   }

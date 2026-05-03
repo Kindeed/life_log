@@ -3,6 +3,7 @@ import 'package:flutter/services.dart';
 
 import '../theme/app_radius.dart';
 import '../theme/app_semantic_colors.dart';
+import '../theme/app_spacing.dart';
 
 enum AppButtonVariant { primary, secondary, text, destructive }
 
@@ -78,9 +79,13 @@ class AppButton extends StatelessWidget {
       isLoading: isLoading,
     );
     final shape = RoundedRectangleBorder(
-      borderRadius: BorderRadius.circular(AppRadius.sm),
+      borderRadius: BorderRadius.circular(AppRadius.lg),
     );
     final minimumSize = Size.fromHeight(height);
+    final textStyle = Theme.of(context).textTheme.labelLarge?.copyWith(
+      fontWeight: FontWeight.w700,
+      letterSpacing: 0,
+    );
 
     switch (variant) {
       case AppButtonVariant.primary:
@@ -90,8 +95,11 @@ class AppButton extends StatelessWidget {
             minimumSize: minimumSize,
             backgroundColor: Theme.of(context).colorScheme.primary,
             foregroundColor: Theme.of(context).colorScheme.onPrimary,
+            disabledBackgroundColor: semantic.mutedSurface,
+            disabledForegroundColor: Theme.of(context).disabledColor,
             elevation: 0,
             shape: shape,
+            textStyle: textStyle,
           ),
           child: child,
         );
@@ -103,13 +111,18 @@ class AppButton extends StatelessWidget {
             foregroundColor: Theme.of(context).colorScheme.primary,
             side: BorderSide(color: semantic.border),
             shape: shape,
+            textStyle: textStyle,
           ),
           child: child,
         );
       case AppButtonVariant.text:
         return TextButton(
           onPressed: callback,
-          style: TextButton.styleFrom(minimumSize: minimumSize, shape: shape),
+          style: TextButton.styleFrom(
+            minimumSize: minimumSize,
+            shape: shape,
+            textStyle: textStyle,
+          ),
           child: child,
         );
       case AppButtonVariant.destructive:
@@ -121,6 +134,7 @@ class AppButton extends StatelessWidget {
             foregroundColor: Theme.of(context).colorScheme.onErrorContainer,
             elevation: 0,
             shape: shape,
+            textStyle: textStyle,
           ),
           child: child,
         );
@@ -153,7 +167,11 @@ class _ButtonContent extends StatelessWidget {
 
     return Row(
       mainAxisSize: MainAxisSize.min,
-      children: [Icon(icon, size: 18), const SizedBox(width: 8), Text(label)],
+      children: [
+        Icon(icon, size: 18),
+        const SizedBox(width: AppSpacing.sm),
+        Text(label),
+      ],
     );
   }
 }
