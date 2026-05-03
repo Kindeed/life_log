@@ -6,6 +6,8 @@ import 'package:share_plus/share_plus.dart';
 import '../../../common/theme/app_colors.dart';
 import '../../../common/theme/custom_colors.dart';
 import '../../../common/services/log_service.dart';
+import '../../../common/widgets/app_card.dart';
+import '../../../common/widgets/app_confirm_dialog.dart';
 import 'design_gallery_view.dart';
 
 /// 开发者选项页面
@@ -17,7 +19,6 @@ class DeveloperView extends StatelessWidget {
     final logService = Get.find<LogService>();
     final theme = Theme.of(context);
     final isDark = theme.brightness == Brightness.dark;
-    final cardColor = theme.cardColor;
     final textPrimary = theme.colorScheme.onSurface;
     final textSecondary = isDark ? Colors.grey[400]! : Colors.grey[600]!;
 
@@ -45,7 +46,6 @@ class DeveloperView extends StatelessWidget {
           _buildSettingsSection(
             logService,
             isDark,
-            cardColor,
             textPrimary,
             textSecondary,
             theme,
@@ -118,26 +118,12 @@ class DeveloperView extends StatelessWidget {
   Widget _buildSettingsSection(
     LogService logService,
     bool isDark,
-    Color cardColor,
     Color textPrimary,
     Color textSecondary,
     ThemeData theme,
   ) {
-    return Container(
-      margin: EdgeInsets.all(16.w),
-      decoration: BoxDecoration(
-        color: cardColor,
-        borderRadius: BorderRadius.circular(16.r),
-        boxShadow: [
-          BoxShadow(
-            color: isDark
-                ? Colors.black.withValues(alpha: 0.3)
-                : Colors.black.withValues(alpha: 0.05),
-            blurRadius: 10,
-            offset: const Offset(0, 4),
-          ),
-        ],
-      ),
+    return AppCard(
+      padding: EdgeInsets.zero,
       child: Column(
         children: [
           // Debug 日志开关
@@ -215,7 +201,7 @@ class DeveloperView extends StatelessWidget {
           ),
         ],
       ),
-    );
+    ).paddingAll(16.w);
   }
 
   Widget _buildLogItem(
@@ -302,27 +288,15 @@ class DeveloperView extends StatelessWidget {
   }
 
   void _confirmClearLogs(LogService logService) {
-    Get.dialog(
-      AlertDialog(
-        title: const Text('清空日志'),
-        content: const Text('确定要清空所有日志吗？'),
-        actions: [
-          TextButton(onPressed: () => Get.back(), child: const Text('取消')),
-          TextButton(
-            onPressed: () {
-              logService.clearLogs();
-              Get.back();
-              Get.snackbar(
-                '已清空',
-                '所有日志已清空',
-                snackPosition: SnackPosition.BOTTOM,
-              );
-            },
-            child: const Text('确定'),
-          ),
-        ],
-      ),
-    );
+    AppConfirmDialog.show(
+      title: '清空日志',
+      message: '确定要清空所有日志吗？',
+      destructive: true,
+    ).then((confirmed) {
+      if (!confirmed) return;
+      logService.clearLogs();
+      Get.snackbar('已清空', '所有日志已清空', snackPosition: SnackPosition.BOTTOM);
+    });
   }
 
   void _copyLogs(LogService logService) {

@@ -63,12 +63,17 @@ class AppActionSheet {
                       title,
                       style: theme.textTheme.titleMedium?.copyWith(
                         fontWeight: FontWeight.w700,
+                        letterSpacing: 0,
                       ),
                     ),
                     const SizedBox(height: AppSpacing.sm),
                   ],
                   ...actions.map(
                     (action) => ListTile(
+                      minTileHeight: 56,
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(AppRadius.lg),
+                      ),
                       leading: Icon(
                         action.icon,
                         color: action.destructive

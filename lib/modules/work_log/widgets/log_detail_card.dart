@@ -3,6 +3,7 @@ import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:get/get.dart';
 import 'package:lunar/lunar.dart';
 import 'package:life_log/common/theme/app_colors.dart';
+import 'package:life_log/common/widgets/app_confirm_dialog.dart';
 import '../work_log_controller.dart';
 import '../work_log_model.dart';
 import '../add_log_sheet.dart';
@@ -272,38 +273,20 @@ class LogDetailCard extends StatelessWidget {
     );
   }
 
-  void _confirmDelete(BuildContext context, WorkLogController logic, int id) {
-    showDialog(
-      context: context,
-      builder: (ctx) => AlertDialog(
-        title: const Text("确认删除"),
-        content: const Text("确定要清空这一天的记录吗？"),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(ctx),
-            child: Text(
-              "取消",
-              style: TextStyle(
-                color: Theme.of(context).colorScheme.onSurfaceVariant,
-              ),
-            ),
-          ),
-          TextButton(
-            onPressed: () {
-              Navigator.pop(ctx);
-              logic.deleteLog(id);
-            },
-            child: Text(
-              "删除",
-              style: TextStyle(
-                color: Theme.of(context).colorScheme.error,
-                fontWeight: FontWeight.bold,
-              ),
-            ),
-          ),
-        ],
-      ),
+  Future<void> _confirmDelete(
+    BuildContext context,
+    WorkLogController logic,
+    int id,
+  ) async {
+    final confirmed = await AppConfirmDialog.show(
+      title: "确认删除",
+      message: "确定要清空这一天的记录吗？",
+      confirmLabel: "删除",
+      destructive: true,
     );
+    if (confirmed) {
+      await logic.deleteLog(id);
+    }
   }
 
   void _showAddSheet(

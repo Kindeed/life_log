@@ -4,7 +4,13 @@ import 'package:get/get.dart';
 import 'work_log_controller.dart';
 import 'work_log_model.dart';
 import '../../common/theme/app_colors.dart';
+import '../../common/theme/app_semantic_colors.dart';
+import '../../common/widgets/app_button.dart';
 import '../../common/widgets/app_confirm_dialog.dart';
+import '../../common/widgets/app_pill.dart';
+import '../../common/widgets/app_safe_bottom_bar.dart';
+import '../../common/widgets/app_sheet_scaffold.dart';
+import '../../common/widgets/app_text_field.dart';
 
 class AddLogSheet extends StatefulWidget {
   final DateTime selectedDate;
@@ -74,43 +80,21 @@ class _AddLogSheetState extends State<AddLogSheet> {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final isDark = theme.brightness == Brightness.dark;
-    final cardColor = theme.cardColor;
-    final bgColor = isDark
-        ? AppColors.darkBackground
-        : AppColors.lightBackground;
+    final semantic = theme.extension<AppSemanticColors>()!;
+    final bgColor = semantic.mutedSurface;
     final textPrimary = theme.colorScheme.onSurface;
     final textSecondary = theme.colorScheme.onSurfaceVariant;
 
-    return Container(
+    return AppSheetScaffold(
       height: 650.h,
-      decoration: BoxDecoration(
-        color: cardColor,
-        borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
+      title: widget.existingLog != null ? "修改记录" : "记录一下",
+      padding: EdgeInsets.zero,
+      bottomBar: AppSafeBottomBar(
+        padding: EdgeInsets.fromLTRB(24.w, 8.h, 24.w, 16.h),
+        child: _buildBottomActions(isDark),
       ),
       child: Column(
         children: [
-          SizedBox(height: 12.h),
-          Container(
-            width: 40.w,
-            height: 4.h,
-            decoration: BoxDecoration(
-              color: isDark ? AppColors.darkDivider : AppColors.lightDivider,
-              borderRadius: BorderRadius.circular(2),
-            ),
-          ),
-          SizedBox(height: 20.h),
-
-          Text(
-            widget.existingLog != null ? "修改记录" : "记录一下",
-            style: TextStyle(
-              fontSize: 18.sp,
-              fontWeight: FontWeight.bold,
-              color: textPrimary,
-            ),
-          ),
-
-          SizedBox(height: 20.h),
-
           _buildTypeSelector(isDark, bgColor, textPrimary, textSecondary),
 
           Expanded(
@@ -134,29 +118,14 @@ class _AddLogSheetState extends State<AddLogSheet> {
                     _buildRestForm(isDark, textSecondary),
 
                   SizedBox(height: 20.h),
-                  TextField(
+                  AppTextField(
                     controller: _noteController,
-                    style: TextStyle(color: textPrimary),
-                    decoration: InputDecoration(
-                      hintText: "备注 (可选)...",
-                      hintStyle: TextStyle(color: textSecondary),
-                      filled: true,
-                      fillColor: bgColor,
-                      border: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(12),
-                        borderSide: BorderSide.none,
-                      ),
-                    ),
+                    hintText: "备注 (可选)...",
                     maxLines: 3,
                   ),
                 ],
               ),
             ),
-          ),
-
-          Padding(
-            padding: EdgeInsets.fromLTRB(24.w, 0, 24.w, 30.h),
-            child: _buildBottomActions(isDark),
           ),
         ],
       ),
@@ -234,75 +203,28 @@ class _AddLogSheetState extends State<AddLogSheet> {
     if (widget.existingLog == null) {
       return SizedBox(
         width: double.infinity,
-        height: 50.h,
-        child: ElevatedButton(
+        child: AppButton.primary(
+          label: "保存",
           onPressed: _saveLog,
-          style: ElevatedButton.styleFrom(
-            backgroundColor: AppColors.primaryBlue,
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(16),
-            ),
-            elevation: 0,
-          ),
-          child: Text(
-            "保存",
-            style: TextStyle(
-              fontSize: 16.sp,
-              color: Theme.of(context).colorScheme.onPrimary,
-              fontWeight: FontWeight.bold,
-            ),
-          ),
+          height: 50.h,
         ),
       );
     } else {
       return Row(
         children: [
           Expanded(
-            child: SizedBox(
+            child: AppButton.destructive(
+              label: "删除",
+              onPressed: _deleteLog,
               height: 50.h,
-              child: TextButton(
-                onPressed: _deleteLog,
-                style: TextButton.styleFrom(
-                  backgroundColor: Theme.of(
-                    context,
-                  ).colorScheme.error.withValues(alpha: isDark ? 0.15 : 0.08),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(16),
-                  ),
-                ),
-                child: Text(
-                  "删除",
-                  style: TextStyle(
-                    fontSize: 16.sp,
-                    color: Theme.of(context).colorScheme.error,
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
-              ),
             ),
           ),
           SizedBox(width: 16.w),
           Expanded(
-            child: SizedBox(
+            child: AppButton.primary(
+              label: "保存修改",
+              onPressed: _saveLog,
               height: 50.h,
-              child: ElevatedButton(
-                onPressed: _saveLog,
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: AppColors.primaryBlue,
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(16),
-                  ),
-                  elevation: 0,
-                ),
-                child: Text(
-                  "保存修改",
-                  style: TextStyle(
-                    fontSize: 16.sp,
-                    color: Theme.of(context).colorScheme.onPrimary,
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
-              ),
             ),
           ),
         ],
@@ -312,27 +234,14 @@ class _AddLogSheetState extends State<AddLogSheet> {
 
   Future<void> _deleteLog() async {
     final confirmed = await AppConfirmDialog.show(
-      title: "删除记录",
-      message: "确定删除这条记录吗？删除后无法恢复。",
+      title: "确认删除",
+      message: "确定要删除这条记录吗？",
       confirmLabel: "删除",
       destructive: true,
     );
-
-    if (!confirmed || !mounted) return;
-
+    if (!confirmed) return;
     await WorkLogController.to.deleteLog(widget.existingLog!.id);
     Get.back();
-  }
-
-  bool _hasBusinessChanges(WorkLog original, WorkLog next) {
-    return original.date != next.date ||
-        original.type != next.type ||
-        original.note != next.note ||
-        original.overtimeHours != next.overtimeHours ||
-        original.location != next.location ||
-        original.transport != next.transport ||
-        original.expenses != next.expenses ||
-        original.isReimbursed != next.isReimbursed;
   }
 
   void _saveLog() {
@@ -393,11 +302,8 @@ class _AddLogSheetState extends State<AddLogSheet> {
         break;
     }
 
-    final existingLog = widget.existingLog;
-    log.isDirty =
-        existingLog == null ||
-        existingLog.isDirty ||
-        _hasBusinessChanges(existingLog, log);
+    // 标记为需要同步
+    log.isDirty = true;
 
     WorkLogController.to.addLog(log);
     Get.back();
@@ -426,25 +332,13 @@ class _AddLogSheetState extends State<AddLogSheet> {
           ],
         ),
         SizedBox(height: 12.h),
-        TextField(
+        AppTextField(
           keyboardType: const TextInputType.numberWithOptions(decimal: true),
-          style: TextStyle(color: textPrimary),
-          decoration: InputDecoration(
-            prefixIcon: Icon(
-              Icons.access_time,
-              color: Theme.of(context).colorScheme.onSurfaceVariant,
-            ),
-            hintText: "自定义时长 (小时)",
-            hintStyle: TextStyle(
-              color: Theme.of(context).colorScheme.onSurfaceVariant,
-            ),
-            filled: true,
-            fillColor: bgColor,
-            border: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(12),
-              borderSide: BorderSide.none,
-            ),
+          prefixIcon: Icon(
+            Icons.access_time,
+            color: Theme.of(context).colorScheme.onSurfaceVariant,
           ),
+          hintText: "自定义时长 (小时)",
           onChanged: (val) {
             setState(() {
               _overtime = double.tryParse(val) ?? 0.0;
@@ -491,25 +385,13 @@ class _AddLogSheetState extends State<AddLogSheet> {
         Row(
           children: [
             Expanded(
-              child: TextField(
+              child: AppTextField(
                 controller: _tripCityController,
-                style: TextStyle(color: textPrimary),
-                decoration: InputDecoration(
-                  prefixIcon: Icon(
-                    Icons.location_on_outlined,
-                    color: Theme.of(context).colorScheme.onSurfaceVariant,
-                  ),
-                  hintText: "城市/地点",
-                  hintStyle: TextStyle(
-                    color: Theme.of(context).colorScheme.onSurfaceVariant,
-                  ),
-                  filled: true,
-                  fillColor: bgColor,
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(12),
-                    borderSide: BorderSide.none,
-                  ),
+                prefixIcon: Icon(
+                  Icons.location_on_outlined,
+                  color: Theme.of(context).colorScheme.onSurfaceVariant,
                 ),
+                hintText: "城市/地点",
               ),
             ),
             SizedBox(width: 12.w),
@@ -536,26 +418,14 @@ class _AddLogSheetState extends State<AddLogSheet> {
           ],
         ),
         SizedBox(height: 12.h),
-        TextField(
+        AppTextField(
           controller: _expenseController,
           keyboardType: TextInputType.number,
-          style: TextStyle(color: textPrimary),
-          decoration: InputDecoration(
-            prefixIcon: Icon(
-              Icons.attach_money,
-              color: Theme.of(context).colorScheme.onSurfaceVariant,
-            ),
-            hintText: "垫付金额 (¥)",
-            hintStyle: TextStyle(
-              color: Theme.of(context).colorScheme.onSurfaceVariant,
-            ),
-            filled: true,
-            fillColor: bgColor,
-            border: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(12),
-              borderSide: BorderSide.none,
-            ),
+          prefixIcon: Icon(
+            Icons.attach_money,
+            color: Theme.of(context).colorScheme.onSurfaceVariant,
           ),
+          hintText: "垫付金额 (¥)",
         ),
         SizedBox(height: 12.h),
         Container(
@@ -587,7 +457,7 @@ class _AddLogSheetState extends State<AddLogSheet> {
               ),
               Switch(
                 value: _isReimbursed,
-                activeThumbColor: AppColors.green,
+                activeThumbColor: Theme.of(context).colorScheme.primary,
                 onChanged: (val) => setState(() => _isReimbursed = val),
               ),
             ],
@@ -623,54 +493,23 @@ class _AddLogSheetState extends State<AddLogSheet> {
             final isSelected = _selectedLeaveType == type;
             return GestureDetector(
               onTap: () => setState(() => _selectedLeaveType = type),
-              child: Container(
-                padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 8.h),
-                decoration: BoxDecoration(
-                  color: isSelected
-                      ? AppColors.purple.withValues(alpha: isDark ? 0.2 : 0.1)
-                      : bgColor,
-                  borderRadius: BorderRadius.circular(20),
-                  border: Border.all(
-                    color: isSelected ? AppColors.purple : Colors.transparent,
-                  ),
-                ),
-                child: Text(
-                  type,
-                  style: TextStyle(
-                    color: isSelected
-                        ? AppColors.purple
-                        : Theme.of(context).colorScheme.onSurfaceVariant,
-                    fontWeight: isSelected
-                        ? FontWeight.bold
-                        : FontWeight.normal,
-                    fontSize: 13.sp,
-                  ),
-                ),
+              child: AppPill(
+                label: type,
+                color: AppColors.purple,
+                selected: isSelected,
               ),
             );
           }).toList(),
         ),
         if (_selectedLeaveType == "其他") ...[
           SizedBox(height: 16.h),
-          TextField(
+          AppTextField(
             controller: _customLeaveController,
-            style: TextStyle(color: textPrimary),
-            decoration: InputDecoration(
-              prefixIcon: Icon(
-                Icons.edit_note,
-                color: Theme.of(context).colorScheme.onSurfaceVariant,
-              ),
-              hintText: "请输入请假原因...",
-              hintStyle: TextStyle(
-                color: Theme.of(context).colorScheme.onSurfaceVariant,
-              ),
-              filled: true,
-              fillColor: bgColor,
-              border: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(12),
-                borderSide: BorderSide.none,
-              ),
+            prefixIcon: Icon(
+              Icons.edit_note,
+              color: Theme.of(context).colorScheme.onSurfaceVariant,
             ),
+            hintText: "请输入请假原因...",
           ),
         ],
       ],

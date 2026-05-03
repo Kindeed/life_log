@@ -8,6 +8,7 @@ import '../../common/theme/app_semantic_colors.dart';
 import '../../common/utils/formatters.dart';
 import '../../common/widgets/app_card.dart';
 import '../../common/widgets/app_metric_tile.dart';
+import '../../common/widgets/app_pill.dart';
 import '../../common/widgets/app_section_header.dart';
 import 'statistics_controller.dart';
 
@@ -91,7 +92,7 @@ class _MonthSelector extends StatelessWidget {
                   AnimatedSwitcher(
                     duration: AppMotion.fast,
                     child: logic.isCurrentMonth
-                        ? _StatusPill(
+                        ? AppPill(
                             key: const ValueKey("current-month-badge"),
                             label: "本月",
                             icon: Icons.today_rounded,
@@ -101,7 +102,7 @@ class _MonthSelector extends StatelessWidget {
                             key: const ValueKey("back-to-current-month"),
                             onTap: logic.resetToCurrentMonth,
                             borderRadius: BorderRadius.circular(999),
-                            child: _StatusPill(
+                            child: AppPill(
                               label: "回到本月",
                               icon: Icons.keyboard_return_rounded,
                               color: semantic.work,
@@ -437,45 +438,5 @@ class _ProgressRow extends StatelessWidget {
     final numericTotal = progressTotal ?? (total ?? 0).toDouble();
     if (numericTotal <= 0) return 0;
     return (numericValue / numericTotal).clamp(0, 1).toDouble();
-  }
-}
-
-class _StatusPill extends StatelessWidget {
-  final String label;
-  final IconData icon;
-  final Color color;
-
-  const _StatusPill({
-    super.key,
-    required this.label,
-    required this.icon,
-    required this.color,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      padding: EdgeInsets.symmetric(horizontal: 10.w, vertical: 4.h),
-      decoration: BoxDecoration(
-        color: color.withValues(alpha: 0.12),
-        borderRadius: BorderRadius.circular(999),
-      ),
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Icon(icon, size: 13.sp, color: color),
-          SizedBox(width: 4.w),
-          Text(
-            label,
-            style: TextStyle(
-              fontSize: 11.sp,
-              fontWeight: FontWeight.w700,
-              color: color,
-              height: 1,
-            ),
-          ),
-        ],
-      ),
-    );
   }
 }

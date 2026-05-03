@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:get/get.dart';
 
+import 'app_button.dart';
+
 class AppConfirmDialog {
   static Future<bool> show({
     required String title,
@@ -12,25 +14,25 @@ class AppConfirmDialog {
   }) async {
     final result = await Get.dialog<bool>(
       AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(18)),
         title: Text(title),
         content: Text(message),
         actions: [
-          TextButton(
+          AppButton.text(
+            label: cancelLabel,
             onPressed: () => Get.back(result: false),
-            child: Text(cancelLabel),
+            height: 42,
           ),
-          FilledButton(
+          AppButton(
+            label: confirmLabel,
             onPressed: () {
               if (destructive) HapticFeedback.heavyImpact();
               Get.back(result: true);
             },
-            style: destructive
-                ? FilledButton.styleFrom(
-                    backgroundColor: Get.theme.colorScheme.errorContainer,
-                    foregroundColor: Get.theme.colorScheme.onErrorContainer,
-                  )
-                : null,
-            child: Text(confirmLabel),
+            variant: destructive
+                ? AppButtonVariant.destructive
+                : AppButtonVariant.primary,
+            height: 42,
           ),
         ],
       ),

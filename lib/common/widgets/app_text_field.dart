@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../theme/app_radius.dart';
 import '../theme/app_semantic_colors.dart';
+import '../theme/app_spacing.dart';
 
 class AppTextField extends StatelessWidget {
   final TextEditingController? controller;
@@ -17,6 +18,9 @@ class AppTextField extends StatelessWidget {
   final String? hintText;
   final Widget? prefixIcon;
   final Widget? suffixIcon;
+  final bool autofocus;
+  final bool readOnly;
+  final VoidCallback? onTap;
 
   const AppTextField({
     super.key,
@@ -33,6 +37,9 @@ class AppTextField extends StatelessWidget {
     this.hintText,
     this.prefixIcon,
     this.suffixIcon,
+    this.autofocus = false,
+    this.readOnly = false,
+    this.onTap,
   });
 
   @override
@@ -49,31 +56,38 @@ class AppTextField extends StatelessWidget {
       validator: validator,
       obscureText: obscureText,
       maxLines: obscureText ? 1 : maxLines,
+      autofocus: autofocus,
+      readOnly: readOnly,
+      onTap: onTap,
       decoration: InputDecoration(
         labelText: labelText,
         hintText: hintText,
         prefixIcon: prefixIcon,
         suffixIcon: suffixIcon,
         filled: true,
-        fillColor: Theme.of(context).cardColor,
+        fillColor: semantic.mutedSurface,
         contentPadding: const EdgeInsets.symmetric(
-          horizontal: 14,
-          vertical: 14,
+          horizontal: AppSpacing.lg,
+          vertical: AppSpacing.md,
         ),
         border: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(AppRadius.sm),
+          borderRadius: BorderRadius.circular(AppRadius.lg),
           borderSide: BorderSide(color: semantic.border),
         ),
         enabledBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(AppRadius.sm),
+          borderRadius: BorderRadius.circular(AppRadius.lg),
           borderSide: BorderSide(color: semantic.border),
         ),
         focusedBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(AppRadius.sm),
+          borderRadius: BorderRadius.circular(AppRadius.lg),
           borderSide: BorderSide(color: Theme.of(context).colorScheme.primary),
         ),
         errorBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(AppRadius.sm),
+          borderRadius: BorderRadius.circular(AppRadius.lg),
+          borderSide: BorderSide(color: Theme.of(context).colorScheme.error),
+        ),
+        focusedErrorBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(AppRadius.lg),
           borderSide: BorderSide(color: Theme.of(context).colorScheme.error),
         ),
       ),
