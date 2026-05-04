@@ -89,7 +89,26 @@ class DbService extends GetxService {
       ExpenseEvidenceSchema,
     ], directory: dir.path);
 
+    await _backfillPhotoDateIndexes();
+
     return this;
+  }
+
+  Future<void> _backfillPhotoDateIndexes() async {
+    final photos = await isar.photoItems.filter().dateIndexedIsNull().findAll();
+    if (photos.isEmpty) return;
+
+    await isar.writeTxn(() async {
+      for (final photo in photos) {
+        final createdAt = photo.createdAt;
+        photo.dateIndexed = DateTime(
+          createdAt.year,
+          createdAt.month,
+          createdAt.day,
+        );
+      }
+      await isar.photoItems.putAll(photos);
+    });
   }
 
   // --- 2. 增加一条日志 (入库) ---

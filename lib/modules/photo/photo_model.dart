@@ -18,7 +18,7 @@ class PhotoItem {
 
   String? projectName; // 所属项目 (文件夹名称)
 
-  // 索引字段，方便按项目或时间查询
+  // 旧版本本地库没有该字段，保持可空以兼容升级迁移。
   @Index()
-  late DateTime dateIndexed;
+  DateTime? dateIndexed;
 }

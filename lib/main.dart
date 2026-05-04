@@ -16,9 +16,16 @@ import 'package:life_log/common/services/log_service.dart';
 import 'package:life_log/common/services/auth_service.dart';
 import 'package:life_log/common/services/sync_service.dart';
 
-void main() async {
-  WidgetsFlutterBinding.ensureInitialized();
+bool _supabaseInitialized = false;
+bool _storageInitialized = false;
+bool _localeInitialized = false;
 
+void main() {
+  WidgetsFlutterBinding.ensureInitialized();
+  runApp(const BootstrapApp());
+}
+
+Future<void> _initializeApp() async {
   // 0. 基础设施：存储和国际化
   // Supabase Init — 通过 --dart-define 注入密钥，避免硬编码
   const supabaseUrl = String.fromEnvironment('SUPABASE_URL');
@@ -29,19 +36,158 @@ void main() async {
       'Pass them with --dart-define.',
     );
   }
-  await Supabase.initialize(url: supabaseUrl, anonKey: supabaseAnonKey);
+  if (!_supabaseInitialized) {
+    await Supabase.initialize(url: supabaseUrl, anonKey: supabaseAnonKey);
+    _supabaseInitialized = true;
+  }
 
-  await GetStorage.init();
-  await initializeDateFormatting('zh_CN', null);
+  if (!_storageInitialized) {
+    await GetStorage.init();
+    _storageInitialized = true;
+  }
+  if (!_localeInitialized) {
+    await initializeDateFormatting('zh_CN', null);
+    _localeInitialized = true;
+  }
 
   // 1. 核心服务（必须在启动时初始化）
-  await Get.putAsync(() => DbService().init());
-  Get.put(ThemeController());
-  await Get.putAsync(() => LogService().init());
-  Get.put(AuthService());
-  Get.put(SyncService());
+  if (!Get.isRegistered<DbService>()) {
+    await Get.putAsync(() => DbService().init());
+  }
+  if (!Get.isRegistered<ThemeController>()) {
+    Get.put(ThemeController());
+  }
+  if (!Get.isRegistered<LogService>()) {
+    await Get.putAsync(() => LogService().init());
+  }
+  if (!Get.isRegistered<AuthService>()) {
+    Get.put(AuthService());
+  }
+  if (!Get.isRegistered<SyncService>()) {
+    Get.put(SyncService());
+  }
+}
 
-  runApp(const MyApp());
+class BootstrapApp extends StatefulWidget {
+  const BootstrapApp({super.key});
+
+  @override
+  State<BootstrapApp> createState() => _BootstrapAppState();
+}
+
+class _BootstrapAppState extends State<BootstrapApp> {
+  late Future<void> _startup;
+
+  @override
+  void initState() {
+    super.initState();
+    _startup = _initializeApp();
+  }
+
+  void _retry() {
+    setState(() {
+      _startup = _initializeApp();
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return FutureBuilder<void>(
+      future: _startup,
+      builder: (context, snapshot) {
+        if (snapshot.connectionState == ConnectionState.done &&
+            snapshot.hasError) {
+          return _BootstrapShell(
+            child: _BootstrapErrorView(error: snapshot.error!, onRetry: _retry),
+          );
+        }
+        if (snapshot.connectionState == ConnectionState.done) {
+          return const MyApp();
+        }
+        return const _BootstrapShell(child: _BootstrapLoadingView());
+      },
+    );
+  }
+}
+
+class _BootstrapShell extends StatelessWidget {
+  const _BootstrapShell({required this.child});
+
+  final Widget child;
+
+  @override
+  Widget build(BuildContext context) {
+    return MaterialApp(
+      debugShowCheckedModeBanner: false,
+      title: 'LifeLog',
+      home: child,
+    );
+  }
+}
+
+class _BootstrapLoadingView extends StatelessWidget {
+  const _BootstrapLoadingView();
+
+  @override
+  Widget build(BuildContext context) {
+    return const Scaffold(body: Center(child: CircularProgressIndicator()));
+  }
+}
+
+class _BootstrapErrorView extends StatelessWidget {
+  const _BootstrapErrorView({required this.error, required this.onRetry});
+
+  final Object error;
+  final VoidCallback onRetry;
+
+  @override
+  Widget build(BuildContext context) {
+    final errorText = error.toString();
+
+    return Scaffold(
+      body: SafeArea(
+        child: Center(
+          child: ConstrainedBox(
+            constraints: const BoxConstraints(maxWidth: 420),
+            child: Padding(
+              padding: const EdgeInsets.all(24),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  const Icon(
+                    Icons.error_outline_rounded,
+                    size: 48,
+                    color: Colors.redAccent,
+                  ),
+                  const SizedBox(height: 16),
+                  const Text(
+                    '启动失败',
+                    textAlign: TextAlign.center,
+                    style: TextStyle(fontSize: 22, fontWeight: FontWeight.w700),
+                  ),
+                  const SizedBox(height: 12),
+                  Text(
+                    errorText,
+                    textAlign: TextAlign.center,
+                    maxLines: 6,
+                    overflow: TextOverflow.ellipsis,
+                    style: TextStyle(color: Colors.grey.shade700),
+                  ),
+                  const SizedBox(height: 20),
+                  FilledButton.icon(
+                    onPressed: onRetry,
+                    icon: const Icon(Icons.refresh_rounded),
+                    label: const Text('重试'),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
 }
 
 class MyApp extends StatelessWidget {

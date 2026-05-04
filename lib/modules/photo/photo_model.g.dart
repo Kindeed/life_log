@@ -133,7 +133,7 @@ PhotoItem _photoItemDeserialize(
 ) {
   final object = PhotoItem();
   object.createdAt = reader.readDateTime(offsets[0]);
-  object.dateIndexed = reader.readDateTime(offsets[1]);
+  object.dateIndexed = reader.readDateTimeOrNull(offsets[1]);
   object.description = reader.readStringOrNull(offsets[2]);
   object.deviceName = reader.readStringOrNull(offsets[3]);
   object.fileName = reader.readString(offsets[4]);
@@ -153,7 +153,7 @@ P _photoItemDeserializeProp<P>(
     case 0:
       return (reader.readDateTime(offset)) as P;
     case 1:
-      return (reader.readDateTime(offset)) as P;
+      return (reader.readDateTimeOrNull(offset)) as P;
     case 2:
       return (reader.readStringOrNull(offset)) as P;
     case 3:
@@ -265,8 +265,28 @@ extension PhotoItemQueryWhere
     });
   }
 
+  QueryBuilder<PhotoItem, PhotoItem, QAfterWhereClause> dateIndexedIsNull() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addWhereClause(IndexWhereClause.equalTo(
+        indexName: r'dateIndexed',
+        value: [null],
+      ));
+    });
+  }
+
+  QueryBuilder<PhotoItem, PhotoItem, QAfterWhereClause> dateIndexedIsNotNull() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addWhereClause(IndexWhereClause.between(
+        indexName: r'dateIndexed',
+        lower: [null],
+        includeLower: false,
+        upper: [],
+      ));
+    });
+  }
+
   QueryBuilder<PhotoItem, PhotoItem, QAfterWhereClause> dateIndexedEqualTo(
-      DateTime dateIndexed) {
+      DateTime? dateIndexed) {
     return QueryBuilder.apply(this, (query) {
       return query.addWhereClause(IndexWhereClause.equalTo(
         indexName: r'dateIndexed',
@@ -276,7 +296,7 @@ extension PhotoItemQueryWhere
   }
 
   QueryBuilder<PhotoItem, PhotoItem, QAfterWhereClause> dateIndexedNotEqualTo(
-      DateTime dateIndexed) {
+      DateTime? dateIndexed) {
     return QueryBuilder.apply(this, (query) {
       if (query.whereSort == Sort.asc) {
         return query
@@ -311,7 +331,7 @@ extension PhotoItemQueryWhere
   }
 
   QueryBuilder<PhotoItem, PhotoItem, QAfterWhereClause> dateIndexedGreaterThan(
-    DateTime dateIndexed, {
+    DateTime? dateIndexed, {
     bool include = false,
   }) {
     return QueryBuilder.apply(this, (query) {
@@ -325,7 +345,7 @@ extension PhotoItemQueryWhere
   }
 
   QueryBuilder<PhotoItem, PhotoItem, QAfterWhereClause> dateIndexedLessThan(
-    DateTime dateIndexed, {
+    DateTime? dateIndexed, {
     bool include = false,
   }) {
     return QueryBuilder.apply(this, (query) {
@@ -339,8 +359,8 @@ extension PhotoItemQueryWhere
   }
 
   QueryBuilder<PhotoItem, PhotoItem, QAfterWhereClause> dateIndexedBetween(
-    DateTime lowerDateIndexed,
-    DateTime upperDateIndexed, {
+    DateTime? lowerDateIndexed,
+    DateTime? upperDateIndexed, {
     bool includeLower = true,
     bool includeUpper = true,
   }) {
@@ -412,8 +432,26 @@ extension PhotoItemQueryFilter
     });
   }
 
+  QueryBuilder<PhotoItem, PhotoItem, QAfterFilterCondition>
+      dateIndexedIsNull() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(const FilterCondition.isNull(
+        property: r'dateIndexed',
+      ));
+    });
+  }
+
+  QueryBuilder<PhotoItem, PhotoItem, QAfterFilterCondition>
+      dateIndexedIsNotNull() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(const FilterCondition.isNotNull(
+        property: r'dateIndexed',
+      ));
+    });
+  }
+
   QueryBuilder<PhotoItem, PhotoItem, QAfterFilterCondition> dateIndexedEqualTo(
-      DateTime value) {
+      DateTime? value) {
     return QueryBuilder.apply(this, (query) {
       return query.addFilterCondition(FilterCondition.equalTo(
         property: r'dateIndexed',
@@ -424,7 +462,7 @@ extension PhotoItemQueryFilter
 
   QueryBuilder<PhotoItem, PhotoItem, QAfterFilterCondition>
       dateIndexedGreaterThan(
-    DateTime value, {
+    DateTime? value, {
     bool include = false,
   }) {
     return QueryBuilder.apply(this, (query) {
@@ -437,7 +475,7 @@ extension PhotoItemQueryFilter
   }
 
   QueryBuilder<PhotoItem, PhotoItem, QAfterFilterCondition> dateIndexedLessThan(
-    DateTime value, {
+    DateTime? value, {
     bool include = false,
   }) {
     return QueryBuilder.apply(this, (query) {
@@ -450,8 +488,8 @@ extension PhotoItemQueryFilter
   }
 
   QueryBuilder<PhotoItem, PhotoItem, QAfterFilterCondition> dateIndexedBetween(
-    DateTime lower,
-    DateTime upper, {
+    DateTime? lower,
+    DateTime? upper, {
     bool includeLower = true,
     bool includeUpper = true,
   }) {
@@ -1492,7 +1530,7 @@ extension PhotoItemQueryProperty
     });
   }
 
-  QueryBuilder<PhotoItem, DateTime, QQueryOperations> dateIndexedProperty() {
+  QueryBuilder<PhotoItem, DateTime?, QQueryOperations> dateIndexedProperty() {
     return QueryBuilder.apply(this, (query) {
       return query.addPropertyName(r'dateIndexed');
     });
