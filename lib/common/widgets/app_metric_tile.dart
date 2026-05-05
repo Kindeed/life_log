@@ -29,7 +29,7 @@ class AppMetricTile extends StatelessWidget {
             height: 38,
             decoration: BoxDecoration(
               color: color.withValues(alpha: 0.12),
-              borderRadius: BorderRadius.circular(AppRadius.sm),
+              borderRadius: BorderRadius.circular(AppRadius.md),
             ),
             child: Icon(icon, color: color, size: 20),
           ),
@@ -45,6 +45,7 @@ class AppMetricTile extends StatelessWidget {
                     value,
                     style: Theme.of(context).textTheme.titleLarge?.copyWith(
                       fontWeight: FontWeight.w800,
+                      letterSpacing: 0,
                       height: 1,
                     ),
                   ),

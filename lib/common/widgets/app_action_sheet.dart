@@ -3,6 +3,7 @@ import 'package:get/get.dart';
 
 import '../theme/app_radius.dart';
 import '../theme/app_spacing.dart';
+import '../theme/theme_extensions.dart';
 
 class AppActionSheetItem {
   final IconData icon;
@@ -30,6 +31,7 @@ class AppActionSheet {
         child: Builder(
           builder: (context) {
             final theme = Theme.of(context);
+            final semantic = theme.semanticColors;
             return Container(
               padding: const EdgeInsets.fromLTRB(
                 AppSpacing.lg,
@@ -42,6 +44,7 @@ class AppActionSheet {
                 borderRadius: const BorderRadius.vertical(
                   top: Radius.circular(AppRadius.sheet),
                 ),
+                border: Border(top: BorderSide(color: semantic.border)),
               ),
               child: Column(
                 mainAxisSize: MainAxisSize.min,
@@ -52,7 +55,7 @@ class AppActionSheet {
                       width: 40,
                       height: 4,
                       decoration: BoxDecoration(
-                        color: theme.colorScheme.outlineVariant,
+                        color: semantic.border.withValues(alpha: 0.9),
                         borderRadius: BorderRadius.circular(2),
                       ),
                     ),
@@ -78,9 +81,14 @@ class AppActionSheet {
                         action.icon,
                         color: action.destructive
                             ? theme.colorScheme.error
-                            : null,
+                            : theme.colorScheme.primary,
                       ),
-                      title: Text(action.title),
+                      title: Text(
+                        action.title,
+                        style: theme.textTheme.titleSmall?.copyWith(
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
                       subtitle: action.subtitle == null
                           ? null
                           : Text(action.subtitle!),

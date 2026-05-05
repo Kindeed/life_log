@@ -1,10 +1,10 @@
 import 'package:flutter/material.dart';
+import 'package:life_log/common/theme/theme_extensions.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:get/get.dart';
 import 'work_log_controller.dart';
 import 'work_log_model.dart';
 import '../../common/theme/app_colors.dart';
-import '../../common/theme/app_semantic_colors.dart';
 import '../../common/widgets/app_button.dart';
 import '../../common/widgets/app_confirm_dialog.dart';
 import '../../common/widgets/app_pill.dart';
@@ -80,7 +80,7 @@ class _AddLogSheetState extends State<AddLogSheet> {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final isDark = theme.brightness == Brightness.dark;
-    final semantic = theme.extension<AppSemanticColors>()!;
+    final semantic = theme.semanticColors;
     final bgColor = semantic.mutedSurface;
     final textPrimary = theme.colorScheme.onSurface;
     final textSecondary = theme.colorScheme.onSurfaceVariant;
@@ -143,7 +143,7 @@ class _AddLogSheetState extends State<AddLogSheet> {
       padding: EdgeInsets.all(4.w),
       decoration: BoxDecoration(
         color: bgColor,
-        borderRadius: BorderRadius.circular(12),
+        borderRadius: BorderRadius.circular(22),
       ),
       child: Row(
         children: [
@@ -172,7 +172,7 @@ class _AddLogSheetState extends State<AddLogSheet> {
             color: isSelected
                 ? (isDark ? AppColors.darkDivider : Theme.of(context).cardColor)
                 : Colors.transparent,
-            borderRadius: BorderRadius.circular(10),
+            borderRadius: BorderRadius.circular(18),
             boxShadow: isSelected
                 ? [
                     BoxShadow(
@@ -188,7 +188,7 @@ class _AddLogSheetState extends State<AddLogSheet> {
           child: Text(
             label,
             style: TextStyle(
-              fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
+              fontWeight: isSelected ? FontWeight.w700 : FontWeight.w500,
               color: isSelected
                   ? textPrimary
                   : Theme.of(context).colorScheme.onSurfaceVariant,

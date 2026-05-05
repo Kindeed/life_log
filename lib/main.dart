@@ -1,3 +1,7 @@
+import 'dart:async';
+import 'dart:ui';
+
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:get/get.dart';
@@ -12,36 +16,141 @@ import 'package:life_log/modules/profile/views/login_view.dart';
 import 'package:life_log/common/db/db_service.dart';
 import 'package:life_log/common/theme/app_theme.dart';
 import 'package:life_log/common/theme/theme_controller.dart';
+import 'package:life_log/common/services/cloud_config_service.dart';
 import 'package:life_log/common/services/log_service.dart';
 import 'package:life_log/common/services/auth_service.dart';
 import 'package:life_log/common/services/sync_service.dart';
 
-void main() async {
-  WidgetsFlutterBinding.ensureInitialized();
+bool _appStarted = false;
 
-  // 0. 基础设施：存储和国际化
-  // Supabase Init — 通过 --dart-define 注入密钥，避免硬编码
-  const supabaseUrl = String.fromEnvironment('SUPABASE_URL');
-  const supabaseAnonKey = String.fromEnvironment('SUPABASE_ANON_KEY');
-  if (supabaseUrl.isEmpty || supabaseAnonKey.isEmpty) {
-    throw StateError(
-      'Missing SUPABASE_URL or SUPABASE_ANON_KEY. '
-      'Pass them with --dart-define.',
+void main() {
+  runZonedGuarded(
+    () async {
+      WidgetsFlutterBinding.ensureInitialized();
+      await _bootstrap();
+    },
+    (error, stackTrace) {
+      _logUnhandled('Zone', error, stackTrace);
+    },
+  );
+}
+
+Future<void> _bootstrap() async {
+  await GetStorage.init();
+
+  final cloudConfig = Get.put(CloudConfigService().init(), permanent: true);
+  final logService = await Get.putAsync(
+    () => LogService().init(),
+    permanent: true,
+  );
+  _installGlobalErrorHandlers(logService);
+
+  logService.info('Startup', '本地存储已初始化');
+  logService.info('Startup', '云配置状态: ${cloudConfig.statusLabel}');
+
+  await initializeDateFormatting('zh_CN', null);
+  logService.info('Startup', '日期格式已初始化');
+
+  await Get.putAsync(() => DbService().init(), permanent: true);
+  logService.info('Startup', '本地数据库已初始化');
+
+  Get.put(ThemeController(), permanent: true);
+  logService.info('Startup', '主题服务已注册');
+
+  if (cloudConfig.isConfigured.value) {
+    await _initializeCloudServices(cloudConfig, logService);
+  } else {
+    logService.warning('Startup', '云同步未配置，已进入本地模式');
+  }
+
+  logService.info('Startup', '启动应用');
+  _appStarted = true;
+  runApp(const MyApp());
+}
+
+Future<void> _initializeCloudServices(
+  CloudConfigService cloudConfig,
+  LogService logService,
+) async {
+  try {
+    await Supabase.initialize(
+      url: cloudConfig.supabaseUrl,
+      anonKey: cloudConfig.supabaseAnonKey,
+    );
+    logService.info('Startup', 'Supabase 初始化成功: ${cloudConfig.supabaseUrl}');
+    Get.put(AuthService(), permanent: true);
+    Get.put(SyncService(), permanent: true);
+    logService.info('Startup', '云服务已注册');
+  } catch (error, stackTrace) {
+    logService.error('Startup', 'Supabase 初始化失败，已进入本地模式: $error', stackTrace);
+  }
+}
+
+void _installGlobalErrorHandlers(LogService logService) {
+  FlutterError.onError = (details) {
+    FlutterError.presentError(details);
+    logService.error(
+      'FlutterError',
+      details.exceptionAsString(),
+      details.stack,
+    );
+  };
+
+  PlatformDispatcher.instance.onError = (error, stackTrace) {
+    logService.error('Platform', error.toString(), stackTrace);
+    return true;
+  };
+}
+
+void _logUnhandled(String tag, Object error, StackTrace stackTrace) {
+  if (Get.isRegistered<LogService>()) {
+    LogService.to.error(tag, error.toString(), stackTrace);
+  } else if (kDebugMode) {
+    debugPrint('[$tag] $error\n$stackTrace');
+  }
+
+  if (!_appStarted) {
+    _appStarted = true;
+    runApp(StartupFailureApp(message: error.toString()));
+  }
+}
+
+class StartupFailureApp extends StatelessWidget {
+  final String message;
+
+  const StartupFailureApp({super.key, required this.message});
+
+  @override
+  Widget build(BuildContext context) {
+    return MaterialApp(
+      debugShowCheckedModeBanner: false,
+      home: Scaffold(
+        body: SafeArea(
+          child: Padding(
+            padding: const EdgeInsets.all(24),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const Icon(Icons.error_outline, size: 40, color: Colors.red),
+                const SizedBox(height: 16),
+                const Text(
+                  '应用启动失败',
+                  style: TextStyle(fontSize: 22, fontWeight: FontWeight.w700),
+                ),
+                const SizedBox(height: 12),
+                Text(
+                  message,
+                  style: const TextStyle(fontSize: 14, height: 1.4),
+                ),
+                const SizedBox(height: 16),
+                const Text('请导出日志或连接调试工具查看详细错误。'),
+              ],
+            ),
+          ),
+        ),
+      ),
     );
   }
-  await Supabase.initialize(url: supabaseUrl, anonKey: supabaseAnonKey);
-
-  await GetStorage.init();
-  await initializeDateFormatting('zh_CN', null);
-
-  // 1. 核心服务（必须在启动时初始化）
-  await Get.putAsync(() => DbService().init());
-  Get.put(ThemeController());
-  await Get.putAsync(() => LogService().init());
-  Get.put(AuthService());
-  Get.put(SyncService());
-
-  runApp(const MyApp());
 }
 
 class MyApp extends StatelessWidget {
@@ -56,28 +165,26 @@ class MyApp extends StatelessWidget {
       minTextAdapt: true,
       splitScreenMode: true,
       builder: (context, child) {
-        return Obx(
-          () => GetMaterialApp(
-            debugShowCheckedModeBanner: false,
-            title: 'LifeLog',
-            theme: AppTheme.light,
-            darkTheme: AppTheme.dark,
-            themeMode: themeController.flutterThemeMode,
-            initialBinding: AppBinding(),
-            initialRoute: '/',
-            getPages: [
-              GetPage(
-                name: '/',
-                page: () => const TabsView(),
-                binding: TabsBinding(),
-              ),
-              GetPage(
-                name: '/login',
-                page: () => const LoginView(),
-                binding: LoginBinding(),
-              ),
-            ],
-          ),
+        return GetMaterialApp(
+          debugShowCheckedModeBanner: false,
+          title: 'LifeLog',
+          theme: AppTheme.light,
+          darkTheme: AppTheme.dark,
+          themeMode: themeController.flutterThemeMode,
+          initialBinding: AppBinding(),
+          initialRoute: '/',
+          getPages: [
+            GetPage(
+              name: '/',
+              page: () => const TabsView(),
+              binding: TabsBinding(),
+            ),
+            GetPage(
+              name: '/login',
+              page: () => const LoginView(),
+              binding: LoginBinding(),
+            ),
+          ],
         );
       },
     );

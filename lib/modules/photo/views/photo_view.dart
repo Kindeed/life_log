@@ -1,10 +1,12 @@
 import 'dart:io';
 
 import 'package:flutter/material.dart';
+import 'package:life_log/common/theme/theme_extensions.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:get/get.dart';
 import 'package:life_log/common/layout/constrained_page.dart';
 import 'package:life_log/common/theme/app_motion.dart';
+import 'package:life_log/common/theme/app_radius.dart';
 import 'package:life_log/common/theme/app_semantic_colors.dart';
 import 'package:life_log/common/widgets/app_action_sheet.dart';
 import 'package:life_log/common/widgets/app_card.dart';
@@ -56,7 +58,7 @@ class _PhotoViewState extends State<PhotoView> {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final isDark = theme.brightness == Brightness.dark;
-    final semantic = theme.extension<AppSemanticColors>()!;
+    final semantic = theme.semanticColors;
     final textSecondary = theme.colorScheme.onSurfaceVariant;
 
     return Scaffold(
@@ -236,7 +238,8 @@ class _ProjectSectionSwitch extends StatelessWidget {
       padding: EdgeInsets.all(4.w),
       decoration: BoxDecoration(
         color: theme.colorScheme.surfaceContainerHighest.withValues(alpha: 0.7),
-        borderRadius: BorderRadius.circular(12),
+        borderRadius: BorderRadius.circular(AppRadius.xl),
+        border: Border.all(color: theme.semanticColors.border, width: 0.7),
       ),
       child: Row(
         children: [
@@ -268,13 +271,13 @@ class _ProjectSectionSwitch extends StatelessWidget {
     return Expanded(
       child: InkWell(
         onTap: () => onChanged(section),
-        borderRadius: BorderRadius.circular(10),
+        borderRadius: BorderRadius.circular(AppRadius.lg),
         child: AnimatedContainer(
           duration: AppMotion.fast,
           padding: EdgeInsets.symmetric(vertical: 9.h),
           decoration: BoxDecoration(
             color: selected ? theme.cardColor : Colors.transparent,
-            borderRadius: BorderRadius.circular(10),
+            borderRadius: BorderRadius.circular(AppRadius.lg),
           ),
           child: Row(
             mainAxisAlignment: MainAxisAlignment.center,
@@ -290,7 +293,7 @@ class _ProjectSectionSwitch extends StatelessWidget {
               Text(
                 label,
                 style: TextStyle(
-                  fontWeight: selected ? FontWeight.w800 : FontWeight.w500,
+                  fontWeight: selected ? FontWeight.w700 : FontWeight.w500,
                   color: selected
                       ? theme.colorScheme.primary
                       : theme.colorScheme.onSurfaceVariant,
@@ -415,7 +418,7 @@ class _ProjectCard extends StatelessWidget {
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
                         style: Theme.of(context).textTheme.titleMedium
-                            ?.copyWith(fontWeight: FontWeight.w800),
+                            ?.copyWith(fontWeight: FontWeight.w700),
                       ),
                     ),
                     Icon(
@@ -486,7 +489,7 @@ class _ProjectCover extends StatelessWidget {
       width: 98.w,
       height: 98.w,
       child: ClipRRect(
-        borderRadius: BorderRadius.circular(8),
+        borderRadius: BorderRadius.circular(AppRadius.lg),
         child: GridView.builder(
           physics: const NeverScrollableScrollPhysics(),
           padding: EdgeInsets.zero,

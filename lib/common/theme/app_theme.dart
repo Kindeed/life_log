@@ -10,11 +10,17 @@ class AppTheme {
     useMaterial3: true,
     brightness: Brightness.light,
     extensions: const [LogColors.light, AppSemanticColors.light],
+    fontFamily: 'Roboto',
+    visualDensity: VisualDensity.standard,
     colorScheme: ColorScheme.fromSeed(
       seedColor: AppColors.primaryBlue,
       brightness: Brightness.light,
       primary: AppColors.primaryBlue,
+      onPrimary: Colors.white,
       surface: AppColors.lightCard,
+      surfaceContainerHighest: AppColors.lightMutedSurface,
+      onSurface: AppColors.lightTextPrimary,
+      onSurfaceVariant: AppColors.lightTextSecondary,
       error: AppColors.errorLight,
       onError: AppColors.onErrorLight,
       errorContainer: AppColors.errorContainerLight,
@@ -29,14 +35,15 @@ class AppTheme {
     dividerColor: AppColors.lightDivider,
     appBarTheme: const AppBarTheme(
       centerTitle: true,
-      backgroundColor: AppColors.lightCard,
+      backgroundColor: AppColors.lightBackground,
       elevation: 0,
       scrolledUnderElevation: 0,
       foregroundColor: AppColors.lightTextPrimary,
       titleTextStyle: TextStyle(
         color: AppColors.lightTextPrimary,
-        fontSize: 18,
+        fontSize: 20,
         fontWeight: FontWeight.w700,
+        letterSpacing: 0,
       ),
     ),
     bottomNavigationBarTheme: const BottomNavigationBarThemeData(
@@ -49,6 +56,13 @@ class AppTheme {
       backgroundColor: AppColors.lightCard,
       surfaceTintColor: Colors.transparent,
     ),
+    iconButtonTheme: IconButtonThemeData(
+      style: IconButton.styleFrom(
+        foregroundColor: AppColors.lightTextPrimary,
+        shape: const CircleBorder(),
+      ),
+    ),
+    textTheme: _textTheme(Brightness.light),
   );
 
   // --- 深色主题 ---
@@ -56,11 +70,17 @@ class AppTheme {
     useMaterial3: true,
     brightness: Brightness.dark,
     extensions: const [LogColors.dark, AppSemanticColors.dark],
+    fontFamily: 'Roboto',
+    visualDensity: VisualDensity.standard,
     colorScheme: ColorScheme.fromSeed(
       seedColor: AppColors.primaryBlue,
       brightness: Brightness.dark,
       primary: AppColors.primaryBlue,
+      onPrimary: Colors.white,
       surface: AppColors.darkCard,
+      surfaceContainerHighest: AppColors.darkMutedSurface,
+      onSurface: AppColors.darkTextPrimary,
+      onSurfaceVariant: AppColors.darkTextSecondary,
       error: AppColors.errorDark,
       onError: AppColors.onErrorDark,
       errorContainer: AppColors.errorContainerDark,
@@ -71,14 +91,15 @@ class AppTheme {
     dividerColor: AppColors.darkDivider,
     appBarTheme: const AppBarTheme(
       centerTitle: true,
-      backgroundColor: AppColors.darkCard,
+      backgroundColor: AppColors.darkBackground,
       elevation: 0,
       scrolledUnderElevation: 0,
       foregroundColor: Colors.white,
       titleTextStyle: TextStyle(
         color: Colors.white,
-        fontSize: 18,
+        fontSize: 20,
         fontWeight: FontWeight.w700,
+        letterSpacing: 0,
       ),
     ),
     bottomNavigationBarTheme: const BottomNavigationBarThemeData(
@@ -91,5 +112,70 @@ class AppTheme {
       backgroundColor: AppColors.darkCard,
       surfaceTintColor: Colors.transparent,
     ),
+    iconButtonTheme: IconButtonThemeData(
+      style: IconButton.styleFrom(
+        foregroundColor: AppColors.darkTextPrimary,
+        shape: const CircleBorder(),
+      ),
+    ),
+    textTheme: _textTheme(Brightness.dark),
   );
+
+  static TextTheme _textTheme(Brightness brightness) {
+    final primary = brightness == Brightness.dark
+        ? AppColors.darkTextPrimary
+        : AppColors.lightTextPrimary;
+    final secondary = brightness == Brightness.dark
+        ? AppColors.darkTextSecondary
+        : AppColors.lightTextSecondary;
+
+    return TextTheme(
+      headlineLarge: TextStyle(
+        color: primary,
+        fontSize: 34,
+        fontWeight: FontWeight.w700,
+        letterSpacing: 0,
+        height: 1.08,
+      ),
+      headlineMedium: TextStyle(
+        color: primary,
+        fontSize: 28,
+        fontWeight: FontWeight.w700,
+        letterSpacing: 0,
+      ),
+      titleLarge: TextStyle(
+        color: primary,
+        fontSize: 22,
+        fontWeight: FontWeight.w700,
+        letterSpacing: 0,
+      ),
+      titleMedium: TextStyle(
+        color: primary,
+        fontSize: 17,
+        fontWeight: FontWeight.w600,
+        letterSpacing: 0,
+      ),
+      titleSmall: TextStyle(
+        color: primary,
+        fontSize: 15,
+        fontWeight: FontWeight.w600,
+        letterSpacing: 0,
+      ),
+      bodyLarge: TextStyle(color: primary, fontSize: 17, letterSpacing: 0),
+      bodyMedium: TextStyle(color: primary, fontSize: 15, letterSpacing: 0),
+      bodySmall: TextStyle(color: secondary, fontSize: 13, letterSpacing: 0),
+      labelLarge: TextStyle(
+        color: primary,
+        fontSize: 16,
+        fontWeight: FontWeight.w600,
+        letterSpacing: 0,
+      ),
+      labelMedium: TextStyle(
+        color: secondary,
+        fontSize: 13,
+        fontWeight: FontWeight.w500,
+        letterSpacing: 0,
+      ),
+    );
+  }
 }

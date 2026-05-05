@@ -1,5 +1,43 @@
 # Changelog
 
+## [1.3.3] - 2026-05-06
+
+### 启动稳定性、云配置与 Apple-inspired UI
+
+#### 新增 (Added)
+- 新增 `CloudConfigService`，通过 `--dart-define` 读取 Supabase URL 与 publishable key；缺配置时自动进入本地模式。
+- 新增早期启动日志、全局 Flutter/Dart 异常捕获、启动状态记录和诊断信息导出。
+- 新增本地 `SyncIdGenerator`，让本地记录创建不再依赖云同步服务。
+
+#### 变更 (Changed)
+- 应用版本升级到 `1.3.3+4`。
+- 无 Supabase 配置时不再阻断启动；Profile 与登录页会明确显示本地模式或云同步未配置。
+- Supabase 初始化、AuthService、SyncService 改为仅在云配置完整时注册。
+- `GetMaterialApp` 不再被 `Obx` 包裹，主题切换继续由 `Get.changeThemeMode()` 处理，避免根组件重建。
+- 启动同步延后到首帧后执行，降低首屏启动阶段阻塞风险。
+- 将 `LogColors` 字段改为非空 `Color`，移除 `day_cell.dart` 中的空断言。
+- 删除 `TabsController.visitedTabs` 死代码。
+- GitHub Actions release/test APK 构建会校验并注入 Supabase secrets。
+- 全局视觉升级为 Apple-inspired 风格：更新主题 token、卡片、按钮、输入框、sheet、空状态、chip、底部 Tab、工时首屏和设置页层次。
+
+#### 修复 (Fixed)
+- 修复缺少 Supabase 配置时启动黑屏/启动失败风险。
+- 修复部分 Repository 在无云配置时仍尝试调用同步服务的问题。
+- 修复 `WorkLogController.loadData()` fire-and-forget 导致异常不可见、loading 状态可能悬挂的问题。
+- 修复 `TabsView` 在 `Obx` builder 内写响应式状态的隐患。
+- 主题扩展访问增加 fallback，降低缺失 ThemeExtension 时的崩溃风险。
+
+#### 仓库整理 (Maintenance)
+- 重写 README，补充功能、运行、云配置、构建和发布说明。
+- 删除历史调试输出文件：`analyze.txt`、`doctor_output.txt`、`diff*.txt`。
+- 删除本地编辑器工作区文件 `life_log.code-workspace`，并更新 `.gitignore` 防止再次提交。
+
+#### 验证 (Validation)
+- `flutter analyze` 通过。
+- `flutter build apk --debug` 通过。
+- 带 Supabase `--dart-define` 的 debug APK 构建通过。
+- 真机 `V2307A` 验证本地模式与云配置模式均可启动，无黑屏；首屏 fully drawn 约 1.6 秒。
+
 ## [1.3.2] - 2026-05-03
 
 ### 🎨 Apple 视觉化与 UI 控件去重

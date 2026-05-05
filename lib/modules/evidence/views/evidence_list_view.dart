@@ -1,10 +1,12 @@
 import 'dart:io';
 
 import 'package:flutter/material.dart';
+import 'package:life_log/common/theme/theme_extensions.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:get/get.dart';
 import 'package:life_log/common/layout/constrained_page.dart';
 import 'package:life_log/common/theme/app_semantic_colors.dart';
+import 'package:life_log/common/theme/app_radius.dart';
 import 'package:life_log/common/utils/formatters.dart';
 import 'package:life_log/common/widgets/app_action_sheet.dart';
 import 'package:life_log/common/widgets/app_card.dart';
@@ -23,7 +25,7 @@ class EvidenceListView extends StatelessWidget {
   Widget build(BuildContext context) {
     final controller = Get.find<EvidenceController>();
     final theme = Theme.of(context);
-    final semantic = theme.extension<AppSemanticColors>()!;
+    final semantic = theme.semanticColors;
     final textSecondary = theme.colorScheme.onSurfaceVariant;
 
     return Obx(() {
@@ -102,6 +104,11 @@ class EvidenceListView extends StatelessWidget {
               child: FloatingActionButton.extended(
                 backgroundColor: semantic.warning,
                 foregroundColor: Colors.white,
+                elevation: 0,
+                highlightElevation: 0,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(AppRadius.xl),
+                ),
                 icon: const Icon(Icons.receipt_long_rounded),
                 label: const Text('添加凭证'),
                 onPressed: () => _showAddActions(context, controller),
@@ -153,7 +160,9 @@ class EvidenceListView extends StatelessWidget {
           padding: EdgeInsets.fromLTRB(16.w, 16.h, 16.w, 24.h),
           decoration: BoxDecoration(
             color: theme.scaffoldBackgroundColor,
-            borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
+            borderRadius: const BorderRadius.vertical(
+              top: Radius.circular(AppRadius.sheet),
+            ),
           ),
           child: Column(
             children: [

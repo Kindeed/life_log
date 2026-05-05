@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
+import 'package:life_log/common/theme/theme_extensions.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:table_calendar/table_calendar.dart';
 import 'package:lunar/lunar.dart';
 import 'package:life_log/common/theme/app_colors.dart';
-import 'package:life_log/common/theme/custom_colors.dart';
 import '../work_log_controller.dart';
 import '../work_log_model.dart';
 // If HolidayUtil is not in lunar package, this might fail, but existing code uses it.
@@ -56,7 +56,7 @@ class DayCell extends StatelessWidget {
     }
 
     // 获取自定义颜色扩展
-    final logColors = Theme.of(context).extension<LogColors>()!;
+    final logColors = Theme.of(context).logColors;
 
     if (events.isNotEmpty) {
       final log = events.first;
@@ -67,16 +67,16 @@ class DayCell extends StatelessWidget {
         bottomText = (log.overtimeHours != null && log.overtimeHours! > 0)
             ? "+${log.overtimeHours}"
             : "正常";
-        bottomColor = logColors.work!;
+        bottomColor = logColors.work;
       } else if (log.type == LogType.businessTrip) {
         bottomText = "出差";
-        bottomColor = logColors.businessTrip!;
+        bottomColor = logColors.businessTrip;
       } else if (log.type == LogType.leave) {
         bottomText = log.location ?? "假";
-        bottomColor = logColors.leave!;
+        bottomColor = logColors.leave;
       } else if (log.type == LogType.rest) {
         bottomText = "休";
-        bottomColor = logColors.rest!;
+        bottomColor = logColors.rest;
       }
     }
 
@@ -85,11 +85,11 @@ class DayCell extends StatelessWidget {
     if (isSelected) {
       decoration = BoxDecoration(
         color: AppColors.primaryBlue,
-        borderRadius: BorderRadius.circular(12),
+        borderRadius: BorderRadius.circular(16),
         boxShadow: [
           BoxShadow(
-            color: AppColors.primaryBlue.withValues(alpha: 0.4),
-            blurRadius: 8,
+            color: AppColors.primaryBlue.withValues(alpha: 0.28),
+            blurRadius: 16,
             offset: const Offset(0, 4),
           ),
         ],
@@ -100,8 +100,9 @@ class DayCell extends StatelessWidget {
       ).colorScheme.onPrimary.withValues(alpha: 0.9);
     } else if (isToday) {
       decoration = BoxDecoration(
-        border: Border.all(color: AppColors.primaryBlue, width: 1.5),
-        borderRadius: BorderRadius.circular(12),
+        color: AppColors.primaryBlue.withValues(alpha: 0.08),
+        border: Border.all(color: AppColors.primaryBlue, width: 1),
+        borderRadius: BorderRadius.circular(16),
       );
       dayColor = AppColors.primaryBlue;
     }

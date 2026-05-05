@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:life_log/common/theme/theme_extensions.dart';
 
 import '../theme/app_radius.dart';
-import '../theme/app_semantic_colors.dart';
 import '../theme/app_spacing.dart';
 
 class AppSheetScaffold extends StatelessWidget {
@@ -27,7 +27,7 @@ class AppSheetScaffold extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final semantic = theme.extension<AppSemanticColors>()!;
+    final semantic = theme.semanticColors;
     final content = Padding(padding: padding, child: child);
 
     return Container(
@@ -38,6 +38,7 @@ class AppSheetScaffold extends StatelessWidget {
         borderRadius: const BorderRadius.vertical(
           top: Radius.circular(AppRadius.sheet),
         ),
+        border: Border(top: BorderSide(color: semantic.border, width: 0.7)),
       ),
       child: Column(
         mainAxisSize: height == null ? MainAxisSize.min : MainAxisSize.max,
@@ -49,7 +50,7 @@ class AppSheetScaffold extends StatelessWidget {
                 width: 40,
                 height: 4,
                 decoration: BoxDecoration(
-                  color: semantic.border,
+                  color: semantic.border.withValues(alpha: 0.9),
                   borderRadius: BorderRadius.circular(2),
                 ),
               ),

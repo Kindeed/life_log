@@ -1,9 +1,10 @@
 import 'package:flutter/material.dart';
+import 'package:life_log/common/theme/app_semantic_colors.dart';
+import 'package:life_log/common/theme/theme_extensions.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:get/get.dart';
 import 'package:lunar/lunar.dart';
 
-import '../../../common/theme/app_semantic_colors.dart';
 import '../../../common/widgets/app_card.dart';
 import '../../../common/widgets/app_confirm_dialog.dart';
 import '../../../common/widgets/app_section_header.dart';
@@ -58,7 +59,7 @@ class _DayLogCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final semantic = Theme.of(context).extension<AppSemanticColors>()!;
+    final semantic = Theme.of(context).semanticColors;
     final textSecondary = Theme.of(context).colorScheme.onSurfaceVariant;
     final meta = _metaFor(log, semantic);
 

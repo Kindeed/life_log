@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:life_log/common/theme/theme_extensions.dart';
 
-import '../theme/app_semantic_colors.dart';
 import '../theme/app_spacing.dart';
 
 class AppSafeBottomBar extends StatelessWidget {
@@ -21,23 +21,25 @@ class AppSafeBottomBar extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final semantic = theme.extension<AppSemanticColors>()!;
+    final semantic = theme.semanticColors;
     return SafeArea(
       top: false,
       child: Container(
         padding: padding,
         decoration: BoxDecoration(
-          color: theme.cardColor,
-          border: Border(top: BorderSide(color: semantic.border)),
-          boxShadow: theme.brightness == Brightness.dark
-              ? null
-              : [
-                  BoxShadow(
-                    color: Colors.black.withValues(alpha: 0.04),
-                    blurRadius: 14,
-                    offset: const Offset(0, -4),
-                  ),
-                ],
+          color: theme.cardColor.withValues(alpha: 0.94),
+          border: Border(
+            top: BorderSide(color: semantic.border.withValues(alpha: 0.8)),
+          ),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withValues(
+                alpha: theme.brightness == Brightness.dark ? 0.2 : 0.055,
+              ),
+              blurRadius: 24,
+              offset: const Offset(0, -8),
+            ),
+          ],
         ),
         child: child,
       ),

@@ -5,23 +5,26 @@ import 'package:flutter/material.dart';
 class AppColors {
   // --- 语义化主色调 (两种模式共用) ---
   static const Color primaryBlue = Color(0xFF007AFF);
-  static const Color orange = Color(0xFFFF9500);
-  static const Color purple = Color(0xFFAF52DE);
-  static const Color green = Color(0xFF34C759);
+  static const Color orange = Color(0xFFFF9F0A);
+  static const Color purple = Color(0xFF9B5CFF);
+  static const Color green = Color(0xFF30D158);
+  static const Color cyan = Color(0xFF64D2FF);
 
   // --- 浅色模式 ---
-  static const Color lightBackground = Color(0xFFF2F2F7);
+  static const Color lightBackground = Color(0xFFF5F5F7);
   static const Color lightCard = Colors.white;
   static const Color lightTextPrimary = Color(0xFF1D1D1F);
-  static const Color lightTextSecondary = Color(0xFF6E6E73);
-  static const Color lightDivider = Color(0xFFD1D1D6);
+  static const Color lightTextSecondary = Color(0xFF6B6B70);
+  static const Color lightDivider = Color(0xFFE0E0E6);
+  static const Color lightMutedSurface = Color(0xFFF2F2F7);
 
   // --- 深色模式 ---
   static const Color darkBackground = Color(0xFF000000);
   static const Color darkCard = Color(0xFF1C1C1E);
   static const Color darkTextPrimary = Color(0xFFFFFFFF);
-  static const Color darkTextSecondary = Color(0xFF98989D);
-  static const Color darkDivider = Color(0xFF2C2C2E);
+  static const Color darkTextSecondary = Color(0xFFA1A1A6);
+  static const Color darkDivider = Color(0xFF38383A);
+  static const Color darkMutedSurface = Color(0xFF2C2C2E);
 
   // --- 语义化颜色 (Material 3 Standard) ---
   // Error - Light
@@ -37,7 +40,7 @@ class AppColors {
   static const Color onErrorContainerDark = Color(0xFFF9DEDC);
 
   // Success (Custom)
-  static const Color successGreen = green;
+  static const Color successGreen = Color(0xFF248A3D);
   static const Color successContainerLight = Color(0xFFE7F8EC);
   static const Color onSuccessContainerLight = Color(0xFF0B5D22);
   static const Color successContainerDark = Color(0xFF123D20);

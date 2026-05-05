@@ -3,6 +3,8 @@ import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:get/get.dart';
 import 'package:intl/intl.dart';
 import 'package:table_calendar/table_calendar.dart';
+import 'package:life_log/common/theme/app_radius.dart';
+import 'package:life_log/common/theme/theme_extensions.dart';
 import '../work_log_controller.dart';
 
 class CalendarHeader extends StatelessWidget {
@@ -19,8 +21,10 @@ class CalendarHeader extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final semantic = theme.semanticColors;
     return Padding(
-      padding: EdgeInsets.symmetric(horizontal: 20.w, vertical: 20.h),
+      padding: EdgeInsets.fromLTRB(20.w, 18.h, 20.w, 14.h),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
@@ -43,9 +47,11 @@ class CalendarHeader extends StatelessWidget {
                   () => Text(
                     DateFormat("yyyy年M月").format(logic.focusedDay.value),
                     style: TextStyle(
-                      fontSize: 22.sp,
-                      fontWeight: FontWeight.bold,
+                      fontSize: 30.sp,
+                      fontWeight: FontWeight.w700,
                       color: textPrimary,
+                      letterSpacing: 0,
+                      height: 1.08,
                     ),
                   ),
                 ),
@@ -61,8 +67,9 @@ class CalendarHeader extends StatelessWidget {
             return Container(
               padding: const EdgeInsets.all(4),
               decoration: BoxDecoration(
-                color: Theme.of(context).colorScheme.surfaceContainerHighest,
-                borderRadius: BorderRadius.circular(20),
+                color: theme.cardColor,
+                borderRadius: BorderRadius.circular(AppRadius.xl),
+                border: Border.all(color: semantic.border, width: 0.7),
               ),
               child: Row(
                 children: [
@@ -97,17 +104,19 @@ class CalendarHeader extends StatelessWidget {
       onTap: onTap,
       child: AnimatedContainer(
         duration: const Duration(milliseconds: 200),
-        padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 6.h),
+        padding: EdgeInsets.symmetric(horizontal: 18.w, vertical: 8.h),
         decoration: BoxDecoration(
-          color: isActive ? Theme.of(context).cardColor : Colors.transparent,
-          borderRadius: BorderRadius.circular(16),
+          color: isActive
+              ? Theme.of(context).colorScheme.primary.withValues(alpha: 0.12)
+              : Colors.transparent,
+          borderRadius: BorderRadius.circular(AppRadius.lg),
           boxShadow: isActive
               ? [
                   BoxShadow(
                     color: Theme.of(
                       context,
-                    ).shadowColor.withValues(alpha: isDark ? 0.3 : 0.1),
-                    blurRadius: 4,
+                    ).shadowColor.withValues(alpha: isDark ? 0.18 : 0.08),
+                    blurRadius: 10,
                   ),
                 ]
               : [],
@@ -116,9 +125,9 @@ class CalendarHeader extends StatelessWidget {
           text,
           style: TextStyle(
             color: isActive
-                ? Theme.of(context).colorScheme.onSurface
+                ? Theme.of(context).colorScheme.primary
                 : Theme.of(context).colorScheme.onSurfaceVariant,
-            fontWeight: isActive ? FontWeight.bold : FontWeight.normal,
+            fontWeight: isActive ? FontWeight.w700 : FontWeight.w500,
             fontSize: 13.sp,
           ),
         ),

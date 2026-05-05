@@ -2,6 +2,7 @@ import 'package:get/get.dart';
 import '../../../common/db/db_service.dart';
 import '../../../common/services/sync_service.dart';
 import '../../../common/services/log_service.dart';
+import '../../../common/utils/sync_id_generator.dart';
 import 'subscription_model.dart';
 
 class SubscriptionRepository extends GetxService {
@@ -18,13 +19,18 @@ class SubscriptionRepository extends GetxService {
 
   // --- 修改业务 ---
   Future<void> saveSubscription(Subscription sub, int currentCount) async {
-    sub.syncId ??= SyncService.to.newSyncId();
+    sub.syncId ??= SyncIdGenerator.newSyncId();
 
     // 如果是新增（没有 sortIndex），把它排到最后
     sub.sortIndex ??= currentCount;
 
     // 1. 本地存储
     await DbService.to.addSubscription(sub);
+
+    if (!Get.isRegistered<SyncService>()) {
+      LogService.to.info('SubscriptionRepository', '本地模式：跳过云端同步');
+      return;
+    }
 
     // 2. 云端同步
     try {
@@ -44,6 +50,8 @@ class SubscriptionRepository extends GetxService {
     try {
       if (sub == null || sub.remoteId == null) {
         await DbService.to.purgeDeletedSubscription(id);
+      } else if (!Get.isRegistered<SyncService>()) {
+        LogService.to.info('SubscriptionRepository', '本地模式：跳过云端删除');
       } else {
         final success = await SyncService.to.deleteSubscription(sub);
         if (success) {

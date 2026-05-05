@@ -5,6 +5,7 @@ import 'package:intl/intl.dart';
 import 'package:life_log/common/db/db_service.dart';
 import 'package:life_log/common/services/log_service.dart';
 import 'package:life_log/common/services/sync_service.dart';
+import 'package:life_log/common/utils/sync_id_generator.dart';
 import 'package:path_provider/path_provider.dart';
 
 import 'evidence_model.dart';
@@ -48,7 +49,7 @@ class EvidenceRepository extends GetxService {
     String? sourcePath,
     String? sourceExtension,
   }) async {
-    evidence.syncId ??= SyncService.to.newSyncId();
+    evidence.syncId ??= SyncIdGenerator.newSyncId();
 
     if (sourcePath != null && sourcePath.isNotEmpty) {
       await _copyEvidenceFile(
@@ -59,6 +60,11 @@ class EvidenceRepository extends GetxService {
     }
 
     await DbService.to.addEvidence(evidence);
+    if (!Get.isRegistered<SyncService>()) {
+      LogService.to.info('EvidenceRepository', '本地模式：跳过云端同步');
+      return evidence;
+    }
+
     try {
       final success = await SyncService.to.pushEvidence(evidence);
       if (!success) {
@@ -118,6 +124,8 @@ class EvidenceRepository extends GetxService {
       if (evidence == null || evidence.remoteId == null) {
         await _deleteLocalFile(evidence);
         await DbService.to.purgeDeletedEvidence(id);
+      } else if (!Get.isRegistered<SyncService>()) {
+        LogService.to.info('EvidenceRepository', '本地模式：跳过云端删除');
       } else {
         final success = await SyncService.to.deleteEvidence(evidence);
         if (success) {

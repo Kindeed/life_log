@@ -23,6 +23,7 @@ class AppEmptyState extends StatelessWidget {
   Widget build(BuildContext context) {
     final textTheme = Theme.of(context).textTheme;
     final secondary = Theme.of(context).colorScheme.onSurfaceVariant;
+    final primary = Theme.of(context).colorScheme.primary;
 
     return Center(
       child: Padding(
@@ -30,13 +31,25 @@ class AppEmptyState extends StatelessWidget {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Icon(icon, size: 56, color: secondary.withValues(alpha: 0.55)),
+            Container(
+              width: 74,
+              height: 74,
+              decoration: BoxDecoration(
+                color: primary.withValues(alpha: 0.09),
+                shape: BoxShape.circle,
+              ),
+              child: Icon(
+                icon,
+                size: 34,
+                color: primary.withValues(alpha: 0.8),
+              ),
+            ),
             const SizedBox(height: AppSpacing.lg),
             Text(
               title,
               textAlign: TextAlign.center,
               style: textTheme.titleMedium?.copyWith(
-                fontWeight: FontWeight.w700,
+                fontWeight: FontWeight.w600,
               ),
             ),
             const SizedBox(height: AppSpacing.sm),
@@ -50,6 +63,7 @@ class AppEmptyState extends StatelessWidget {
               AppButton.primary(
                 label: actionLabel!,
                 icon: Icons.add_rounded,
+                height: 52,
                 onPressed: onAction,
               ),
             ],

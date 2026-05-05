@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
+import 'package:life_log/common/theme/theme_extensions.dart';
 import 'package:flutter/services.dart';
 
 import '../theme/app_radius.dart';
-import '../theme/app_semantic_colors.dart';
 import '../theme/app_spacing.dart';
 
 class AppFilterChipItem<T> {
@@ -32,7 +32,7 @@ class AppFilterChipBar<T> extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final semantic = theme.extension<AppSemanticColors>()!;
+    final semantic = theme.semanticColors;
     return Wrap(
       spacing: AppSpacing.sm,
       runSpacing: AppSpacing.sm,
@@ -50,10 +50,15 @@ class AppFilterChipBar<T> extends StatelessWidget {
               vertical: AppSpacing.sm,
             ),
             decoration: BoxDecoration(
-              color: selected ? theme.colorScheme.primary : theme.cardColor,
+              color: selected
+                  ? theme.colorScheme.primary.withValues(alpha: 0.12)
+                  : theme.cardColor,
               borderRadius: BorderRadius.circular(AppRadius.lg),
               border: Border.all(
-                color: selected ? theme.colorScheme.primary : semantic.border,
+                color: selected
+                    ? theme.colorScheme.primary.withValues(alpha: 0.35)
+                    : semantic.border,
+                width: 0.7,
               ),
             ),
             child: Row(
@@ -65,7 +70,7 @@ class AppFilterChipBar<T> extends StatelessWidget {
                       : item.icon ?? Icons.tune_rounded,
                   size: 15,
                   color: selected
-                      ? theme.colorScheme.onPrimary
+                      ? theme.colorScheme.primary
                       : theme.colorScheme.onSurfaceVariant,
                 ),
                 const SizedBox(width: AppSpacing.xs),
@@ -73,9 +78,9 @@ class AppFilterChipBar<T> extends StatelessWidget {
                   item.label,
                   style: theme.textTheme.labelMedium?.copyWith(
                     color: selected
-                        ? theme.colorScheme.onPrimary
+                        ? theme.colorScheme.primary
                         : theme.colorScheme.onSurface,
-                    fontWeight: FontWeight.w700,
+                    fontWeight: selected ? FontWeight.w700 : FontWeight.w500,
                     letterSpacing: 0,
                   ),
                 ),

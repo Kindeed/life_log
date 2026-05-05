@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
+import 'package:life_log/common/theme/theme_extensions.dart';
 import 'package:flutter/services.dart';
 
 import '../theme/app_radius.dart';
-import '../theme/app_semantic_colors.dart';
 import '../theme/app_spacing.dart';
 
 enum AppButtonVariant { primary, secondary, text, destructive }
@@ -63,7 +63,7 @@ class AppButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final semantic = Theme.of(context).extension<AppSemanticColors>()!;
+    final semantic = Theme.of(context).semanticColors;
     final callback = isLoading || onPressed == null
         ? null
         : () {
@@ -79,7 +79,7 @@ class AppButton extends StatelessWidget {
       isLoading: isLoading,
     );
     final shape = RoundedRectangleBorder(
-      borderRadius: BorderRadius.circular(AppRadius.lg),
+      borderRadius: BorderRadius.circular(AppRadius.xl),
     );
     final minimumSize = Size.fromHeight(height);
     final textStyle = Theme.of(context).textTheme.labelLarge?.copyWith(
@@ -98,6 +98,7 @@ class AppButton extends StatelessWidget {
             disabledBackgroundColor: semantic.mutedSurface,
             disabledForegroundColor: Theme.of(context).disabledColor,
             elevation: 0,
+            shadowColor: Colors.transparent,
             shape: shape,
             textStyle: textStyle,
           ),
@@ -109,7 +110,8 @@ class AppButton extends StatelessWidget {
           style: OutlinedButton.styleFrom(
             minimumSize: minimumSize,
             foregroundColor: Theme.of(context).colorScheme.primary,
-            side: BorderSide(color: semantic.border),
+            backgroundColor: semantic.mutedSurface.withValues(alpha: 0.8),
+            side: BorderSide(color: semantic.border, width: 0.7),
             shape: shape,
             textStyle: textStyle,
           ),
@@ -133,6 +135,7 @@ class AppButton extends StatelessWidget {
             backgroundColor: Theme.of(context).colorScheme.errorContainer,
             foregroundColor: Theme.of(context).colorScheme.onErrorContainer,
             elevation: 0,
+            shadowColor: Colors.transparent,
             shape: shape,
             textStyle: textStyle,
           ),

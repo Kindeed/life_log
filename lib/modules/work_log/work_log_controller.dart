@@ -28,9 +28,9 @@ class WorkLogController extends GetxController {
   @override
   void onInit() {
     super.onInit();
-    loadData();
+    _loadDataSafely('startup');
     _dbSub = WorkLogRepository.to.watchLogs().listen((_) {
-      loadData();
+      _loadDataSafely('watch');
     });
   }
 
@@ -67,26 +67,36 @@ class WorkLogController extends GetxController {
   // 加载数据
   Future<void> loadData() async {
     isLoading.value = true;
-    LogService.to.debug('WorkLog', '开始加载数据...');
+    try {
+      LogService.to.debug('WorkLog', '开始加载数据...');
 
-    final allLogs = await WorkLogRepository.to.getAllLogs();
-    LogService.to.debug('WorkLog', '从数据库获取到 ${allLogs.length} 条记录');
+      final allLogs = await WorkLogRepository.to.getAllLogs();
+      LogService.to.debug('WorkLog', '从数据库获取到 ${allLogs.length} 条记录');
 
-    final newMap = <DateTime, List<WorkLog>>{};
-    for (var log in allLogs) {
-      final date = log.date;
-      final key = DateTime(date.year, date.month, date.day);
-      if (newMap[key] == null) newMap[key] = [];
-      newMap[key]!.add(log);
+      final newMap = <DateTime, List<WorkLog>>{};
+      for (var log in allLogs) {
+        final date = log.date;
+        final key = DateTime(date.year, date.month, date.day);
+        if (newMap[key] == null) newMap[key] = [];
+        newMap[key]!.add(log);
+      }
+
+      logsMap.assignAll(newMap);
+      dataVersion.value++; // 强制刷新日历
+      LogService.to.info('WorkLog', '数据已更新，共 ${logsMap.length} 天有记录');
+      _calculateMonthStats();
+
+      LogService.to.debug('WorkLog', '数据加载完成');
+    } catch (e, stackTrace) {
+      LogService.to.error('WorkLog', '加载数据失败: $e', stackTrace);
+    } finally {
+      isLoading.value = false;
     }
+  }
 
-    logsMap.assignAll(newMap);
-    dataVersion.value++; // 强制刷新日历
-    LogService.to.info('WorkLog', '数据已更新，共 ${logsMap.length} 天有记录');
-    _calculateMonthStats();
-
-    isLoading.value = false;
-    LogService.to.debug('WorkLog', '数据加载完成');
+  void _loadDataSafely(String reason) {
+    unawaited(loadData());
+    LogService.to.debug('WorkLog', '触发数据加载: $reason');
   }
 
   // 添加/修改日志

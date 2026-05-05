@@ -23,18 +23,18 @@ class AppSemanticColors extends ThemeExtension<AppSemanticColors> {
 
   static const light = AppSemanticColors(
     work: Color(0xFF007AFF),
-    expense: Color(0xFFAF52DE),
-    project: Color(0xFF34C759),
-    stats: Color(0xFF5AC8FA),
-    success: Color(0xFF34C759),
-    warning: Color(0xFFFF9500),
+    expense: Color(0xFF9B5CFF),
+    project: Color(0xFF248A3D),
+    stats: Color(0xFF0A84FF),
+    success: Color(0xFF248A3D),
+    warning: Color(0xFFFF9F0A),
     mutedSurface: Color(0xFFF2F2F7),
-    border: Color(0xFFD1D1D6),
+    border: Color(0xFFE0E0E6),
   );
 
   static const dark = AppSemanticColors(
     work: Color(0xFF0A84FF),
-    expense: Color(0xFFBF5AF2),
+    expense: Color(0xFFBF8CFF),
     project: Color(0xFF30D158),
     stats: Color(0xFF64D2FF),
     success: Color(0xFF30D158),

@@ -1,10 +1,10 @@
 import 'package:flutter/material.dart';
+import 'package:life_log/common/theme/theme_extensions.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:get/get.dart';
 
 import '../../../common/db/backup_service.dart';
 import '../../../common/layout/constrained_page.dart';
-import '../../../common/theme/app_semantic_colors.dart';
 import '../../../common/theme/app_spacing.dart';
 import '../../../common/widgets/app_card.dart';
 import '../../../common/widgets/app_confirm_dialog.dart';
@@ -15,7 +15,7 @@ class DataManagementView extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final semantic = Theme.of(context).extension<AppSemanticColors>()!;
+    final semantic = Theme.of(context).semanticColors;
 
     return Scaffold(
       appBar: AppBar(title: const Text('数据管理')),

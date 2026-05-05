@@ -40,9 +40,9 @@ class WorkLogView extends StatelessWidget {
 
                   // 2. 日历主体
                   ConstrainedPage(
-                    padding: EdgeInsets.symmetric(horizontal: 16.w),
+                    padding: EdgeInsets.symmetric(horizontal: 14.w),
                     child: AppCard(
-                      padding: EdgeInsets.zero,
+                      padding: EdgeInsets.fromLTRB(6.w, 8.h, 6.w, 8.h),
                       child: Obx(() {
                         return TableCalendar<WorkLog>(
                           key: ValueKey(
@@ -65,7 +65,7 @@ class WorkLogView extends StatelessWidget {
                               fontSize: 12.sp,
                             ),
                           ),
-                          rowHeight: 60.h,
+                          rowHeight: 58.h,
                           calendarStyle: const CalendarStyle(
                             markersMaxCount: 0,
                           ),
@@ -90,7 +90,7 @@ class WorkLogView extends StatelessWidget {
                       }),
                     ),
                   ),
-                  SizedBox(height: 18.h),
+                  SizedBox(height: 16.h),
                 ],
               ),
             ),
@@ -98,7 +98,7 @@ class WorkLogView extends StatelessWidget {
             SliverFillRemaining(
               hasScrollBody: false,
               child: ConstrainedPage(
-                padding: EdgeInsets.symmetric(horizontal: 16.w),
+                padding: EdgeInsets.symmetric(horizontal: 14.w),
                 child: Obx(() {
                   final selectedDate = logic.selectedDay.value;
                   final events = logic.getEventsForDay(selectedDate);

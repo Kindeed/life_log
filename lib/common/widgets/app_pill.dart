@@ -22,12 +22,12 @@ class AppPill extends StatelessWidget {
     final tint = selected ? 0.14 : 0.08;
     return Container(
       padding: const EdgeInsets.symmetric(
-        horizontal: AppSpacing.sm,
+        horizontal: AppSpacing.md,
         vertical: AppSpacing.xs,
       ),
       decoration: BoxDecoration(
         color: color.withValues(alpha: tint),
-        borderRadius: BorderRadius.circular(AppRadius.sm),
+        borderRadius: BorderRadius.circular(AppRadius.lg),
         border: selected
             ? Border.all(color: color.withValues(alpha: 0.5))
             : null,

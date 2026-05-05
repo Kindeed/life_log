@@ -1,9 +1,10 @@
 import 'package:flutter/material.dart';
+import 'package:life_log/common/theme/app_semantic_colors.dart';
+import 'package:life_log/common/theme/theme_extensions.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:get/get.dart';
 
 import '../../common/layout/constrained_page.dart';
-import '../../common/theme/app_semantic_colors.dart';
 import '../../common/utils/formatters.dart';
 import '../../common/widgets/app_card.dart';
 import '../../common/widgets/app_confirm_dialog.dart';
@@ -24,7 +25,7 @@ class SubscriptionView extends StatelessWidget {
   Widget build(BuildContext context) {
     final logic = Get.find<SubscriptionController>();
     final theme = Theme.of(context);
-    final semantic = theme.extension<AppSemanticColors>()!;
+    final semantic = theme.semanticColors;
     final textSecondary = theme.colorScheme.onSurfaceVariant;
 
     return Scaffold(
@@ -325,7 +326,7 @@ class _SubscriptionCard extends StatelessWidget {
             alignment: Alignment.center,
             decoration: BoxDecoration(
               color: accent.withValues(alpha: 0.12),
-              borderRadius: BorderRadius.circular(10),
+              borderRadius: BorderRadius.circular(16),
             ),
             child: Text(
               sub.name.trim().isNotEmpty
@@ -348,7 +349,7 @@ class _SubscriptionCard extends StatelessWidget {
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                   style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                    fontWeight: FontWeight.w800,
+                    fontWeight: FontWeight.w700,
                   ),
                 ),
                 SizedBox(height: 5.h),
@@ -381,7 +382,7 @@ class _SubscriptionCard extends StatelessWidget {
                   formatMoney(sub.price ?? 0),
                   style: TextStyle(
                     fontSize: 18.sp,
-                    fontWeight: FontWeight.w800,
+                    fontWeight: FontWeight.w700,
                     fontFamily: "Roboto",
                   ),
                 ),

@@ -74,8 +74,16 @@ jobs:
         run: flutter analyze --no-fatal-infos
 
       # ── 8. 打包 APK（分架构）──────────────────────────
+      - name: Validate Supabase secrets
+        run: |
+          test -n "${{ secrets.SUPABASE_URL }}" || (echo "Missing SUPABASE_URL secret" && exit 1)
+          test -n "${{ secrets.SUPABASE_ANON_KEY }}" || (echo "Missing SUPABASE_ANON_KEY secret" && exit 1)
+
       - name: Build APK (split per ABI)
-        run: flutter build apk --release --split-per-abi
+        run: >
+          flutter build apk --release --split-per-abi
+          --dart-define=SUPABASE_URL=${{ secrets.SUPABASE_URL }}
+          --dart-define=SUPABASE_ANON_KEY=${{ secrets.SUPABASE_ANON_KEY }}
 
       # ── 9. 提取版本号用于 Release 标题 ────────────────
       - name: Extract version from tag

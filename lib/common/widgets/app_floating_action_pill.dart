@@ -33,8 +33,9 @@ class AppFloatingActionPill extends StatelessWidget {
         child: FloatingActionButton.extended(
           backgroundColor: color,
           elevation: 0,
+          highlightElevation: 0,
           shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(AppRadius.lg),
+            borderRadius: BorderRadius.circular(AppRadius.xl),
           ),
           icon: Icon(icon, color: Colors.white),
           label: Padding(
@@ -43,7 +44,7 @@ class AppFloatingActionPill extends StatelessWidget {
               label,
               style: Theme.of(context).textTheme.labelLarge?.copyWith(
                 color: Colors.white,
-                fontWeight: FontWeight.w700,
+                fontWeight: FontWeight.w600,
                 letterSpacing: 0,
               ),
             ),

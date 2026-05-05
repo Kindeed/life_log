@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:life_log/common/theme/theme_extensions.dart';
 
 import '../theme/app_radius.dart';
-import '../theme/app_semantic_colors.dart';
 import '../theme/app_spacing.dart';
 
 class AppTextField extends StatelessWidget {
@@ -20,6 +20,7 @@ class AppTextField extends StatelessWidget {
   final Widget? suffixIcon;
   final bool autofocus;
   final bool readOnly;
+  final bool enabled;
   final VoidCallback? onTap;
 
   const AppTextField({
@@ -39,12 +40,16 @@ class AppTextField extends StatelessWidget {
     this.suffixIcon,
     this.autofocus = false,
     this.readOnly = false,
+    this.enabled = true,
     this.onTap,
   });
 
   @override
   Widget build(BuildContext context) {
-    final semantic = Theme.of(context).extension<AppSemanticColors>()!;
+    final theme = Theme.of(context);
+    final semantic = theme.semanticColors;
+    final radius = BorderRadius.circular(AppRadius.lg);
+    final borderSide = BorderSide(color: semantic.border, width: 0.7);
 
     return TextFormField(
       controller: controller,
@@ -58,6 +63,7 @@ class AppTextField extends StatelessWidget {
       maxLines: obscureText ? 1 : maxLines,
       autofocus: autofocus,
       readOnly: readOnly,
+      enabled: enabled,
       onTap: onTap,
       decoration: InputDecoration(
         labelText: labelText,
@@ -65,30 +71,30 @@ class AppTextField extends StatelessWidget {
         prefixIcon: prefixIcon,
         suffixIcon: suffixIcon,
         filled: true,
-        fillColor: semantic.mutedSurface,
+        fillColor: theme.cardColor,
         contentPadding: const EdgeInsets.symmetric(
           horizontal: AppSpacing.lg,
-          vertical: AppSpacing.md,
+          vertical: AppSpacing.lg,
         ),
         border: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(AppRadius.lg),
-          borderSide: BorderSide(color: semantic.border),
+          borderRadius: radius,
+          borderSide: borderSide,
         ),
         enabledBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(AppRadius.lg),
-          borderSide: BorderSide(color: semantic.border),
+          borderRadius: radius,
+          borderSide: borderSide,
         ),
         focusedBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(AppRadius.lg),
-          borderSide: BorderSide(color: Theme.of(context).colorScheme.primary),
+          borderRadius: radius,
+          borderSide: BorderSide(color: theme.colorScheme.primary, width: 1.2),
         ),
         errorBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(AppRadius.lg),
-          borderSide: BorderSide(color: Theme.of(context).colorScheme.error),
+          borderRadius: radius,
+          borderSide: BorderSide(color: theme.colorScheme.error),
         ),
         focusedErrorBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(AppRadius.lg),
-          borderSide: BorderSide(color: Theme.of(context).colorScheme.error),
+          borderRadius: radius,
+          borderSide: BorderSide(color: theme.colorScheme.error, width: 1.2),
         ),
       ),
     );

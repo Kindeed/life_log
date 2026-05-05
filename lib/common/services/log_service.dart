@@ -2,6 +2,7 @@ import 'dart:io';
 import 'package:flutter/foundation.dart';
 import 'package:get/get.dart';
 import 'package:path_provider/path_provider.dart';
+import 'cloud_config_service.dart';
 
 /// 日志级别
 enum LogLevel { debug, info, warning, error }
@@ -50,8 +51,7 @@ class LogEntry {
 
   @override
   String toString() {
-    final time =
-        '${timestamp.hour.toString().padLeft(2, '0')}:${timestamp.minute.toString().padLeft(2, '0')}:${timestamp.second.toString().padLeft(2, '0')}';
+    final time = timestamp.toIso8601String();
     return '[$time] [$levelName] [$tag] $message${stackTrace != null ? '\n$stackTrace' : ''}';
   }
 }
@@ -84,6 +84,13 @@ class LogService extends GetxService {
       debugPrint("Failed to init log file: $e");
     }
     return this;
+  }
+
+  LogEntry? get latestError {
+    for (final entry in logs.reversed) {
+      if (entry.level == LogLevel.error) return entry;
+    }
+    return null;
   }
 
   /// 记录 Debug 日志
@@ -142,6 +149,20 @@ class LogService extends GetxService {
     buffer.writeln('=== LifeLog 应用日志 ===');
     buffer.writeln('导出时间: ${DateTime.now()}');
     buffer.writeln('日志数量: ${logs.length}');
+    buffer.writeln(
+      '构建模式: ${kReleaseMode
+          ? "release"
+          : kProfileMode
+          ? "profile"
+          : "debug"}',
+    );
+    if (Get.isRegistered<CloudConfigService>()) {
+      final cloudConfig = CloudConfigService.to;
+      buffer.writeln('云配置: ${cloudConfig.statusLabel}');
+      if (cloudConfig.isConfigured.value) {
+        buffer.writeln('Supabase URL: ${cloudConfig.supabaseUrl}');
+      }
+    }
     buffer.writeln('========================\n');
 
     for (final log in logs) {
@@ -157,6 +178,35 @@ class LogService extends GetxService {
     // 可选：清空文件
     _logFile?.writeAsString('');
     info('LogService', '日志已清空');
+  }
+
+  String exportLatestError() {
+    final error = latestError;
+    return error?.toString() ?? '暂无错误日志';
+  }
+
+  String exportDiagnostics() {
+    final buffer = StringBuffer();
+    buffer.writeln('=== LifeLog 诊断信息 ===');
+    buffer.writeln('时间: ${DateTime.now().toIso8601String()}');
+    buffer.writeln(
+      '构建模式: ${kReleaseMode
+          ? "release"
+          : kProfileMode
+          ? "profile"
+          : "debug"}',
+    );
+    buffer.writeln('日志数量: ${logs.length}');
+    if (Get.isRegistered<CloudConfigService>()) {
+      final cloudConfig = CloudConfigService.to;
+      buffer.writeln('云配置: ${cloudConfig.statusLabel}');
+      if (cloudConfig.isConfigured.value) {
+        buffer.writeln('Supabase URL: ${cloudConfig.supabaseUrl}');
+      }
+    }
+    buffer.writeln('最近错误:');
+    buffer.writeln(exportLatestError());
+    return buffer.toString();
   }
 
   /// 按级别筛选日志

@@ -1,8 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
-import '../../../common/services/auth_service.dart';
-import '../../../common/theme/app_colors.dart';
+import '../../common/services/cloud_config_service.dart';
+import '../../common/services/auth_service.dart';
+import '../../common/theme/app_colors.dart';
 
 class LoginController extends GetxController {
   final emailController = TextEditingController();
@@ -11,6 +12,11 @@ class LoginController extends GetxController {
 
   final isLoading = false.obs;
   final isLogin = true.obs;
+
+  bool get isCloudAvailable =>
+      Get.isRegistered<CloudConfigService>() &&
+      CloudConfigService.to.isConfigured.value &&
+      Get.isRegistered<AuthService>();
 
   @override
   void onClose() {
@@ -24,6 +30,10 @@ class LoginController extends GetxController {
   }
 
   Future<void> submit() async {
+    if (!isCloudAvailable) {
+      Get.snackbar('云同步未配置', '当前为本地模式，登录和注册暂不可用。');
+      return;
+    }
     if (!formKey.currentState!.validate()) return;
 
     isLoading.value = true;

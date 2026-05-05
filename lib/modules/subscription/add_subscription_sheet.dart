@@ -1,11 +1,11 @@
 import 'package:flutter/material.dart';
+import 'package:life_log/common/theme/theme_extensions.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:get/get.dart';
 import 'package:intl/intl.dart';
 import 'subscription_model.dart';
 import 'subscription_controller.dart';
 import '../../common/theme/app_colors.dart';
-import '../../common/theme/app_semantic_colors.dart';
 import '../../common/widgets/app_button.dart';
 import '../../common/widgets/app_safe_bottom_bar.dart';
 import '../../common/widgets/app_sheet_scaffold.dart';
@@ -42,7 +42,7 @@ class _AddSubscriptionSheetState extends State<AddSubscriptionSheet> {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final isDark = theme.brightness == Brightness.dark;
-    final semantic = theme.extension<AppSemanticColors>()!;
+    final semantic = theme.semanticColors;
     final bgColor = semantic.mutedSurface;
     final textPrimary = theme.colorScheme.onSurface;
     final textSecondary = theme.colorScheme.onSurfaceVariant;

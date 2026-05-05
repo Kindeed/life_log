@@ -1,9 +1,10 @@
 import 'package:flutter/material.dart';
+import 'package:life_log/common/theme/app_semantic_colors.dart';
+import 'package:life_log/common/theme/theme_extensions.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:get/get.dart';
 
 import '../../common/layout/constrained_page.dart';
-import '../../common/theme/app_semantic_colors.dart';
 import '../../common/theme/app_spacing.dart';
 import '../../common/widgets/app_card.dart';
 import '../../common/widgets/app_confirm_dialog.dart';
@@ -20,7 +21,7 @@ class ProfileView extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     Get.find<ProfileController>();
-    final semantic = Theme.of(context).extension<AppSemanticColors>()!;
+    final semantic = Theme.of(context).semanticColors;
 
     return Scaffold(
       appBar: AppBar(title: const Text('我的')),
@@ -106,10 +107,13 @@ class _AccountCard extends StatelessWidget {
 
     return Obx(() {
       final isLoggedIn = controller.isLoggedIn.value;
+      final isCloudConfigured = controller.isCloudConfigured.value;
       final userName = controller.userName.value;
 
       return AppCard(
-        onTap: isLoggedIn ? null : () => Get.toNamed('/login'),
+        onTap: isLoggedIn || !isCloudConfigured
+            ? null
+            : () => Get.toNamed('/login'),
         padding: EdgeInsets.all(18.w),
         child: Column(
           children: [
@@ -134,21 +138,25 @@ class _AccountCard extends StatelessWidget {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
-                        isLoggedIn ? userName : '点击登录',
+                        isLoggedIn || !isCloudConfigured ? userName : '点击登录',
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
                         style: Theme.of(context).textTheme.titleMedium
-                            ?.copyWith(fontWeight: FontWeight.w800),
+                            ?.copyWith(fontWeight: FontWeight.w700),
                       ),
                       SizedBox(height: 4.h),
                       Text(
-                        isLoggedIn ? '已登录，数据可同步到云端' : '登录后可同步数据',
+                        !isCloudConfigured
+                            ? '云同步未配置，本地数据可正常使用'
+                            : isLoggedIn
+                            ? '已登录，数据可同步到云端'
+                            : '登录后可同步数据',
                         style: TextStyle(fontSize: 13.sp, color: textSecondary),
                       ),
                     ],
                   ),
                 ),
-                if (!isLoggedIn)
+                if (!isLoggedIn && isCloudConfigured)
                   Icon(Icons.chevron_right_rounded, color: textSecondary),
               ],
             ),
@@ -221,12 +229,12 @@ class _AccountAction extends StatelessWidget {
   Widget build(BuildContext context) {
     return InkWell(
       onTap: onTap,
-      borderRadius: BorderRadius.circular(8),
+      borderRadius: BorderRadius.circular(16),
       child: Container(
         padding: EdgeInsets.symmetric(horizontal: 10.w, vertical: 10.h),
         decoration: BoxDecoration(
           color: color.withValues(alpha: 0.1),
-          borderRadius: BorderRadius.circular(8),
+          borderRadius: BorderRadius.circular(16),
         ),
         child: Row(
           mainAxisAlignment: MainAxisAlignment.center,
@@ -241,7 +249,7 @@ class _AccountAction extends StatelessWidget {
                 style: TextStyle(
                   color: color,
                   fontSize: 13.sp,
-                  fontWeight: FontWeight.w800,
+                  fontWeight: FontWeight.w600,
                 ),
               ),
             ),
@@ -303,9 +311,9 @@ class _SettingsTile extends StatelessWidget {
 
     return InkWell(
       onTap: onTap,
-      borderRadius: BorderRadius.circular(8),
+      borderRadius: BorderRadius.circular(18),
       child: Padding(
-        padding: EdgeInsets.symmetric(horizontal: 14.w, vertical: 14.h),
+        padding: EdgeInsets.symmetric(horizontal: 14.w, vertical: 13.h),
         child: Row(
           children: [
             Container(
@@ -313,7 +321,7 @@ class _SettingsTile extends StatelessWidget {
               height: 40.w,
               decoration: BoxDecoration(
                 color: iconColor.withValues(alpha: 0.1),
-                borderRadius: BorderRadius.circular(10.r),
+                borderRadius: BorderRadius.circular(14.r),
               ),
               child: Icon(icon, color: iconColor, size: 22.sp),
             ),
@@ -326,7 +334,7 @@ class _SettingsTile extends StatelessWidget {
                     title,
                     style: TextStyle(
                       fontSize: 15.sp,
-                      fontWeight: FontWeight.w700,
+                      fontWeight: FontWeight.w600,
                     ),
                   ),
                   SizedBox(height: 2.h),

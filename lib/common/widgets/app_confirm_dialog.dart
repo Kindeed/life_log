@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:get/get.dart';
 
+import '../theme/app_radius.dart';
 import 'app_button.dart';
 
 class AppConfirmDialog {
@@ -14,7 +15,9 @@ class AppConfirmDialog {
   }) async {
     final result = await Get.dialog<bool>(
       AlertDialog(
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(18)),
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(AppRadius.xl),
+        ),
         title: Text(title),
         content: Text(message),
         actions: [

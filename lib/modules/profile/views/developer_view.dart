@@ -5,6 +5,7 @@ import 'package:get/get.dart';
 import 'package:share_plus/share_plus.dart';
 import '../../../common/theme/app_colors.dart';
 import '../../../common/theme/custom_colors.dart';
+import '../../../common/services/cloud_config_service.dart';
 import '../../../common/services/log_service.dart';
 import '../../../common/widgets/app_card.dart';
 import '../../../common/widgets/app_confirm_dialog.dart';
@@ -17,6 +18,7 @@ class DeveloperView extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final logService = Get.find<LogService>();
+    final cloudConfig = Get.find<CloudConfigService>();
     final theme = Theme.of(context);
     final isDark = theme.brightness == Brightness.dark;
     final textPrimary = theme.colorScheme.onSurface;
@@ -45,6 +47,7 @@ class DeveloperView extends StatelessWidget {
           // 设置区域
           _buildSettingsSection(
             logService,
+            cloudConfig,
             isDark,
             textPrimary,
             textSecondary,
@@ -117,6 +120,7 @@ class DeveloperView extends StatelessWidget {
 
   Widget _buildSettingsSection(
     LogService logService,
+    CloudConfigService cloudConfig,
     bool isDark,
     Color textPrimary,
     Color textSecondary,
@@ -162,6 +166,29 @@ class DeveloperView extends StatelessWidget {
             endIndent: 16.w,
             color: isDark ? Colors.grey[800] : Colors.grey[200],
           ),
+          Obx(
+            () => ListTile(
+              leading: Icon(Icons.cloud_outlined, color: textSecondary),
+              title: Text(
+                '云同步状态',
+                style: TextStyle(
+                  fontSize: 15.sp,
+                  fontWeight: FontWeight.w500,
+                  color: textPrimary,
+                ),
+              ),
+              subtitle: Text(
+                cloudConfig.isConfigured.value ? '已配置' : '未配置，本地模式',
+                style: TextStyle(fontSize: 12.sp, color: textSecondary),
+              ),
+            ),
+          ),
+          Divider(
+            height: 1,
+            indent: 16.w,
+            endIndent: 16.w,
+            color: isDark ? Colors.grey[800] : Colors.grey[200],
+          ),
           // 复制日志
           ListTile(
             leading: Icon(Icons.copy_outlined, color: textSecondary),
@@ -175,6 +202,28 @@ class DeveloperView extends StatelessWidget {
             ),
             trailing: Icon(Icons.chevron_right_rounded, color: textSecondary),
             onTap: () => _copyLogs(logService),
+          ),
+          Divider(
+            height: 1,
+            indent: 16.w,
+            endIndent: 16.w,
+            color: isDark ? Colors.grey[800] : Colors.grey[200],
+          ),
+          ListTile(
+            leading: Icon(
+              Icons.health_and_safety_outlined,
+              color: textSecondary,
+            ),
+            title: Text(
+              '复制诊断信息',
+              style: TextStyle(
+                fontSize: 15.sp,
+                fontWeight: FontWeight.w500,
+                color: textPrimary,
+              ),
+            ),
+            trailing: Icon(Icons.chevron_right_rounded, color: textSecondary),
+            onTap: () => _copyDiagnostics(logService),
           ),
           Divider(
             height: 1,
@@ -272,7 +321,7 @@ class DeveloperView extends StatelessWidget {
                 color: isDark ? Colors.black38 : Colors.grey[200],
                 borderRadius: BorderRadius.circular(4.r),
               ),
-              child: Text(
+              child: SelectableText(
                 log.stackTrace!,
                 style: TextStyle(
                   fontSize: 10.sp,
@@ -303,6 +352,12 @@ class DeveloperView extends StatelessWidget {
     final text = logService.exportLogs();
     Clipboard.setData(ClipboardData(text: text));
     Get.snackbar('已复制', '日志已复制到剪贴板', snackPosition: SnackPosition.BOTTOM);
+  }
+
+  void _copyDiagnostics(LogService logService) {
+    final text = logService.exportDiagnostics();
+    Clipboard.setData(ClipboardData(text: text));
+    Get.snackbar('已复制', '诊断信息已复制', snackPosition: SnackPosition.BOTTOM);
   }
 
   Future<void> _exportLogs(LogService logService) async {

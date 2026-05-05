@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:life_log/common/theme/theme_extensions.dart';
 
 import '../theme/app_radius.dart';
-import '../theme/app_semantic_colors.dart';
 import '../theme/app_spacing.dart';
 
 class AppCard extends StatelessWidget {
@@ -14,23 +14,28 @@ class AppCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final semantic = theme.extension<AppSemanticColors>()!;
+    final semantic = theme.semanticColors;
 
     final content = Container(
       padding: padding ?? const EdgeInsets.all(AppSpacing.lg),
       decoration: BoxDecoration(
         color: theme.cardColor,
-        borderRadius: BorderRadius.circular(AppRadius.sm),
-        border: Border.all(color: semantic.border),
-        boxShadow: theme.brightness == Brightness.dark
-            ? null
-            : [
-                BoxShadow(
-                  color: Colors.black.withValues(alpha: 0.025),
-                  blurRadius: 8,
-                  offset: const Offset(0, 2),
-                ),
-              ],
+        borderRadius: BorderRadius.circular(AppRadius.lg),
+        border: Border.all(
+          color: semantic.border.withValues(
+            alpha: theme.brightness == Brightness.dark ? 0.62 : 0.9,
+          ),
+          width: 0.7,
+        ),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(
+              alpha: theme.brightness == Brightness.dark ? 0.18 : 0.035,
+            ),
+            blurRadius: 22,
+            offset: const Offset(0, 8),
+          ),
+        ],
       ),
       child: child,
     );
@@ -39,10 +44,10 @@ class AppCard extends StatelessWidget {
 
     return Material(
       color: Colors.transparent,
-      borderRadius: BorderRadius.circular(AppRadius.sm),
+      borderRadius: BorderRadius.circular(AppRadius.lg),
       child: InkWell(
         onTap: onTap,
-        borderRadius: BorderRadius.circular(AppRadius.sm),
+        borderRadius: BorderRadius.circular(AppRadius.lg),
         child: content,
       ),
     );

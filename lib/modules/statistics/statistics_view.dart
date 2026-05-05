@@ -1,10 +1,11 @@
 import 'package:flutter/material.dart';
+import 'package:life_log/common/theme/app_semantic_colors.dart';
+import 'package:life_log/common/theme/theme_extensions.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:get/get.dart';
 
 import '../../common/layout/constrained_page.dart';
 import '../../common/theme/app_motion.dart';
-import '../../common/theme/app_semantic_colors.dart';
 import '../../common/utils/formatters.dart';
 import '../../common/widgets/app_card.dart';
 import '../../common/widgets/app_metric_tile.dart';
@@ -19,7 +20,7 @@ class StatisticsView extends StatelessWidget {
   Widget build(BuildContext context) {
     final logic = Get.find<StatisticsController>();
     final theme = Theme.of(context);
-    final semantic = theme.extension<AppSemanticColors>()!;
+    final semantic = theme.semanticColors;
 
     return Scaffold(
       backgroundColor: theme.scaffoldBackgroundColor,
@@ -84,7 +85,7 @@ class _MonthSelector extends StatelessWidget {
                     logic.selectedMonthLabel,
                     textAlign: TextAlign.center,
                     style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                      fontWeight: FontWeight.w800,
+                      fontWeight: FontWeight.w700,
                       height: 1.1,
                     ),
                   ),
@@ -144,14 +145,14 @@ class _MonthNavButton extends StatelessWidget {
       message: tooltip,
       child: InkWell(
         onTap: onPressed,
-        borderRadius: BorderRadius.circular(10),
+        borderRadius: BorderRadius.circular(16),
         child: Container(
           width: 42.w,
           height: 42.w,
           alignment: Alignment.center,
           decoration: BoxDecoration(
             color: color.withValues(alpha: 0.1),
-            borderRadius: BorderRadius.circular(10),
+            borderRadius: BorderRadius.circular(16),
           ),
           child: Icon(icon, size: 24.sp, color: color),
         ),

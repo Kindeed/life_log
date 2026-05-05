@@ -52,3 +52,9 @@ android/app/upload-keystore.jks
 
 # Local machine config
 android/local.properties
+
+# Local diagnostics / review scratch files
+analyze.txt
+doctor_output.txt
+diff*.txt
+*.code-workspace
