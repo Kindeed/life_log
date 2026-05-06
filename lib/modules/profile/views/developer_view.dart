@@ -22,7 +22,7 @@ class DeveloperView extends StatelessWidget {
     final theme = Theme.of(context);
     final isDark = theme.brightness == Brightness.dark;
     final textPrimary = theme.colorScheme.onSurface;
-    final textSecondary = isDark ? Colors.grey[400]! : Colors.grey[600]!;
+    final textSecondary = theme.colorScheme.onSurfaceVariant;
 
     return Scaffold(
       backgroundColor: theme.scaffoldBackgroundColor,
@@ -108,7 +108,7 @@ class DeveloperView extends StatelessWidget {
                   // 显示最新的日志在顶部
                   final log =
                       logService.logs[logService.logs.length - 1 - index];
-                  return _buildLogItem(log, isDark, textPrimary, textSecondary);
+                  return _buildLogItem(log, theme, textPrimary, textSecondary);
                 },
               );
             }),
@@ -164,7 +164,7 @@ class DeveloperView extends StatelessWidget {
             height: 1,
             indent: 16.w,
             endIndent: 16.w,
-            color: isDark ? Colors.grey[800] : Colors.grey[200],
+            color: theme.dividerColor,
           ),
           Obx(
             () => ListTile(
@@ -187,7 +187,7 @@ class DeveloperView extends StatelessWidget {
             height: 1,
             indent: 16.w,
             endIndent: 16.w,
-            color: isDark ? Colors.grey[800] : Colors.grey[200],
+            color: theme.dividerColor,
           ),
           // 复制日志
           ListTile(
@@ -207,7 +207,7 @@ class DeveloperView extends StatelessWidget {
             height: 1,
             indent: 16.w,
             endIndent: 16.w,
-            color: isDark ? Colors.grey[800] : Colors.grey[200],
+            color: theme.dividerColor,
           ),
           ListTile(
             leading: Icon(
@@ -229,7 +229,7 @@ class DeveloperView extends StatelessWidget {
             height: 1,
             indent: 16.w,
             endIndent: 16.w,
-            color: isDark ? Colors.grey[800] : Colors.grey[200],
+            color: theme.dividerColor,
           ),
           ListTile(
             leading: Icon(Icons.palette_outlined, color: textSecondary),
@@ -255,27 +255,28 @@ class DeveloperView extends StatelessWidget {
 
   Widget _buildLogItem(
     LogEntry log,
-    bool isDark,
+    ThemeData theme,
     Color textPrimary,
     Color textSecondary,
   ) {
+    final colorScheme = theme.colorScheme;
     Color levelColor;
     switch (log.level) {
       case LogLevel.debug:
-        levelColor = Colors.grey;
+        levelColor = colorScheme.onSurfaceVariant;
       case LogLevel.info:
-        levelColor = AppColors.primaryBlue;
+        levelColor = colorScheme.primary;
       case LogLevel.warning:
         levelColor = AppColors.orange;
       case LogLevel.error:
-        levelColor = Colors.red;
+        levelColor = colorScheme.error;
     }
 
     return Container(
       margin: EdgeInsets.only(bottom: 8.h),
       padding: EdgeInsets.all(12.w),
       decoration: BoxDecoration(
-        color: isDark ? Colors.grey[850] : Colors.grey[50],
+        color: colorScheme.surfaceContainerHighest.withValues(alpha: 0.55),
         borderRadius: BorderRadius.circular(8.r),
         border: Border(left: BorderSide(color: levelColor, width: 3)),
       ),
@@ -318,7 +319,7 @@ class DeveloperView extends StatelessWidget {
             Container(
               padding: EdgeInsets.all(8.w),
               decoration: BoxDecoration(
-                color: isDark ? Colors.black38 : Colors.grey[200],
+                color: colorScheme.surfaceContainerHighest,
                 borderRadius: BorderRadius.circular(4.r),
               ),
               child: SelectableText(

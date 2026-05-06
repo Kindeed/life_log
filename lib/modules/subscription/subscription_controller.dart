@@ -10,12 +10,15 @@ enum SubscriptionFilter { all, monthly, yearly, oneTime }
 
 enum SubscriptionSortMode { manual, date, price }
 
+enum FinanceSection { fixed, records }
+
 class SubscriptionController extends GetxController {
   static SubscriptionController get to => Get.find();
 
   final subs = <Subscription>[].obs;
   // 控制 FAB 显示/隐藏
   final isFabVisible = true.obs;
+  final section = FinanceSection.fixed.obs;
   final filter = SubscriptionFilter.all.obs;
   final sortMode = SubscriptionSortMode.manual.obs;
 
@@ -120,6 +123,10 @@ class SubscriptionController extends GetxController {
 
   void setFilter(SubscriptionFilter value) {
     filter.value = value;
+  }
+
+  void setSection(FinanceSection value) {
+    section.value = value;
   }
 
   void setSortMode(SubscriptionSortMode value) {

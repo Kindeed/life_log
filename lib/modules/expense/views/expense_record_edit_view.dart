@@ -13,8 +13,14 @@ import '../expense_record_model.dart';
 class ExpenseRecordEditView extends StatefulWidget {
   final ExpenseRecord? record;
   final DateTime? initialDate;
+  final String? initialProjectName;
 
-  const ExpenseRecordEditView({super.key, this.record, this.initialDate});
+  const ExpenseRecordEditView({
+    super.key,
+    this.record,
+    this.initialDate,
+    this.initialProjectName,
+  });
 
   @override
   State<ExpenseRecordEditView> createState() => _ExpenseRecordEditViewState();
@@ -39,6 +45,8 @@ class _ExpenseRecordEditViewState extends State<ExpenseRecordEditView> {
       _projectController.text = record.projectName ?? '';
       _noteController.text = record.note ?? '';
       _category = record.category;
+    } else if (widget.initialProjectName?.trim().isNotEmpty == true) {
+      _projectController.text = widget.initialProjectName!.trim();
     }
   }
 

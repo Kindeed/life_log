@@ -4,9 +4,13 @@ import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:get/get.dart';
 import 'package:life_log/modules/evidence/evidence_controller.dart';
 import 'package:life_log/modules/evidence/evidence_model.dart';
+import 'package:life_log/modules/expense/expense_record_controller.dart';
+import 'package:life_log/modules/expense/expense_record_model.dart';
+import 'package:life_log/modules/expense/views/expense_record_edit_view.dart';
 import 'package:life_log/modules/photo/photo_controller.dart';
 import 'package:life_log/modules/photo/photo_model.dart';
 import 'package:life_log/modules/photo/views/photo_preview_view.dart';
+import 'package:life_log/common/utils/formatters.dart';
 import 'package:life_log/common/theme/app_colors.dart';
 import 'package:life_log/common/widgets/app_action_sheet.dart';
 import 'package:life_log/common/widgets/app_button.dart';
@@ -25,6 +29,8 @@ class ProjectGalleryView extends StatefulWidget {
 class _ProjectGalleryViewState extends State<ProjectGalleryView> {
   final PhotoController controller = Get.find<PhotoController>();
   final EvidenceController evidenceController = Get.find<EvidenceController>();
+  final ExpenseRecordController expenseController =
+      Get.find<ExpenseRecordController>();
   final RxList<PhotoItem> selectedPhotos = <PhotoItem>[].obs;
   final RxBool isMultiSelectMode = false.obs;
 
@@ -35,7 +41,7 @@ class _ProjectGalleryViewState extends State<ProjectGalleryView> {
     final textSecondary = theme.colorScheme.onSurfaceVariant;
 
     return DefaultTabController(
-      length: 2,
+      length: 3,
       child: Scaffold(
         appBar: AppBar(
           title: Text(widget.projectName),
@@ -43,6 +49,7 @@ class _ProjectGalleryViewState extends State<ProjectGalleryView> {
             tabs: [
               Tab(icon: Icon(Icons.photo_library_rounded), text: '照片'),
               Tab(icon: Icon(Icons.receipt_long_rounded), text: '凭证'),
+              Tab(icon: Icon(Icons.payments_rounded), text: '支出'),
             ],
           ),
           actions: [
@@ -218,6 +225,16 @@ class _ProjectGalleryViewState extends State<ProjectGalleryView> {
               );
             }),
             Obx(() => _buildEvidenceList(textSecondary, theme)),
+            Obx(() {
+              final records =
+                  expenseController.records
+                      .where(
+                        (record) => record.projectName == widget.projectName,
+                      )
+                      .toList()
+                    ..sort((a, b) => b.expenseDate.compareTo(a.expenseDate));
+              return _buildExpenseList(records, textSecondary, theme);
+            }),
           ],
         ),
         bottomNavigationBar: Obx(() {
@@ -254,11 +271,11 @@ class _ProjectGalleryViewState extends State<ProjectGalleryView> {
         floatingActionButton: Obx(() {
           if (isMultiSelectMode.value) return const SizedBox.shrink();
           return AppFloatingActionPill(
-            label: "添加照片",
-            icon: Icons.add_photo_alternate,
+            label: "添加",
+            icon: Icons.add_rounded,
             color: Theme.of(context).colorScheme.primary,
             visible: true,
-            onPressed: () => _showAddPhotoActions(),
+            onPressed: () => _showProjectAddActions(),
           );
         }),
       ),
@@ -312,6 +329,42 @@ class _ProjectGalleryViewState extends State<ProjectGalleryView> {
     );
   }
 
+  Widget _buildExpenseList(
+    List<ExpenseRecord> records,
+    Color textSecondary,
+    ThemeData theme,
+  ) {
+    if (records.isEmpty) {
+      return Center(
+        child: Text('此项目下暂无支出', style: TextStyle(color: textSecondary)),
+      );
+    }
+    return ListView.separated(
+      padding: EdgeInsets.all(12.w),
+      itemCount: records.length,
+      separatorBuilder: (_, _) => SizedBox(height: 10.h),
+      itemBuilder: (context, index) {
+        final record = records[index];
+        final title = record.merchant?.trim().isNotEmpty == true
+            ? record.merchant!.trim()
+            : record.category.label;
+        return ListTile(
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(12),
+          ),
+          tileColor: theme.cardColor,
+          leading: const Icon(Icons.payments_rounded),
+          title: Text(title),
+          subtitle: Text(
+            '${formatDateYmd(record.expenseDate)} · ${record.category.label}',
+          ),
+          trailing: Text(formatMoney(record.amount)),
+          onTap: () => Get.to(() => ExpenseRecordEditView(record: record)),
+        );
+      },
+    );
+  }
+
   void _showAddPhotoActions() {
     AppActionSheet.show(
       title: "添加照片",
@@ -329,6 +382,33 @@ class _ProjectGalleryViewState extends State<ProjectGalleryView> {
           subtitle: "导入后请求删除系统相册原图",
           onTap: () =>
               controller.importFromGallery(initialProject: widget.projectName),
+        ),
+      ],
+    );
+  }
+
+  void _showProjectAddActions() {
+    AppActionSheet.show(
+      title: "添加到 ${widget.projectName}",
+      actions: [
+        AppActionSheetItem(
+          icon: Icons.add_photo_alternate_rounded,
+          title: "照片",
+          onTap: _showAddPhotoActions,
+        ),
+        AppActionSheetItem(
+          icon: Icons.receipt_long_rounded,
+          title: "凭证",
+          onTap: () => evidenceController.createManualEvidence(
+            initialProject: widget.projectName,
+          ),
+        ),
+        AppActionSheetItem(
+          icon: Icons.payments_rounded,
+          title: "项目支出",
+          onTap: () => Get.to(
+            () => ExpenseRecordEditView(initialProjectName: widget.projectName),
+          ),
         ),
       ],
     );

@@ -1,40 +1,101 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import 'package:life_log/common/widgets/app_action_sheet.dart';
 import 'package:life_log/common/theme/app_radius.dart';
 import 'package:life_log/common/theme/theme_extensions.dart';
-import '../today/today_view.dart';
-import '../work_log/work_log_view.dart';
-import '../subscription/subscription_view.dart';
-import 'tabs_controller.dart';
+import 'package:life_log/modules/evidence/evidence_controller.dart';
+import 'package:life_log/modules/expense/views/expense_record_edit_view.dart';
+import 'package:life_log/modules/photo/photo_controller.dart';
+import 'package:life_log/modules/work_log/views/log_edit_view.dart';
 import '../photo/views/photo_view.dart';
 import '../profile/profile_view.dart';
+import '../subscription/subscription_view.dart';
+import '../work_log/work_log_view.dart';
+import 'tabs_controller.dart';
 
-class TabsView extends StatelessWidget {
+class TabsView extends StatefulWidget {
   const TabsView({super.key});
 
   @override
-  Widget build(BuildContext context) {
-    final controller = Get.find<TabsController>();
+  State<TabsView> createState() => _TabsViewState();
+}
 
+class _TabsViewState extends State<TabsView> {
+  late final TabsController controller;
+  late final PageController pageController;
+
+  @override
+  void initState() {
+    super.initState();
+    controller = Get.find<TabsController>();
+    pageController = PageController(initialPage: controller.currentIndex.value);
+  }
+
+  @override
+  void dispose() {
+    pageController.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
     return Scaffold(
-      body: Obx(
-        () => IndexedStack(
-          index: controller.currentIndex.value,
-          children: const [
-            TodayView(),
-            WorkLogView(),
-            SubscriptionView(),
-            PhotoView(),
-            ProfileView(),
-          ],
-        ),
+      body: PageView(
+        controller: pageController,
+        onPageChanged: controller.changePage,
+        children: const [
+          WorkLogView(),
+          SubscriptionView(),
+          PhotoView(),
+          ProfileView(),
+        ],
       ),
       bottomNavigationBar: Obx(
         () => _AppleTabBar(
           currentIndex: controller.currentIndex.value,
-          onTap: controller.changePage,
+          onTap: _goToPage,
+          onAdd: _showQuickAdd,
         ),
       ),
+    );
+  }
+
+  void _goToPage(int index) {
+    controller.changePage(index);
+    pageController.animateToPage(
+      index,
+      duration: const Duration(milliseconds: 180),
+      curve: Curves.easeOutCubic,
+    );
+  }
+
+  void _showQuickAdd() {
+    final now = DateTime.now();
+    final today = DateTime(now.year, now.month, now.day);
+    AppActionSheet.show(
+      title: '快速添加',
+      actions: [
+        AppActionSheetItem(
+          icon: Icons.work_history_rounded,
+          title: '工时',
+          onTap: () => Get.to(() => LogEditView(selectedDate: today)),
+        ),
+        AppActionSheetItem(
+          icon: Icons.payments_rounded,
+          title: '项目支出',
+          onTap: () => Get.to(() => ExpenseRecordEditView(initialDate: today)),
+        ),
+        AppActionSheetItem(
+          icon: Icons.camera_alt_rounded,
+          title: '照片',
+          onTap: () => PhotoController.to.captureWithSystemCamera(),
+        ),
+        AppActionSheetItem(
+          icon: Icons.receipt_long_rounded,
+          title: '凭证',
+          onTap: () => EvidenceController.to.createManualEvidence(),
+        ),
+      ],
     );
   }
 }
@@ -42,13 +103,17 @@ class TabsView extends StatelessWidget {
 class _AppleTabBar extends StatelessWidget {
   final int currentIndex;
   final ValueChanged<int> onTap;
+  final VoidCallback onAdd;
 
-  const _AppleTabBar({required this.currentIndex, required this.onTap});
+  const _AppleTabBar({
+    required this.currentIndex,
+    required this.onTap,
+    required this.onAdd,
+  });
 
   static const _items = [
-    _TabSpec(Icons.today_rounded, '今天'),
     _TabSpec(Icons.calendar_today_rounded, '工时'),
-    _TabSpec(Icons.account_balance_wallet_rounded, '支出'),
+    _TabSpec(Icons.account_balance_wallet_rounded, '财务'),
     _TabSpec(Icons.folder_shared_rounded, '项目'),
     _TabSpec(Icons.person_rounded, '我的'),
   ];
@@ -82,7 +147,16 @@ class _AppleTabBar extends StatelessWidget {
         ),
         child: Row(
           children: [
-            for (var i = 0; i < _items.length; i++)
+            for (var i = 0; i < 2; i++)
+              Expanded(
+                child: _AppleTabItem(
+                  spec: _items[i],
+                  selected: i == currentIndex,
+                  onTap: () => onTap(i),
+                ),
+              ),
+            _AddTabButton(onTap: onAdd),
+            for (var i = 2; i < _items.length; i++)
               Expanded(
                 child: _AppleTabItem(
                   spec: _items[i],
@@ -91,6 +165,42 @@ class _AppleTabBar extends StatelessWidget {
                 ),
               ),
           ],
+        ),
+      ),
+    );
+  }
+}
+
+class _AddTabButton extends StatelessWidget {
+  final VoidCallback onTap;
+
+  const _AddTabButton({required this.onTap});
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    return Expanded(
+      child: Center(
+        child: Semantics(
+          button: true,
+          label: '快速添加',
+          child: Material(
+            color: theme.colorScheme.primary,
+            shape: const CircleBorder(),
+            child: InkWell(
+              customBorder: const CircleBorder(),
+              onTap: onTap,
+              child: SizedBox(
+                width: 48,
+                height: 48,
+                child: Icon(
+                  Icons.add_rounded,
+                  color: theme.colorScheme.onPrimary,
+                  size: 30,
+                ),
+              ),
+            ),
+          ),
         ),
       ),
     );

@@ -18,6 +18,8 @@ import 'package:life_log/common/widgets/app_metric_tile.dart';
 import 'package:life_log/common/widgets/app_pill.dart';
 import 'package:life_log/common/widgets/app_text_field.dart';
 import 'package:life_log/modules/evidence/evidence_controller.dart';
+import 'package:life_log/modules/expense/expense_record_controller.dart';
+import 'package:life_log/modules/expense/expense_record_model.dart';
 import 'package:life_log/modules/photo/photo_controller.dart';
 import 'package:life_log/modules/photo/views/project_gallery_view.dart';
 
@@ -56,6 +58,7 @@ class _PhotoViewState extends State<PhotoView> {
     final isDark = theme.brightness == Brightness.dark;
     final semantic = theme.semanticColors;
     final textSecondary = theme.colorScheme.onSurfaceVariant;
+    final expenseController = Get.find<ExpenseRecordController>();
 
     return Scaffold(
       appBar: AppBar(
@@ -72,15 +75,19 @@ class _PhotoViewState extends State<PhotoView> {
         ],
       ),
       body: Obx(() {
-        if (controller.isLoading.value) {
+        final isLoading = controller.isLoading.value;
+        final photosCount = controller.photos.length;
+        final expenseRecords = expenseController.records.toList();
+
+        if (isLoading) {
           return const AppLoading(label: "正在加载项目");
         }
 
-        if (controller.photos.isEmpty) {
+        if (photosCount == 0 && expenseRecords.isEmpty) {
           return AppEmptyState(
             icon: Icons.folder_open_rounded,
             title: "暂无项目记录",
-            message: "拍摄或导入照片后会自动按项目归档",
+            message: "添加照片、凭证或项目支出后会按项目归档",
             actionLabel: "添加照片",
             onAction: () => _showAddPhotoActions(context, controller),
           );
@@ -99,6 +106,7 @@ class _PhotoViewState extends State<PhotoView> {
                 child: ConstrainedPage(
                   child: _ProjectOverview(
                     controller: controller,
+                    expenseRecords: expenseRecords,
                     semantic: semantic,
                     textSecondary: textSecondary,
                   ),
@@ -125,6 +133,10 @@ class _PhotoViewState extends State<PhotoView> {
                       return ConstrainedPage(
                         child: _ProjectCard(
                           summary: project,
+                          expenseTotal: _expenseTotalForProject(
+                            expenseRecords,
+                            project.name,
+                          ),
                           isDark: isDark,
                           semantic: semantic,
                           textSecondary: textSecondary,
@@ -153,6 +165,12 @@ class _PhotoViewState extends State<PhotoView> {
         );
       }),
     );
+  }
+
+  double _expenseTotalForProject(List<ExpenseRecord> records, String project) {
+    return records
+        .where((record) => record.projectName == project)
+        .fold(0.0, (sum, record) => sum + record.amount);
   }
 
   void _showUiMessage(PhotoUiMessage? message) {
@@ -203,11 +221,13 @@ class _PhotoViewState extends State<PhotoView> {
 
 class _ProjectOverview extends StatelessWidget {
   final PhotoController controller;
+  final List<ExpenseRecord> expenseRecords;
   final AppSemanticColors semantic;
   final Color textSecondary;
 
   const _ProjectOverview({
     required this.controller,
+    required this.expenseRecords,
     required this.semantic,
     required this.textSecondary,
   });
@@ -239,6 +259,15 @@ class _ProjectOverview extends StatelessWidget {
                 ),
               ),
             ],
+          ),
+          SizedBox(height: 10.h),
+          AppMetricTile(
+            label: "项目支出",
+            value: formatMoney(
+              expenseRecords.fold(0.0, (sum, item) => sum + item.amount),
+            ),
+            icon: Icons.payments_rounded,
+            color: semantic.expense,
           ),
           SizedBox(height: 12.h),
           AppTextField(
@@ -278,6 +307,7 @@ class _ProjectOverview extends StatelessWidget {
 
 class _ProjectCard extends StatelessWidget {
   final ProjectSummary summary;
+  final double expenseTotal;
   final bool isDark;
   final AppSemanticColors semantic;
   final Color textSecondary;
@@ -285,6 +315,7 @@ class _ProjectCard extends StatelessWidget {
 
   const _ProjectCard({
     required this.summary,
+    required this.expenseTotal,
     required this.isDark,
     required this.semantic,
     required this.textSecondary,
@@ -357,6 +388,12 @@ class _ProjectCard extends StatelessWidget {
                         icon: Icons.payments_rounded,
                         label: formatMoney(pendingAmount),
                         color: semantic.warning,
+                      ),
+                    if (expenseTotal > 0)
+                      AppPill(
+                        icon: Icons.account_balance_wallet_rounded,
+                        label: formatMoney(expenseTotal),
+                        color: semantic.expense,
                       ),
                     AppPill(
                       icon: Icons.devices_rounded,

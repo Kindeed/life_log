@@ -16,6 +16,7 @@ import '../../common/widgets/app_metric_tile.dart';
 import '../../common/widgets/app_pill.dart';
 import '../../common/widgets/app_section_header.dart';
 import '../expense/expense_record_controller.dart';
+import '../expense/expense_record_model.dart';
 import '../expense/views/expense_record_edit_view.dart';
 import 'subscription_controller.dart';
 import 'subscription_model.dart';
@@ -34,7 +35,7 @@ class SubscriptionView extends StatelessWidget {
 
     return Scaffold(
       backgroundColor: theme.scaffoldBackgroundColor,
-      appBar: AppBar(title: const Text("支出管理")),
+      appBar: AppBar(title: const Text("财务")),
       body: SafeArea(
         child: NotificationListener<UserScrollNotification>(
           onNotification: (notification) {
@@ -42,17 +43,25 @@ class SubscriptionView extends StatelessWidget {
             return true;
           },
           child: Obx(() {
-            if (logic.subs.isEmpty) {
+            final subsCount = logic.subs.length;
+            final recordCount = expenseLogic.records.length;
+            final section = logic.section.value;
+            if (subsCount == 0 && recordCount == 0) {
               return AppEmptyState(
                 icon: Icons.subscriptions_outlined,
                 title: "还没有支出记录",
-                message: "添加订阅或一次性支出后，会在这里看到扣费提醒。",
+                message: "添加固定支出或项目支出后，会在这里看到财务概览。",
                 actionLabel: "添加支出",
-                onAction: () => _showAddSheet(),
+                onAction: () => _showAddActions(),
               );
             }
 
-            final visibleSubs = logic.visibleSubs;
+            final visibleSubs = section == FinanceSection.fixed
+                ? logic.visibleSubs
+                : const <Subscription>[];
+            final visibleRecords = section == FinanceSection.records
+                ? _sortedExpenseRecords(expenseLogic.records)
+                : const <ExpenseRecord>[];
 
             return CustomScrollView(
               slivers: [
@@ -63,10 +72,49 @@ class SubscriptionView extends StatelessWidget {
                       expenseLogic: expenseLogic,
                       semantic: semantic,
                       textSecondary: textSecondary,
+                      section: section,
+                      onSectionChanged: logic.setSection,
                     ),
                   ),
                 ),
-                if (visibleSubs.isEmpty)
+                if (section == FinanceSection.records)
+                  if (visibleRecords.isEmpty)
+                    SliverFillRemaining(
+                      hasScrollBody: false,
+                      child: Center(
+                        child: Text(
+                          "还没有项目支出",
+                          style: TextStyle(
+                            color: textSecondary,
+                            fontSize: 14.sp,
+                          ),
+                        ),
+                      ),
+                    )
+                  else
+                    SliverPadding(
+                      padding: EdgeInsets.fromLTRB(16.w, 8.h, 16.w, 88.h),
+                      sliver: SliverList.separated(
+                        itemCount: visibleRecords.length,
+                        separatorBuilder: (_, _) => SizedBox(height: 12.h),
+                        itemBuilder: (context, index) {
+                          final record = visibleRecords[index];
+                          return ConstrainedPage(
+                            child: _ExpenseRecordCard(
+                              record: record,
+                              semantic: semantic,
+                              textSecondary: textSecondary,
+                              onTap: () => Get.to(
+                                () => ExpenseRecordEditView(record: record),
+                              ),
+                              onDelete: () =>
+                                  _deleteExpenseRecord(expenseLogic, record),
+                            ),
+                          );
+                        },
+                      ),
+                    )
+                else if (visibleSubs.isEmpty)
                   SliverFillRemaining(
                     hasScrollBody: false,
                     child: Center(
@@ -113,12 +161,21 @@ class SubscriptionView extends StatelessWidget {
                       itemBuilder: (context, index) {
                         final sub = visibleSubs[index];
                         return ConstrainedPage(
-                          child: _SubscriptionCard(
-                            sub: sub,
-                            semantic: semantic,
-                            textSecondary: textSecondary,
-                            onTap: () => _showAddSheet(sub),
-                            onDelete: () => _deleteSub(logic, sub),
+                          child: Dismissible(
+                            key: ValueKey('sub-dismiss-${sub.id}'),
+                            direction: DismissDirection.endToStart,
+                            background: const SizedBox.shrink(),
+                            secondaryBackground: _DeleteBackground(
+                              color: theme.colorScheme.error,
+                            ),
+                            confirmDismiss: (_) => _deleteSub(logic, sub),
+                            child: _SubscriptionCard(
+                              sub: sub,
+                              semantic: semantic,
+                              textSecondary: textSecondary,
+                              onTap: () => _showAddSheet(sub),
+                              onDelete: () => _deleteSub(logic, sub),
+                            ),
                           ),
                         );
                       },
@@ -140,6 +197,11 @@ class SubscriptionView extends StatelessWidget {
         ),
       ),
     );
+  }
+
+  List<ExpenseRecord> _sortedExpenseRecords(List<ExpenseRecord> records) {
+    return records.toList()
+      ..sort((a, b) => b.expenseDate.compareTo(a.expenseDate));
   }
 
   bool _canReorder(SubscriptionController logic) {
@@ -169,7 +231,7 @@ class SubscriptionView extends StatelessWidget {
     );
   }
 
-  Future<void> _deleteSub(
+  Future<bool> _deleteSub(
     SubscriptionController logic,
     Subscription sub,
   ) async {
@@ -181,6 +243,26 @@ class SubscriptionView extends StatelessWidget {
     );
     if (confirmed) {
       await logic.deleteSub(sub.id);
+      return true;
+    }
+    return false;
+  }
+
+  Future<void> _deleteExpenseRecord(
+    ExpenseRecordController logic,
+    ExpenseRecord record,
+  ) async {
+    final title = record.merchant?.trim().isNotEmpty == true
+        ? record.merchant!.trim()
+        : record.category.label;
+    final confirmed = await AppConfirmDialog.show(
+      title: "删除项目支出",
+      message: "确定删除「$title」这条支出吗？删除后无法恢复。",
+      confirmLabel: "删除",
+      destructive: true,
+    );
+    if (confirmed) {
+      await logic.deleteRecord(record.id);
     }
   }
 }
@@ -190,12 +272,16 @@ class _SubscriptionOverview extends StatelessWidget {
   final ExpenseRecordController expenseLogic;
   final AppSemanticColors semantic;
   final Color textSecondary;
+  final FinanceSection section;
+  final ValueChanged<FinanceSection> onSectionChanged;
 
   const _SubscriptionOverview({
     required this.logic,
     required this.expenseLogic,
     required this.semantic,
     required this.textSecondary,
+    required this.section,
+    required this.onSectionChanged,
   });
 
   @override
@@ -262,54 +348,75 @@ class _SubscriptionOverview extends StatelessWidget {
             ),
           ),
           SizedBox(height: 14.h),
-          const AppSectionHeader(title: "分类"),
+          const AppSectionHeader(title: "类型"),
           SizedBox(height: 8.h),
-          AppFilterChipBar<SubscriptionFilter>(
-            value: logic.filter.value,
-            onChanged: logic.setFilter,
+          AppFilterChipBar<FinanceSection>(
+            value: section,
+            onChanged: onSectionChanged,
             items: const [
-              AppFilterChipItem(value: SubscriptionFilter.all, label: "全部"),
               AppFilterChipItem(
-                value: SubscriptionFilter.monthly,
-                label: "每月",
-                icon: Icons.repeat_rounded,
+                value: FinanceSection.fixed,
+                label: "固定支出",
+                icon: Icons.subscriptions_rounded,
               ),
               AppFilterChipItem(
-                value: SubscriptionFilter.yearly,
-                label: "每年",
-                icon: Icons.event_repeat_rounded,
-              ),
-              AppFilterChipItem(
-                value: SubscriptionFilter.oneTime,
-                label: "一次性",
-                icon: Icons.looks_one_rounded,
+                value: FinanceSection.records,
+                label: "项目支出",
+                icon: Icons.receipt_rounded,
               ),
             ],
           ),
-          SizedBox(height: 12.h),
-          const AppSectionHeader(title: "排序"),
-          SizedBox(height: 8.h),
-          AppFilterChipBar<SubscriptionSortMode>(
-            value: logic.sortMode.value,
-            onChanged: logic.setSortMode,
-            items: const [
-              AppFilterChipItem(
-                value: SubscriptionSortMode.manual,
-                label: "手动",
-                icon: Icons.drag_handle_rounded,
-              ),
-              AppFilterChipItem(
-                value: SubscriptionSortMode.date,
-                label: "日期",
-                icon: Icons.schedule_rounded,
-              ),
-              AppFilterChipItem(
-                value: SubscriptionSortMode.price,
-                label: "金额",
-                icon: Icons.payments_outlined,
-              ),
-            ],
-          ),
+          if (section == FinanceSection.fixed) ...[
+            SizedBox(height: 14.h),
+            const AppSectionHeader(title: "分类"),
+            SizedBox(height: 8.h),
+            AppFilterChipBar<SubscriptionFilter>(
+              value: logic.filter.value,
+              onChanged: logic.setFilter,
+              items: const [
+                AppFilterChipItem(value: SubscriptionFilter.all, label: "全部"),
+                AppFilterChipItem(
+                  value: SubscriptionFilter.monthly,
+                  label: "每月",
+                  icon: Icons.repeat_rounded,
+                ),
+                AppFilterChipItem(
+                  value: SubscriptionFilter.yearly,
+                  label: "每年",
+                  icon: Icons.event_repeat_rounded,
+                ),
+                AppFilterChipItem(
+                  value: SubscriptionFilter.oneTime,
+                  label: "一次性",
+                  icon: Icons.looks_one_rounded,
+                ),
+              ],
+            ),
+            SizedBox(height: 12.h),
+            const AppSectionHeader(title: "排序"),
+            SizedBox(height: 8.h),
+            AppFilterChipBar<SubscriptionSortMode>(
+              value: logic.sortMode.value,
+              onChanged: logic.setSortMode,
+              items: const [
+                AppFilterChipItem(
+                  value: SubscriptionSortMode.manual,
+                  label: "手动",
+                  icon: Icons.drag_handle_rounded,
+                ),
+                AppFilterChipItem(
+                  value: SubscriptionSortMode.date,
+                  label: "日期",
+                  icon: Icons.schedule_rounded,
+                ),
+                AppFilterChipItem(
+                  value: SubscriptionSortMode.price,
+                  label: "金额",
+                  icon: Icons.payments_outlined,
+                ),
+              ],
+            ),
+          ],
           SizedBox(height: 12.h),
         ],
       ),
@@ -423,16 +530,6 @@ class _SubscriptionCard extends StatelessWidget {
                       color: textSecondary,
                       size: 18.sp,
                     ),
-                  IconButton(
-                    visualDensity: VisualDensity.compact,
-                    tooltip: "删除",
-                    icon: Icon(
-                      Icons.delete_outline_rounded,
-                      color: textSecondary,
-                      size: 20.sp,
-                    ),
-                    onPressed: onDelete,
-                  ),
                 ],
               ),
             ],
@@ -468,6 +565,122 @@ class _SubscriptionCard extends StatelessWidget {
       case SubscriptionCycle.oneTime:
         return "一次性";
     }
+  }
+}
+
+class _DeleteBackground extends StatelessWidget {
+  final Color color;
+
+  const _DeleteBackground({required this.color});
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      alignment: Alignment.centerRight,
+      padding: EdgeInsets.only(right: 22.w),
+      decoration: BoxDecoration(
+        color: color,
+        borderRadius: BorderRadius.circular(18.r),
+      ),
+      child: const Icon(Icons.delete_outline_rounded, color: Colors.white),
+    );
+  }
+}
+
+class _ExpenseRecordCard extends StatelessWidget {
+  final ExpenseRecord record;
+  final AppSemanticColors semantic;
+  final Color textSecondary;
+  final VoidCallback onTap;
+  final Future<void> Function() onDelete;
+
+  const _ExpenseRecordCard({
+    required this.record,
+    required this.semantic,
+    required this.textSecondary,
+    required this.onTap,
+    required this.onDelete,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final title = record.merchant?.trim().isNotEmpty == true
+        ? record.merchant!.trim()
+        : record.category.label;
+    final project = record.projectName?.trim();
+
+    return Dismissible(
+      key: ValueKey('expense-record-${record.id}'),
+      direction: DismissDirection.endToStart,
+      background: const SizedBox.shrink(),
+      secondaryBackground: _DeleteBackground(color: semantic.warning),
+      confirmDismiss: (_) async {
+        await onDelete();
+        return false;
+      },
+      child: AppCard(
+        onTap: onTap,
+        padding: EdgeInsets.all(14.w),
+        child: Row(
+          children: [
+            Container(
+              width: 46.w,
+              height: 46.w,
+              alignment: Alignment.center,
+              decoration: BoxDecoration(
+                color: semantic.expense.withValues(alpha: 0.12),
+                borderRadius: BorderRadius.circular(16),
+              ),
+              child: Icon(
+                Icons.receipt_rounded,
+                color: semantic.expense,
+                size: 22.sp,
+              ),
+            ),
+            SizedBox(width: 12.w),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    title,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                      fontWeight: FontWeight.w700,
+                    ),
+                  ),
+                  SizedBox(height: 5.h),
+                  Text(
+                    '${formatDateYmd(record.expenseDate)} · ${record.category.label}',
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: TextStyle(fontSize: 12.sp, color: textSecondary),
+                  ),
+                  if (project != null && project.isNotEmpty) ...[
+                    SizedBox(height: 8.h),
+                    AppPill(
+                      icon: Icons.folder_special_rounded,
+                      label: project,
+                      color: semantic.project,
+                    ),
+                  ],
+                ],
+              ),
+            ),
+            SizedBox(width: 10.w),
+            Text(
+              formatMoney(record.amount),
+              style: TextStyle(
+                fontSize: 18.sp,
+                fontWeight: FontWeight.w800,
+                fontFamily: "Roboto",
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
   }
 }
 

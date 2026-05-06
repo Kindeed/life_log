@@ -24,7 +24,7 @@ class AppSemanticColors extends ThemeExtension<AppSemanticColors> {
   static const light = AppSemanticColors(
     work: Color(0xFF007AFF),
     expense: Color(0xFF9B5CFF),
-    project: Color(0xFF248A3D),
+    project: Color(0xFF0F8F7A),
     stats: Color(0xFF0A84FF),
     success: Color(0xFF248A3D),
     warning: Color(0xFFFF9F0A),
@@ -35,7 +35,7 @@ class AppSemanticColors extends ThemeExtension<AppSemanticColors> {
   static const dark = AppSemanticColors(
     work: Color(0xFF0A84FF),
     expense: Color(0xFFBF8CFF),
-    project: Color(0xFF30D158),
+    project: Color(0xFF40C8B4),
     stats: Color(0xFF64D2FF),
     success: Color(0xFF30D158),
     warning: Color(0xFFFF9F0A),

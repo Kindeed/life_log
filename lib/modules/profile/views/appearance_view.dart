@@ -3,6 +3,7 @@ import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:get/get.dart';
 import '../../../common/theme/app_colors.dart';
 import '../../../common/theme/theme_controller.dart';
+import '../../../common/widgets/app_card.dart';
 
 /// 外观设置页面
 class AppearanceView extends StatelessWidget {
@@ -12,8 +13,6 @@ class AppearanceView extends StatelessWidget {
   Widget build(BuildContext context) {
     final themeController = Get.find<ThemeController>();
     final theme = Theme.of(context);
-    final isDark = theme.brightness == Brightness.dark;
-    final cardColor = theme.cardColor;
     final textPrimary = theme.colorScheme.onSurface;
     final textSecondary = theme.colorScheme.onSurfaceVariant;
 
@@ -30,8 +29,7 @@ class AppearanceView extends StatelessWidget {
             SizedBox(height: 12.h),
             _buildThemeSelector(
               themeController,
-              isDark,
-              cardColor,
+              theme,
               textPrimary,
               textSecondary,
             ),
@@ -57,25 +55,12 @@ class AppearanceView extends StatelessWidget {
 
   Widget _buildThemeSelector(
     ThemeController controller,
-    bool isDark,
-    Color cardColor,
+    ThemeData theme,
     Color textPrimary,
     Color textSecondary,
   ) {
-    return Container(
-      decoration: BoxDecoration(
-        color: cardColor,
-        borderRadius: BorderRadius.circular(16.r),
-        boxShadow: [
-          BoxShadow(
-            color: isDark
-                ? Colors.black.withValues(alpha: 0.3)
-                : Colors.black.withValues(alpha: 0.05),
-            blurRadius: 10,
-            offset: const Offset(0, 4),
-          ),
-        ],
-      ),
+    return AppCard(
+      padding: EdgeInsets.zero,
       child: Obx(
         () => Column(
           children: [
@@ -84,27 +69,27 @@ class AppearanceView extends StatelessWidget {
               title: '跟随系统',
               isSelected: controller.themeMode.value == AppThemeMode.system,
               onTap: () => controller.setThemeMode(AppThemeMode.system),
-              isDark: isDark,
+              theme: theme,
               textPrimary: textPrimary,
               textSecondary: textSecondary,
             ),
-            _buildDivider(isDark),
+            _buildDivider(theme),
             _buildThemeOption(
               icon: Icons.light_mode_rounded,
               title: '浅色模式',
               isSelected: controller.themeMode.value == AppThemeMode.light,
               onTap: () => controller.setThemeMode(AppThemeMode.light),
-              isDark: isDark,
+              theme: theme,
               textPrimary: textPrimary,
               textSecondary: textSecondary,
             ),
-            _buildDivider(isDark),
+            _buildDivider(theme),
             _buildThemeOption(
               icon: Icons.dark_mode_rounded,
               title: '深色模式',
               isSelected: controller.themeMode.value == AppThemeMode.dark,
               onTap: () => controller.setThemeMode(AppThemeMode.dark),
-              isDark: isDark,
+              theme: theme,
               textPrimary: textPrimary,
               textSecondary: textSecondary,
             ),
@@ -119,7 +104,7 @@ class AppearanceView extends StatelessWidget {
     required String title,
     required bool isSelected,
     required VoidCallback onTap,
-    required bool isDark,
+    required ThemeData theme,
     required Color textPrimary,
     required Color textSecondary,
   }) {
@@ -158,13 +143,10 @@ class AppearanceView extends StatelessWidget {
     );
   }
 
-  Widget _buildDivider(bool isDark) {
+  Widget _buildDivider(ThemeData theme) {
     return Padding(
       padding: EdgeInsets.symmetric(horizontal: 16.w),
-      child: Divider(
-        height: 1,
-        color: isDark ? Colors.grey[800] : Colors.grey[200],
-      ),
+      child: Divider(height: 1, color: theme.dividerColor),
     );
   }
 }
