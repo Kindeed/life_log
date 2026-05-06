@@ -1,6 +1,7 @@
 import 'package:get/get.dart';
 import '../../common/services/auth_service.dart';
 import '../../common/services/cloud_config_service.dart';
+import '../../common/services/log_service.dart';
 import '../../common/services/sync_service.dart';
 
 /// Profile 模块控制器
@@ -39,7 +40,12 @@ class ProfileController extends GetxController {
   }
 
   Future<void> logout() async {
-    await authService?.signOut();
+    try {
+      await authService?.signOut();
+    } catch (e, stackTrace) {
+      LogService.to.error('Profile', '退出登录失败: $e', stackTrace);
+      rethrow;
+    }
   }
 
   Future<bool> syncData() async {

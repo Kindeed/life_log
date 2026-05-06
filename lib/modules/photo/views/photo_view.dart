@@ -5,9 +5,9 @@ import 'package:life_log/common/theme/theme_extensions.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:get/get.dart';
 import 'package:life_log/common/layout/constrained_page.dart';
-import 'package:life_log/common/theme/app_motion.dart';
 import 'package:life_log/common/theme/app_radius.dart';
 import 'package:life_log/common/theme/app_semantic_colors.dart';
+import 'package:life_log/common/utils/formatters.dart';
 import 'package:life_log/common/widgets/app_action_sheet.dart';
 import 'package:life_log/common/widgets/app_card.dart';
 import 'package:life_log/common/widgets/app_empty_state.dart';
@@ -18,11 +18,8 @@ import 'package:life_log/common/widgets/app_metric_tile.dart';
 import 'package:life_log/common/widgets/app_pill.dart';
 import 'package:life_log/common/widgets/app_text_field.dart';
 import 'package:life_log/modules/evidence/evidence_controller.dart';
-import 'package:life_log/modules/evidence/views/evidence_list_view.dart';
 import 'package:life_log/modules/photo/photo_controller.dart';
 import 'package:life_log/modules/photo/views/project_gallery_view.dart';
-
-enum _ProjectSection { photos, evidence }
 
 class PhotoView extends StatefulWidget {
   const PhotoView({super.key});
@@ -35,7 +32,6 @@ class _PhotoViewState extends State<PhotoView> {
   late final PhotoController controller;
   late final EvidenceController evidenceController;
   late final Worker _messageWorker;
-  _ProjectSection _section = _ProjectSection.photos;
 
   @override
   void initState() {
@@ -74,98 +70,78 @@ class _PhotoViewState extends State<PhotoView> {
             },
           ),
         ],
-        bottom: PreferredSize(
-          preferredSize: Size.fromHeight(54.h),
-          child: Padding(
-            padding: EdgeInsets.fromLTRB(16.w, 0, 16.w, 10.h),
-            child: _ProjectSectionSwitch(
-              value: _section,
-              onChanged: (value) => setState(() => _section = value),
-            ),
-          ),
-        ),
       ),
-      body: _section == _ProjectSection.evidence
-          ? const EvidenceListView()
-          : Obx(() {
-              if (controller.isLoading.value) {
-                return const AppLoading(label: "正在加载项目");
-              }
+      body: Obx(() {
+        if (controller.isLoading.value) {
+          return const AppLoading(label: "正在加载项目");
+        }
 
-              if (controller.photos.isEmpty) {
-                return AppEmptyState(
-                  icon: Icons.folder_open_rounded,
-                  title: "暂无项目记录",
-                  message: "拍摄或导入照片后会自动按项目归档",
-                  actionLabel: "添加照片",
-                  onAction: () => _showAddPhotoActions(context, controller),
-                );
-              }
+        if (controller.photos.isEmpty) {
+          return AppEmptyState(
+            icon: Icons.folder_open_rounded,
+            title: "暂无项目记录",
+            message: "拍摄或导入照片后会自动按项目归档",
+            actionLabel: "添加照片",
+            onAction: () => _showAddPhotoActions(context, controller),
+          );
+        }
 
-              final projects = controller.filteredProjectSummaries;
+        final projects = controller.filteredProjectSummaries;
 
-              return NotificationListener<UserScrollNotification>(
-                onNotification: (notification) {
-                  controller.onScroll(notification);
-                  return true;
-                },
-                child: CustomScrollView(
-                  slivers: [
-                    SliverToBoxAdapter(
-                      child: ConstrainedPage(
-                        child: _ProjectOverview(
-                          controller: controller,
+        return NotificationListener<UserScrollNotification>(
+          onNotification: (notification) {
+            controller.onScroll(notification);
+            return true;
+          },
+          child: CustomScrollView(
+            slivers: [
+              SliverToBoxAdapter(
+                child: ConstrainedPage(
+                  child: _ProjectOverview(
+                    controller: controller,
+                    semantic: semantic,
+                    textSecondary: textSecondary,
+                  ),
+                ),
+              ),
+              if (projects.isEmpty)
+                SliverFillRemaining(
+                  hasScrollBody: false,
+                  child: Center(
+                    child: Text(
+                      "没有匹配的项目",
+                      style: TextStyle(color: textSecondary, fontSize: 14.sp),
+                    ),
+                  ),
+                )
+              else
+                SliverPadding(
+                  padding: EdgeInsets.fromLTRB(16.w, 10.h, 16.w, 92.h),
+                  sliver: SliverList.separated(
+                    itemCount: projects.length,
+                    separatorBuilder: (_, _) => SizedBox(height: 12.h),
+                    itemBuilder: (context, index) {
+                      final project = projects[index];
+                      return ConstrainedPage(
+                        child: _ProjectCard(
+                          summary: project,
+                          isDark: isDark,
                           semantic: semantic,
                           textSecondary: textSecondary,
-                        ),
-                      ),
-                    ),
-                    if (projects.isEmpty)
-                      SliverFillRemaining(
-                        hasScrollBody: false,
-                        child: Center(
-                          child: Text(
-                            "没有匹配的项目",
-                            style: TextStyle(
-                              color: textSecondary,
-                              fontSize: 14.sp,
-                            ),
+                          onTap: () => Get.to(
+                            () => ProjectGalleryView(projectName: project.name),
                           ),
                         ),
-                      )
-                    else
-                      SliverPadding(
-                        padding: EdgeInsets.fromLTRB(16.w, 10.h, 16.w, 92.h),
-                        sliver: SliverList.separated(
-                          itemCount: projects.length,
-                          separatorBuilder: (_, _) => SizedBox(height: 12.h),
-                          itemBuilder: (context, index) {
-                            final project = projects[index];
-                            return ConstrainedPage(
-                              child: _ProjectCard(
-                                summary: project,
-                                isDark: isDark,
-                                semantic: semantic,
-                                textSecondary: textSecondary,
-                                onTap: () => Get.to(
-                                  () => ProjectGalleryView(
-                                    projectName: project.name,
-                                  ),
-                                ),
-                              ),
-                            );
-                          },
-                        ),
-                      ),
-                  ],
+                      );
+                    },
+                  ),
                 ),
-              );
-            }),
+            ],
+          ),
+        );
+      }),
       floatingActionButtonLocation: FloatingActionButtonLocation.centerFloat,
       floatingActionButton: Obx(() {
-        if (_section == _ProjectSection.evidence) {
-          return const SizedBox.shrink();
-        }
         if (controller.photos.isEmpty) return const SizedBox.shrink();
 
         return AppFloatingActionPill(
@@ -221,88 +197,6 @@ class _PhotoViewState extends State<PhotoView> {
           onTap: controller.importFromGallery,
         ),
       ],
-    );
-  }
-}
-
-class _ProjectSectionSwitch extends StatelessWidget {
-  final _ProjectSection value;
-  final ValueChanged<_ProjectSection> onChanged;
-
-  const _ProjectSectionSwitch({required this.value, required this.onChanged});
-
-  @override
-  Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    return Container(
-      padding: EdgeInsets.all(4.w),
-      decoration: BoxDecoration(
-        color: theme.colorScheme.surfaceContainerHighest.withValues(alpha: 0.7),
-        borderRadius: BorderRadius.circular(AppRadius.xl),
-        border: Border.all(color: theme.semanticColors.border, width: 0.7),
-      ),
-      child: Row(
-        children: [
-          _item(
-            context,
-            '照片',
-            Icons.photo_library_rounded,
-            _ProjectSection.photos,
-          ),
-          _item(
-            context,
-            '凭证',
-            Icons.receipt_long_rounded,
-            _ProjectSection.evidence,
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _item(
-    BuildContext context,
-    String label,
-    IconData icon,
-    _ProjectSection section,
-  ) {
-    final selected = value == section;
-    final theme = Theme.of(context);
-    return Expanded(
-      child: InkWell(
-        onTap: () => onChanged(section),
-        borderRadius: BorderRadius.circular(AppRadius.lg),
-        child: AnimatedContainer(
-          duration: AppMotion.fast,
-          padding: EdgeInsets.symmetric(vertical: 9.h),
-          decoration: BoxDecoration(
-            color: selected ? theme.cardColor : Colors.transparent,
-            borderRadius: BorderRadius.circular(AppRadius.lg),
-          ),
-          child: Row(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Icon(
-                icon,
-                size: 17.sp,
-                color: selected
-                    ? theme.colorScheme.primary
-                    : theme.colorScheme.onSurfaceVariant,
-              ),
-              SizedBox(width: 6.w),
-              Text(
-                label,
-                style: TextStyle(
-                  fontWeight: selected ? FontWeight.w700 : FontWeight.w500,
-                  color: selected
-                      ? theme.colorScheme.primary
-                      : theme.colorScheme.onSurfaceVariant,
-                ),
-              ),
-            ],
-          ),
-        ),
-      ),
     );
   }
 }
@@ -399,6 +293,14 @@ class _ProjectCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final evidenceController = Get.find<EvidenceController>();
+    final evidenceItems =
+        evidenceController.groupedEvidence[summary.name] ?? const [];
+    final pendingAmount = evidenceItems.fold<double>(
+      0,
+      (sum, item) =>
+          sum + (item.status.name == 'reimbursed' ? 0 : (item.amount ?? 0)),
+    );
     return AppCard(
       onTap: onTap,
       padding: EdgeInsets.all(10.w),
@@ -445,6 +347,17 @@ class _ProjectCard extends StatelessWidget {
                       label: "${summary.photoCount} 张",
                       color: semantic.project,
                     ),
+                    AppPill(
+                      icon: Icons.receipt_long_rounded,
+                      label: "${evidenceItems.length} 份",
+                      color: semantic.expense,
+                    ),
+                    if (pendingAmount > 0)
+                      AppPill(
+                        icon: Icons.payments_rounded,
+                        label: formatMoney(pendingAmount),
+                        color: semantic.warning,
+                      ),
                     AppPill(
                       icon: Icons.devices_rounded,
                       label: "${summary.deviceCount} 台",

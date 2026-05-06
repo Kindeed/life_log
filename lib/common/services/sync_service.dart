@@ -8,6 +8,7 @@ import 'package:path_provider/path_provider.dart';
 import '../../modules/work_log/work_log_model.dart';
 import '../../modules/subscription/subscription_model.dart';
 import '../../modules/evidence/evidence_model.dart';
+import '../../modules/expense/expense_record_model.dart';
 import '../db/db_service.dart';
 import '../services/auth_service.dart';
 import '../services/log_service.dart';
@@ -83,6 +84,21 @@ class SyncService extends GetxService {
     }
   }
 
+  Future<void> _refreshRemoteExpenseRecord(ExpenseRecord record) async {
+    final user = AuthService.to.currentUser.value;
+    if (user == null || record.remoteId == null) return;
+
+    final remote = await _client
+        .from('expense_records')
+        .select()
+        .eq('id', record.remoteId!)
+        .eq('user_id', user.id)
+        .maybeSingle();
+    if (remote != null) {
+      await DbService.to.syncRemoteExpenseRecordToLocal(remote);
+    }
+  }
+
   void _applyWorkLogSyncResult(WorkLog log, Map<String, dynamic> response) {
     log.remoteId = response['id'] as int;
     log.syncId = response['sync_id'] as String? ?? log.syncId;
@@ -123,6 +139,21 @@ class SyncService extends GetxService {
     evidence.syncedAt = DateTime.now();
     evidence.isDirty = false;
     evidence.pendingDelete = false;
+  }
+
+  void _applyExpenseRecordSyncResult(
+    ExpenseRecord record,
+    Map<String, dynamic> response,
+  ) {
+    record.remoteId = response['id'] as int;
+    record.syncId = response['sync_id'] as String? ?? record.syncId;
+    record.remoteVersion = (response['version'] as num?)?.toInt() ?? 0;
+    record.remoteUpdatedAt = response['updated_at'] == null
+        ? null
+        : DateTime.parse(response['updated_at'] as String);
+    record.syncedAt = DateTime.now();
+    record.isDirty = false;
+    record.pendingDelete = false;
   }
 
   @override
@@ -596,6 +627,124 @@ class SyncService extends GetxService {
     }
   }
 
+  // --- Expense Record Sync ---
+
+  Future<bool> pushExpenseRecord(ExpenseRecord record) async {
+    if (!AuthService.to.isLoggedIn) return false;
+
+    if (record.pendingDelete) {
+      if (record.remoteId == null) {
+        await DbService.to.purgeDeletedExpenseRecord(record.id);
+        return true;
+      }
+      final success = await deleteExpenseRecord(record);
+      if (success) {
+        await DbService.to.purgeDeletedExpenseRecord(record.id);
+      }
+      return success;
+    }
+
+    try {
+      final user = AuthService.to.currentUser.value!;
+      if (record.remoteId == null) {
+        record.syncId ??= newSyncId();
+      }
+      final data = {
+        'user_id': user.id,
+        'local_id': record.id,
+        'expense_date': record.expenseDate.toIso8601String(),
+        'amount': record.amount,
+        'currency': record.currency,
+        'category': record.category.name,
+        'merchant': record.merchant,
+        'note': record.note,
+        'project_name': record.projectName,
+        'deleted_at': null,
+        'updated_at': DateTime.now().toUtc().toIso8601String(),
+      };
+      if (record.syncId != null) {
+        data['sync_id'] = record.syncId;
+      }
+
+      final operation = record.remoteId == null ? 'insert' : 'update';
+      if (record.remoteId != null) {
+        var query = _client
+            .from('expense_records')
+            .update(data)
+            .eq('id', record.remoteId!)
+            .eq('user_id', user.id);
+        if (record.remoteVersion > 0) {
+          query = query.eq('version', record.remoteVersion);
+        }
+        final response = await query
+            .select('id, sync_id, version, updated_at')
+            .maybeSingle();
+        if (response == null) {
+          await _refreshRemoteExpenseRecord(record);
+          throw StateError(
+            'Remote ExpenseRecord update conflict or not found: ${record.remoteId}',
+          );
+        }
+        _applyExpenseRecordSyncResult(record, response);
+        await DbService.to.updateExpenseRecordRemoteId(record);
+      } else {
+        final response = await _client
+            .from('expense_records')
+            .insert(data)
+            .select('id, sync_id, version, updated_at')
+            .single();
+        _applyExpenseRecordSyncResult(record, response);
+        await DbService.to.updateExpenseRecordRemoteId(record);
+      }
+      LogService.to.info(
+        'Sync',
+        'ExpenseRecord $operation success: ${record.id}',
+      );
+      return true;
+    } catch (e) {
+      LogService.to.error('Sync', 'Push ExpenseRecord failed: $e');
+      return false;
+    }
+  }
+
+  Future<bool> deleteExpenseRecord(ExpenseRecord record) async {
+    if (!AuthService.to.isLoggedIn) return false;
+    if (record.remoteId == null) return true;
+
+    try {
+      final user = AuthService.to.currentUser.value!;
+      var query = _client
+          .from('expense_records')
+          .update({
+            'deleted_at': DateTime.now().toUtc().toIso8601String(),
+            'updated_at': DateTime.now().toUtc().toIso8601String(),
+          })
+          .eq('id', record.remoteId!)
+          .eq('user_id', user.id);
+      if (record.remoteVersion > 0) {
+        query = query.eq('version', record.remoteVersion);
+      }
+      final response = await query
+          .select('id, sync_id, version, updated_at')
+          .maybeSingle();
+      if (response == null) {
+        await _refreshRemoteExpenseRecord(record);
+        throw StateError(
+          'Remote ExpenseRecord delete conflict or not found: ${record.remoteId}',
+        );
+      }
+      _applyExpenseRecordSyncResult(record, response);
+      LogService.to.info(
+        'Sync',
+        'ExpenseRecord delete success: ${record.remoteId}',
+      );
+      return true;
+    } catch (e) {
+      LogService.to.error('Sync', 'Delete ExpenseRecord failed: $e');
+      return false;
+    }
+  }
+
   // --- Pull Everything ---
 
   // --- Sync All ---
@@ -730,13 +879,29 @@ class SyncService extends GetxService {
         }
       }
 
+      // 4. Pull one-time expense records
+      var expenseRecordsQuery = _client
+          .from('expense_records')
+          .select()
+          .eq('user_id', user.id);
+      final expenseRecordsData = fullRefresh
+          ? await expenseRecordsQuery
+          : await expenseRecordsQuery
+                .gte('updated_at', lastCursor.toIso8601String())
+                .lte('updated_at', pullStartedAt.toIso8601String());
+
+      for (var map in expenseRecordsData) {
+        await DbService.to.syncRemoteExpenseRecordToLocal(map);
+      }
+
       _storage.write(_lastPullCursorKey, pullStartedAt.toIso8601String());
 
       LogService.to.info(
         'Sync',
         'Pull complete (${fullRefresh ? "full" : "incremental"}): '
             '${logsData.length} logs, ${subsData.length} subscriptions, '
-            '${evidenceData.length} evidence',
+            '${evidenceData.length} evidence, '
+            '${expenseRecordsData.length} expenseRecords',
       );
       return true;
     } catch (e) {
@@ -786,12 +951,26 @@ class SyncService extends GetxService {
         }
       }
 
+      final allExpenseRecords = await DbService.to
+          .getAllExpenseRecordsForSync();
+      var expenseRecordAttempts = 0;
+      var expenseRecordFailures = 0;
+      for (var item in allExpenseRecords) {
+        if (item.remoteId == null || item.isDirty || item.pendingDelete) {
+          expenseRecordAttempts++;
+          final pushed = await pushExpenseRecord(item);
+          if (!pushed) expenseRecordFailures++;
+          success = pushed && success;
+        }
+      }
+
       LogService.to.info(
         'Sync',
         'Push ${success ? "complete" : "incomplete"}: '
             'workLogs $workLogAttempts attempted/$workLogFailures failed, '
             'subscriptions $subscriptionAttempts attempted/$subscriptionFailures failed, '
-            'evidence $evidenceAttempts attempted/$evidenceFailures failed',
+            'evidence $evidenceAttempts attempted/$evidenceFailures failed, '
+            'expenseRecords $expenseRecordAttempts attempted/$expenseRecordFailures failed',
       );
       return success;
     } catch (e) {

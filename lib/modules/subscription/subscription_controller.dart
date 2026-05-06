@@ -38,16 +38,24 @@ class SubscriptionController extends GetxController {
 
   // --- 加载数据 (按 sortIndex 排序) ---
   Future<void> loadData() async {
-    final list = await SubscriptionRepository.to.getAllSubscriptions();
-    // 排序逻辑：如果 sortIndex 为 null，默认为 0
-    list.sort((a, b) => (a.sortIndex ?? 0).compareTo(b.sortIndex ?? 0));
-    subs.value = list;
+    try {
+      final list = await SubscriptionRepository.to.getAllSubscriptions();
+      // 排序逻辑：如果 sortIndex 为 null，默认为 0
+      list.sort((a, b) => (a.sortIndex ?? 0).compareTo(b.sortIndex ?? 0));
+      subs.value = list;
+    } catch (e, stackTrace) {
+      LogService.to.error('Subscription', '加载订阅失败: $e', stackTrace);
+    }
   }
 
   // --- 添加/更新订阅 ---
   Future<void> addSub(Subscription sub) async {
     // 如果是新增（没有 sortIndex），把它排到最后
+    final hadSortIndex = sub.sortIndex != null;
     sub.sortIndex ??= subs.length;
+    if (!hadSortIndex && sub.remoteId != null) {
+      sub.isDirty = true;
+    }
     await SubscriptionRepository.to.saveSubscription(sub, subs.length);
     LogService.to.info('Subscription', '添加/更新订阅: ${sub.name}');
   }

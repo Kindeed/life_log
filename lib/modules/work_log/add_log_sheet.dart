@@ -244,7 +244,7 @@ class _AddLogSheetState extends State<AddLogSheet> {
     Get.back();
   }
 
-  void _saveLog() {
+  Future<void> _saveLog() async {
     final log = WorkLog()
       ..date = widget.existingLog?.date ?? widget.selectedDate
       ..type = _selectedType
@@ -302,11 +302,18 @@ class _AddLogSheetState extends State<AddLogSheet> {
         break;
     }
 
-    // 标记为需要同步
-    log.isDirty = true;
+    final existing = widget.existingLog;
+    log.isDirty =
+        existing == null ||
+        existing.isDirty ||
+        log.hasBusinessChangesComparedTo(existing);
 
-    WorkLogController.to.addLog(log);
-    Get.back();
+    try {
+      await WorkLogController.to.addLog(log);
+      Get.back();
+    } catch (e) {
+      Get.snackbar("错误", "无法保存: $e", snackPosition: SnackPosition.BOTTOM);
+    }
   }
 
   Widget _buildWorkForm(bool isDark, Color bgColor, Color textPrimary) {

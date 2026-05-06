@@ -1,6 +1,8 @@
 import 'package:get/get.dart';
 
 class TabsController extends GetxController {
+  static TabsController get to => Get.find();
+
   // 1. 这是一个“可观察”的整数，代表当前选中的是第几个 Tab (0=日历, 1=会员)
   final currentIndex = 0.obs;
 

@@ -5,6 +5,8 @@ import '../../modules/work_log/work_log_model.dart';
 import '../../modules/subscription/subscription_model.dart';
 import '../../modules/photo/photo_model.dart'; // Import PhotoModel
 import '../../modules/evidence/evidence_model.dart';
+import '../../modules/expense/expense_record_model.dart';
+import '../../modules/project/project_model.dart';
 import '../services/auth_service.dart';
 // import '../services/sync_service.dart'; // Removed cyclic dependency
 
@@ -34,6 +36,18 @@ class DbService extends GetxService {
 
   void _stampEvidenceOwner(ExpenseEvidence evidence) {
     evidence.ownerUserId ??= currentOwnerUserId;
+  }
+
+  void _stampExpenseRecordOwner(ExpenseRecord record) {
+    record.ownerUserId ??= currentOwnerUserId;
+  }
+
+  void _stampPhotoOwner(PhotoItem photo) {
+    photo.ownerUserId ??= currentOwnerUserId;
+  }
+
+  void _stampProjectOwner(Project project) {
+    project.ownerUserId ??= currentOwnerUserId;
   }
 
   Future<void> claimUnownedRecordsForCurrentUser() async {
@@ -73,6 +87,18 @@ class DbService extends GetxService {
       if (evidence.isNotEmpty) {
         await isar.expenseEvidences.putAll(evidence);
       }
+
+      final expenseRecords = await isar.expenseRecords
+          .filter()
+          .ownerUserIdIsNull()
+          .findAll();
+      for (final item in expenseRecords) {
+        item.ownerUserId = currentUserId;
+        item.isDirty = true;
+      }
+      if (expenseRecords.isNotEmpty) {
+        await isar.expenseRecords.putAll(expenseRecords);
+      }
     });
   }
 
@@ -87,6 +113,8 @@ class DbService extends GetxService {
       SubscriptionSchema,
       PhotoItemSchema,
       ExpenseEvidenceSchema,
+      ExpenseRecordSchema,
+      ProjectSchema,
     ], directory: dir.path);
 
     return this;
@@ -260,11 +288,19 @@ class DbService extends GetxService {
   // --- 照片系统 Photo ---
 
   Future<List<PhotoItem>> getAllPhotos() async {
-    return await isar.photoItems.where().sortByCreatedAtDesc().findAll();
+    final photos = await isar.photoItems
+        .where()
+        .sortByCreatedAtDesc()
+        .findAll();
+    return photos
+        .where((photo) => _belongsToCurrentUser(photo.ownerUserId))
+        .toList();
   }
 
   Future<PhotoItem?> getPhoto(int id) async {
-    return await isar.photoItems.get(id);
+    final photo = await isar.photoItems.get(id);
+    if (photo == null || !_belongsToCurrentUser(photo.ownerUserId)) return null;
+    return photo;
   }
 
   // 获取照片变更流
@@ -272,12 +308,15 @@ class DbService extends GetxService {
 
   Future<void> addPhoto(PhotoItem photo) async {
     await isar.writeTxn(() async {
+      _stampPhotoOwner(photo);
       await isar.photoItems.put(photo);
     });
   }
 
   Future<void> deletePhoto(int id) async {
     await isar.writeTxn(() async {
+      final photo = await isar.photoItems.get(id);
+      if (photo == null || !_belongsToCurrentUser(photo.ownerUserId)) return;
       await isar.photoItems.delete(id);
     });
   }
@@ -359,6 +398,119 @@ class DbService extends GetxService {
   Future<void> updateSubscriptionRemoteId(Subscription sub) async {
     await isar.writeTxn(() async {
       await isar.subscriptions.put(sub);
+    });
+  }
+
+  // --- 项目 Project ---
+
+  Future<List<Project>> getAllProjects() async {
+    final projects = await isar.projects
+        .where()
+        .sortByUpdatedAtDesc()
+        .findAll();
+    return projects
+        .where(
+          (project) =>
+              project.deletedAt == null &&
+              _belongsToCurrentUser(project.ownerUserId),
+        )
+        .toList();
+  }
+
+  Stream<void> watchProjects() => isar.projects.watchLazy();
+
+  Future<int> addProject(Project project) async {
+    final id = await isar.writeTxn(() async {
+      _stampProjectOwner(project);
+      return await isar.projects.put(project);
+    });
+    return id;
+  }
+
+  Future<Project> ensureProject(String name) async {
+    final safeName = name.trim().isEmpty ? 'DefaultProject' : name.trim();
+    for (final project in await getAllProjects()) {
+      if (project.name.toLowerCase() == safeName.toLowerCase()) {
+        return project;
+      }
+    }
+
+    final now = DateTime.now();
+    final project = Project()
+      ..name = safeName
+      ..createdAt = now
+      ..updatedAt = now
+      ..isDirty = true;
+    project.id = await addProject(project);
+    return project;
+  }
+
+  // --- 一次性消费 ExpenseRecord ---
+
+  Future<List<ExpenseRecord>> getAllExpenseRecords() async {
+    final records = await isar.expenseRecords
+        .where()
+        .sortByExpenseDateDesc()
+        .findAll();
+    return records
+        .where(
+          (record) =>
+              record.deletedAt == null &&
+              _belongsToCurrentUser(record.ownerUserId),
+        )
+        .toList();
+  }
+
+  Future<List<ExpenseRecord>> getAllExpenseRecordsForSync() async {
+    final records = await isar.expenseRecords
+        .where()
+        .sortByExpenseDateDesc()
+        .findAll();
+    return records
+        .where((record) => _belongsToCurrentUser(record.ownerUserId))
+        .toList();
+  }
+
+  Stream<void> watchExpenseRecords() => isar.expenseRecords.watchLazy();
+
+  Future<int> addExpenseRecord(ExpenseRecord record) async {
+    final id = await isar.writeTxn(() async {
+      _stampExpenseRecordOwner(record);
+      return await isar.expenseRecords.put(record);
+    });
+    return id;
+  }
+
+  Future<ExpenseRecord?> getExpenseRecord(int id) async {
+    final record = await isar.expenseRecords.get(id);
+    if (record == null || !_belongsToCurrentUser(record.ownerUserId)) {
+      return null;
+    }
+    return record;
+  }
+
+  Future<ExpenseRecord?> markExpenseRecordDeleted(int id) async {
+    return await isar.writeTxn(() async {
+      final record = await isar.expenseRecords.get(id);
+      if (record == null) return null;
+      if (!_belongsToCurrentUser(record.ownerUserId)) return null;
+      record.deletedAt = DateTime.now().toUtc();
+      record.pendingDelete = true;
+      record.isDirty = true;
+      await isar.expenseRecords.put(record);
+      return record;
+    });
+  }
+
+  Future<void> purgeDeletedExpenseRecord(int id) async {
+    await isar.writeTxn(() async {
+      await isar.expenseRecords.delete(id);
+    });
+  }
+
+  Future<void> updateExpenseRecordRemoteId(ExpenseRecord record) async {
+    await isar.writeTxn(() async {
+      await isar.expenseRecords.put(record);
     });
   }
 
@@ -634,6 +786,110 @@ class DbService extends GetxService {
           : DateTime.parse(data['trip_date'] as String);
 
       await isar.expenseEvidences.put(item);
+    });
+  }
+
+  Future<void> syncRemoteExpenseRecordToLocal(Map<String, dynamic> data) async {
+    final remoteId = data['id'] as int;
+    final remoteSyncId = data['sync_id'] as String?;
+    final remoteVersion = (data['version'] as num?)?.toInt() ?? 0;
+    final remoteUpdatedAt = DateTime.parse(data['updated_at'] as String);
+    final remoteDeletedAt = data['deleted_at'] == null
+        ? null
+        : DateTime.parse(data['deleted_at'] as String);
+
+    await isar.writeTxn(() async {
+      ExpenseRecord? record;
+      if (remoteSyncId != null) {
+        record = await isar.expenseRecords
+            .filter()
+            .syncIdEqualTo(remoteSyncId)
+            .findFirst();
+      }
+      record ??= await isar.expenseRecords
+          .filter()
+          .remoteIdEqualTo(remoteId)
+          .findFirst();
+
+      if (remoteDeletedAt != null) {
+        if (record != null) {
+          if (!record.isDirty || record.pendingDelete) {
+            await isar.expenseRecords.delete(record.id);
+            return;
+          }
+          record.deletedAt = remoteDeletedAt;
+          record.ownerUserId = currentOwnerUserId;
+          record.pendingDelete = false;
+          record.remoteId = remoteId;
+          record.syncId = remoteSyncId ?? record.syncId;
+          record.remoteVersion = remoteVersion;
+          record.remoteUpdatedAt = remoteUpdatedAt;
+          record.syncedAt = remoteUpdatedAt;
+          await isar.expenseRecords.put(record);
+        }
+        return;
+      }
+
+      record ??= ExpenseRecord();
+
+      if (record.isDirty) {
+        record.ownerUserId = currentOwnerUserId;
+        record.remoteId = remoteId;
+        record.syncId = remoteSyncId ?? record.syncId;
+        record.remoteVersion = remoteVersion;
+        record.remoteUpdatedAt = remoteUpdatedAt;
+        await isar.expenseRecords.put(record);
+        return;
+      }
+
+      final projectName = data['project_name'] as String?;
+      int? projectId;
+      if (projectName != null && projectName.trim().isNotEmpty) {
+        final safeProjectName = projectName.trim();
+        final projects = await isar.projects.where().findAll();
+        Project? project;
+        for (final item in projects) {
+          if (_belongsToCurrentUser(item.ownerUserId) &&
+              item.name.toLowerCase() == safeProjectName.toLowerCase()) {
+            project = item;
+            break;
+          }
+        }
+        if (project == null) {
+          final now = DateTime.now();
+          project = Project()
+            ..name = safeProjectName
+            ..ownerUserId = currentOwnerUserId
+            ..createdAt = now
+            ..updatedAt = now
+            ..isDirty = false;
+          project.id = await isar.projects.put(project);
+        }
+        projectId = project.id;
+      }
+
+      record.remoteId = remoteId;
+      record.ownerUserId = currentOwnerUserId;
+      record.syncId = remoteSyncId ?? record.syncId;
+      record.remoteVersion = remoteVersion;
+      record.remoteUpdatedAt = remoteUpdatedAt;
+      record.syncedAt = remoteUpdatedAt;
+      record.isDirty = false;
+      record.deletedAt = null;
+      record.pendingDelete = false;
+      record.expenseDate = DateTime.parse(data['expense_date'] as String);
+      record.amount = (data['amount'] as num).toDouble();
+      record.currency = data['currency'] ?? 'CNY';
+      record.category = ExpenseCategory.values.firstWhere(
+        (value) => value.name == data['category'],
+        orElse: () => ExpenseCategory.other,
+      );
+      record.merchant = data['merchant'];
+      record.note = data['note'];
+      record.projectName = projectName;
+      record.projectId = projectId;
+
+      await isar.expenseRecords.put(record);
     });
   }
 }

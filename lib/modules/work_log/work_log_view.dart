@@ -10,7 +10,7 @@ import 'package:life_log/modules/work_log/widgets/day_log_list.dart';
 import 'package:life_log/modules/work_log/widgets/day_cell.dart';
 import 'work_log_controller.dart';
 import 'work_log_model.dart';
-import 'add_log_sheet.dart';
+import 'views/log_edit_view.dart';
 
 class WorkLogView extends StatelessWidget {
   const WorkLogView({super.key});
@@ -133,10 +133,9 @@ class WorkLogView extends StatelessWidget {
   }
 
   void _showAddSheet(WorkLogController logic, {WorkLog? log}) {
-    Get.bottomSheet(
-      AddLogSheet(selectedDate: logic.selectedDay.value, existingLog: log),
-      isScrollControlled: true,
-      backgroundColor: Colors.transparent,
+    Get.to(
+      () =>
+          LogEditView(selectedDate: logic.selectedDay.value, existingLog: log),
     );
   }
 }

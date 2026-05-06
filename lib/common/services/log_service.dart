@@ -67,6 +67,7 @@ class LogService extends GetxService {
 
   /// 最大日志条数
   static const int maxLogs = 500;
+  static const int maxLogFileBytes = 1024 * 1024;
 
   /// 是否启用 debug 日志（生产环境可关闭）
   final enableDebug = true.obs;
@@ -76,6 +77,7 @@ class LogService extends GetxService {
     try {
       final dir = await getApplicationDocumentsDirectory();
       _logFile = File('${dir.path}/app_logs.txt');
+      await _rotateLogFileIfNeeded();
       if (!await _logFile!.exists()) {
         await _logFile!.create();
       }
@@ -140,7 +142,36 @@ class LogService extends GetxService {
     }
 
     // 写入文件
+    _rotateLogFileIfNeededSync();
     _logFile?.writeAsString('$logString\n', mode: FileMode.append);
+  }
+
+  Future<void> _rotateLogFileIfNeeded() async {
+    final file = _logFile;
+    if (file == null || !await file.exists()) return;
+    final size = await file.length();
+    if (size <= maxLogFileBytes) return;
+
+    final rotated = File('${file.parent.path}/app_logs.old.txt');
+    if (await rotated.exists()) {
+      await rotated.delete();
+    }
+    await file.rename(rotated.path);
+    _logFile = File(file.path);
+  }
+
+  void _rotateLogFileIfNeededSync() {
+    final file = _logFile;
+    if (file == null || !file.existsSync()) return;
+    final size = file.lengthSync();
+    if (size <= maxLogFileBytes) return;
+
+    final rotated = File('${file.parent.path}/app_logs.old.txt');
+    if (rotated.existsSync()) {
+      rotated.deleteSync();
+    }
+    file.renameSync(rotated.path);
+    _logFile = File(file.path)..createSync();
   }
 
   /// 获取所有日志文本

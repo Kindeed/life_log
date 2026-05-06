@@ -2,6 +2,7 @@ import 'package:get/get.dart';
 import '../../../common/db/db_service.dart';
 import '../../../common/services/sync_service.dart';
 import '../../../common/services/log_service.dart';
+import '../../../common/utils/record_validators.dart';
 import '../../../common/utils/sync_id_generator.dart';
 import 'subscription_model.dart';
 
@@ -19,6 +20,7 @@ class SubscriptionRepository extends GetxService {
 
   // --- 修改业务 ---
   Future<void> saveSubscription(Subscription sub, int currentCount) async {
+    validateSubscription(sub);
     sub.syncId ??= SyncIdGenerator.newSyncId();
 
     // 如果是新增（没有 sortIndex），把它排到最后
@@ -29,6 +31,10 @@ class SubscriptionRepository extends GetxService {
 
     if (!Get.isRegistered<SyncService>()) {
       LogService.to.info('SubscriptionRepository', '本地模式：跳过云端同步');
+      return;
+    }
+
+    if (sub.remoteId != null && !sub.isDirty && !sub.pendingDelete) {
       return;
     }
 

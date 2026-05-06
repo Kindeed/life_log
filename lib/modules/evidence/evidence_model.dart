@@ -21,6 +21,9 @@ class ExpenseEvidence {
   late String projectName;
 
   @Index()
+  int? projectId;
+
+  @Index()
   late DateTime evidenceDate;
 
   double? amount;

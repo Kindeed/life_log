@@ -72,3 +72,15 @@ extension SubscriptionListDomainLogic on Iterable<Subscription> {
   double totalCostForMonth(DateTime targetMonth) =>
       fold(0.0, (sum, sub) => sum + sub.costForMonth(targetMonth));
 }
+
+extension SubscriptionBusinessChanges on Subscription {
+  bool hasBusinessChangesComparedTo(Subscription other) {
+    return name != other.name ||
+        price != other.price ||
+        cycle != other.cycle ||
+        nextPaymentDate != other.nextPaymentDate ||
+        reminderDays != other.reminderDays ||
+        note != other.note ||
+        sortIndex != other.sortIndex;
+  }
+}

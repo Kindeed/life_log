@@ -2,6 +2,7 @@ import 'package:get/get.dart';
 import '../../../common/db/db_service.dart';
 import '../../../common/services/sync_service.dart';
 import '../../../common/services/log_service.dart';
+import '../../../common/utils/record_validators.dart';
 import '../../../common/utils/sync_id_generator.dart';
 import 'work_log_model.dart';
 
@@ -23,6 +24,7 @@ class WorkLogRepository extends GetxService {
 
   // --- 修改业务 ---
   Future<void> saveLog(WorkLog log) async {
+    validateWorkLog(log);
     log.syncId ??= SyncIdGenerator.newSyncId();
 
     // 1. 本地存储 (包含产生 dirty/remoteId)
@@ -30,6 +32,10 @@ class WorkLogRepository extends GetxService {
 
     if (!Get.isRegistered<SyncService>()) {
       LogService.to.info('WorkLogRepository', '本地模式：跳过云端同步');
+      return;
+    }
+
+    if (log.remoteId != null && !log.isDirty && !log.pendingDelete) {
       return;
     }
 

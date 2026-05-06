@@ -3,33 +3,12 @@ import 'package:get/get.dart';
 import 'package:intl/intl.dart';
 import 'package:path_provider/path_provider.dart';
 import '../../common/db/db_service.dart';
+import '../../common/utils/file_path_utils.dart';
+import '../project/project_repository.dart';
 import 'photo_model.dart';
 
 class PhotoRepository extends GetxService {
   static PhotoRepository get to => Get.find();
-
-  String _sanitizePathSegment(String value, {String fallback = 'Untitled'}) {
-    final sanitized = value
-        .trim()
-        .replaceAll(RegExp(r'[<>:"/\\|?*\x00-\x1F]'), '_')
-        .replaceAll(RegExp(r'\s+'), ' ');
-    if (sanitized.isEmpty) return fallback;
-    return sanitized;
-  }
-
-  Future<String> _availablePath(String directory, String fileName) async {
-    final dotIndex = fileName.lastIndexOf('.');
-    final baseName = dotIndex <= 0 ? fileName : fileName.substring(0, dotIndex);
-    final extension = dotIndex <= 0 ? '' : fileName.substring(dotIndex);
-
-    var candidate = '$directory/$fileName';
-    var suffix = 1;
-    while (await File(candidate).exists()) {
-      candidate = '$directory/${baseName}_$suffix$extension';
-      suffix++;
-    }
-    return candidate;
-  }
 
   // --- 查询业务 ---
   Future<List<PhotoItem>> getAllPhotos() async {
@@ -50,15 +29,16 @@ class PhotoRepository extends GetxService {
   }) async {
     final appDir = await getApplicationDocumentsDirectory();
 
-    final safeProjectName = _sanitizePathSegment(
+    final safeProjectName = sanitizePathSegment(
       projectName,
       fallback: 'DefaultProject',
     );
-    final safeDeviceName = _sanitizePathSegment(
+    final project = await ProjectRepository.to.ensureProject(safeProjectName);
+    final safeDeviceName = sanitizePathSegment(
       deviceName,
       fallback: 'UnknownDevice',
     );
-    final safeDesc = _sanitizePathSegment(description, fallback: '');
+    final safeDesc = sanitizePathSegment(description, fallback: '');
 
     final folderPath = Directory(
       '${appDir.path}/$safeProjectName/$safeDeviceName',
@@ -75,7 +55,7 @@ class PhotoRepository extends GetxService {
       filePrefix = filePrefix.substring(0, 50);
     }
     final fileName = "${filePrefix}_$dateStr.jpg";
-    final savePath = await _availablePath(folderPath.path, fileName);
+    final savePath = await availablePath(folderPath.path, fileName);
 
     // Copy into the app-private archive. Gallery imports must keep the source
     // until the platform media delete request has completed.
@@ -90,7 +70,8 @@ class PhotoRepository extends GetxService {
       ..fileName = fileName
       ..filePath = savePath
       ..deviceName = deviceName
-      ..projectName = projectName
+      ..projectId = project.id
+      ..projectName = project.name
       ..description = description
       ..dateIndexed = DateTime(now.year, now.month, now.day);
 
@@ -100,8 +81,11 @@ class PhotoRepository extends GetxService {
 
   Future<void> deletePhotos(List<PhotoItem> itemsToDelete) async {
     for (var photo in itemsToDelete) {
+      final currentPhoto = await DbService.to.getPhoto(photo.id);
+      if (currentPhoto == null) continue;
+
       // 1. Delete file
-      final file = File(photo.filePath);
+      final file = File(currentPhoto.filePath);
       if (await file.exists()) {
         await file.delete();
       }
@@ -116,17 +100,23 @@ class PhotoRepository extends GetxService {
     PhotoItem photo,
     String newDescription,
   ) async {
-    final oldFile = File(photo.filePath);
+    final currentPhoto = await DbService.to.getPhoto(photo.id);
+    if (currentPhoto == null) {
+      throw StateError('照片不存在或不属于当前用户');
+    }
+
+    final oldFile = File(currentPhoto.filePath);
     if (!await oldFile.exists()) {
       // Just update DB if file missing
-      photo.description = newDescription;
-      await DbService.to.addPhoto(photo);
+      currentPhoto.description = newDescription;
+      await DbService.to.addPhoto(currentPhoto);
+      _copyPhotoFields(currentPhoto, photo);
       return null;
     }
 
-    final safeDesc = _sanitizePathSegment(newDescription, fallback: '');
-    final safeProject = _sanitizePathSegment(
-      photo.projectName ?? "Doc",
+    final safeDesc = sanitizePathSegment(newDescription, fallback: '');
+    final safeProject = sanitizePathSegment(
+      currentPhoto.projectName ?? "Doc",
       fallback: 'Doc',
     );
 
@@ -134,24 +124,39 @@ class PhotoRepository extends GetxService {
     if (prefix.length > 50) {
       prefix = prefix.substring(0, 50);
     }
-    final dateStr = DateFormat('yyyyMMdd_HHmmss').format(photo.createdAt);
+    final dateStr = DateFormat(
+      'yyyyMMdd_HHmmss',
+    ).format(currentPhoto.createdAt);
     final newFileName = "${prefix}_$dateStr.jpg";
 
-    final newPath = photo.fileName == newFileName
-        ? photo.filePath
-        : await _availablePath(oldFile.parent.path, newFileName);
+    final newPath = currentPhoto.fileName == newFileName
+        ? currentPhoto.filePath
+        : await availablePath(oldFile.parent.path, newFileName);
     String? oldPathToEvict;
 
-    if (newPath != photo.filePath) {
-      oldPathToEvict = photo.filePath;
+    if (newPath != currentPhoto.filePath) {
+      oldPathToEvict = currentPhoto.filePath;
       await oldFile.rename(newPath);
-      photo.fileName = newFileName;
-      photo.filePath = newPath;
+      currentPhoto.fileName = newFileName;
+      currentPhoto.filePath = newPath;
     }
 
-    photo.description = newDescription;
-    await DbService.to.addPhoto(photo);
+    currentPhoto.description = newDescription;
+    await DbService.to.addPhoto(currentPhoto);
+    _copyPhotoFields(currentPhoto, photo);
     return oldPathToEvict;
+  }
+
+  void _copyPhotoFields(PhotoItem source, PhotoItem target) {
+    target.ownerUserId = source.ownerUserId;
+    target.createdAt = source.createdAt;
+    target.fileName = source.fileName;
+    target.filePath = source.filePath;
+    target.description = source.description;
+    target.deviceName = source.deviceName;
+    target.projectName = source.projectName;
+    target.projectId = source.projectId;
+    target.dateIndexed = source.dateIndexed;
   }
 
   Future<int> exportPhotos(
@@ -163,16 +168,13 @@ class PhotoRepository extends GetxService {
       final sourceFile = File(photo.filePath);
       if (await sourceFile.exists()) {
         final projectDir = Directory(
-          '$targetDirectory/${_sanitizePathSegment(photo.projectName ?? "Exported", fallback: "Exported")}',
+          '$targetDirectory/${sanitizePathSegment(photo.projectName ?? "Exported", fallback: "Exported")}',
         );
         if (!await projectDir.exists()) {
           await projectDir.create(recursive: true);
         }
 
-        final targetPath = await _availablePath(
-          projectDir.path,
-          photo.fileName,
-        );
+        final targetPath = await availablePath(projectDir.path, photo.fileName);
         await sourceFile.copy(targetPath);
         successCount++;
       }

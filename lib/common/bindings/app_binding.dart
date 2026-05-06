@@ -3,7 +3,7 @@ import 'package:get/get.dart';
 class AppBinding extends Bindings {
   @override
   void dependencies() {
-    // 纯全局服务目前都在 main.dart 中通过 Get.put 初始化
-    // 未来如果需要全局的懒加载服务，可以在此处注册
+    // 当前服务在 main.dart/bootstrap 和模块 binding 中注册。
+    // 保留此绑定作为应用级路由入口的扩展点。
   }
 }

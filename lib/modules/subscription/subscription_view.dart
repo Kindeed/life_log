@@ -7,6 +7,7 @@ import 'package:get/get.dart';
 import '../../common/layout/constrained_page.dart';
 import '../../common/utils/formatters.dart';
 import '../../common/widgets/app_card.dart';
+import '../../common/widgets/app_action_sheet.dart';
 import '../../common/widgets/app_confirm_dialog.dart';
 import '../../common/widgets/app_empty_state.dart';
 import '../../common/widgets/app_filter_chip_bar.dart';
@@ -14,9 +15,11 @@ import '../../common/widgets/app_floating_action_pill.dart';
 import '../../common/widgets/app_metric_tile.dart';
 import '../../common/widgets/app_pill.dart';
 import '../../common/widgets/app_section_header.dart';
-import 'add_subscription_sheet.dart';
+import '../expense/expense_record_controller.dart';
+import '../expense/views/expense_record_edit_view.dart';
 import 'subscription_controller.dart';
 import 'subscription_model.dart';
+import 'views/subscription_edit_view.dart';
 
 class SubscriptionView extends StatelessWidget {
   const SubscriptionView({super.key});
@@ -24,6 +27,7 @@ class SubscriptionView extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final logic = Get.find<SubscriptionController>();
+    final expenseLogic = Get.find<ExpenseRecordController>();
     final theme = Theme.of(context);
     final semantic = theme.semanticColors;
     final textSecondary = theme.colorScheme.onSurfaceVariant;
@@ -56,6 +60,7 @@ class SubscriptionView extends StatelessWidget {
                   child: ConstrainedPage(
                     child: _SubscriptionOverview(
                       logic: logic,
+                      expenseLogic: expenseLogic,
                       semantic: semantic,
                       textSecondary: textSecondary,
                     ),
@@ -131,7 +136,7 @@ class SubscriptionView extends StatelessWidget {
           icon: Icons.add_rounded,
           color: semantic.expense,
           visible: logic.isFabVisible.value,
-          onPressed: () => _showAddSheet(),
+          onPressed: () => _showAddActions(),
         ),
       ),
     );
@@ -143,10 +148,24 @@ class SubscriptionView extends StatelessWidget {
   }
 
   void _showAddSheet([Subscription? sub]) {
-    Get.bottomSheet(
-      AddSubscriptionSheet(sub: sub),
-      isScrollControlled: true,
-      backgroundColor: Colors.transparent,
+    Get.to(() => SubscriptionEditView(sub: sub));
+  }
+
+  void _showAddActions() {
+    AppActionSheet.show(
+      title: '添加支出',
+      actions: [
+        AppActionSheetItem(
+          icon: Icons.subscriptions_rounded,
+          title: '订阅/固定支出',
+          onTap: () => _showAddSheet(),
+        ),
+        AppActionSheetItem(
+          icon: Icons.receipt_rounded,
+          title: '一次性消费',
+          onTap: () => Get.to(() => const ExpenseRecordEditView()),
+        ),
+      ],
     );
   }
 
@@ -168,11 +187,13 @@ class SubscriptionView extends StatelessWidget {
 
 class _SubscriptionOverview extends StatelessWidget {
   final SubscriptionController logic;
+  final ExpenseRecordController expenseLogic;
   final AppSemanticColors semantic;
   final Color textSecondary;
 
   const _SubscriptionOverview({
     required this.logic,
+    required this.expenseLogic,
     required this.semantic,
     required this.textSecondary,
   });
@@ -191,7 +212,12 @@ class _SubscriptionOverview extends StatelessWidget {
               Expanded(
                 child: AppMetricTile(
                   label: "本月预计",
-                  value: formatMoney(logic.currentMonthCost),
+                  value: formatMoney(
+                    logic.currentMonthCost +
+                        expenseLogic.totalForMonth(
+                          DateTime(DateTime.now().year, DateTime.now().month),
+                        ),
+                  ),
                   icon: Icons.calendar_month_rounded,
                   color: semantic.expense,
                 ),

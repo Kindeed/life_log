@@ -2,9 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:life_log/common/theme/app_radius.dart';
 import 'package:life_log/common/theme/theme_extensions.dart';
+import '../today/today_view.dart';
 import '../work_log/work_log_view.dart';
 import '../subscription/subscription_view.dart';
-import '../statistics/statistics_view.dart';
 import 'tabs_controller.dart';
 import '../photo/views/photo_view.dart';
 import '../profile/profile_view.dart';
@@ -17,26 +17,18 @@ class TabsView extends StatelessWidget {
     final controller = Get.find<TabsController>();
 
     return Scaffold(
-      body: Obx(() {
-        return AnimatedSwitcher(
-          duration: const Duration(milliseconds: 300),
-          switchInCurve: Curves.easeOut,
-          switchOutCurve: Curves.easeIn,
-          transitionBuilder: (Widget child, Animation<double> animation) {
-            return FadeTransition(
-              opacity: animation,
-              child: SlideTransition(
-                position: Tween<Offset>(
-                  begin: const Offset(0.0, 0.05),
-                  end: Offset.zero,
-                ).animate(animation),
-                child: child,
-              ),
-            );
-          },
-          child: _buildPage(controller.currentIndex.value),
-        );
-      }),
+      body: Obx(
+        () => IndexedStack(
+          index: controller.currentIndex.value,
+          children: const [
+            TodayView(),
+            WorkLogView(),
+            SubscriptionView(),
+            PhotoView(),
+            ProfileView(),
+          ],
+        ),
+      ),
       bottomNavigationBar: Obx(
         () => _AppleTabBar(
           currentIndex: controller.currentIndex.value,
@@ -44,23 +36,6 @@ class TabsView extends StatelessWidget {
         ),
       ),
     );
-  }
-
-  Widget _buildPage(int index) {
-    switch (index) {
-      case 0:
-        return const WorkLogView();
-      case 1:
-        return const SubscriptionView();
-      case 2:
-        return const PhotoView();
-      case 3:
-        return const StatisticsView();
-      case 4:
-        return const ProfileView();
-      default:
-        return const SizedBox.shrink();
-    }
   }
 }
 
@@ -71,10 +46,10 @@ class _AppleTabBar extends StatelessWidget {
   const _AppleTabBar({required this.currentIndex, required this.onTap});
 
   static const _items = [
+    _TabSpec(Icons.today_rounded, '今天'),
     _TabSpec(Icons.calendar_today_rounded, '工时'),
     _TabSpec(Icons.account_balance_wallet_rounded, '支出'),
     _TabSpec(Icons.folder_shared_rounded, '项目'),
-    _TabSpec(Icons.analytics_rounded, '面板'),
     _TabSpec(Icons.person_rounded, '我的'),
   ];
 

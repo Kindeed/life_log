@@ -3,6 +3,8 @@ import 'package:get/get.dart';
 import '../../common/services/log_service.dart';
 import '../evidence/evidence_model.dart';
 import '../evidence/evidence_repository.dart';
+import '../expense/expense_record_model.dart';
+import '../expense/expense_record_repository.dart';
 import '../subscription/subscription_repository.dart';
 import '../work_log/work_log_model.dart';
 import '../work_log/work_log_repository.dart';
@@ -20,6 +22,7 @@ class StatisticsController extends GetxController {
 
   // --- 3. 财务统计 ---
   final selectedMonthSubCost = 0.0.obs;
+  final selectedMonthExpenseRecordCost = 0.0.obs;
   final yearSubCost = 0.0.obs;
 
   final reimbursedAmount = 0.0.obs;
@@ -30,6 +33,7 @@ class StatisticsController extends GetxController {
   StreamSubscription? _logSub;
   StreamSubscription? _subSub;
   StreamSubscription? _evidenceSub;
+  StreamSubscription? _expenseRecordSub;
   Future<void>? _refreshInFlight;
   bool _refreshAgain = false;
 
@@ -58,6 +62,13 @@ class StatisticsController extends GetxController {
       LogService.to.debug('Stats', 'Evidence Changed');
       refreshStats();
     });
+
+    _expenseRecordSub = ExpenseRecordRepository.to.watchExpenseRecords().listen(
+      (_) {
+        LogService.to.debug('Stats', 'ExpenseRecords Changed');
+        refreshStats();
+      },
+    );
   }
 
   @override
@@ -66,6 +77,7 @@ class StatisticsController extends GetxController {
     _logSub?.cancel();
     _subSub?.cancel();
     _evidenceSub?.cancel();
+    _expenseRecordSub?.cancel();
     super.onClose();
   }
 
@@ -87,7 +99,9 @@ class StatisticsController extends GetxController {
         final allLogs = await WorkLogRepository.to.getAllLogs();
         final allSubs = await SubscriptionRepository.to.getAllSubscriptions();
         final allEvidence = await EvidenceRepository.to.getAllEvidence();
-        _calculateStats(allLogs, allSubs, allEvidence);
+        final allExpenseRecords = await ExpenseRecordRepository.to
+            .getAllExpenseRecords();
+        _calculateStats(allLogs, allSubs, allEvidence, allExpenseRecords);
       } while (_refreshAgain);
     } catch (e) {
       LogService.to.error('Stats', '刷新统计失败: $e');
@@ -129,6 +143,7 @@ class StatisticsController extends GetxController {
     List<WorkLog> logs,
     List<Subscription> subs,
     List<ExpenseEvidence> evidence,
+    List<ExpenseRecord> expenseRecords,
   ) {
     final now = DateTime.now();
     lastUpdated.value =
@@ -154,6 +169,9 @@ class StatisticsController extends GetxController {
 
     // 3. 订阅统计
     selectedMonthSubCost.value = subs.totalCostForMonth(month);
+    selectedMonthExpenseRecordCost.value = expenseRecords
+        .inMonth(month)
+        .totalAmount;
     yearSubCost.value = subs.totalYearlyCost;
   }
 }

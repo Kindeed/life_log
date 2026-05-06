@@ -4,11 +4,27 @@ import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:get/get.dart';
 import 'package:life_log/common/theme/app_colors.dart';
+import 'package:life_log/common/utils/formatters.dart';
 import 'package:life_log/common/widgets/app_confirm_dialog.dart';
 import 'package:life_log/modules/evidence/evidence_controller.dart';
 import 'package:life_log/modules/evidence/evidence_model.dart';
 
 void showEvidenceEditorSheet({
+  ExpenseEvidence? existing,
+  String? initialProject,
+  String? sourcePath,
+}) {
+  Get.to(
+    () => EvidenceEditorSheet(
+      existing: existing,
+      initialProject: initialProject,
+      sourcePath: sourcePath,
+      asPage: true,
+    ),
+  );
+}
+
+void showEvidenceEditorBottomSheet({
   ExpenseEvidence? existing,
   String? initialProject,
   String? sourcePath,
@@ -28,12 +44,14 @@ class EvidenceEditorSheet extends StatefulWidget {
   final ExpenseEvidence? existing;
   final String? initialProject;
   final String? sourcePath;
+  final bool asPage;
 
   const EvidenceEditorSheet({
     super.key,
     this.existing,
     this.initialProject,
     this.sourcePath,
+    this.asPage = false,
   });
 
   @override
@@ -86,7 +104,7 @@ class _EvidenceEditorSheetState extends State<EvidenceEditorSheet> {
     final fillColor = isDark ? theme.cardColor : const Color(0xFFF7F9FC);
     final bottomInset = MediaQuery.of(context).viewInsets.bottom;
 
-    return SafeArea(
+    final content = SafeArea(
       top: false,
       child: Container(
         constraints: BoxConstraints(maxHeight: 0.92.sh),
@@ -284,6 +302,12 @@ class _EvidenceEditorSheetState extends State<EvidenceEditorSheet> {
           ),
         ),
       ),
+    );
+    if (!widget.asPage) return content;
+
+    return Scaffold(
+      backgroundColor: theme.scaffoldBackgroundColor,
+      body: SafeArea(top: true, child: content),
     );
   }
 
@@ -495,7 +519,5 @@ class _EvidenceEditorSheetState extends State<EvidenceEditorSheet> {
         widget.sourcePath != null;
   }
 
-  String _formatDate(DateTime date) {
-    return '${date.year}-${date.month.toString().padLeft(2, '0')}-${date.day.toString().padLeft(2, '0')}';
-  }
+  String _formatDate(DateTime date) => formatDateYmd(date);
 }

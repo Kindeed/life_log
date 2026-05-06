@@ -184,7 +184,7 @@ class _AddSubscriptionSheetState extends State<AddSubscriptionSheet> {
     }
   }
 
-  void _onSave() {
+  Future<void> _onSave() async {
     if (_nameController.text.isEmpty) {
       Get.snackbar(
         "错误",
@@ -231,11 +231,14 @@ class _AddSubscriptionSheetState extends State<AddSubscriptionSheet> {
       sub.pendingDelete = widget.sub!.pendingDelete;
     }
 
-    // 标记为需要同步
-    sub.isDirty = true;
+    final existing = widget.sub;
+    sub.isDirty =
+        existing == null ||
+        existing.isDirty ||
+        sub.hasBusinessChangesComparedTo(existing);
 
     try {
-      Get.find<SubscriptionController>().addSub(sub);
+      await Get.find<SubscriptionController>().addSub(sub);
       Get.back();
 
       Get.snackbar(

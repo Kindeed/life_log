@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:fl_chart/fl_chart.dart';
 import 'package:life_log/common/theme/app_semantic_colors.dart';
 import 'package:life_log/common/theme/theme_extensions.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
@@ -262,6 +263,38 @@ class _WorkDistribution extends StatelessWidget {
           children: [
             const AppSectionHeader(title: "工时概览"),
             SizedBox(height: 16.h),
+            if (totalDays > 0) ...[
+              SizedBox(
+                height: 160.h,
+                child: PieChart(
+                  PieChartData(
+                    centerSpaceRadius: 32.r,
+                    sectionsSpace: 2,
+                    sections: [
+                      PieChartSectionData(
+                        value: logic.workDays.value.toDouble(),
+                        title: '工作',
+                        color: semantic.work,
+                        radius: 52.r,
+                      ),
+                      PieChartSectionData(
+                        value: logic.tripDays.value.toDouble(),
+                        title: '出差',
+                        color: semantic.warning,
+                        radius: 52.r,
+                      ),
+                      PieChartSectionData(
+                        value: logic.restDays.value.toDouble(),
+                        title: '休息',
+                        color: semantic.success,
+                        radius: 52.r,
+                      ),
+                    ].where((section) => section.value > 0).toList(),
+                  ),
+                ),
+              ),
+              SizedBox(height: 12.h),
+            ],
             _ProgressRow(
               label: "工作",
               value: logic.workDays.value,
@@ -319,6 +352,52 @@ class _FinanceOverview extends StatelessWidget {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             const AppSectionHeader(title: "财务概览"),
+            SizedBox(height: 16.h),
+            SizedBox(
+              height: 150.h,
+              child: BarChart(
+                BarChartData(
+                  borderData: FlBorderData(show: false),
+                  titlesData: const FlTitlesData(show: false),
+                  gridData: const FlGridData(show: false),
+                  barGroups: [
+                    BarChartGroupData(
+                      x: 0,
+                      barRods: [
+                        BarChartRodData(
+                          toY: logic.selectedMonthSubCost.value,
+                          color: semantic.expense,
+                          width: 24.w,
+                          borderRadius: BorderRadius.circular(6),
+                        ),
+                      ],
+                    ),
+                    BarChartGroupData(
+                      x: 1,
+                      barRods: [
+                        BarChartRodData(
+                          toY: logic.selectedMonthExpenseRecordCost.value,
+                          color: semantic.stats,
+                          width: 24.w,
+                          borderRadius: BorderRadius.circular(6),
+                        ),
+                      ],
+                    ),
+                    BarChartGroupData(
+                      x: 2,
+                      barRods: [
+                        BarChartRodData(
+                          toY: logic.evidenceUnreimbursedAmount.value,
+                          color: semantic.warning,
+                          width: 24.w,
+                          borderRadius: BorderRadius.circular(6),
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
+              ),
+            ),
             SizedBox(height: 16.h),
             _ProgressRow(
               label: "出差待报销",

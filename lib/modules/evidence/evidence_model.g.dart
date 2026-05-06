@@ -71,46 +71,51 @@ const ExpenseEvidenceSchema = CollectionSchema(
       name: r'pendingDelete',
       type: IsarType.bool,
     ),
-    r'projectName': PropertySchema(
+    r'projectId': PropertySchema(
       id: 13,
+      name: r'projectId',
+      type: IsarType.long,
+    ),
+    r'projectName': PropertySchema(
+      id: 14,
       name: r'projectName',
       type: IsarType.string,
     ),
-    r'remoteId': PropertySchema(id: 14, name: r'remoteId', type: IsarType.long),
+    r'remoteId': PropertySchema(id: 15, name: r'remoteId', type: IsarType.long),
     r'remoteStoragePath': PropertySchema(
-      id: 15,
+      id: 16,
       name: r'remoteStoragePath',
       type: IsarType.string,
     ),
     r'remoteUpdatedAt': PropertySchema(
-      id: 16,
+      id: 17,
       name: r'remoteUpdatedAt',
       type: IsarType.dateTime,
     ),
     r'remoteVersion': PropertySchema(
-      id: 17,
+      id: 18,
       name: r'remoteVersion',
       type: IsarType.long,
     ),
     r'status': PropertySchema(
-      id: 18,
+      id: 19,
       name: r'status',
       type: IsarType.byte,
       enumMap: _ExpenseEvidencestatusEnumValueMap,
     ),
-    r'syncId': PropertySchema(id: 19, name: r'syncId', type: IsarType.string),
+    r'syncId': PropertySchema(id: 20, name: r'syncId', type: IsarType.string),
     r'syncedAt': PropertySchema(
-      id: 20,
+      id: 21,
       name: r'syncedAt',
       type: IsarType.dateTime,
     ),
     r'tripDate': PropertySchema(
-      id: 21,
+      id: 22,
       name: r'tripDate',
       type: IsarType.dateTime,
     ),
     r'uploadedAt': PropertySchema(
-      id: 22,
+      id: 23,
       name: r'uploadedAt',
       type: IsarType.dateTime,
     ),
@@ -130,6 +135,19 @@ const ExpenseEvidenceSchema = CollectionSchema(
         IndexPropertySchema(
           name: r'projectName',
           type: IndexType.hash,
+          caseSensitive: false,
+        ),
+      ],
+    ),
+    r'projectId': IndexSchema(
+      id: 3305656282123791113,
+      name: r'projectId',
+      unique: false,
+      replace: false,
+      properties: [
+        IndexPropertySchema(
+          name: r'projectId',
+          type: IndexType.value,
           caseSensitive: false,
         ),
       ],
@@ -234,16 +252,17 @@ void _expenseEvidenceSerialize(
   writer.writeString(offsets[10], object.note);
   writer.writeString(offsets[11], object.ownerUserId);
   writer.writeBool(offsets[12], object.pendingDelete);
-  writer.writeString(offsets[13], object.projectName);
-  writer.writeLong(offsets[14], object.remoteId);
-  writer.writeString(offsets[15], object.remoteStoragePath);
-  writer.writeDateTime(offsets[16], object.remoteUpdatedAt);
-  writer.writeLong(offsets[17], object.remoteVersion);
-  writer.writeByte(offsets[18], object.status.index);
-  writer.writeString(offsets[19], object.syncId);
-  writer.writeDateTime(offsets[20], object.syncedAt);
-  writer.writeDateTime(offsets[21], object.tripDate);
-  writer.writeDateTime(offsets[22], object.uploadedAt);
+  writer.writeLong(offsets[13], object.projectId);
+  writer.writeString(offsets[14], object.projectName);
+  writer.writeLong(offsets[15], object.remoteId);
+  writer.writeString(offsets[16], object.remoteStoragePath);
+  writer.writeDateTime(offsets[17], object.remoteUpdatedAt);
+  writer.writeLong(offsets[18], object.remoteVersion);
+  writer.writeByte(offsets[19], object.status.index);
+  writer.writeString(offsets[20], object.syncId);
+  writer.writeDateTime(offsets[21], object.syncedAt);
+  writer.writeDateTime(offsets[22], object.tripDate);
+  writer.writeDateTime(offsets[23], object.uploadedAt);
 }
 
 ExpenseEvidence _expenseEvidenceDeserialize(
@@ -269,18 +288,19 @@ ExpenseEvidence _expenseEvidenceDeserialize(
   object.note = reader.readStringOrNull(offsets[10]);
   object.ownerUserId = reader.readStringOrNull(offsets[11]);
   object.pendingDelete = reader.readBool(offsets[12]);
-  object.projectName = reader.readString(offsets[13]);
-  object.remoteId = reader.readLongOrNull(offsets[14]);
-  object.remoteStoragePath = reader.readStringOrNull(offsets[15]);
-  object.remoteUpdatedAt = reader.readDateTimeOrNull(offsets[16]);
-  object.remoteVersion = reader.readLong(offsets[17]);
+  object.projectId = reader.readLongOrNull(offsets[13]);
+  object.projectName = reader.readString(offsets[14]);
+  object.remoteId = reader.readLongOrNull(offsets[15]);
+  object.remoteStoragePath = reader.readStringOrNull(offsets[16]);
+  object.remoteUpdatedAt = reader.readDateTimeOrNull(offsets[17]);
+  object.remoteVersion = reader.readLong(offsets[18]);
   object.status =
-      _ExpenseEvidencestatusValueEnumMap[reader.readByteOrNull(offsets[18])] ??
+      _ExpenseEvidencestatusValueEnumMap[reader.readByteOrNull(offsets[19])] ??
       EvidenceStatus.pending;
-  object.syncId = reader.readStringOrNull(offsets[19]);
-  object.syncedAt = reader.readDateTimeOrNull(offsets[20]);
-  object.tripDate = reader.readDateTimeOrNull(offsets[21]);
-  object.uploadedAt = reader.readDateTimeOrNull(offsets[22]);
+  object.syncId = reader.readStringOrNull(offsets[20]);
+  object.syncedAt = reader.readDateTimeOrNull(offsets[21]);
+  object.tripDate = reader.readDateTimeOrNull(offsets[22]);
+  object.uploadedAt = reader.readDateTimeOrNull(offsets[23]);
   return object;
 }
 
@@ -322,28 +342,30 @@ P _expenseEvidenceDeserializeProp<P>(
     case 12:
       return (reader.readBool(offset)) as P;
     case 13:
-      return (reader.readString(offset)) as P;
-    case 14:
       return (reader.readLongOrNull(offset)) as P;
+    case 14:
+      return (reader.readString(offset)) as P;
     case 15:
-      return (reader.readStringOrNull(offset)) as P;
+      return (reader.readLongOrNull(offset)) as P;
     case 16:
-      return (reader.readDateTimeOrNull(offset)) as P;
+      return (reader.readStringOrNull(offset)) as P;
     case 17:
-      return (reader.readLong(offset)) as P;
+      return (reader.readDateTimeOrNull(offset)) as P;
     case 18:
+      return (reader.readLong(offset)) as P;
+    case 19:
       return (_ExpenseEvidencestatusValueEnumMap[reader.readByteOrNull(
                 offset,
               )] ??
               EvidenceStatus.pending)
           as P;
-    case 19:
-      return (reader.readStringOrNull(offset)) as P;
     case 20:
-      return (reader.readDateTimeOrNull(offset)) as P;
+      return (reader.readStringOrNull(offset)) as P;
     case 21:
       return (reader.readDateTimeOrNull(offset)) as P;
     case 22:
+      return (reader.readDateTimeOrNull(offset)) as P;
+    case 23:
       return (reader.readDateTimeOrNull(offset)) as P;
     default:
       throw IsarError('Unknown property with id $propertyId');
@@ -400,6 +422,14 @@ extension ExpenseEvidenceQueryWhereSort
   QueryBuilder<ExpenseEvidence, ExpenseEvidence, QAfterWhere> anyId() {
     return QueryBuilder.apply(this, (query) {
       return query.addWhereClause(const IdWhereClause.any());
+    });
+  }
+
+  QueryBuilder<ExpenseEvidence, ExpenseEvidence, QAfterWhere> anyProjectId() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addWhereClause(
+        const IndexWhereClause.any(indexName: r'projectId'),
+      );
     });
   }
 
@@ -536,6 +566,129 @@ extension ExpenseEvidenceQueryWhere
               ),
             );
       }
+    });
+  }
+
+  QueryBuilder<ExpenseEvidence, ExpenseEvidence, QAfterWhereClause>
+  projectIdIsNull() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addWhereClause(
+        IndexWhereClause.equalTo(indexName: r'projectId', value: [null]),
+      );
+    });
+  }
+
+  QueryBuilder<ExpenseEvidence, ExpenseEvidence, QAfterWhereClause>
+  projectIdIsNotNull() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addWhereClause(
+        IndexWhereClause.between(
+          indexName: r'projectId',
+          lower: [null],
+          includeLower: false,
+          upper: [],
+        ),
+      );
+    });
+  }
+
+  QueryBuilder<ExpenseEvidence, ExpenseEvidence, QAfterWhereClause>
+  projectIdEqualTo(int? projectId) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addWhereClause(
+        IndexWhereClause.equalTo(indexName: r'projectId', value: [projectId]),
+      );
+    });
+  }
+
+  QueryBuilder<ExpenseEvidence, ExpenseEvidence, QAfterWhereClause>
+  projectIdNotEqualTo(int? projectId) {
+    return QueryBuilder.apply(this, (query) {
+      if (query.whereSort == Sort.asc) {
+        return query
+            .addWhereClause(
+              IndexWhereClause.between(
+                indexName: r'projectId',
+                lower: [],
+                upper: [projectId],
+                includeUpper: false,
+              ),
+            )
+            .addWhereClause(
+              IndexWhereClause.between(
+                indexName: r'projectId',
+                lower: [projectId],
+                includeLower: false,
+                upper: [],
+              ),
+            );
+      } else {
+        return query
+            .addWhereClause(
+              IndexWhereClause.between(
+                indexName: r'projectId',
+                lower: [projectId],
+                includeLower: false,
+                upper: [],
+              ),
+            )
+            .addWhereClause(
+              IndexWhereClause.between(
+                indexName: r'projectId',
+                lower: [],
+                upper: [projectId],
+                includeUpper: false,
+              ),
+            );
+      }
+    });
+  }
+
+  QueryBuilder<ExpenseEvidence, ExpenseEvidence, QAfterWhereClause>
+  projectIdGreaterThan(int? projectId, {bool include = false}) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addWhereClause(
+        IndexWhereClause.between(
+          indexName: r'projectId',
+          lower: [projectId],
+          includeLower: include,
+          upper: [],
+        ),
+      );
+    });
+  }
+
+  QueryBuilder<ExpenseEvidence, ExpenseEvidence, QAfterWhereClause>
+  projectIdLessThan(int? projectId, {bool include = false}) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addWhereClause(
+        IndexWhereClause.between(
+          indexName: r'projectId',
+          lower: [],
+          upper: [projectId],
+          includeUpper: include,
+        ),
+      );
+    });
+  }
+
+  QueryBuilder<ExpenseEvidence, ExpenseEvidence, QAfterWhereClause>
+  projectIdBetween(
+    int? lowerProjectId,
+    int? upperProjectId, {
+    bool includeLower = true,
+    bool includeUpper = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addWhereClause(
+        IndexWhereClause.between(
+          indexName: r'projectId',
+          lower: [lowerProjectId],
+          includeLower: includeLower,
+          upper: [upperProjectId],
+          includeUpper: includeUpper,
+        ),
+      );
     });
   }
 
@@ -2086,6 +2239,79 @@ extension ExpenseEvidenceQueryFilter
   }
 
   QueryBuilder<ExpenseEvidence, ExpenseEvidence, QAfterFilterCondition>
+  projectIdIsNull() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(
+        const FilterCondition.isNull(property: r'projectId'),
+      );
+    });
+  }
+
+  QueryBuilder<ExpenseEvidence, ExpenseEvidence, QAfterFilterCondition>
+  projectIdIsNotNull() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(
+        const FilterCondition.isNotNull(property: r'projectId'),
+      );
+    });
+  }
+
+  QueryBuilder<ExpenseEvidence, ExpenseEvidence, QAfterFilterCondition>
+  projectIdEqualTo(int? value) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(
+        FilterCondition.equalTo(property: r'projectId', value: value),
+      );
+    });
+  }
+
+  QueryBuilder<ExpenseEvidence, ExpenseEvidence, QAfterFilterCondition>
+  projectIdGreaterThan(int? value, {bool include = false}) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(
+        FilterCondition.greaterThan(
+          include: include,
+          property: r'projectId',
+          value: value,
+        ),
+      );
+    });
+  }
+
+  QueryBuilder<ExpenseEvidence, ExpenseEvidence, QAfterFilterCondition>
+  projectIdLessThan(int? value, {bool include = false}) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(
+        FilterCondition.lessThan(
+          include: include,
+          property: r'projectId',
+          value: value,
+        ),
+      );
+    });
+  }
+
+  QueryBuilder<ExpenseEvidence, ExpenseEvidence, QAfterFilterCondition>
+  projectIdBetween(
+    int? lower,
+    int? upper, {
+    bool includeLower = true,
+    bool includeUpper = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(
+        FilterCondition.between(
+          property: r'projectId',
+          lower: lower,
+          includeLower: includeLower,
+          upper: upper,
+          includeUpper: includeUpper,
+        ),
+      );
+    });
+  }
+
+  QueryBuilder<ExpenseEvidence, ExpenseEvidence, QAfterFilterCondition>
   projectNameEqualTo(String value, {bool caseSensitive = true}) {
     return QueryBuilder.apply(this, (query) {
       return query.addFilterCondition(
@@ -3208,6 +3434,20 @@ extension ExpenseEvidenceQuerySortBy
   }
 
   QueryBuilder<ExpenseEvidence, ExpenseEvidence, QAfterSortBy>
+  sortByProjectId() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'projectId', Sort.asc);
+    });
+  }
+
+  QueryBuilder<ExpenseEvidence, ExpenseEvidence, QAfterSortBy>
+  sortByProjectIdDesc() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'projectId', Sort.desc);
+    });
+  }
+
+  QueryBuilder<ExpenseEvidence, ExpenseEvidence, QAfterSortBy>
   sortByProjectName() {
     return QueryBuilder.apply(this, (query) {
       return query.addSortBy(r'projectName', Sort.asc);
@@ -3540,6 +3780,20 @@ extension ExpenseEvidenceQuerySortThenBy
   }
 
   QueryBuilder<ExpenseEvidence, ExpenseEvidence, QAfterSortBy>
+  thenByProjectId() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'projectId', Sort.asc);
+    });
+  }
+
+  QueryBuilder<ExpenseEvidence, ExpenseEvidence, QAfterSortBy>
+  thenByProjectIdDesc() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'projectId', Sort.desc);
+    });
+  }
+
+  QueryBuilder<ExpenseEvidence, ExpenseEvidence, QAfterSortBy>
   thenByProjectName() {
     return QueryBuilder.apply(this, (query) {
       return query.addSortBy(r'projectName', Sort.asc);
@@ -3779,6 +4033,13 @@ extension ExpenseEvidenceQueryWhereDistinct
   }
 
   QueryBuilder<ExpenseEvidence, ExpenseEvidence, QDistinct>
+  distinctByProjectId() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addDistinctBy(r'projectId');
+    });
+  }
+
+  QueryBuilder<ExpenseEvidence, ExpenseEvidence, QDistinct>
   distinctByProjectName({bool caseSensitive = true}) {
     return QueryBuilder.apply(this, (query) {
       return query.addDistinctBy(r'projectName', caseSensitive: caseSensitive);
@@ -3941,6 +4202,12 @@ extension ExpenseEvidenceQueryProperty
   pendingDeleteProperty() {
     return QueryBuilder.apply(this, (query) {
       return query.addPropertyName(r'pendingDelete');
+    });
+  }
+
+  QueryBuilder<ExpenseEvidence, int?, QQueryOperations> projectIdProperty() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addPropertyName(r'projectId');
     });
   }
 

@@ -129,3 +129,16 @@ class WorkMonthStats {
     required this.restDays,
   });
 }
+
+extension WorkLogBusinessChanges on WorkLog {
+  bool hasBusinessChangesComparedTo(WorkLog other) {
+    return date != other.date ||
+        type != other.type ||
+        overtimeHours != other.overtimeHours ||
+        location != other.location ||
+        transport != other.transport ||
+        expenses != other.expenses ||
+        isReimbursed != other.isReimbursed ||
+        note != other.note;
+  }
+}

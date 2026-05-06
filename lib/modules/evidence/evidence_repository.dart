@@ -5,36 +5,16 @@ import 'package:intl/intl.dart';
 import 'package:life_log/common/db/db_service.dart';
 import 'package:life_log/common/services/log_service.dart';
 import 'package:life_log/common/services/sync_service.dart';
+import 'package:life_log/common/utils/file_path_utils.dart';
+import 'package:life_log/common/utils/record_validators.dart';
 import 'package:life_log/common/utils/sync_id_generator.dart';
+import 'package:life_log/modules/project/project_repository.dart';
 import 'package:path_provider/path_provider.dart';
 
 import 'evidence_model.dart';
 
 class EvidenceRepository extends GetxService {
   static EvidenceRepository get to => Get.find();
-
-  String _sanitizePathSegment(String value, {String fallback = 'Untitled'}) {
-    final sanitized = value
-        .trim()
-        .replaceAll(RegExp(r'[<>:"/\\|?*\x00-\x1F]'), '_')
-        .replaceAll(RegExp(r'\s+'), ' ');
-    if (sanitized.isEmpty) return fallback;
-    return sanitized;
-  }
-
-  Future<String> _availablePath(String directory, String fileName) async {
-    final dotIndex = fileName.lastIndexOf('.');
-    final baseName = dotIndex <= 0 ? fileName : fileName.substring(0, dotIndex);
-    final extension = dotIndex <= 0 ? '' : fileName.substring(dotIndex);
-
-    var candidate = '$directory/$fileName';
-    var suffix = 1;
-    while (await File(candidate).exists()) {
-      candidate = '$directory/${baseName}_$suffix$extension';
-      suffix++;
-    }
-    return candidate;
-  }
 
   Future<List<ExpenseEvidence>> getAllEvidence() {
     return DbService.to.getAllEvidence();
@@ -49,7 +29,13 @@ class EvidenceRepository extends GetxService {
     String? sourcePath,
     String? sourceExtension,
   }) async {
+    validateExpenseEvidence(evidence);
     evidence.syncId ??= SyncIdGenerator.newSyncId();
+    final project = await ProjectRepository.to.ensureProject(
+      evidence.projectName,
+    );
+    evidence.projectId = project.id;
+    evidence.projectName = project.name;
 
     if (sourcePath != null && sourcePath.isNotEmpty) {
       await _copyEvidenceFile(
@@ -62,6 +48,12 @@ class EvidenceRepository extends GetxService {
     await DbService.to.addEvidence(evidence);
     if (!Get.isRegistered<SyncService>()) {
       LogService.to.info('EvidenceRepository', '本地模式：跳过云端同步');
+      return evidence;
+    }
+
+    if (evidence.remoteId != null &&
+        !evidence.isDirty &&
+        !evidence.pendingDelete) {
       return evidence;
     }
 
@@ -82,7 +74,7 @@ class EvidenceRepository extends GetxService {
     String? sourceExtension,
   }) async {
     final appDir = await getApplicationDocumentsDirectory();
-    final safeProject = _sanitizePathSegment(
+    final safeProject = sanitizePathSegment(
       evidence.projectName,
       fallback: 'DefaultProject',
     );
@@ -103,7 +95,7 @@ class EvidenceRepository extends GetxService {
     final dateStr = DateFormat('yyyyMMdd_HHmmss').format(evidence.evidenceDate);
     final category = evidence.category.name;
     final fileName = '${category}_$dateStr$normalizedExtension';
-    final targetPath = await _availablePath(folder.path, fileName);
+    final targetPath = await availablePath(folder.path, fileName);
 
     await sourceFile.copy(targetPath);
     evidence.localFilePath = targetPath;

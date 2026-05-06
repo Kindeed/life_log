@@ -106,8 +106,8 @@ class PhotoController extends GetxController {
     try {
       final allPhotos = await PhotoRepository.to.getAllPhotos();
       photos.assignAll(allPhotos);
-    } catch (e) {
-      debugPrint("Load photos error: $e");
+    } catch (e, stackTrace) {
+      LogService.to.error('Photo', '加载照片失败: $e', stackTrace);
     } finally {
       isLoading.value = false;
     }
@@ -131,7 +131,8 @@ class PhotoController extends GetxController {
           },
         );
       }
-    } catch (e) {
+    } catch (e, stackTrace) {
+      LogService.to.error('Photo', '无法打开系统相机: $e', stackTrace);
       _emitError("错误", "无法打开系统相机: $e");
     }
   }
@@ -155,7 +156,8 @@ class PhotoController extends GetxController {
           );
         },
       );
-    } catch (e) {
+    } catch (e, stackTrace) {
+      LogService.to.error('Photo', '无法导入相册照片: $e', stackTrace);
       _emitError("错误", "无法导入相册照片: $e");
     }
   }
@@ -189,7 +191,8 @@ class PhotoController extends GetxController {
         'Photo',
         '保存照片 ${photoItem.fileName} (${photoItem.projectName})',
       );
-    } catch (e) {
+    } catch (e, stackTrace) {
+      LogService.to.error('Photo', '保存照片失败: $e', stackTrace);
       _emitError("错误", "保存照片失败: $e");
     } finally {
       isLoading.value = false;
@@ -204,7 +207,8 @@ class PhotoController extends GetxController {
       if (deletedIds.isEmpty) {
         _emitWarning("原图未删除", "照片已归档，但系统相册原图仍保留", showAtBottom: true);
       }
-    } catch (e) {
+    } catch (e, stackTrace) {
+      LogService.to.error('Photo', '删除系统相册原图失败: $e', stackTrace);
       _emitWarning("原图未删除", "照片已归档，但删除系统相册原图失败: $e", showAtBottom: true);
     }
   }
@@ -300,7 +304,8 @@ class PhotoController extends GetxController {
       await PhotoRepository.to.deletePhotos(itemsToDelete);
       _emitSuccess("已删除", "成功删除 ${itemsToDelete.length} 张照片");
       LogService.to.info('Photo', '删除 ${itemsToDelete.length} 张照片');
-    } catch (e) {
+    } catch (e, stackTrace) {
+      LogService.to.error('Photo', '删除照片失败: $e', stackTrace);
       _emitError("删除失败", e.toString());
     } finally {
       isLoading.value = false;
@@ -324,7 +329,8 @@ class PhotoController extends GetxController {
 
       Get.back();
       _emitSuccess("成功", "照片信息已更新");
-    } catch (e) {
+    } catch (e, stackTrace) {
+      LogService.to.error('Photo', '照片信息更新失败: $e', stackTrace);
       _emitError("更新失败", "照片信息更新失败: $e");
     }
   }
@@ -355,7 +361,8 @@ class PhotoController extends GetxController {
         showAtBottom: true,
       );
       LogService.to.info('Photo', '导出 $successCount 张照片至 $selectedDirectory');
-    } catch (e) {
+    } catch (e, stackTrace) {
+      LogService.to.error('Photo', '导出照片失败: $e', stackTrace);
       _emitError("导出错误", "导出照片失败: $e");
     } finally {
       isLoading.value = false;

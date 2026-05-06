@@ -131,7 +131,8 @@ class EvidenceController extends GetxController {
         initialProject: initialProject,
         sourcePath: image.path,
       );
-    } catch (e) {
+    } catch (e, stackTrace) {
+      LogService.to.error('Evidence', '无法打开系统相机: $e', stackTrace);
       Get.snackbar('错误', '无法打开系统相机: $e');
     }
   }
@@ -147,7 +148,8 @@ class EvidenceController extends GetxController {
         initialProject: initialProject,
         sourcePath: image.path,
       );
-    } catch (e) {
+    } catch (e, stackTrace) {
+      LogService.to.error('Evidence', '无法导入凭证图片: $e', stackTrace);
       Get.snackbar('错误', '无法导入凭证图片: $e');
     }
   }
@@ -174,7 +176,8 @@ class EvidenceController extends GetxController {
       );
       Get.back();
       Get.snackbar('已保存', '凭证记录已更新');
-    } catch (e) {
+    } catch (e, stackTrace) {
+      LogService.to.error('Evidence', '保存凭证失败: $e', stackTrace);
       Get.snackbar('保存失败', e.toString());
     } finally {
       isLoading.value = false;
@@ -187,7 +190,8 @@ class EvidenceController extends GetxController {
       await EvidenceRepository.to.deleteEvidence(item.id);
       Get.back();
       Get.snackbar('已删除', '凭证已删除');
-    } catch (e) {
+    } catch (e, stackTrace) {
+      LogService.to.error('Evidence', '删除凭证失败: $e', stackTrace);
       Get.snackbar('删除失败', e.toString());
     } finally {
       isLoading.value = false;
@@ -201,13 +205,18 @@ class EvidenceController extends GetxController {
       return;
     }
 
-    final selectedDirectory = await FilePicker.platform.getDirectoryPath();
-    if (selectedDirectory == null) return;
+    try {
+      final selectedDirectory = await FilePicker.platform.getDirectoryPath();
+      if (selectedDirectory == null) return;
 
-    final fileName = item.fileName ?? path.split(Platform.pathSeparator).last;
-    await File(
-      path,
-    ).copy('$selectedDirectory${Platform.pathSeparator}$fileName');
-    Get.snackbar('导出成功', '凭证文件已导出');
+      final fileName = item.fileName ?? path.split(Platform.pathSeparator).last;
+      await File(
+        path,
+      ).copy('$selectedDirectory${Platform.pathSeparator}$fileName');
+      Get.snackbar('导出成功', '凭证文件已导出');
+    } catch (e, stackTrace) {
+      LogService.to.error('Evidence', '导出凭证文件失败: $e', stackTrace);
+      Get.snackbar('导出失败', e.toString());
+    }
   }
 }

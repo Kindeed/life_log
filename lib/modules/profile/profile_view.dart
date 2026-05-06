@@ -6,9 +6,13 @@ import 'package:get/get.dart';
 
 import '../../common/layout/constrained_page.dart';
 import '../../common/theme/app_spacing.dart';
+import '../../common/utils/formatters.dart';
 import '../../common/widgets/app_card.dart';
 import '../../common/widgets/app_confirm_dialog.dart';
+import '../../common/widgets/app_metric_tile.dart';
 import '../../common/widgets/app_section_header.dart';
+import '../statistics/statistics_controller.dart';
+import '../statistics/statistics_view.dart';
 import 'profile_controller.dart';
 import 'views/about_view.dart';
 import 'views/appearance_view.dart';
@@ -33,6 +37,8 @@ class ProfileView extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 _AccountCard(semantic: semantic),
+                SizedBox(height: 22.h),
+                _StatsSummaryCard(semantic: semantic),
                 SizedBox(height: 22.h),
                 _SettingsGroup(
                   title: '数据',
@@ -255,6 +261,69 @@ class _AccountAction extends StatelessWidget {
             ),
           ],
         ),
+      ),
+    );
+  }
+}
+
+class _StatsSummaryCard extends StatelessWidget {
+  final AppSemanticColors semantic;
+
+  const _StatsSummaryCard({required this.semantic});
+
+  @override
+  Widget build(BuildContext context) {
+    final stats = Get.find<StatisticsController>();
+    return AppCard(
+      onTap: () => Get.to(() => const StatisticsView()),
+      padding: EdgeInsets.all(14.w),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Expanded(
+                child: Text(
+                  '数据总览',
+                  style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                    fontWeight: FontWeight.w800,
+                  ),
+                ),
+              ),
+              Icon(
+                Icons.chevron_right_rounded,
+                color: Theme.of(context).colorScheme.onSurfaceVariant,
+              ),
+            ],
+          ),
+          SizedBox(height: 12.h),
+          Obx(
+            () => Row(
+              children: [
+                Expanded(
+                  child: AppMetricTile(
+                    label: '本月工时',
+                    value: stats.workHours.value.toStringAsFixed(1),
+                    icon: Icons.timelapse_rounded,
+                    color: semantic.work,
+                  ),
+                ),
+                SizedBox(width: 10.w),
+                Expanded(
+                  child: AppMetricTile(
+                    label: '本月支出',
+                    value: formatMoney(
+                      stats.selectedMonthSubCost.value +
+                          stats.selectedMonthExpenseRecordCost.value,
+                    ),
+                    icon: Icons.payments_rounded,
+                    color: semantic.expense,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
       ),
     );
   }
