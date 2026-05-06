@@ -1,10 +1,16 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
+import 'package:package_info_plus/package_info_plus.dart';
 import '../../../common/theme/app_colors.dart';
 
 /// 关于页面
 class AboutView extends StatelessWidget {
   const AboutView({super.key});
+
+  Future<String> _loadVersionText() async {
+    final info = await PackageInfo.fromPlatform();
+    return '版本 ${info.version}+${info.buildNumber}';
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -52,9 +58,14 @@ class AboutView extends StatelessWidget {
               ),
             ),
             SizedBox(height: 4.h),
-            Text(
-              '版本 1.0.0',
-              style: TextStyle(fontSize: 14.sp, color: textSecondary),
+            FutureBuilder<String>(
+              future: _loadVersionText(),
+              builder: (context, snapshot) {
+                return Text(
+                  snapshot.data ?? '版本 --',
+                  style: TextStyle(fontSize: 14.sp, color: textSecondary),
+                );
+              },
             ),
             SizedBox(height: 32.h),
 
