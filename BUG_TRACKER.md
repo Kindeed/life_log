@@ -36,6 +36,7 @@ This is the active defect ledger. `REVIEW_REPORT.md` is historical context only.
 | ID | Severity | Status | Area | Finding | Fix / Acceptance |
 | --- | --- | --- | --- | --- | --- |
 | T1 | Medium | fixed | Flutter/Dart CLI | `flutter`/`dart` commands timed out inside the sandbox because the CLI could not write normal analytics/tool-state files under `C:\Users\WZH\AppData\Roaming`. | Fixed: reran with approved Flutter/Dart permissions; `flutter --version`, `dart --version`, `flutter analyze`, and `flutter test` complete successfully. |
+| T2 | Low | fixed | GitHub Actions | GitHub Actions warned that Node.js 20 action runtime is deprecated and will default to Node.js 24 on 2026-06-02. | Fixed: opted both APK workflows into Node.js 24 action runtime with `FORCE_JAVASCRIPT_ACTIONS_TO_NODE24=true`. |
 
 ## Maintenance / Cleanup
 
