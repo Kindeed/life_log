@@ -274,64 +274,83 @@ class DeveloperView extends StatelessWidget {
 
     return Container(
       margin: EdgeInsets.only(bottom: 8.h),
-      padding: EdgeInsets.all(12.w),
       decoration: BoxDecoration(
         color: colorScheme.surfaceContainerHighest.withValues(alpha: 0.55),
         borderRadius: BorderRadius.circular(8.r),
-        border: Border(left: BorderSide(color: levelColor, width: 3)),
       ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
+      clipBehavior: Clip.antiAlias,
+      child: Stack(
         children: [
-          Row(
-            children: [
-              Text(log.levelIcon, style: TextStyle(fontSize: 12.sp)),
-              SizedBox(width: 6.w),
-              Container(
-                padding: EdgeInsets.symmetric(horizontal: 6.w, vertical: 2.h),
-                decoration: BoxDecoration(
-                  color: levelColor.withValues(alpha: 0.1),
-                  borderRadius: BorderRadius.circular(4.r),
+          Positioned(
+            left: 0,
+            top: 0,
+            bottom: 0,
+            child: Container(width: 3.w, color: levelColor),
+          ),
+          Padding(
+            padding: EdgeInsets.all(12.w),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  children: [
+                    Text(log.levelIcon, style: TextStyle(fontSize: 12.sp)),
+                    SizedBox(width: 6.w),
+                    Container(
+                      padding: EdgeInsets.symmetric(
+                        horizontal: 6.w,
+                        vertical: 2.h,
+                      ),
+                      decoration: BoxDecoration(
+                        color: levelColor.withValues(alpha: 0.1),
+                        borderRadius: BorderRadius.circular(4.r),
+                      ),
+                      child: Text(
+                        log.tag,
+                        style: TextStyle(
+                          fontSize: 10.sp,
+                          fontWeight: FontWeight.w600,
+                          color: levelColor,
+                        ),
+                      ),
+                    ),
+                    const Spacer(),
+                    Text(
+                      '${log.timestamp.hour.toString().padLeft(2, '0')}:${log.timestamp.minute.toString().padLeft(2, '0')}:${log.timestamp.second.toString().padLeft(2, '0')}',
+                      style: TextStyle(fontSize: 10.sp, color: textSecondary),
+                    ),
+                  ],
                 ),
-                child: Text(
-                  log.tag,
+                SizedBox(height: 6.h),
+                Text(
+                  log.message,
                   style: TextStyle(
-                    fontSize: 10.sp,
-                    fontWeight: FontWeight.w600,
-                    color: levelColor,
+                    fontSize: 13.sp,
+                    color: textPrimary,
+                    height: 1.4,
                   ),
                 ),
-              ),
-              const Spacer(),
-              Text(
-                '${log.timestamp.hour.toString().padLeft(2, '0')}:${log.timestamp.minute.toString().padLeft(2, '0')}:${log.timestamp.second.toString().padLeft(2, '0')}',
-                style: TextStyle(fontSize: 10.sp, color: textSecondary),
-              ),
-            ],
-          ),
-          SizedBox(height: 6.h),
-          Text(
-            log.message,
-            style: TextStyle(fontSize: 13.sp, color: textPrimary, height: 1.4),
-          ),
-          if (log.stackTrace != null) ...[
-            SizedBox(height: 8.h),
-            Container(
-              padding: EdgeInsets.all(8.w),
-              decoration: BoxDecoration(
-                color: colorScheme.surfaceContainerHighest,
-                borderRadius: BorderRadius.circular(4.r),
-              ),
-              child: SelectableText(
-                log.stackTrace!,
-                style: TextStyle(
-                  fontSize: 10.sp,
-                  color: textSecondary,
-                  fontFamily: 'monospace',
-                ),
-              ),
+                if (log.stackTrace != null) ...[
+                  SizedBox(height: 8.h),
+                  Container(
+                    padding: EdgeInsets.all(8.w),
+                    decoration: BoxDecoration(
+                      color: colorScheme.surfaceContainerHighest,
+                      borderRadius: BorderRadius.circular(4.r),
+                    ),
+                    child: SelectableText(
+                      log.stackTrace!,
+                      style: TextStyle(
+                        fontSize: 10.sp,
+                        color: textSecondary,
+                        fontFamily: 'monospace',
+                      ),
+                    ),
+                  ),
+                ],
+              ],
             ),
-          ],
+          ),
         ],
       ),
     );

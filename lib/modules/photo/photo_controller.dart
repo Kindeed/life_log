@@ -62,13 +62,14 @@ class PhotoController extends GetxController {
 
   // Device info
   String _deviceName = "UnknownDevice";
+  Future<void>? _deviceInfoFuture;
 
   StreamSubscription? _dbSub;
 
   @override
   void onInit() {
     super.onInit();
-    _initDeviceInfo();
+    _deviceInfoFuture = _initDeviceInfo();
     loadPhotos();
     _dbSub = PhotoRepository.to.watchPhotos().listen((_) {
       loadPhotos();
@@ -91,13 +92,17 @@ class PhotoController extends GetxController {
   }
 
   Future<void> _initDeviceInfo() async {
-    final DeviceInfoPlugin deviceInfo = DeviceInfoPlugin();
-    if (Platform.isAndroid) {
-      final androidInfo = await deviceInfo.androidInfo;
-      _deviceName = androidInfo.model;
-    } else if (Platform.isIOS) {
-      final iosInfo = await deviceInfo.iosInfo;
-      _deviceName = iosInfo.name;
+    try {
+      final DeviceInfoPlugin deviceInfo = DeviceInfoPlugin();
+      if (Platform.isAndroid) {
+        final androidInfo = await deviceInfo.androidInfo;
+        _deviceName = androidInfo.model;
+      } else if (Platform.isIOS) {
+        final iosInfo = await deviceInfo.iosInfo;
+        _deviceName = iosInfo.name;
+      }
+    } catch (e, stackTrace) {
+      LogService.to.error('Photo', '获取设备信息失败: $e', stackTrace);
     }
   }
 
@@ -170,6 +175,7 @@ class PhotoController extends GetxController {
   }) async {
     try {
       isLoading.value = true;
+      await _deviceInfoFuture;
       final photoItem = await PhotoRepository.to.processAndSavePhoto(
         tempPath: tempPath,
         projectName: projectName,
@@ -178,15 +184,26 @@ class PhotoController extends GetxController {
         deleteSource: sourceAssetId == null,
       );
 
+      final deleteWarning = sourceAssetId == null
+          ? null
+          : await _deleteSourceGalleryAsset(sourceAssetId);
       if (sourceAssetId != null) {
-        await _deleteSourceGalleryAsset(sourceAssetId);
+        if (deleteWarning != null) {
+          _emitWarning("原图未删除", deleteWarning, showAtBottom: true);
+        } else {
+          _emitSuccess(
+            "归档成功",
+            "照片已保存至: ${photoItem.projectName}",
+            showAtBottom: true,
+          );
+        }
+      } else {
+        _emitSuccess(
+          "归档成功",
+          "照片已保存至: ${photoItem.projectName}",
+          showAtBottom: true,
+        );
       }
-
-      _emitSuccess(
-        "归档成功",
-        "照片已保存至: ${photoItem.projectName}",
-        showAtBottom: true,
-      );
       LogService.to.info(
         'Photo',
         '保存照片 ${photoItem.fileName} (${photoItem.projectName})',
@@ -199,17 +216,18 @@ class PhotoController extends GetxController {
     }
   }
 
-  Future<void> _deleteSourceGalleryAsset(String sourceAssetId) async {
+  Future<String?> _deleteSourceGalleryAsset(String sourceAssetId) async {
     try {
       final deletedIds = await PhotoManager.editor.deleteWithIds([
         sourceAssetId,
       ]);
       if (deletedIds.isEmpty) {
-        _emitWarning("原图未删除", "照片已归档，但系统相册原图仍保留", showAtBottom: true);
+        return "照片已归档，但系统相册原图仍保留";
       }
+      return null;
     } catch (e, stackTrace) {
       LogService.to.error('Photo', '删除系统相册原图失败: $e', stackTrace);
-      _emitWarning("原图未删除", "照片已归档，但删除系统相册原图失败: $e", showAtBottom: true);
+      return "照片已归档，但删除系统相册原图失败: $e";
     }
   }
 

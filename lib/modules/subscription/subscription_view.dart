@@ -520,18 +520,19 @@ class _SubscriptionCard extends StatelessWidget {
                   ),
                 ),
               ),
-              SizedBox(height: 6.h),
-              Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  if (showDragHandle)
+              if (showDragHandle) ...[
+                SizedBox(height: 6.h),
+                Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
                     Icon(
                       Icons.drag_indicator_rounded,
                       color: textSecondary,
                       size: 18.sp,
                     ),
-                ],
-              ),
+                  ],
+                ),
+              ],
             ],
           ),
         ],

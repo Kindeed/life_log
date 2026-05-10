@@ -58,7 +58,7 @@ class AppFilterChipBar<T> extends StatelessWidget {
                 color: selected
                     ? theme.colorScheme.primary.withValues(alpha: 0.35)
                     : semantic.border,
-                width: 0.7,
+                width: 1,
               ),
             ),
             child: Row(

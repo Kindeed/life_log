@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:get/get.dart';
 import 'package:life_log/common/theme/app_colors.dart';
 import 'package:life_log/common/widgets/app_button.dart';
@@ -28,7 +29,7 @@ void showCaptureDialog({
         final hintColor = theme.colorScheme.onSurfaceVariant;
 
         return AppSheetScaffold(
-          padding: const EdgeInsets.fromLTRB(24, 0, 24, 24),
+          padding: EdgeInsets.fromLTRB(24.w, 0, 24.w, 24.h),
           child: Column(
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.start,
@@ -36,7 +37,7 @@ void showCaptureDialog({
               Row(
                 children: [
                   Container(
-                    padding: const EdgeInsets.all(12),
+                    padding: EdgeInsets.all(12.w),
                     decoration: BoxDecoration(
                       color: AppColors.primaryBlue.withValues(alpha: 0.1),
                       shape: BoxShape.circle,
@@ -47,18 +48,18 @@ void showCaptureDialog({
                     ),
                   ),
 
-                  const SizedBox(width: 16),
+                  SizedBox(width: 16.w),
                   Text(
                     "归档照片",
                     style: TextStyle(
-                      fontSize: 20,
+                      fontSize: 20.sp,
                       fontWeight: FontWeight.bold,
                       color: textColor,
                     ),
                   ),
                 ],
               ),
-              const SizedBox(height: 24),
+              SizedBox(height: 24.h),
 
               // Project Selector (Instagram Style)
               GestureDetector(
@@ -82,7 +83,7 @@ void showCaptureDialog({
                   ),
                 ),
               ),
-              const SizedBox(height: 16),
+              SizedBox(height: 16.h),
 
               // Description Input
               AppTextField(
@@ -90,12 +91,12 @@ void showCaptureDialog({
                 labelText: "添加备注 (可选)",
                 prefixIcon: Icon(Icons.edit_note_rounded, color: hintColor),
               ),
-              const SizedBox(height: 32),
+              SizedBox(height: 32.h),
 
               // Confirm Button
               AppButton.primary(
                 label: "确认录入",
-                height: 56,
+                height: 56.h,
                 onPressed: () {
                   final projectName = projectCtrl.text.trim();
                   if (projectName.isEmpty) {

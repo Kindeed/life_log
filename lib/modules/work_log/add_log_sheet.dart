@@ -15,8 +15,14 @@ import '../../common/widgets/app_text_field.dart';
 class AddLogSheet extends StatefulWidget {
   final DateTime selectedDate;
   final WorkLog? existingLog;
+  final bool asPage;
 
-  const AddLogSheet({super.key, required this.selectedDate, this.existingLog});
+  const AddLogSheet({
+    super.key,
+    required this.selectedDate,
+    this.existingLog,
+    this.asPage = false,
+  });
 
   @override
   State<AddLogSheet> createState() => _AddLogSheetState();
@@ -25,19 +31,25 @@ class AddLogSheet extends StatefulWidget {
 class _AddLogSheetState extends State<AddLogSheet> {
   late LogType _selectedType;
   final TextEditingController _noteController = TextEditingController();
+  final FocusNode _noteFocusNode = FocusNode();
+  final FocusNode _overtimeFocusNode = FocusNode();
 
   // --- 1. 工作相关 ---
   double _overtime = 0.0;
 
   // --- 2. 出差相关 ---
   final TextEditingController _tripCityController = TextEditingController();
+  final FocusNode _tripCityFocusNode = FocusNode();
   String _transport = "高铁";
   final TextEditingController _expenseController = TextEditingController();
+  final FocusNode _expenseFocusNode = FocusNode();
   bool _isReimbursed = false;
 
   // --- 3. 请假相关 ---
   String _selectedLeaveType = "年假";
   final TextEditingController _customLeaveController = TextEditingController();
+  final FocusNode _customLeaveFocusNode = FocusNode();
+  bool _isTextFieldFocused = false;
 
   @override
   void initState() {
@@ -65,15 +77,40 @@ class _AddLogSheetState extends State<AddLogSheet> {
     } else {
       _selectedType = LogType.work;
     }
+    for (final node in _textFocusNodes) {
+      node.addListener(_syncTextFieldFocus);
+    }
   }
 
   @override
   void dispose() {
+    for (final node in _textFocusNodes) {
+      node.removeListener(_syncTextFieldFocus);
+      node.dispose();
+    }
     _noteController.dispose();
     _tripCityController.dispose();
     _customLeaveController.dispose();
     _expenseController.dispose();
     super.dispose();
+  }
+
+  List<FocusNode> get _textFocusNodes => [
+    _noteFocusNode,
+    _overtimeFocusNode,
+    _tripCityFocusNode,
+    _expenseFocusNode,
+    _customLeaveFocusNode,
+  ];
+
+  void _syncTextFieldFocus() {
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+      final next = _textFocusNodes.any((node) => node.hasFocus);
+      if (next != _isTextFieldFocused) {
+        setState(() => _isTextFieldFocused = next);
+      }
+    });
   }
 
   @override
@@ -84,21 +121,28 @@ class _AddLogSheetState extends State<AddLogSheet> {
     final bgColor = semantic.mutedSurface;
     final textPrimary = theme.colorScheme.onSurface;
     final textSecondary = theme.colorScheme.onSurfaceVariant;
+    final sheetHeight = MediaQuery.of(context).size.height * 0.85;
 
     return AppSheetScaffold(
-      height: 650.h,
+      presentation: widget.asPage
+          ? AppSheetPresentation.page
+          : AppSheetPresentation.sheet,
+      height: widget.asPage ? null : sheetHeight,
       title: widget.existingLog != null ? "修改记录" : "记录一下",
       padding: EdgeInsets.zero,
-      bottomBar: AppSafeBottomBar(
-        padding: EdgeInsets.fromLTRB(24.w, 8.h, 24.w, 16.h),
-        child: _buildBottomActions(isDark),
-      ),
+      bottomBar: _isTextFieldFocused
+          ? null
+          : AppSafeBottomBar(
+              padding: EdgeInsets.fromLTRB(24.w, 8.h, 24.w, 16.h),
+              child: _buildBottomActions(isDark),
+            ),
       child: Column(
         children: [
           _buildTypeSelector(isDark, bgColor, textPrimary, textSecondary),
 
           Expanded(
             child: SingleChildScrollView(
+              keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
               padding: EdgeInsets.symmetric(horizontal: 24.w, vertical: 20.h),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -120,6 +164,7 @@ class _AddLogSheetState extends State<AddLogSheet> {
                   SizedBox(height: 20.h),
                   AppTextField(
                     controller: _noteController,
+                    focusNode: _noteFocusNode,
                     hintText: "备注 (可选)...",
                     maxLines: 3,
                   ),
@@ -245,6 +290,25 @@ class _AddLogSheetState extends State<AddLogSheet> {
   }
 
   Future<void> _saveLog() async {
+    double? tripExpense;
+    if (_selectedType == LogType.businessTrip) {
+      final expenseText = _expenseController.text.trim();
+      if (expenseText.isNotEmpty) {
+        tripExpense = double.tryParse(expenseText);
+        if (tripExpense == null || tripExpense < 0) {
+          Get.snackbar(
+            "错误",
+            "垫付金额格式不正确",
+            snackPosition: SnackPosition.BOTTOM,
+            backgroundColor: Colors.redAccent,
+            colorText: Colors.white,
+            margin: EdgeInsets.all(20.w),
+          );
+          return;
+        }
+      }
+    }
+
     final log = WorkLog()
       ..date = widget.existingLog?.date ?? widget.selectedDate
       ..type = _selectedType
@@ -297,7 +361,7 @@ class _AddLogSheetState extends State<AddLogSheet> {
         log.overtimeHours = null;
         log.location = _tripCityController.text;
         log.transport = _transport;
-        log.expenses = double.tryParse(_expenseController.text);
+        log.expenses = tripExpense;
         log.isReimbursed = _isReimbursed;
         break;
     }
@@ -311,8 +375,9 @@ class _AddLogSheetState extends State<AddLogSheet> {
     try {
       await WorkLogController.to.addLog(log);
       Get.back();
-    } catch (e) {
-      Get.snackbar("错误", "无法保存: $e", snackPosition: SnackPosition.BOTTOM);
+    } catch (_) {
+      // Controller already logs and shows the snackbar; stop the success flow.
+      return;
     }
   }
 
@@ -340,6 +405,7 @@ class _AddLogSheetState extends State<AddLogSheet> {
         ),
         SizedBox(height: 12.h),
         AppTextField(
+          focusNode: _overtimeFocusNode,
           keyboardType: const TextInputType.numberWithOptions(decimal: true),
           prefixIcon: Icon(
             Icons.access_time,
@@ -394,6 +460,7 @@ class _AddLogSheetState extends State<AddLogSheet> {
             Expanded(
               child: AppTextField(
                 controller: _tripCityController,
+                focusNode: _tripCityFocusNode,
                 prefixIcon: Icon(
                   Icons.location_on_outlined,
                   color: Theme.of(context).colorScheme.onSurfaceVariant,
@@ -427,7 +494,8 @@ class _AddLogSheetState extends State<AddLogSheet> {
         SizedBox(height: 12.h),
         AppTextField(
           controller: _expenseController,
-          keyboardType: TextInputType.number,
+          focusNode: _expenseFocusNode,
+          keyboardType: const TextInputType.numberWithOptions(decimal: true),
           prefixIcon: Icon(
             Icons.attach_money,
             color: Theme.of(context).colorScheme.onSurfaceVariant,
@@ -512,6 +580,7 @@ class _AddLogSheetState extends State<AddLogSheet> {
           SizedBox(height: 16.h),
           AppTextField(
             controller: _customLeaveController,
+            focusNode: _customLeaveFocusNode,
             prefixIcon: Icon(
               Icons.edit_note,
               color: Theme.of(context).colorScheme.onSurfaceVariant,

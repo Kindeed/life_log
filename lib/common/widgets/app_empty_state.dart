@@ -4,6 +4,9 @@ import '../theme/app_spacing.dart';
 import 'app_button.dart';
 
 class AppEmptyState extends StatelessWidget {
+  static const double iconContainerSize = 74;
+  static const double iconSize = 34;
+
   final IconData icon;
   final String title;
   final String message;
@@ -32,15 +35,15 @@ class AppEmptyState extends StatelessWidget {
           mainAxisSize: MainAxisSize.min,
           children: [
             Container(
-              width: 74,
-              height: 74,
+              width: iconContainerSize,
+              height: iconContainerSize,
               decoration: BoxDecoration(
                 color: primary.withValues(alpha: 0.09),
                 shape: BoxShape.circle,
               ),
               child: Icon(
                 icon,
-                size: 34,
+                size: iconSize,
                 color: primary.withValues(alpha: 0.8),
               ),
             ),

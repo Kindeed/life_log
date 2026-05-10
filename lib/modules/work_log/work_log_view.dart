@@ -96,7 +96,7 @@ class WorkLogView extends StatelessWidget {
             ),
             // 3. 详情区域
             SliverFillRemaining(
-              hasScrollBody: false,
+              hasScrollBody: true,
               child: ConstrainedPage(
                 padding: EdgeInsets.symmetric(horizontal: 14.w),
                 child: Obx(() {
@@ -118,10 +118,16 @@ class WorkLogView extends StatelessWidget {
                     );
                   }
 
-                  return DayLogList(
-                    date: selectedDate,
-                    logs: events,
-                    logic: logic,
+                  return ListView(
+                    padding: EdgeInsets.only(bottom: 16.h),
+                    physics: const BouncingScrollPhysics(),
+                    children: [
+                      DayLogList(
+                        date: selectedDate,
+                        logs: events,
+                        logic: logic,
+                      ),
+                    ],
                   );
                 }),
               ),

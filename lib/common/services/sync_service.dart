@@ -7,6 +7,7 @@ import 'package:get_storage/get_storage.dart';
 import 'package:path_provider/path_provider.dart';
 import '../../modules/work_log/work_log_model.dart';
 import '../../modules/subscription/subscription_model.dart';
+import '../../modules/project/project_model.dart';
 import '../../modules/evidence/evidence_model.dart';
 import '../../modules/expense/expense_record_model.dart';
 import '../db/db_service.dart';
@@ -24,6 +25,14 @@ class SyncService extends GetxService {
   DateTime? _lastSyncStartedAt;
   Future<void>? _claimUnownedRecordsFuture;
   String? _claimUnownedRecordsUserId;
+  Worker? _authWorker;
+  static const int _pullPageSize = 500;
+  static const Duration _serverTimeTimeout = Duration(seconds: 10);
+  static const String _workLogsTable = 'work_logs';
+  static const String _subscriptionsTable = 'subscriptions';
+  static const String _projectsTable = 'projects';
+  static const String _expenseEvidenceTable = 'expense_evidence';
+  static const String _expenseRecordsTable = 'expense_records';
 
   String get _lastSyncKey {
     final user = AuthService.to.currentUser.value;
@@ -44,7 +53,7 @@ class SyncService extends GetxService {
     if (user == null || log.remoteId == null) return;
 
     final remote = await _client
-        .from('work_logs')
+        .from(_workLogsTable)
         .select()
         .eq('id', log.remoteId!)
         .eq('user_id', user.id)
@@ -59,7 +68,7 @@ class SyncService extends GetxService {
     if (user == null || sub.remoteId == null) return;
 
     final remote = await _client
-        .from('subscriptions')
+        .from(_subscriptionsTable)
         .select()
         .eq('id', sub.remoteId!)
         .eq('user_id', user.id)
@@ -69,12 +78,27 @@ class SyncService extends GetxService {
     }
   }
 
+  Future<void> _refreshRemoteProject(Project project) async {
+    final user = AuthService.to.currentUser.value;
+    if (user == null || project.remoteId == null) return;
+
+    final remote = await _client
+        .from(_projectsTable)
+        .select()
+        .eq('id', project.remoteId!)
+        .eq('user_id', user.id)
+        .maybeSingle();
+    if (remote != null) {
+      await DbService.to.syncRemoteProjectToLocal(remote);
+    }
+  }
+
   Future<void> _refreshRemoteEvidence(ExpenseEvidence evidence) async {
     final user = AuthService.to.currentUser.value;
     if (user == null || evidence.remoteId == null) return;
 
     final remote = await _client
-        .from('expense_evidence')
+        .from(_expenseEvidenceTable)
         .select()
         .eq('id', evidence.remoteId!)
         .eq('user_id', user.id)
@@ -89,7 +113,7 @@ class SyncService extends GetxService {
     if (user == null || record.remoteId == null) return;
 
     final remote = await _client
-        .from('expense_records')
+        .from(_expenseRecordsTable)
         .select()
         .eq('id', record.remoteId!)
         .eq('user_id', user.id)
@@ -126,6 +150,18 @@ class SyncService extends GetxService {
     sub.pendingDelete = false;
   }
 
+  void _applyProjectSyncResult(Project project, Map<String, dynamic> response) {
+    project.remoteId = response['id'] as int;
+    project.syncId = response['sync_id'] as String? ?? project.syncId;
+    project.remoteVersion = (response['version'] as num?)?.toInt() ?? 0;
+    project.remoteUpdatedAt = response['updated_at'] == null
+        ? null
+        : DateTime.parse(response['updated_at'] as String);
+    project.syncedAt = DateTime.now();
+    project.isDirty = false;
+    project.pendingDelete = false;
+  }
+
   void _applyEvidenceSyncResult(
     ExpenseEvidence evidence,
     Map<String, dynamic> response,
@@ -159,7 +195,7 @@ class SyncService extends GetxService {
   @override
   void onInit() {
     super.onInit();
-    ever(AuthService.to.currentUser, (user) {
+    _authWorker = ever(AuthService.to.currentUser, (user) {
       if (user != null) {
         _claimUnownedRecordsThenSync(user.id, reason: 'auth');
       } else {
@@ -175,6 +211,13 @@ class SyncService extends GetxService {
         _claimUnownedRecordsThenSync(userId, reason: 'startup');
       });
     }
+  }
+
+  @override
+  void onClose() {
+    _authWorker?.dispose();
+    _authWorker = null;
+    super.onClose();
   }
 
   Future<void> _claimUnownedRecordsThenSync(
@@ -252,7 +295,7 @@ class SyncService extends GetxService {
       if (log.remoteId != null) {
         // Update
         var query = _client
-            .from('work_logs')
+            .from(_workLogsTable)
             .update(data)
             .eq('id', log.remoteId!)
             .eq('user_id', user.id);
@@ -273,7 +316,7 @@ class SyncService extends GetxService {
       } else {
         // Insert
         final response = await _client
-            .from('work_logs')
+            .from(_workLogsTable)
             .insert(data)
             .select('id, sync_id, version, updated_at')
             .single();
@@ -285,7 +328,10 @@ class SyncService extends GetxService {
       LogService.to.info('Sync', 'WorkLog $operation success: ${log.id}');
       return true;
     } catch (e) {
-      LogService.to.error('Sync', 'Push WorkLog failed: $e');
+      LogService.to.error(
+        'Sync',
+        'Push WorkLog failed localId=${log.id} remoteId=${log.remoteId}: $e',
+      );
       // Keep isDirty = true
       return false;
     }
@@ -299,7 +345,7 @@ class SyncService extends GetxService {
     try {
       final user = AuthService.to.currentUser.value!;
       var query = _client
-          .from('work_logs')
+          .from(_workLogsTable)
           .update({
             'deleted_at': DateTime.now().toUtc().toIso8601String(),
             'updated_at': DateTime.now().toUtc().toIso8601String(),
@@ -322,7 +368,10 @@ class SyncService extends GetxService {
       LogService.to.info('Sync', 'WorkLog delete success: ${log.remoteId}');
       return true;
     } catch (e) {
-      LogService.to.error('Sync', 'Delete WorkLog failed: $e');
+      LogService.to.error(
+        'Sync',
+        'Delete WorkLog failed localId=${log.id} remoteId=${log.remoteId}: $e',
+      );
       // Queue for retry?
       return false;
     }
@@ -371,7 +420,7 @@ class SyncService extends GetxService {
 
       if (sub.remoteId != null) {
         var query = _client
-            .from('subscriptions')
+            .from(_subscriptionsTable)
             .update(data)
             .eq('id', sub.remoteId!)
             .eq('user_id', user.id);
@@ -391,7 +440,7 @@ class SyncService extends GetxService {
         await DbService.to.updateSubscriptionRemoteId(sub);
       } else {
         final response = await _client
-            .from('subscriptions')
+            .from(_subscriptionsTable)
             .insert(data)
             .select('id, sync_id, version, updated_at')
             .single();
@@ -402,7 +451,118 @@ class SyncService extends GetxService {
       LogService.to.info('Sync', 'Subscription $operation success: ${sub.id}');
       return true;
     } catch (e) {
-      LogService.to.error('Sync', 'Push Subscription failed: $e');
+      LogService.to.error(
+        'Sync',
+        'Push Subscription failed localId=${sub.id} remoteId=${sub.remoteId}: $e',
+      );
+      return false;
+    }
+  }
+
+  Future<bool> pushProject(Project project) async {
+    if (!AuthService.to.isLoggedIn) return false;
+
+    if (project.pendingDelete) {
+      if (project.remoteId == null) {
+        await DbService.to.purgeDeletedProject(project.id);
+        return true;
+      }
+      final success = await deleteProject(project);
+      if (success) {
+        await DbService.to.purgeDeletedProject(project.id);
+      }
+      return success;
+    }
+
+    try {
+      final user = AuthService.to.currentUser.value!;
+      project.syncId ??= newSyncId();
+      final data = {
+        'user_id': user.id,
+        'local_id': project.id,
+        'name': project.name,
+        'status': project.status.name,
+        'deleted_at': null,
+        'updated_at': DateTime.now().toUtc().toIso8601String(),
+        'created_at': project.createdAt.toUtc().toIso8601String(),
+        'sync_id': project.syncId,
+      };
+
+      final operation = project.remoteId == null ? 'insert' : 'update';
+      if (project.remoteId != null) {
+        var query = _client
+            .from(_projectsTable)
+            .update(data)
+            .eq('id', project.remoteId!)
+            .eq('user_id', user.id);
+        if (project.remoteVersion > 0) {
+          query = query.eq('version', project.remoteVersion);
+        }
+        final response = await query
+            .select('id, sync_id, version, updated_at')
+            .maybeSingle();
+        if (response == null) {
+          await _refreshRemoteProject(project);
+          throw StateError(
+            'Remote Project update conflict or not found: ${project.remoteId}',
+          );
+        }
+        _applyProjectSyncResult(project, response);
+        await DbService.to.updateProjectRemoteId(project);
+      } else {
+        final response = await _client
+            .from(_projectsTable)
+            .insert(data)
+            .select('id, sync_id, version, updated_at')
+            .single();
+        _applyProjectSyncResult(project, response);
+        await DbService.to.updateProjectRemoteId(project);
+      }
+      LogService.to.info('Sync', 'Project $operation success: ${project.id}');
+      return true;
+    } catch (e) {
+      LogService.to.error(
+        'Sync',
+        'Push Project failed localId=${project.id} remoteId=${project.remoteId}: $e',
+      );
+      return false;
+    }
+  }
+
+  Future<bool> deleteProject(Project project) async {
+    if (!AuthService.to.isLoggedIn) return false;
+    if (project.remoteId == null) return true;
+
+    try {
+      final user = AuthService.to.currentUser.value!;
+      var query = _client
+          .from(_projectsTable)
+          .update({
+            'deleted_at': DateTime.now().toUtc().toIso8601String(),
+            'updated_at': DateTime.now().toUtc().toIso8601String(),
+          })
+          .eq('id', project.remoteId!)
+          .eq('user_id', user.id);
+      if (project.remoteVersion > 0) {
+        query = query.eq('version', project.remoteVersion);
+      }
+      final response = await query
+          .select('id, sync_id, version, updated_at')
+          .maybeSingle();
+      if (response == null) {
+        await _refreshRemoteProject(project);
+        throw StateError(
+          'Remote Project delete conflict or not found: ${project.remoteId}',
+        );
+      }
+      _applyProjectSyncResult(project, response);
+      LogService.to.info('Sync', 'Project delete success: ${project.remoteId}');
+      return true;
+    } catch (e) {
+      LogService.to.error(
+        'Sync',
+        'Delete Project failed localId=${project.id} remoteId=${project.remoteId}: $e',
+      );
       return false;
     }
   }
@@ -414,7 +574,7 @@ class SyncService extends GetxService {
     try {
       final user = AuthService.to.currentUser.value!;
       var query = _client
-          .from('subscriptions')
+          .from(_subscriptionsTable)
           .update({
             'deleted_at': DateTime.now().toUtc().toIso8601String(),
             'updated_at': DateTime.now().toUtc().toIso8601String(),
@@ -440,7 +600,10 @@ class SyncService extends GetxService {
       );
       return true;
     } catch (e) {
-      LogService.to.error('Sync', 'Delete Subscription failed: $e');
+      LogService.to.error(
+        'Sync',
+        'Delete Subscription failed localId=${sub.id} remoteId=${sub.remoteId}: $e',
+      );
       return false;
     }
   }
@@ -549,7 +712,7 @@ class SyncService extends GetxService {
       final operation = evidence.remoteId == null ? 'insert' : 'update';
       if (evidence.remoteId != null) {
         var query = _client
-            .from('expense_evidence')
+            .from(_expenseEvidenceTable)
             .update(data)
             .eq('id', evidence.remoteId!)
             .eq('user_id', user.id);
@@ -569,7 +732,7 @@ class SyncService extends GetxService {
         await DbService.to.updateEvidenceRemoteId(evidence);
       } else {
         final response = await _client
-            .from('expense_evidence')
+            .from(_expenseEvidenceTable)
             .insert(data)
             .select('id, sync_id, version, updated_at')
             .single();
@@ -579,7 +742,10 @@ class SyncService extends GetxService {
       LogService.to.info('Sync', 'Evidence $operation success: ${evidence.id}');
       return true;
     } catch (e) {
-      LogService.to.error('Sync', 'Push Evidence failed: $e');
+      LogService.to.error(
+        'Sync',
+        'Push Evidence failed localId=${evidence.id} remoteId=${evidence.remoteId} storage=${evidence.remoteStoragePath}: $e',
+      );
       return false;
     }
   }
@@ -591,7 +757,7 @@ class SyncService extends GetxService {
     try {
       final user = AuthService.to.currentUser.value!;
       var query = _client
-          .from('expense_evidence')
+          .from(_expenseEvidenceTable)
           .update({
             'deleted_at': DateTime.now().toUtc().toIso8601String(),
             'updated_at': DateTime.now().toUtc().toIso8601String(),
@@ -622,7 +788,10 @@ class SyncService extends GetxService {
       );
       return true;
     } catch (e) {
-      LogService.to.error('Sync', 'Delete Evidence failed: $e');
+      LogService.to.error(
+        'Sync',
+        'Delete Evidence failed localId=${evidence.id} remoteId=${evidence.remoteId} storage=${evidence.remoteStoragePath}: $e',
+      );
       return false;
     }
   }
@@ -669,7 +838,7 @@ class SyncService extends GetxService {
       final operation = record.remoteId == null ? 'insert' : 'update';
       if (record.remoteId != null) {
         var query = _client
-            .from('expense_records')
+            .from(_expenseRecordsTable)
             .update(data)
             .eq('id', record.remoteId!)
             .eq('user_id', user.id);
@@ -689,7 +858,7 @@ class SyncService extends GetxService {
         await DbService.to.updateExpenseRecordRemoteId(record);
       } else {
         final response = await _client
-            .from('expense_records')
+            .from(_expenseRecordsTable)
             .insert(data)
             .select('id, sync_id, version, updated_at')
             .single();
@@ -702,7 +871,10 @@ class SyncService extends GetxService {
       );
       return true;
     } catch (e) {
-      LogService.to.error('Sync', 'Push ExpenseRecord failed: $e');
+      LogService.to.error(
+        'Sync',
+        'Push ExpenseRecord failed localId=${record.id} remoteId=${record.remoteId}: $e',
+      );
       return false;
     }
   }
@@ -714,7 +886,7 @@ class SyncService extends GetxService {
     try {
       final user = AuthService.to.currentUser.value!;
       var query = _client
-          .from('expense_records')
+          .from(_expenseRecordsTable)
           .update({
             'deleted_at': DateTime.now().toUtc().toIso8601String(),
             'updated_at': DateTime.now().toUtc().toIso8601String(),
@@ -740,7 +912,10 @@ class SyncService extends GetxService {
       );
       return true;
     } catch (e) {
-      LogService.to.error('Sync', 'Delete ExpenseRecord failed: $e');
+      LogService.to.error(
+        'Sync',
+        'Delete ExpenseRecord failed localId=${record.id} remoteId=${record.remoteId}: $e',
+      );
       return false;
     }
   }
@@ -804,12 +979,49 @@ class SyncService extends GetxService {
   }
 
   Future<DateTime> _getServerNow() async {
-    final response = await _client.rpc('get_server_time');
+    final response = await _client
+        .rpc('get_server_time')
+        .timeout(_serverTimeTimeout);
     if (response == null) {
       throw StateError('get_server_time returned null');
     }
     if (response is String) return DateTime.parse(response);
     return DateTime.parse(response.toString());
+  }
+
+  Future<List<Map<String, dynamic>>> _pullPagedRows({
+    required String table,
+    required String userId,
+    required bool fullRefresh,
+    required DateTime? lastCursor,
+    required DateTime pullStartedAt,
+  }) async {
+    final rows = <Map<String, dynamic>>[];
+    var start = 0;
+
+    while (true) {
+      dynamic query = _client.from(table).select().eq('user_id', userId);
+      if (!fullRefresh && lastCursor != null) {
+        query = query
+            .gte('updated_at', lastCursor.toIso8601String())
+            .lte('updated_at', pullStartedAt.toIso8601String());
+      }
+
+      final page = await query
+          .order('updated_at', ascending: true)
+          .order('id', ascending: true)
+          .range(start, start + _pullPageSize - 1);
+      final pageRows = (page as List)
+          .cast<Map>()
+          .map((row) => Map<String, dynamic>.from(row))
+          .toList();
+      rows.addAll(pageRows);
+
+      if (pageRows.length < _pullPageSize) break;
+      start += _pullPageSize;
+    }
+
+    return rows;
   }
 
   Future<bool> _pullAll({required bool forceFullRefresh}) async {
@@ -824,43 +1036,49 @@ class SyncService extends GetxService {
       final lastCursor = cursorStr == null ? null : DateTime.parse(cursorStr);
       final fullRefresh = forceFullRefresh || lastCursor == null;
 
-      // 1. Pull Work Logs
-      var logsQuery = _client.from('work_logs').select().eq('user_id', user.id);
-      final logsData = fullRefresh
-          ? await logsQuery
-          : await logsQuery
-                .gte('updated_at', lastCursor.toIso8601String())
-                .lte('updated_at', pullStartedAt.toIso8601String());
+      final logsData = await _pullPagedRows(
+        table: _workLogsTable,
+        userId: user.id,
+        fullRefresh: fullRefresh,
+        lastCursor: lastCursor,
+        pullStartedAt: pullStartedAt,
+      );
 
       for (var map in logsData) {
         await DbService.to.syncRemoteLogToLocal(map);
       }
 
-      // 2. Pull Subscriptions
-      var subsQuery = _client
-          .from('subscriptions')
-          .select()
-          .eq('user_id', user.id);
-      final subsData = fullRefresh
-          ? await subsQuery
-          : await subsQuery
-                .gte('updated_at', lastCursor.toIso8601String())
-                .lte('updated_at', pullStartedAt.toIso8601String());
+      final subsData = await _pullPagedRows(
+        table: _subscriptionsTable,
+        userId: user.id,
+        fullRefresh: fullRefresh,
+        lastCursor: lastCursor,
+        pullStartedAt: pullStartedAt,
+      );
 
       for (var map in subsData) {
         await DbService.to.syncRemoteSubscriptionToLocal(map);
       }
 
-      // 3. Pull Evidence
-      var evidenceQuery = _client
-          .from('expense_evidence')
-          .select()
-          .eq('user_id', user.id);
-      final evidenceData = fullRefresh
-          ? await evidenceQuery
-          : await evidenceQuery
-                .gte('updated_at', lastCursor.toIso8601String())
-                .lte('updated_at', pullStartedAt.toIso8601String());
+      final projectsData = await _pullPagedRows(
+        table: _projectsTable,
+        userId: user.id,
+        fullRefresh: fullRefresh,
+        lastCursor: lastCursor,
+        pullStartedAt: pullStartedAt,
+      );
+
+      for (var map in projectsData) {
+        await DbService.to.syncRemoteProjectToLocal(map);
+      }
+
+      final evidenceData = await _pullPagedRows(
+        table: _expenseEvidenceTable,
+        userId: user.id,
+        fullRefresh: fullRefresh,
+        lastCursor: lastCursor,
+        pullStartedAt: pullStartedAt,
+      );
 
       for (var map in evidenceData) {
         await DbService.to.syncRemoteEvidenceToLocal(map);
@@ -874,21 +1092,25 @@ class SyncService extends GetxService {
             }
           }
           if (evidence != null) {
-            await downloadEvidenceFile(evidence);
+            try {
+              await downloadEvidenceFile(evidence);
+            } catch (e) {
+              LogService.to.error(
+                'Sync',
+                'Download Evidence file failed syncId=${evidence.syncId} remoteId=${evidence.remoteId} storage=${evidence.remoteStoragePath}: $e',
+              );
+            }
           }
         }
       }
 
-      // 4. Pull one-time expense records
-      var expenseRecordsQuery = _client
-          .from('expense_records')
-          .select()
-          .eq('user_id', user.id);
-      final expenseRecordsData = fullRefresh
-          ? await expenseRecordsQuery
-          : await expenseRecordsQuery
-                .gte('updated_at', lastCursor.toIso8601String())
-                .lte('updated_at', pullStartedAt.toIso8601String());
+      final expenseRecordsData = await _pullPagedRows(
+        table: _expenseRecordsTable,
+        userId: user.id,
+        fullRefresh: fullRefresh,
+        lastCursor: lastCursor,
+        pullStartedAt: pullStartedAt,
+      );
 
       for (var map in expenseRecordsData) {
         await DbService.to.syncRemoteExpenseRecordToLocal(map);
@@ -900,6 +1122,7 @@ class SyncService extends GetxService {
         'Sync',
         'Pull complete (${fullRefresh ? "full" : "incremental"}): '
             '${logsData.length} logs, ${subsData.length} subscriptions, '
+            '${projectsData.length} projects, '
             '${evidenceData.length} evidence, '
             '${expenseRecordsData.length} expenseRecords',
       );
@@ -939,6 +1162,18 @@ class SyncService extends GetxService {
         }
       }
 
+      final allProjects = await DbService.to.getAllProjectsForSync();
+      var projectAttempts = 0;
+      var projectFailures = 0;
+      for (var project in allProjects) {
+        if (project.remoteId == null || project.isDirty || project.pendingDelete) {
+          projectAttempts++;
+          final pushed = await pushProject(project);
+          if (!pushed) projectFailures++;
+          success = pushed && success;
+        }
+      }
+
       final allEvidence = await DbService.to.getAllEvidenceForSync();
       var evidenceAttempts = 0;
       var evidenceFailures = 0;
@@ -969,6 +1204,7 @@ class SyncService extends GetxService {
         'Push ${success ? "complete" : "incomplete"}: '
             'workLogs $workLogAttempts attempted/$workLogFailures failed, '
             'subscriptions $subscriptionAttempts attempted/$subscriptionFailures failed, '
+            'projects $projectAttempts attempted/$projectFailures failed, '
             'evidence $evidenceAttempts attempted/$evidenceFailures failed, '
             'expenseRecords $expenseRecordAttempts attempted/$expenseRecordFailures failed',
       );

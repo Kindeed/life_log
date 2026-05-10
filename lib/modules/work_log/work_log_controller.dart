@@ -101,14 +101,26 @@ class WorkLogController extends GetxController {
 
   // 添加/修改日志
   Future<void> addLog(WorkLog log) async {
-    await WorkLogRepository.to.saveLog(log);
-    LogService.to.info('WorkLog', '添加/修改日志: ${log.date}');
+    try {
+      await WorkLogRepository.to.saveLog(log);
+      LogService.to.info('WorkLog', '添加/修改日志: ${log.date}');
+    } catch (e, stackTrace) {
+      LogService.to.error('WorkLog', '保存日志失败: $e', stackTrace);
+      Get.snackbar('保存失败', e.toString());
+      rethrow;
+    }
   }
 
   // 删除日志
   Future<void> deleteLog(int id) async {
-    await WorkLogRepository.to.deleteLog(id);
-    LogService.to.info('WorkLog', '删除日志 ID: $id');
+    try {
+      await WorkLogRepository.to.deleteLog(id);
+      LogService.to.info('WorkLog', '删除日志 ID: $id');
+    } catch (e, stackTrace) {
+      LogService.to.error('WorkLog', '删除日志失败: $e', stackTrace);
+      Get.snackbar('删除失败', e.toString());
+      rethrow;
+    }
   }
 
   void _calculateMonthStats() {

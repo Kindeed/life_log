@@ -15,6 +15,7 @@ class LogEditView extends StatelessWidget {
         child: AddLogSheet(
           selectedDate: selectedDate,
           existingLog: existingLog,
+          asPage: true,
         ),
       ),
     );

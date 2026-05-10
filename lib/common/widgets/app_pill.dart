@@ -20,7 +20,9 @@ class AppPill extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final tint = selected ? 0.14 : 0.08;
-    return Container(
+    return AnimatedContainer(
+      duration: const Duration(milliseconds: 160),
+      curve: Curves.easeOutCubic,
       padding: const EdgeInsets.symmetric(
         horizontal: AppSpacing.md,
         vertical: AppSpacing.xs,

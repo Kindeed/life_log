@@ -43,13 +43,25 @@ class ExpenseRecordController extends GetxController {
   }
 
   Future<void> saveRecord(ExpenseRecord record) async {
-    await ExpenseRecordRepository.to.saveExpenseRecord(record);
-    LogService.to.info('ExpenseRecord', '保存一次性消费: ${record.amount}');
+    try {
+      await ExpenseRecordRepository.to.saveExpenseRecord(record);
+      LogService.to.info('ExpenseRecord', '保存一次性消费: ${record.amount}');
+    } catch (e, stackTrace) {
+      LogService.to.error('ExpenseRecord', '保存一次性消费失败: $e', stackTrace);
+      Get.snackbar('保存失败', e.toString());
+      rethrow;
+    }
   }
 
   Future<void> deleteRecord(int id) async {
-    await ExpenseRecordRepository.to.deleteExpenseRecord(id);
-    LogService.to.info('ExpenseRecord', '删除一次性消费 ID: $id');
+    try {
+      await ExpenseRecordRepository.to.deleteExpenseRecord(id);
+      LogService.to.info('ExpenseRecord', '删除一次性消费 ID: $id');
+    } catch (e, stackTrace) {
+      LogService.to.error('ExpenseRecord', '删除一次性消费失败: $e', stackTrace);
+      Get.snackbar('删除失败', e.toString());
+      rethrow;
+    }
   }
 
   double totalForMonth(DateTime month) {

@@ -7,6 +7,6 @@ class AppMotion {
 
   static const Curve standard = Easing.standard;
   static const Curve standardDecelerate = Easing.standardDecelerate;
-  static const Curve emphasized = Curves.easeInOutCubic;
+  static const Curve emphasized = Easing.emphasizedDecelerate;
   static const Curve emphasizedDecelerate = Easing.emphasizedDecelerate;
 }

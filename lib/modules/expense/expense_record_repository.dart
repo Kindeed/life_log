@@ -23,7 +23,7 @@ class ExpenseRecordRepository extends GetxService {
     validateExpenseRecord(record);
     record.syncId ??= SyncIdGenerator.newSyncId();
     if (record.projectName?.trim().isNotEmpty == true) {
-      final project = await ProjectRepository.to.ensureProject(
+      final project = await ProjectRepository.to.ensureSyncableProject(
         record.projectName!.trim(),
       );
       record.projectId = project.id;

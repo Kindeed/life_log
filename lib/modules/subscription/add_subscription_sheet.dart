@@ -13,7 +13,9 @@ import '../../common/widgets/app_text_field.dart';
 
 class AddSubscriptionSheet extends StatefulWidget {
   final Subscription? sub;
-  const AddSubscriptionSheet({super.key, this.sub});
+  final bool asPage;
+
+  const AddSubscriptionSheet({super.key, this.sub, this.asPage = false});
 
   @override
   State<AddSubscriptionSheet> createState() => _AddSubscriptionSheetState();
@@ -51,8 +53,11 @@ class _AddSubscriptionSheetState extends State<AddSubscriptionSheet> {
     final double sheetHeight = MediaQuery.of(context).size.height * 0.85;
 
     return AppSheetScaffold(
+      presentation: widget.asPage
+          ? AppSheetPresentation.page
+          : AppSheetPresentation.sheet,
       title: widget.sub == null ? "添加订阅" : "编辑订阅",
-      height: sheetHeight,
+      height: widget.asPage ? null : sheetHeight,
       padding: EdgeInsets.symmetric(horizontal: 24.w),
       bottomBar: AppSafeBottomBar(
         padding: EdgeInsets.symmetric(horizontal: 24.w, vertical: 10.h),
@@ -66,6 +71,7 @@ class _AddSubscriptionSheetState extends State<AddSubscriptionSheet> {
         ),
       ),
       child: SingleChildScrollView(
+        keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
         physics: const BouncingScrollPhysics(),
         child: Column(
           children: [
@@ -216,7 +222,9 @@ class _AddSubscriptionSheetState extends State<AddSubscriptionSheet> {
       ..name = _nameController.text
       ..price = price
       ..cycle = _cycle
-      ..nextPaymentDate = _nextPaymentDate;
+      ..nextPaymentDate = _nextPaymentDate
+      ..reminderDays = widget.sub?.reminderDays ?? 1
+      ..note = widget.sub?.note;
 
     if (widget.sub != null) {
       sub.id = widget.sub!.id;
@@ -250,8 +258,9 @@ class _AddSubscriptionSheetState extends State<AddSubscriptionSheet> {
         margin: EdgeInsets.all(20.w),
         duration: const Duration(seconds: 1),
       );
-    } catch (e) {
-      Get.snackbar("错误", "无法保存: $e", snackPosition: SnackPosition.BOTTOM);
+    } catch (_) {
+      // Controller already logs and shows the snackbar; stop the success flow.
+      return;
     }
   }
 
@@ -342,7 +351,7 @@ class _AddSubscriptionSheetState extends State<AddSubscriptionSheet> {
             decoration: BoxDecoration(
               color: bgColor,
               borderRadius: BorderRadius.circular(12),
-              border: Border.all(color: borderColor),
+              border: Border.all(color: borderColor, width: 1),
             ),
             child: Row(
               children: [

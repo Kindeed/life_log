@@ -25,7 +25,7 @@ class AppFloatingActionPill extends StatelessWidget {
     return AnimatedSlide(
       duration: AppMotion.normal,
       curve: AppMotion.standardDecelerate,
-      offset: visible ? Offset.zero : const Offset(0, 2),
+      offset: visible ? Offset.zero : const Offset(0, 0.2),
       child: AnimatedOpacity(
         duration: AppMotion.normal,
         curve: AppMotion.standardDecelerate,

@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 
+import '../theme/app_spacing.dart';
+
 class AppLoading extends StatelessWidget {
   final String? label;
 
@@ -13,7 +15,7 @@ class AppLoading extends StatelessWidget {
         children: [
           const CircularProgressIndicator(strokeWidth: 2.5),
           if (label != null) ...[
-            const SizedBox(height: 12),
+            const SizedBox(height: AppSpacing.md),
             Text(
               label!,
               style: Theme.of(context).textTheme.bodySmall?.copyWith(

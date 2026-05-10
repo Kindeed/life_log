@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:fl_chart/fl_chart.dart';
 import 'package:life_log/common/theme/app_semantic_colors.dart';
 import 'package:life_log/common/theme/theme_extensions.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
@@ -9,7 +8,6 @@ import '../../common/layout/constrained_page.dart';
 import '../../common/theme/app_motion.dart';
 import '../../common/utils/formatters.dart';
 import '../../common/widgets/app_card.dart';
-import '../../common/widgets/app_metric_tile.dart';
 import '../../common/widgets/app_pill.dart';
 import '../../common/widgets/app_section_header.dart';
 import 'statistics_controller.dart';
@@ -44,8 +42,6 @@ class StatisticsView extends StatelessWidget {
               children: [
                 _MonthSelector(logic: logic, semantic: semantic),
                 SizedBox(height: 16.h),
-                _MetricGrid(logic: logic, semantic: semantic),
-                SizedBox(height: 20.h),
                 _WorkDistribution(logic: logic, semantic: semantic),
                 SizedBox(height: 20.h),
                 _FinanceOverview(logic: logic, semantic: semantic),
@@ -162,88 +158,6 @@ class _MonthNavButton extends StatelessWidget {
   }
 }
 
-class _MetricGrid extends StatelessWidget {
-  final StatisticsController logic;
-  final AppSemanticColors semantic;
-
-  const _MetricGrid({required this.logic, required this.semantic});
-
-  @override
-  Widget build(BuildContext context) {
-    return Obx(
-      () => Column(
-        children: [
-          Row(
-            children: [
-              Expanded(
-                child: AppMetricTile(
-                  label: "加班小时",
-                  value: logic.workHours.value.toStringAsFixed(1),
-                  icon: Icons.timelapse_rounded,
-                  color: semantic.work,
-                ),
-              ),
-              SizedBox(width: 10.w),
-              Expanded(
-                child: AppMetricTile(
-                  label: "工作天数",
-                  value: "${logic.workDays.value}",
-                  icon: Icons.work_history_rounded,
-                  color: semantic.success,
-                ),
-              ),
-            ],
-          ),
-          SizedBox(height: 10.h),
-          Row(
-            children: [
-              Expanded(
-                child: AppMetricTile(
-                  label: "出差待报销",
-                  value: formatMoney(logic.unreimbursedAmount.value),
-                  icon: Icons.receipt_long_rounded,
-                  color: semantic.warning,
-                ),
-              ),
-              SizedBox(width: 10.w),
-              Expanded(
-                child: AppMetricTile(
-                  label: "本月订阅",
-                  value: formatMoney(logic.selectedMonthSubCost.value),
-                  icon: Icons.subscriptions_rounded,
-                  color: semantic.expense,
-                ),
-              ),
-            ],
-          ),
-          SizedBox(height: 10.h),
-          Row(
-            children: [
-              Expanded(
-                child: AppMetricTile(
-                  label: "凭证待报销",
-                  value: formatMoney(logic.evidenceUnreimbursedAmount.value),
-                  icon: Icons.pending_actions_rounded,
-                  color: semantic.warning,
-                ),
-              ),
-              SizedBox(width: 10.w),
-              Expanded(
-                child: AppMetricTile(
-                  label: "凭证已报销",
-                  value: formatMoney(logic.evidenceReimbursedAmount.value),
-                  icon: Icons.verified_rounded,
-                  color: semantic.success,
-                ),
-              ),
-            ],
-          ),
-        ],
-      ),
-    );
-  }
-}
-
 class _WorkDistribution extends StatelessWidget {
   final StatisticsController logic;
   final AppSemanticColors semantic;
@@ -252,8 +166,6 @@ class _WorkDistribution extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final textSecondary = Theme.of(context).colorScheme.onSurfaceVariant;
-
     return AppCard(
       child: Obx(() {
         final totalDays =
@@ -263,65 +175,40 @@ class _WorkDistribution extends StatelessWidget {
           children: [
             const AppSectionHeader(title: "工时概览"),
             SizedBox(height: 16.h),
-            if (totalDays > 0) ...[
-              SizedBox(
-                height: 160.h,
-                child: PieChart(
-                  PieChartData(
-                    centerSpaceRadius: 32.r,
-                    sectionsSpace: 2,
-                    sections: [
-                      PieChartSectionData(
-                        value: logic.workDays.value.toDouble(),
-                        title: '工作',
-                        color: semantic.work,
-                        radius: 52.r,
-                      ),
-                      PieChartSectionData(
-                        value: logic.tripDays.value.toDouble(),
-                        title: '出差',
-                        color: semantic.warning,
-                        radius: 52.r,
-                      ),
-                      PieChartSectionData(
-                        value: logic.restDays.value.toDouble(),
-                        title: '休息',
-                        color: semantic.success,
-                        radius: 52.r,
-                      ),
-                    ].where((section) => section.value > 0).toList(),
+            Row(
+              children: [
+                Expanded(
+                  child: _CompactStat(
+                    label: "加班小时",
+                    value: logic.workHours.value.toStringAsFixed(1),
+                    icon: Icons.timelapse_rounded,
+                    color: semantic.work,
                   ),
                 ),
-              ),
-              SizedBox(height: 12.h),
-            ],
-            _ProgressRow(
-              label: "工作",
-              value: logic.workDays.value,
-              total: totalDays,
-              color: semantic.work,
+                SizedBox(width: 8.w),
+                Expanded(
+                  child: _CompactStat(
+                    label: "工作天数",
+                    value: "${logic.workDays.value}",
+                    icon: Icons.work_history_rounded,
+                    color: semantic.success,
+                  ),
+                ),
+                SizedBox(width: 8.w),
+                Expanded(
+                  child: _CompactStat(
+                    label: "出差天数",
+                    value: "${logic.tripDays.value}",
+                    icon: Icons.business_center_rounded,
+                    color: semantic.warning,
+                  ),
+                ),
+              ],
             ),
-            SizedBox(height: 12.h),
-            _ProgressRow(
-              label: "出差",
-              value: logic.tripDays.value,
-              total: totalDays,
-              color: semantic.warning,
-            ),
-            SizedBox(height: 12.h),
-            _ProgressRow(
-              label: "休息/请假",
-              value: logic.restDays.value,
-              total: totalDays,
-              color: semantic.success,
-            ),
-            if (totalDays == 0) ...[
-              SizedBox(height: 12.h),
-              Text(
-                "本月暂无工时记录",
-                style: TextStyle(color: textSecondary, fontSize: 13.sp),
-              ),
-            ],
+            SizedBox(height: 16.h),
+            totalDays == 0
+                ? const _EmptyPanel(message: "本月暂无工时记录")
+                : _WorkCalendar(days: logic.dailyWorkStats, semantic: semantic),
           ],
         );
       }),
@@ -339,112 +226,37 @@ class _FinanceOverview extends StatelessWidget {
   Widget build(BuildContext context) {
     return AppCard(
       child: Obx(() {
-        final reimburseTotal =
-            logic.reimbursedAmount.value + logic.unreimbursedAmount.value;
-        final evidenceTotal =
-            logic.evidenceReimbursedAmount.value +
-            logic.evidenceUnreimbursedAmount.value;
-        final fixedTotal = logic.yearSubCost.value <= 0
-            ? logic.selectedMonthSubCost.value
-            : logic.yearSubCost.value;
-
+        final totalCost = logic.selectedMonthTotalCost;
         return Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             const AppSectionHeader(title: "财务概览"),
             SizedBox(height: 16.h),
-            SizedBox(
-              height: 150.h,
-              child: BarChart(
-                BarChartData(
-                  borderData: FlBorderData(show: false),
-                  titlesData: const FlTitlesData(show: false),
-                  gridData: const FlGridData(show: false),
-                  barGroups: [
-                    BarChartGroupData(
-                      x: 0,
-                      barRods: [
-                        BarChartRodData(
-                          toY: logic.selectedMonthSubCost.value,
-                          color: semantic.expense,
-                          width: 24.w,
-                          borderRadius: BorderRadius.circular(6),
-                        ),
-                      ],
-                    ),
-                    BarChartGroupData(
-                      x: 1,
-                      barRods: [
-                        BarChartRodData(
-                          toY: logic.selectedMonthExpenseRecordCost.value,
-                          color: semantic.stats,
-                          width: 24.w,
-                          borderRadius: BorderRadius.circular(6),
-                        ),
-                      ],
-                    ),
-                    BarChartGroupData(
-                      x: 2,
-                      barRods: [
-                        BarChartRodData(
-                          toY: logic.evidenceUnreimbursedAmount.value,
-                          color: semantic.warning,
-                          width: 24.w,
-                          borderRadius: BorderRadius.circular(6),
-                        ),
-                      ],
-                    ),
-                  ],
-                ),
-              ),
+            _TotalCostHeader(
+              totalCost: totalCost,
+              yearlyCost: logic.yearSubCost.value,
+              semantic: semantic,
             ),
-            SizedBox(height: 16.h),
-            _ProgressRow(
-              label: "出差待报销",
-              valueLabel: formatMoney(logic.unreimbursedAmount.value),
-              progressValue: logic.unreimbursedAmount.value,
-              progressTotal: reimburseTotal,
-              color: semantic.warning,
-            ),
-            SizedBox(height: 12.h),
-            _ProgressRow(
-              label: "已报销",
-              valueLabel: formatMoney(logic.reimbursedAmount.value),
-              progressValue: logic.reimbursedAmount.value,
-              progressTotal: reimburseTotal,
-              color: semantic.success,
-            ),
-            SizedBox(height: 12.h),
-            _ProgressRow(
-              label: "凭证待报销",
-              valueLabel: formatMoney(logic.evidenceUnreimbursedAmount.value),
-              progressValue: logic.evidenceUnreimbursedAmount.value,
-              progressTotal: evidenceTotal,
-              color: semantic.warning,
-            ),
-            SizedBox(height: 12.h),
-            _ProgressRow(
-              label: "凭证已报销",
-              valueLabel: formatMoney(logic.evidenceReimbursedAmount.value),
-              progressValue: logic.evidenceReimbursedAmount.value,
-              progressTotal: evidenceTotal,
-              color: semantic.success,
+            SizedBox(height: 14.h),
+            _CostComposition(
+              subscriptionCost: logic.selectedMonthSubCost.value,
+              expenseRecordCost: logic.selectedMonthExpenseRecordCost.value,
+              totalCost: totalCost,
+              semantic: semantic,
             ),
             SizedBox(height: 18.h),
-            _ProgressRow(
-              label: "本月订阅",
-              valueLabel: formatMoney(logic.selectedMonthSubCost.value),
-              progressValue: logic.selectedMonthSubCost.value,
-              progressTotal: fixedTotal,
-              color: semantic.expense,
+            _ReimbursementGroup(
+              title: "出差垫付",
+              stats: logic.tripReimbursement,
+              pendingColor: semantic.warning,
+              reimbursedColor: semantic.success,
             ),
-            SizedBox(height: 12.h),
-            _ProgressRow(
-              label: "固定年支",
-              valueLabel: formatMoney(logic.yearSubCost.value),
-              progressValue: logic.yearSubCost.value,
-              progressTotal: fixedTotal,
-              color: semantic.stats,
+            SizedBox(height: 14.h),
+            _ReimbursementGroup(
+              title: "凭证报销",
+              stats: logic.evidenceReimbursement,
+              pendingColor: semantic.warning,
+              reimbursedColor: semantic.success,
             ),
           ],
         );
@@ -453,31 +265,400 @@ class _FinanceOverview extends StatelessWidget {
   }
 }
 
-class _ProgressRow extends StatelessWidget {
+class _CompactStat extends StatelessWidget {
   final String label;
-  final int? value;
-  final int? total;
-  final String? valueLabel;
-  final double? progressValue;
-  final double? progressTotal;
+  final String value;
+  final IconData icon;
   final Color color;
 
-  const _ProgressRow({
+  const _CompactStat({
     required this.label,
-    this.value,
-    this.total,
-    this.valueLabel,
-    this.progressValue,
-    this.progressTotal,
+    required this.value,
+    required this.icon,
     required this.color,
   });
 
   @override
   Widget build(BuildContext context) {
     final textSecondary = Theme.of(context).colorScheme.onSurfaceVariant;
-    final progress = _progress();
-    final displayValue = valueLabel ?? "${value ?? 0}天";
+    return Container(
+      padding: EdgeInsets.symmetric(horizontal: 10.w, vertical: 10.h),
+      decoration: BoxDecoration(
+        color: color.withValues(alpha: 0.08),
+        borderRadius: BorderRadius.circular(8),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Icon(icon, color: color, size: 18.sp),
+          SizedBox(height: 8.h),
+          FittedBox(
+            fit: BoxFit.scaleDown,
+            alignment: Alignment.centerLeft,
+            child: Text(
+              value,
+              style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                fontWeight: FontWeight.w800,
+                height: 1,
+              ),
+            ),
+          ),
+          SizedBox(height: 5.h),
+          Text(
+            label,
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+            style: TextStyle(color: textSecondary, fontSize: 12.sp),
+          ),
+        ],
+      ),
+    );
+  }
+}
 
+class _WorkCalendar extends StatelessWidget {
+  final List<DailyWorkStat> days;
+  final AppSemanticColors semantic;
+
+  const _WorkCalendar({required this.days, required this.semantic});
+
+  @override
+  Widget build(BuildContext context) {
+    if (days.isEmpty) {
+      return const _EmptyPanel(message: "本月暂无工时记录");
+    }
+    const weekdayLabels = ["一", "二", "三", "四", "五", "六", "日"];
+    final firstWeekdayOffset = days.first.date.weekday - 1;
+    final cells = <Widget>[
+      for (var i = 0; i < firstWeekdayOffset; i++) const SizedBox.shrink(),
+      for (final day in days) _CalendarDayCell(day: day, semantic: semantic),
+    ];
+
+    return Column(
+      children: [
+        Row(
+          children: [
+            for (final label in weekdayLabels)
+              Expanded(
+                child: Center(
+                  child: Text(
+                    label,
+                    style: Theme.of(context).textTheme.labelSmall?.copyWith(
+                      color: Theme.of(context).colorScheme.onSurfaceVariant,
+                    ),
+                  ),
+                ),
+              ),
+          ],
+        ),
+        SizedBox(height: 8.h),
+        GridView.count(
+          crossAxisCount: 7,
+          shrinkWrap: true,
+          physics: const NeverScrollableScrollPhysics(),
+          mainAxisSpacing: 6.h,
+          crossAxisSpacing: 6.w,
+          children: cells,
+        ),
+        SizedBox(height: 12.h),
+        _WorkLegend(semantic: semantic),
+      ],
+    );
+  }
+}
+
+class _CalendarDayCell extends StatelessWidget {
+  final DailyWorkStat day;
+  final AppSemanticColors semantic;
+
+  const _CalendarDayCell({required this.day, required this.semantic});
+
+  @override
+  Widget build(BuildContext context) {
+    final color = switch (day.kind) {
+      DailyWorkKind.work => semantic.work,
+      DailyWorkKind.trip => semantic.warning,
+      DailyWorkKind.restOrLeave => semantic.success,
+      DailyWorkKind.empty => Theme.of(context).colorScheme.outlineVariant,
+    };
+    final hasOvertime = day.overtimeHours > 0;
+    final textColor = day.kind == DailyWorkKind.empty
+        ? Theme.of(context).colorScheme.onSurfaceVariant
+        : color;
+
+    return Container(
+      alignment: Alignment.center,
+      decoration: BoxDecoration(
+        color: color.withValues(
+          alpha: day.kind == DailyWorkKind.empty ? 0.08 : 0.14,
+        ),
+        borderRadius: BorderRadius.circular(7),
+        border: Border.all(color: color.withValues(alpha: 0.24), width: 1),
+      ),
+      child: Padding(
+        padding: EdgeInsets.symmetric(horizontal: 2.w, vertical: 3.h),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Text(
+              "${day.date.day}",
+              maxLines: 1,
+              overflow: TextOverflow.visible,
+              style: TextStyle(
+                color: textColor,
+                fontSize: 12.sp,
+                fontWeight: FontWeight.w800,
+                height: 1,
+              ),
+            ),
+            if (hasOvertime) ...[
+              SizedBox(height: 3.h),
+              Text(
+                "${day.overtimeHours.toStringAsFixed(1)}h",
+                maxLines: 1,
+                overflow: TextOverflow.fade,
+                softWrap: false,
+                style: TextStyle(
+                  color: semantic.work,
+                  fontSize: 9.sp,
+                  fontWeight: FontWeight.w700,
+                  height: 1,
+                ),
+              ),
+            ],
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _WorkLegend extends StatelessWidget {
+  final AppSemanticColors semantic;
+
+  const _WorkLegend({required this.semantic});
+
+  @override
+  Widget build(BuildContext context) {
+    return Wrap(
+      spacing: 12.w,
+      runSpacing: 8.h,
+      children: [
+        _LegendItem(label: "工作", color: semantic.work),
+        _LegendItem(label: "出差", color: semantic.warning),
+        _LegendItem(label: "休息/请假", color: semantic.success),
+      ],
+    );
+  }
+}
+
+class _LegendItem extends StatelessWidget {
+  final String label;
+  final Color color;
+
+  const _LegendItem({required this.label, required this.color});
+
+  @override
+  Widget build(BuildContext context) {
+    final textSecondary = Theme.of(context).colorScheme.onSurfaceVariant;
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Container(
+          width: 8.w,
+          height: 8.w,
+          decoration: BoxDecoration(color: color, shape: BoxShape.circle),
+        ),
+        SizedBox(width: 5.w),
+        Text(
+          label,
+          style: TextStyle(color: textSecondary, fontSize: 12.sp),
+        ),
+      ],
+    );
+  }
+}
+
+class _TotalCostHeader extends StatelessWidget {
+  final double totalCost;
+  final double yearlyCost;
+  final AppSemanticColors semantic;
+
+  const _TotalCostHeader({
+    required this.totalCost,
+    required this.yearlyCost,
+    required this.semantic,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final textSecondary = Theme.of(context).colorScheme.onSurfaceVariant;
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Row(
+          children: [
+            Container(
+              width: 42.w,
+              height: 42.w,
+              decoration: BoxDecoration(
+                color: semantic.expense.withValues(alpha: 0.12),
+                borderRadius: BorderRadius.circular(8),
+              ),
+              child: Icon(
+                Icons.payments_rounded,
+                color: semantic.expense,
+                size: 22.sp,
+              ),
+            ),
+            SizedBox(width: 12.w),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    "本月总支出",
+                    style: TextStyle(color: textSecondary, fontSize: 13.sp),
+                  ),
+                  SizedBox(height: 4.h),
+                  FittedBox(
+                    fit: BoxFit.scaleDown,
+                    alignment: Alignment.centerLeft,
+                    child: Text(
+                      formatMoney(totalCost),
+                      style: Theme.of(context).textTheme.headlineSmall
+                          ?.copyWith(fontWeight: FontWeight.w800, height: 1),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            Text(
+              "固定年支 ${formatMoney(yearlyCost)}",
+              style: TextStyle(color: textSecondary, fontSize: 12.sp),
+            ),
+          ],
+        ),
+      ],
+    );
+  }
+}
+
+class _CostComposition extends StatelessWidget {
+  final double subscriptionCost;
+  final double expenseRecordCost;
+  final double totalCost;
+  final AppSemanticColors semantic;
+
+  const _CostComposition({
+    required this.subscriptionCost,
+    required this.expenseRecordCost,
+    required this.totalCost,
+    required this.semantic,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    if (totalCost <= 0) return const _EmptyPanel(message: "本月暂无支出记录");
+
+    return Column(
+      children: [
+        Row(
+          children: [
+            Expanded(
+              child: _AmountTile(
+                label: "订阅/固定支出",
+                value: formatMoney(subscriptionCost),
+                color: semantic.expense,
+              ),
+            ),
+            SizedBox(width: 10.w),
+            Expanded(
+              child: _AmountTile(
+                label: "一次性消费",
+                value: formatMoney(expenseRecordCost),
+                color: semantic.stats,
+              ),
+            ),
+          ],
+        ),
+        SizedBox(height: 10.h),
+        _StackedBar(
+          firstValue: subscriptionCost,
+          firstColor: semantic.expense,
+          secondValue: expenseRecordCost,
+          secondColor: semantic.stats,
+          total: totalCost,
+        ),
+      ],
+    );
+  }
+}
+
+class _AmountTile extends StatelessWidget {
+  final String label;
+  final String value;
+  final Color color;
+
+  const _AmountTile({
+    required this.label,
+    required this.value,
+    required this.color,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final textSecondary = Theme.of(context).colorScheme.onSurfaceVariant;
+    return Container(
+      padding: EdgeInsets.all(12.w),
+      decoration: BoxDecoration(
+        color: color.withValues(alpha: 0.08),
+        borderRadius: BorderRadius.circular(8),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            label,
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+            style: TextStyle(color: textSecondary, fontSize: 12.sp),
+          ),
+          SizedBox(height: 8.h),
+          FittedBox(
+            fit: BoxFit.scaleDown,
+            alignment: Alignment.centerLeft,
+            child: Text(
+              value,
+              style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                color: color,
+                fontWeight: FontWeight.w800,
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _ReimbursementGroup extends StatelessWidget {
+  final String title;
+  final ReimbursementStats stats;
+  final Color pendingColor;
+  final Color reimbursedColor;
+
+  const _ReimbursementGroup({
+    required this.title,
+    required this.stats,
+    required this.pendingColor,
+    required this.reimbursedColor,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final textSecondary = Theme.of(context).colorScheme.onSurfaceVariant;
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -485,38 +666,120 @@ class _ProgressRow extends StatelessWidget {
           children: [
             Expanded(
               child: Text(
-                label,
-                style: TextStyle(fontSize: 13.sp, color: textSecondary),
+                title,
+                style: Theme.of(
+                  context,
+                ).textTheme.titleSmall?.copyWith(fontWeight: FontWeight.w800),
               ),
             ),
             Text(
-              displayValue,
-              style: TextStyle(
-                fontSize: 13.sp,
-                fontWeight: FontWeight.w800,
-                color: color,
+              formatMoney(stats.total),
+              style: TextStyle(color: textSecondary, fontSize: 12.sp),
+            ),
+          ],
+        ),
+        SizedBox(height: 10.h),
+        Row(
+          children: [
+            Expanded(
+              child: _AmountTile(
+                label: "待报销",
+                value: formatMoney(stats.pending),
+                color: pendingColor,
+              ),
+            ),
+            SizedBox(width: 10.w),
+            Expanded(
+              child: _AmountTile(
+                label: "已报销",
+                value: formatMoney(stats.reimbursed),
+                color: reimbursedColor,
               ),
             ),
           ],
         ),
-        SizedBox(height: 7.h),
-        ClipRRect(
-          borderRadius: BorderRadius.circular(999),
-          child: LinearProgressIndicator(
-            value: progress,
-            minHeight: 8.h,
-            backgroundColor: color.withValues(alpha: 0.1),
-            valueColor: AlwaysStoppedAnimation<Color>(color),
+        if (stats.total > 0) ...[
+          SizedBox(height: 10.h),
+          _StackedBar(
+            firstValue: stats.pending,
+            firstColor: pendingColor,
+            secondValue: stats.reimbursed,
+            secondColor: reimbursedColor,
+            total: stats.total,
           ),
-        ),
+        ],
       ],
     );
   }
+}
 
-  double _progress() {
-    final numericValue = progressValue ?? (value ?? 0).toDouble();
-    final numericTotal = progressTotal ?? (total ?? 0).toDouble();
-    if (numericTotal <= 0) return 0;
-    return (numericValue / numericTotal).clamp(0, 1).toDouble();
+class _StackedBar extends StatelessWidget {
+  final double firstValue;
+  final Color firstColor;
+  final double secondValue;
+  final Color secondColor;
+  final double total;
+
+  const _StackedBar({
+    required this.firstValue,
+    required this.firstColor,
+    required this.secondValue,
+    required this.secondColor,
+    required this.total,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    if (total <= 0) return const SizedBox.shrink();
+
+    return ClipRRect(
+      borderRadius: BorderRadius.circular(999),
+      child: SizedBox(
+        height: 9.h,
+        child: Row(
+          children: [
+            if (firstValue > 0)
+              Expanded(
+                flex: _barFlex(firstValue),
+                child: ColoredBox(color: firstColor),
+              ),
+            if (secondValue > 0)
+              Expanded(
+                flex: _barFlex(secondValue),
+                child: ColoredBox(color: secondColor),
+              ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  int _barFlex(double value) => (value / total * 1000).round().clamp(1, 1000);
+}
+
+class _EmptyPanel extends StatelessWidget {
+  final String message;
+
+  const _EmptyPanel({required this.message});
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      width: double.infinity,
+      padding: EdgeInsets.symmetric(horizontal: 12.w, vertical: 14.h),
+      decoration: BoxDecoration(
+        color: Theme.of(
+          context,
+        ).colorScheme.surfaceContainerHighest.withValues(alpha: 0.35),
+        borderRadius: BorderRadius.circular(8),
+      ),
+      child: Text(
+        message,
+        style: TextStyle(
+          color: Theme.of(context).colorScheme.onSurfaceVariant,
+          fontSize: 13.sp,
+        ),
+      ),
+    );
   }
 }

@@ -64,6 +64,10 @@ class LogService extends GetxService {
   /// 日志缓存（内存中保留最近500条）
   final logs = <LogEntry>[].obs;
   File? _logFile;
+  Future<void> _fileWriteQueue = Future.value();
+  int _fileWriteFailureCount = 0;
+  String? _lastFileWriteError;
+  DateTime? _lastFileWriteErrorAt;
 
   /// 最大日志条数
   static const int maxLogs = 500;
@@ -83,6 +87,7 @@ class LogService extends GetxService {
       }
       info('LogService', '日志服务已初始化，路径: ${_logFile!.path}');
     } catch (e) {
+      _recordFileWriteError(e);
       debugPrint("Failed to init log file: $e");
     }
     return this;
@@ -93,6 +98,25 @@ class LogService extends GetxService {
       if (entry.level == LogLevel.error) return entry;
     }
     return null;
+  }
+
+  int get fileWriteFailureCount => _fileWriteFailureCount;
+
+  String? get lastFileWriteError => _lastFileWriteError;
+
+  String _maskUrl(String url) {
+    final parsed = Uri.tryParse(url);
+    if (parsed == null || parsed.host.isEmpty) return '已配置（URL 已隐藏）';
+    final hostParts = parsed.host.split('.');
+    final maskedHost = hostParts.isEmpty
+        ? '***'
+        : [
+            hostParts.first.length <= 6
+                ? '***'
+                : '${hostParts.first.substring(0, 3)}***',
+            ...hostParts.skip(1),
+          ].join('.');
+    return '${parsed.scheme}://$maskedHost';
   }
 
   /// 记录 Debug 日志
@@ -141,9 +165,34 @@ class LogService extends GetxService {
       debugPrint(logString);
     }
 
-    // 写入文件
-    _rotateLogFileIfNeededSync();
-    _logFile?.writeAsString('$logString\n', mode: FileMode.append);
+    _enqueueFileWrite(() async {
+      await _rotateLogFileIfNeeded();
+      final file = _logFile;
+      if (file == null) return;
+      if (!await file.exists()) {
+        await file.create(recursive: true);
+      }
+      await file.writeAsString('$logString\n', mode: FileMode.append);
+    });
+  }
+
+  void _enqueueFileWrite(Future<void> Function() operation) {
+    _fileWriteQueue = _fileWriteQueue
+        .catchError((Object e) {
+          _recordFileWriteError(e);
+          debugPrint('Previous log file write failed: $e');
+        })
+        .then((_) => operation())
+        .catchError((Object e) {
+          _recordFileWriteError(e);
+          debugPrint('Log file write failed: $e');
+        });
+  }
+
+  void _recordFileWriteError(Object error) {
+    _fileWriteFailureCount++;
+    _lastFileWriteError = error.toString();
+    _lastFileWriteErrorAt = DateTime.now();
   }
 
   Future<void> _rotateLogFileIfNeeded() async {
@@ -158,20 +207,6 @@ class LogService extends GetxService {
     }
     await file.rename(rotated.path);
     _logFile = File(file.path);
-  }
-
-  void _rotateLogFileIfNeededSync() {
-    final file = _logFile;
-    if (file == null || !file.existsSync()) return;
-    final size = file.lengthSync();
-    if (size <= maxLogFileBytes) return;
-
-    final rotated = File('${file.parent.path}/app_logs.old.txt');
-    if (rotated.existsSync()) {
-      rotated.deleteSync();
-    }
-    file.renameSync(rotated.path);
-    _logFile = File(file.path)..createSync();
   }
 
   /// 获取所有日志文本
@@ -191,8 +226,14 @@ class LogService extends GetxService {
       final cloudConfig = CloudConfigService.to;
       buffer.writeln('云配置: ${cloudConfig.statusLabel}');
       if (cloudConfig.isConfigured.value) {
-        buffer.writeln('Supabase URL: ${cloudConfig.supabaseUrl}');
+        buffer.writeln('Supabase URL: ${_maskUrl(cloudConfig.supabaseUrl)}');
       }
+    }
+    buffer.writeln('日志文件写入失败次数: $_fileWriteFailureCount');
+    if (_lastFileWriteError != null) {
+      buffer.writeln(
+        '最近日志文件写入失败: ${_lastFileWriteErrorAt?.toIso8601String()} $_lastFileWriteError',
+      );
     }
     buffer.writeln('========================\n');
 
@@ -206,9 +247,9 @@ class LogService extends GetxService {
   /// 清空日志
   void clearLogs() {
     logs.clear();
-    // 可选：清空文件
-    _logFile?.writeAsString('');
-    info('LogService', '日志已清空');
+    _enqueueFileWrite(() async {
+      await _logFile?.writeAsString('');
+    });
   }
 
   String exportLatestError() {
@@ -228,11 +269,17 @@ class LogService extends GetxService {
           : "debug"}',
     );
     buffer.writeln('日志数量: ${logs.length}');
+    buffer.writeln('日志文件写入失败次数: $_fileWriteFailureCount');
+    if (_lastFileWriteError != null) {
+      buffer.writeln(
+        '最近日志文件写入失败: ${_lastFileWriteErrorAt?.toIso8601String()} $_lastFileWriteError',
+      );
+    }
     if (Get.isRegistered<CloudConfigService>()) {
       final cloudConfig = CloudConfigService.to;
       buffer.writeln('云配置: ${cloudConfig.statusLabel}');
       if (cloudConfig.isConfigured.value) {
-        buffer.writeln('Supabase URL: ${cloudConfig.supabaseUrl}');
+        buffer.writeln('Supabase URL: ${_maskUrl(cloudConfig.supabaseUrl)}');
       }
     }
     buffer.writeln('最近错误:');

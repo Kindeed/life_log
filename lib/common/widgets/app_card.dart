@@ -25,7 +25,7 @@ class AppCard extends StatelessWidget {
           color: semantic.border.withValues(
             alpha: theme.brightness == Brightness.dark ? 0.62 : 0.9,
           ),
-          width: 0.7,
+          width: 1,
         ),
         boxShadow: [
           BoxShadow(

@@ -57,7 +57,7 @@ class LogColors extends ThemeExtension<LogColors> {
 
   // 预定义浅色模式配色
   static const light = LogColors(
-    work: Color(0xFF1A73E8), // Primary Blue
+    work: Color(0xFF007AFF), // Primary Blue
     rest: Color(0xFF6E7F91), // Muted blue-gray
     businessTrip: Color(0xFFE77917), // Orange
     leave: Color(0xFF7D5FB2), // Purple
@@ -67,11 +67,11 @@ class LogColors extends ThemeExtension<LogColors> {
 
   // 预定义深色模式配色
   static const dark = LogColors(
-    work: Color(0xFF8AB4F8), // Lighter Blue
+    work: Color(0xFF007AFF), // Primary Blue
     rest: Color(0xFF9AA9B8), // Muted blue-gray
     businessTrip: Color(0xFFFFCC80), // Lighter Orange
     leave: Color(0xFFD0BCFF), // Lighter Purple
     overtime: Color(0xFFF2B8B5), // Light Red
-    success: Color(0xFF81C995),
+    success: Color(0xFF248A3D),
   );
 }
