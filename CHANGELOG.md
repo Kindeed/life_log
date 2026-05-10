@@ -1,5 +1,16 @@
 # Changelog
 
+## [1.4.1] - 2026-05-10
+
+### GitHub Actions 发布兼容性
+
+#### 变更 (Changed)
+- 应用版本升级到 `1.4.1+7`。
+- GitHub Actions APK 构建工作流显式启用 Node.js 24 action runtime，避免 Node.js 20 弃用导致后续 release/test APK 构建告警或失败。
+
+#### 发布 (Release)
+- 本版本应通过推送 `v1.4.1` tag 触发 GitHub Actions 自动构建并上传 APK 安装包。
+
 ## [1.3.3] - 2026-05-06
 
 ### 启动稳定性、云配置与 Apple-inspired UI
