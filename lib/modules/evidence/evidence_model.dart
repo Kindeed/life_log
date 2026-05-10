@@ -59,6 +59,24 @@ enum EvidenceCategory {
 
 enum EvidenceStatus { pending, submitted, reimbursed }
 
+extension ExpenseEvidenceBusinessChanges on ExpenseEvidence {
+  bool hasBusinessChangesComparedTo(ExpenseEvidence other) {
+    return projectName != other.projectName ||
+        projectId != other.projectId ||
+        evidenceDate != other.evidenceDate ||
+        amount != other.amount ||
+        currency != other.currency ||
+        category != other.category ||
+        status != other.status ||
+        merchant != other.merchant ||
+        note != other.note ||
+        localFilePath != other.localFilePath ||
+        fileName != other.fileName ||
+        mimeType != other.mimeType ||
+        tripDate != other.tripDate;
+  }
+}
+
 extension EvidenceCategoryLabel on EvidenceCategory {
   String get label {
     switch (this) {

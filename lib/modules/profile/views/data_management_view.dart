@@ -36,7 +36,7 @@ class DataManagementView extends StatelessWidget {
                         icon: Icons.backup_outlined,
                         iconColor: semantic.work,
                         title: '导出备份',
-                        subtitle: '将本地数据库导出为备份文件',
+                        subtitle: '仅导出数据库，不含照片/凭证文件',
                         onTap: _handleBackup,
                       ),
                       Divider(
@@ -102,7 +102,8 @@ class DataManagementView extends StatelessWidget {
 
       final confirmed = await AppConfirmDialog.show(
         title: "恢复确认",
-        message: "导入备份将覆盖当前所有本地数据。建议先导出当前数据，再继续恢复。",
+        message:
+            "导入备份将覆盖当前本地数据库。备份文件不包含照片和凭证文件本体，恢复后缺失的本地文件无法自动还原。建议先导出当前数据，再继续恢复。",
         confirmLabel: "恢复",
         destructive: true,
       );

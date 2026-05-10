@@ -8,6 +8,7 @@ import '../../modules/evidence/evidence_model.dart';
 import '../../modules/expense/expense_record_model.dart';
 import '../../modules/project/project_model.dart';
 import '../services/auth_service.dart';
+import '../utils/sync_id_generator.dart';
 // import '../services/sync_service.dart'; // Removed cyclic dependency
 
 class DbService extends GetxService {
@@ -48,6 +49,34 @@ class DbService extends GetxService {
 
   void _stampProjectOwner(Project project) {
     project.ownerUserId ??= currentOwnerUserId;
+  }
+
+  bool _isProjectSyncEligible(Project project) {
+    return project.remoteId != null ||
+        project.syncId != null ||
+        project.pendingDelete;
+  }
+
+  Future<Set<String>> _getSyncableProjectNames() async {
+    final syncableProjectNames = <String>{};
+
+    final evidenceRefs = await isar.expenseEvidences.where().findAll();
+    for (final item in evidenceRefs) {
+      if (_belongsToCurrentUser(item.ownerUserId) &&
+          item.projectName.trim().isNotEmpty) {
+        syncableProjectNames.add(item.projectName.trim().toLowerCase());
+      }
+    }
+
+    final expenseRecordRefs = await isar.expenseRecords.where().findAll();
+    for (final item in expenseRecordRefs) {
+      if (_belongsToCurrentUser(item.ownerUserId) &&
+          (item.projectName?.trim().isNotEmpty ?? false)) {
+        syncableProjectNames.add(item.projectName!.trim().toLowerCase());
+      }
+    }
+
+    return syncableProjectNames;
   }
 
   Future<void> claimUnownedRecordsForCurrentUser() async {
@@ -99,6 +128,23 @@ class DbService extends GetxService {
       if (expenseRecords.isNotEmpty) {
         await isar.expenseRecords.putAll(expenseRecords);
       }
+
+      final syncableProjectNames = await _getSyncableProjectNames();
+
+      final projects = await isar.projects.filter().ownerUserIdIsNull().findAll();
+      for (final project in projects) {
+        project.ownerUserId = currentUserId;
+        final syncable = syncableProjectNames.contains(
+          project.name.trim().toLowerCase(),
+        );
+        if (syncable || _isProjectSyncEligible(project)) {
+          project.syncId ??= SyncIdGenerator.newSyncId();
+          project.isDirty = true;
+        }
+      }
+      if (projects.isNotEmpty) {
+        await isar.projects.putAll(projects);
+      }
     });
   }
 
@@ -120,10 +166,26 @@ class DbService extends GetxService {
     return this;
   }
 
+  @override
+  void onClose() {
+    if (isar.isOpen) {
+      isar.close();
+    }
+    super.onClose();
+  }
+
   // --- 2. 增加一条日志 (入库) ---
   Future<int> addLog(WorkLog log) async {
     final id = await isar.writeTxn(() async {
       _stampWorkLogOwner(log);
+      final existing = log.id == Isar.autoIncrement
+          ? null
+          : await isar.workLogs.get(log.id);
+      log.isDirty =
+          existing?.isDirty == true ||
+          log.isDirty ||
+          log.remoteId == null ||
+          (existing != null && log.hasBusinessChangesComparedTo(existing));
       return await isar.workLogs.put(log); // Insert or update
     });
     return id;
@@ -242,6 +304,14 @@ class DbService extends GetxService {
   Future<int> addSubscription(Subscription sub) async {
     final id = await isar.writeTxn(() async {
       _stampSubscriptionOwner(sub);
+      final existing = sub.id == Isar.autoIncrement
+          ? null
+          : await isar.subscriptions.get(sub.id);
+      sub.isDirty =
+          existing?.isDirty == true ||
+          sub.isDirty ||
+          sub.remoteId == null ||
+          (existing != null && sub.hasBusinessChangesComparedTo(existing));
       return await isar.subscriptions.put(sub); // Insert or update
     });
     return id;
@@ -357,6 +427,14 @@ class DbService extends GetxService {
   Future<int> addEvidence(ExpenseEvidence evidence) async {
     final id = await isar.writeTxn(() async {
       _stampEvidenceOwner(evidence);
+      final existing = evidence.id == Isar.autoIncrement
+          ? null
+          : await isar.expenseEvidences.get(evidence.id);
+      evidence.isDirty =
+          existing?.isDirty == true ||
+          evidence.isDirty ||
+          evidence.remoteId == null ||
+          (existing != null && evidence.hasBusinessChangesComparedTo(existing));
       return await isar.expenseEvidences.put(evidence);
     });
     return id;
@@ -422,15 +500,78 @@ class DbService extends GetxService {
   Future<int> addProject(Project project) async {
     final id = await isar.writeTxn(() async {
       _stampProjectOwner(project);
+      final existing = project.id == Isar.autoIncrement
+          ? null
+          : await isar.projects.get(project.id);
+      if (existing != null) {
+        project.isDirty =
+            project.isDirty || existing.isDirty || project.hasBusinessChangesComparedTo(existing);
+      } else {
+        project.isDirty =
+            project.isDirty || project.remoteId == null && project.syncId != null;
+      }
       return await isar.projects.put(project);
     });
     return id;
   }
 
-  Future<Project> ensureProject(String name) async {
+  Future<List<Project>> getAllProjectsForSync() async {
+    final syncableProjectNames = await _getSyncableProjectNames();
+    final projects = await isar.projects.where().sortByUpdatedAtDesc().findAll();
+    return projects
+        .where(
+          (project) =>
+              _belongsToCurrentUser(project.ownerUserId) &&
+              (_isProjectSyncEligible(project) ||
+                  syncableProjectNames.contains(
+                    project.name.trim().toLowerCase(),
+                  )),
+        )
+        .toList();
+  }
+
+  Future<Project?> getProject(int id) async {
+    final project = await isar.projects.get(id);
+    if (project == null || !_belongsToCurrentUser(project.ownerUserId)) {
+      return null;
+    }
+    return project;
+  }
+
+  Future<Project?> markProjectDeleted(int id) async {
+    return await isar.writeTxn(() async {
+      final project = await isar.projects.get(id);
+      if (project == null) return null;
+      if (!_belongsToCurrentUser(project.ownerUserId)) return null;
+      project.deletedAt = DateTime.now().toUtc();
+      project.pendingDelete = true;
+      project.isDirty = true;
+      await isar.projects.put(project);
+      return project;
+    });
+  }
+
+  Future<void> purgeDeletedProject(int id) async {
+    await isar.writeTxn(() async {
+      await isar.projects.delete(id);
+    });
+  }
+
+  Future<void> updateProjectRemoteId(Project project) async {
+    await isar.writeTxn(() async {
+      await isar.projects.put(project);
+    });
+  }
+
+  Future<Project> ensureProject(String name, {bool syncable = false}) async {
     final safeName = name.trim().isEmpty ? 'DefaultProject' : name.trim();
     for (final project in await getAllProjects()) {
       if (project.name.toLowerCase() == safeName.toLowerCase()) {
+        if (syncable && project.syncId == null) {
+          project.syncId = SyncIdGenerator.newSyncId();
+          project.isDirty = true;
+          await addProject(project);
+        }
         return project;
       }
     }
@@ -440,7 +581,8 @@ class DbService extends GetxService {
       ..name = safeName
       ..createdAt = now
       ..updatedAt = now
-      ..isDirty = true;
+      ..syncId = syncable ? SyncIdGenerator.newSyncId() : null
+      ..isDirty = syncable;
     project.id = await addProject(project);
     return project;
   }
@@ -476,6 +618,14 @@ class DbService extends GetxService {
   Future<int> addExpenseRecord(ExpenseRecord record) async {
     final id = await isar.writeTxn(() async {
       _stampExpenseRecordOwner(record);
+      final existing = record.id == Isar.autoIncrement
+          ? null
+          : await isar.expenseRecords.get(record.id);
+      record.isDirty =
+          existing?.isDirty == true ||
+          record.isDirty ||
+          record.remoteId == null ||
+          (existing != null && record.hasBusinessChangesComparedTo(existing));
       return await isar.expenseRecords.put(record);
     });
     return id;
@@ -890,6 +1040,87 @@ class DbService extends GetxService {
       record.projectId = projectId;
 
       await isar.expenseRecords.put(record);
+    });
+  }
+
+  Future<void> syncRemoteProjectToLocal(Map<String, dynamic> data) async {
+    final remoteId = data['id'] as int;
+    final remoteSyncId = data['sync_id'] as String?;
+    final remoteVersion = (data['version'] as num?)?.toInt() ?? 0;
+    final remoteUpdatedAt = DateTime.parse(data['updated_at'] as String);
+    final remoteDeletedAt = data['deleted_at'] == null
+        ? null
+        : DateTime.parse(data['deleted_at'] as String);
+
+    await isar.writeTxn(() async {
+      Project? project;
+      if (remoteSyncId != null) {
+        project = await isar.projects
+            .filter()
+            .syncIdEqualTo(remoteSyncId)
+            .findFirst();
+      }
+      project ??= await isar.projects
+          .filter()
+          .remoteIdEqualTo(remoteId)
+          .findFirst();
+
+      if (remoteDeletedAt != null) {
+        if (project != null) {
+          if (!project.isDirty || project.pendingDelete) {
+            await isar.projects.delete(project.id);
+            return;
+          }
+          project.deletedAt = remoteDeletedAt;
+          project.ownerUserId = currentOwnerUserId;
+          project.pendingDelete = false;
+          project.remoteId = remoteId;
+          project.syncId = remoteSyncId ?? project.syncId;
+          project.remoteVersion = remoteVersion;
+          project.remoteUpdatedAt = remoteUpdatedAt;
+          project.syncedAt = remoteUpdatedAt;
+          await isar.projects.put(project);
+        }
+        return;
+      }
+
+      project ??= Project();
+
+      if (project.isDirty) {
+        project.ownerUserId = currentOwnerUserId;
+        if (project.remoteId != remoteId) {
+          project.remoteId = remoteId;
+        }
+        project.syncId = remoteSyncId ?? project.syncId;
+        project.remoteVersion = remoteVersion;
+        project.remoteUpdatedAt = remoteUpdatedAt;
+        await isar.projects.put(project);
+        return;
+      }
+
+      project.remoteId = remoteId;
+      project.ownerUserId = currentOwnerUserId;
+      project.syncId = remoteSyncId ?? project.syncId;
+      project.remoteVersion = remoteVersion;
+      project.remoteUpdatedAt = remoteUpdatedAt;
+      project.syncedAt = remoteUpdatedAt;
+      project.isDirty = false;
+      project.deletedAt = null;
+      project.pendingDelete = false;
+      project.name = data['name'] as String? ?? 'Untitled';
+      final statusStr = data['status'] as String? ?? ProjectStatus.active.name;
+      project.status = ProjectStatus.values.firstWhere(
+        (value) => value.name == statusStr,
+        orElse: () => ProjectStatus.active,
+      );
+      project.createdAt = data['created_at'] == null
+          ? remoteUpdatedAt
+          : DateTime.parse(data['created_at'] as String);
+      project.updatedAt = data['updated_at'] == null
+          ? remoteUpdatedAt
+          : DateTime.parse(data['updated_at'] as String);
+
+      await isar.projects.put(project);
     });
   }
 }

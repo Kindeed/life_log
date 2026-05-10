@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:get/get.dart';
 import 'package:life_log/common/widgets/app_action_sheet.dart';
 import 'package:life_log/common/theme/app_radius.dart';
@@ -127,14 +128,14 @@ class _AppleTabBar extends StatelessWidget {
     return SafeArea(
       top: false,
       child: Container(
-        height: 70,
-        padding: const EdgeInsets.fromLTRB(10, 6, 10, 8),
+        height: 70.h,
+        padding: EdgeInsets.fromLTRB(10.w, 6.h, 10.w, 8.h),
         decoration: BoxDecoration(
           color: theme.cardColor.withValues(alpha: 0.96),
           border: Border(
             top: BorderSide(
               color: semantic.border.withValues(alpha: isDark ? 0.7 : 0.85),
-              width: 0.7,
+              width: 1,
             ),
           ),
           boxShadow: [
@@ -191,12 +192,12 @@ class _AddTabButton extends StatelessWidget {
               customBorder: const CircleBorder(),
               onTap: onTap,
               child: SizedBox(
-                width: 48,
-                height: 48,
+                width: 48.w,
+                height: 48.w,
                 child: Icon(
                   Icons.add_rounded,
                   color: theme.colorScheme.onPrimary,
-                  size: 30,
+                  size: 30.sp,
                 ),
               ),
             ),
@@ -237,8 +238,8 @@ class _AppleTabItem extends StatelessWidget {
           child: AnimatedContainer(
             duration: const Duration(milliseconds: 180),
             curve: Curves.easeOutCubic,
-            margin: const EdgeInsets.symmetric(horizontal: 5),
-            padding: const EdgeInsets.symmetric(vertical: 5),
+            margin: EdgeInsets.symmetric(horizontal: 5.w),
+            padding: EdgeInsets.symmetric(vertical: 5.h),
             decoration: BoxDecoration(
               color: Colors.transparent,
               borderRadius: BorderRadius.circular(AppRadius.lg),
@@ -248,16 +249,16 @@ class _AppleTabItem extends StatelessWidget {
               children: [
                 Icon(
                   spec.icon,
-                  size: selected ? 23 : 22,
+                  size: selected ? 23.sp : 22.sp,
                   color: selected ? selectedColor : muted,
                 ),
-                const SizedBox(height: 3),
+                SizedBox(height: 3.h),
                 Text(
                   spec.label,
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                   style: TextStyle(
-                    fontSize: 11.5,
+                    fontSize: 11.5.sp,
                     height: 1.1,
                     color: selected ? selectedColor : muted,
                     fontWeight: selected ? FontWeight.w700 : FontWeight.w500,

@@ -26,6 +26,10 @@ flutter doctor -v
 
 There are currently no unit/widget tests in `test/`.
 
+## Local workspace files
+
+- `.claude/` is local Claude tooling state. Do not inspect, edit, stage, or mention it during normal repo work.
+
 ## Architecture Overview
 
 This is **LifeLog** (life_log), a Flutter personal life-tracking app. Dart SDK ^3.10.4, Flutter 3.38.5 stable.

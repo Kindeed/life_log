@@ -49,7 +49,7 @@ class AppTextField extends StatelessWidget {
     final theme = Theme.of(context);
     final semantic = theme.semanticColors;
     final radius = BorderRadius.circular(AppRadius.lg);
-    final borderSide = BorderSide(color: semantic.border, width: 0.7);
+    final borderSide = BorderSide(color: semantic.border, width: 1);
 
     return TextFormField(
       controller: controller,
@@ -65,13 +65,16 @@ class AppTextField extends StatelessWidget {
       readOnly: readOnly,
       enabled: enabled,
       onTap: onTap,
+      scrollPadding: EdgeInsets.only(
+        bottom: MediaQuery.of(context).viewInsets.bottom + 96,
+      ),
       decoration: InputDecoration(
         labelText: labelText,
         hintText: hintText,
         prefixIcon: prefixIcon,
         suffixIcon: suffixIcon,
         filled: true,
-        fillColor: theme.cardColor,
+        fillColor: semantic.mutedSurface,
         contentPadding: const EdgeInsets.symmetric(
           horizontal: AppSpacing.lg,
           vertical: AppSpacing.lg,
@@ -86,7 +89,7 @@ class AppTextField extends StatelessWidget {
         ),
         focusedBorder: OutlineInputBorder(
           borderRadius: radius,
-          borderSide: BorderSide(color: theme.colorScheme.primary, width: 1.2),
+          borderSide: BorderSide(color: theme.colorScheme.primary, width: 1.5),
         ),
         errorBorder: OutlineInputBorder(
           borderRadius: radius,
@@ -94,7 +97,7 @@ class AppTextField extends StatelessWidget {
         ),
         focusedErrorBorder: OutlineInputBorder(
           borderRadius: radius,
-          borderSide: BorderSide(color: theme.colorScheme.error, width: 1.2),
+          borderSide: BorderSide(color: theme.colorScheme.error, width: 1.5),
         ),
       ),
     );

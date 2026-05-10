@@ -18,6 +18,7 @@ import 'package:life_log/common/widgets/app_metric_tile.dart';
 import 'package:life_log/common/widgets/app_pill.dart';
 import 'package:life_log/common/widgets/app_text_field.dart';
 import 'package:life_log/modules/evidence/evidence_controller.dart';
+import 'package:life_log/modules/evidence/evidence_model.dart';
 import 'package:life_log/modules/expense/expense_record_controller.dart';
 import 'package:life_log/modules/expense/expense_record_model.dart';
 import 'package:life_log/modules/photo/photo_controller.dart';
@@ -33,6 +34,7 @@ class PhotoView extends StatefulWidget {
 class _PhotoViewState extends State<PhotoView> {
   late final PhotoController controller;
   late final EvidenceController evidenceController;
+  late final ExpenseRecordController expenseController;
   late final Worker _messageWorker;
 
   @override
@@ -40,6 +42,7 @@ class _PhotoViewState extends State<PhotoView> {
     super.initState();
     controller = Get.find<PhotoController>();
     evidenceController = Get.find<EvidenceController>();
+    expenseController = Get.find<ExpenseRecordController>();
     _messageWorker = ever<PhotoUiMessage?>(
       controller.uiMessage,
       _showUiMessage,
@@ -58,7 +61,6 @@ class _PhotoViewState extends State<PhotoView> {
     final isDark = theme.brightness == Brightness.dark;
     final semantic = theme.semanticColors;
     final textSecondary = theme.colorScheme.onSurfaceVariant;
-    final expenseController = Get.find<ExpenseRecordController>();
 
     return Scaffold(
       appBar: AppBar(
@@ -330,7 +332,8 @@ class _ProjectCard extends StatelessWidget {
     final pendingAmount = evidenceItems.fold<double>(
       0,
       (sum, item) =>
-          sum + (item.status.name == 'reimbursed' ? 0 : (item.amount ?? 0)),
+          sum +
+          (item.status == EvidenceStatus.reimbursed ? 0 : (item.amount ?? 0)),
     );
     return AppCard(
       onTap: onTap,
@@ -440,39 +443,41 @@ class _ProjectCover extends StatelessWidget {
       height: 98.w,
       child: ClipRRect(
         borderRadius: BorderRadius.circular(AppRadius.lg),
-        child: GridView.builder(
-          physics: const NeverScrollableScrollPhysics(),
-          padding: EdgeInsets.zero,
-          gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-            crossAxisCount: 2,
-            crossAxisSpacing: 1,
-            mainAxisSpacing: 1,
-          ),
-          itemCount: photos.length == 1 ? 1 : 4,
-          itemBuilder: (context, index) {
-            if (index >= photos.length) {
-              return Container(
-                color: isDark ? Colors.grey[850] : Colors.grey[100],
-                child: Icon(
-                  Icons.image_outlined,
-                  size: 18.sp,
-                  color: isDark ? Colors.grey[700] : Colors.grey[300],
+        child: photos.length == 1
+            ? Image.file(
+                File(photos.first.filePath),
+                fit: BoxFit.cover,
+                errorBuilder: (_, _, _) => Container(
+                  color: isDark ? Colors.grey[850] : Colors.grey[100],
+                  child: Icon(
+                    Icons.broken_image_outlined,
+                    color: isDark ? Colors.grey[600] : Colors.grey,
+                  ),
                 ),
-              );
-            }
-            return Image.file(
-              File(photos[index].filePath),
-              fit: BoxFit.cover,
-              errorBuilder: (_, _, _) => Container(
-                color: isDark ? Colors.grey[850] : Colors.grey[100],
-                child: Icon(
-                  Icons.broken_image_outlined,
-                  color: isDark ? Colors.grey[600] : Colors.grey,
+              )
+            : GridView.builder(
+                physics: const NeverScrollableScrollPhysics(),
+                padding: EdgeInsets.zero,
+                gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                  crossAxisCount: 2,
+                  crossAxisSpacing: 1,
+                  mainAxisSpacing: 1,
                 ),
+                itemCount: photos.length,
+                itemBuilder: (context, index) {
+                  return Image.file(
+                    File(photos[index].filePath),
+                    fit: BoxFit.cover,
+                    errorBuilder: (_, _, _) => Container(
+                      color: isDark ? Colors.grey[850] : Colors.grey[100],
+                      child: Icon(
+                        Icons.broken_image_outlined,
+                        color: isDark ? Colors.grey[600] : Colors.grey,
+                      ),
+                    ),
+                  );
+                },
               ),
-            );
-          },
-        ),
       ),
     );
   }

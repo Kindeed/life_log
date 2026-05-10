@@ -36,7 +36,7 @@ class LoginView extends StatelessWidget {
                       borderRadius: BorderRadius.circular(AppRadius.lg),
                       border: Border.all(
                         color: semantic.warning.withValues(alpha: 0.24),
-                        width: 0.7,
+                        width: 1,
                       ),
                     ),
                     child: Row(

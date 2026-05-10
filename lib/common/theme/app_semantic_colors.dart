@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 
+import 'app_colors.dart';
+
 class AppSemanticColors extends ThemeExtension<AppSemanticColors> {
   final Color work;
   final Color expense;
@@ -33,14 +35,14 @@ class AppSemanticColors extends ThemeExtension<AppSemanticColors> {
   );
 
   static const dark = AppSemanticColors(
-    work: Color(0xFF0A84FF),
+    work: AppColors.primaryBlue,
     expense: Color(0xFFBF8CFF),
     project: Color(0xFF40C8B4),
     stats: Color(0xFF64D2FF),
-    success: Color(0xFF30D158),
+    success: AppColors.successGreen,
     warning: Color(0xFFFF9F0A),
-    mutedSurface: Color(0xFF1C1C1E),
-    border: Color(0xFF2C2C2E),
+    mutedSurface: AppColors.darkMutedSurface,
+    border: AppColors.darkDivider,
   );
 
   @override

@@ -44,7 +44,9 @@ class AppActionSheet {
                 borderRadius: const BorderRadius.vertical(
                   top: Radius.circular(AppRadius.sheet),
                 ),
-                border: Border(top: BorderSide(color: semantic.border)),
+                border: Border(
+                  top: BorderSide(color: semantic.border, width: 1),
+                ),
               ),
               child: Column(
                 mainAxisSize: MainAxisSize.min,

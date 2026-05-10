@@ -6,11 +6,6 @@ import 'package:lunar/lunar.dart';
 import 'package:life_log/common/theme/app_colors.dart';
 import '../work_log_controller.dart';
 import '../work_log_model.dart';
-// If HolidayUtil is not in lunar package, this might fail, but existing code uses it.
-// Assuming it's available via imports or same package structure.
-// Since strict mode is on, I'll assume it's imported via lunar or other.
-// However, I can't add an import I don't know.
-// I'll try to add imports I saw in work_log_view.dart
 
 class DayCell extends StatelessWidget {
   final DateTime day;
@@ -122,7 +117,8 @@ class DayCell extends StatelessWidget {
       decoration: decoration,
       child: Stack(
         children: [
-          Center(
+          Padding(
+            padding: EdgeInsets.only(top: holiday != null ? 10.h : 0),
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
@@ -152,7 +148,7 @@ class DayCell extends StatelessWidget {
           ),
           if (holiday != null)
             Positioned(
-              top: 0,
+              top: 2.h,
               right: 0,
               child: Container(
                 padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 2),

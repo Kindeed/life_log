@@ -53,20 +53,32 @@ class SubscriptionController extends GetxController {
 
   // --- 添加/更新订阅 ---
   Future<void> addSub(Subscription sub) async {
-    // 如果是新增（没有 sortIndex），把它排到最后
-    final hadSortIndex = sub.sortIndex != null;
-    sub.sortIndex ??= subs.length;
-    if (!hadSortIndex && sub.remoteId != null) {
-      sub.isDirty = true;
+    try {
+      // 如果是新增（没有 sortIndex），把它排到最后
+      final hadSortIndex = sub.sortIndex != null;
+      sub.sortIndex ??= subs.length;
+      if (!hadSortIndex && sub.remoteId != null) {
+        sub.isDirty = true;
+      }
+      await SubscriptionRepository.to.saveSubscription(sub, subs.length);
+      LogService.to.info('Subscription', '添加/更新订阅: ${sub.name}');
+    } catch (e, stackTrace) {
+      LogService.to.error('Subscription', '保存订阅失败: $e', stackTrace);
+      Get.snackbar('保存失败', e.toString());
+      rethrow;
     }
-    await SubscriptionRepository.to.saveSubscription(sub, subs.length);
-    LogService.to.info('Subscription', '添加/更新订阅: ${sub.name}');
   }
 
   // --- 删除订阅 ---
   Future<void> deleteSub(int id) async {
-    await SubscriptionRepository.to.deleteSubscription(id);
-    LogService.to.info('Subscription', '删除订阅 ID: $id');
+    try {
+      await SubscriptionRepository.to.deleteSubscription(id);
+      LogService.to.info('Subscription', '删除订阅 ID: $id');
+    } catch (e, stackTrace) {
+      LogService.to.error('Subscription', '删除订阅失败: $e', stackTrace);
+      Get.snackbar('删除失败', e.toString());
+      rethrow;
+    }
   }
 
   List<Subscription> get visibleSubs {
@@ -150,8 +162,14 @@ class SubscriptionController extends GetxController {
     subs.insert(newIndex, item);
 
     // 重新写入数据库中的顺序
-    await SubscriptionRepository.to.reorderSubscriptions(subs);
-    LogService.to.info('Subscription', '重新排序订阅');
+    try {
+      await SubscriptionRepository.to.reorderSubscriptions(subs);
+      LogService.to.info('Subscription', '重新排序订阅');
+    } catch (e, stackTrace) {
+      LogService.to.error('Subscription', '重新排序订阅失败: $e', stackTrace);
+      Get.snackbar('排序失败', e.toString());
+      rethrow;
+    }
   }
 
   // --- 滚动监听 ---

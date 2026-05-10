@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:get/get.dart';
 import 'package:life_log/common/theme/app_colors.dart';
+import 'package:life_log/common/theme/theme_extensions.dart';
 import 'package:life_log/common/utils/formatters.dart';
 import 'package:life_log/common/widgets/app_confirm_dialog.dart';
 import 'package:life_log/modules/evidence/evidence_controller.dart';
@@ -73,7 +74,7 @@ class _EvidenceEditorSheetState extends State<EvidenceEditorSheet> {
     super.initState();
     final existing = widget.existing;
     _projectController = TextEditingController(
-      text: existing?.projectName ?? widget.initialProject ?? 'DefaultProject',
+      text: existing?.projectName ?? widget.initialProject ?? '',
     );
     _amountController = TextEditingController(
       text: existing?.amount == null ? '' : existing!.amount!.toString(),
@@ -98,216 +99,247 @@ class _EvidenceEditorSheetState extends State<EvidenceEditorSheet> {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final isDark = theme.brightness == Brightness.dark;
     final textPrimary = theme.colorScheme.onSurface;
     final textSecondary = theme.colorScheme.onSurfaceVariant;
-    final fillColor = isDark ? theme.cardColor : const Color(0xFFF7F9FC);
-    final bottomInset = MediaQuery.of(context).viewInsets.bottom;
+    final semantic = theme.semanticColors;
+    final fillColor = semantic.mutedSurface;
 
-    final content = SafeArea(
-      top: false,
-      child: Container(
-        constraints: BoxConstraints(maxHeight: 0.92.sh),
-        padding: EdgeInsets.fromLTRB(20.w, 18.h, 20.w, 20.h + bottomInset),
-        decoration: BoxDecoration(
-          color: theme.scaffoldBackgroundColor,
-          borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
+    final header = Padding(
+      padding: EdgeInsets.fromLTRB(20.w, 18.h, 20.w, 10.h),
+      child: Row(
+        children: [
+          Expanded(
+            child: Text(
+              widget.existing == null ? '添加凭证' : '编辑凭证',
+              style: TextStyle(
+                fontSize: 20.sp,
+                fontWeight: FontWeight.w800,
+                color: textPrimary,
+              ),
+            ),
+          ),
+          IconButton(
+            icon: Icon(Icons.close_rounded, color: textSecondary),
+            onPressed: Get.back,
+          ),
+        ],
+      ),
+    );
+
+    final formContent = Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        if (_previewPath != null) ...[
+          SizedBox(height: 12.h),
+          ClipRRect(
+            borderRadius: BorderRadius.circular(12),
+            child: Image.file(
+              File(_previewPath!),
+              height: 160.h,
+              width: double.infinity,
+              fit: BoxFit.cover,
+              errorBuilder: (_, _, _) => Container(
+                height: 120.h,
+                alignment: Alignment.center,
+                color: fillColor,
+                child: Icon(Icons.receipt_long_rounded, color: textSecondary),
+              ),
+            ),
+          ),
+        ],
+        SizedBox(height: 16.h),
+        _buildTextField(
+          controller: _projectController,
+          label: '项目',
+          icon: Icons.folder_special_rounded,
+          fillColor: fillColor,
         ),
-        child: SingleChildScrollView(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Row(
-                children: [
-                  Expanded(
-                    child: Text(
-                      widget.existing == null ? '添加凭证' : '编辑凭证',
-                      style: TextStyle(
-                        fontSize: 20.sp,
-                        fontWeight: FontWeight.w800,
-                        color: textPrimary,
-                      ),
-                    ),
-                  ),
-                  IconButton(
-                    icon: Icon(Icons.close_rounded, color: textSecondary),
-                    onPressed: Get.back,
-                  ),
-                ],
-              ),
-              if (_previewPath != null) ...[
-                SizedBox(height: 12.h),
-                ClipRRect(
-                  borderRadius: BorderRadius.circular(12),
-                  child: Image.file(
-                    File(_previewPath!),
-                    height: 160.h,
-                    width: double.infinity,
-                    fit: BoxFit.cover,
-                    errorBuilder: (_, _, _) => Container(
-                      height: 120.h,
-                      alignment: Alignment.center,
-                      color: fillColor,
-                      child: Icon(
-                        Icons.receipt_long_rounded,
-                        color: textSecondary,
-                      ),
-                    ),
-                  ),
+        SizedBox(height: 12.h),
+        Row(
+          children: [
+            Expanded(
+              child: _buildTextField(
+                controller: _amountController,
+                label: '金额',
+                icon: Icons.payments_rounded,
+                fillColor: fillColor,
+                keyboardType: const TextInputType.numberWithOptions(
+                  decimal: true,
                 ),
-              ],
-              SizedBox(height: 16.h),
-              _buildTextField(
-                controller: _projectController,
-                label: '项目',
-                icon: Icons.folder_special_rounded,
+              ),
+            ),
+            SizedBox(width: 12.w),
+            Expanded(
+              child: _buildPickerTile(
+                label: _formatDate(_evidenceDate),
+                icon: Icons.event_rounded,
                 fillColor: fillColor,
-              ),
-              SizedBox(height: 12.h),
-              Row(
-                children: [
-                  Expanded(
-                    child: _buildTextField(
-                      controller: _amountController,
-                      label: '金额',
-                      icon: Icons.payments_rounded,
-                      fillColor: fillColor,
-                      keyboardType: const TextInputType.numberWithOptions(
-                        decimal: true,
-                      ),
-                    ),
-                  ),
-                  SizedBox(width: 12.w),
-                  Expanded(
-                    child: _buildPickerTile(
-                      label: _formatDate(_evidenceDate),
-                      icon: Icons.event_rounded,
-                      fillColor: fillColor,
-                      onTap: () => _pickDate(
-                        initial: _evidenceDate,
-                        onPicked: (date) =>
-                            setState(() => _evidenceDate = date),
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-              SizedBox(height: 12.h),
-              _buildTextField(
-                controller: _merchantController,
-                label: '商家/用途',
-                icon: Icons.storefront_rounded,
-                fillColor: fillColor,
-              ),
-              SizedBox(height: 12.h),
-              Row(
-                children: [
-                  Expanded(
-                    child: _buildDropdown<EvidenceCategory>(
-                      value: _category,
-                      values: EvidenceCategory.values,
-                      labelBuilder: (value) => value.label,
-                      icon: Icons.category_rounded,
-                      fillColor: fillColor,
-                      onChanged: (value) => setState(() => _category = value),
-                    ),
-                  ),
-                  SizedBox(width: 12.w),
-                  Expanded(
-                    child: _buildDropdown<EvidenceStatus>(
-                      value: _status,
-                      values: EvidenceStatus.values,
-                      labelBuilder: (value) => value.label,
-                      icon: Icons.verified_rounded,
-                      fillColor: fillColor,
-                      onChanged: (value) => setState(() => _status = value),
-                    ),
-                  ),
-                ],
-              ),
-              SizedBox(height: 12.h),
-              _buildPickerTile(
-                label: _tripDate == null
-                    ? '关联出差日期（可选）'
-                    : _formatDate(_tripDate!),
-                icon: Icons.luggage_rounded,
-                fillColor: fillColor,
-                trailing: _tripDate == null
-                    ? null
-                    : IconButton(
-                        icon: const Icon(Icons.clear_rounded),
-                        onPressed: () => setState(() => _tripDate = null),
-                      ),
                 onTap: () => _pickDate(
-                  initial: _tripDate ?? _evidenceDate,
-                  onPicked: (date) => setState(() => _tripDate = date),
+                  initial: _evidenceDate,
+                  onPicked: (date) => setState(() => _evidenceDate = date),
                 ),
               ),
-              SizedBox(height: 12.h),
-              _buildTextField(
-                controller: _noteController,
-                label: '备注',
-                icon: Icons.edit_note_rounded,
+            ),
+          ],
+        ),
+        SizedBox(height: 12.h),
+        _buildTextField(
+          controller: _merchantController,
+          label: '商家/用途',
+          icon: Icons.storefront_rounded,
+          fillColor: fillColor,
+        ),
+        SizedBox(height: 12.h),
+        Row(
+          children: [
+            Expanded(
+              child: _buildDropdown<EvidenceCategory>(
+                value: _category,
+                values: EvidenceCategory.values,
+                labelBuilder: (value) => value.label,
+                icon: Icons.category_rounded,
                 fillColor: fillColor,
-                maxLines: 3,
+                onChanged: (value) => setState(() => _category = value),
               ),
-              SizedBox(height: 20.h),
-              if (widget.existing == null)
-                SizedBox(
-                  width: double.infinity,
-                  height: 50.h,
-                  child: ElevatedButton.icon(
-                    onPressed: _save,
-                    icon: const Icon(Icons.save_rounded),
-                    label: const Text('保存凭证'),
-                    style: _primaryButtonStyle(context),
-                  ),
-                )
-              else
-                Row(
-                  children: [
-                    Expanded(
-                      child: OutlinedButton.icon(
-                        onPressed: _confirmDelete,
-                        icon: Icon(
-                          Icons.delete_outline_rounded,
-                          color: theme.colorScheme.error,
-                        ),
-                        label: Text(
-                          '删除',
-                          style: TextStyle(color: theme.colorScheme.error),
-                        ),
-                        style: OutlinedButton.styleFrom(
-                          side: BorderSide(color: theme.colorScheme.error),
-                          padding: EdgeInsets.symmetric(vertical: 13.h),
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(12),
-                          ),
-                        ),
-                      ),
-                    ),
-                    SizedBox(width: 12.w),
-                    Expanded(
-                      child: ElevatedButton.icon(
-                        onPressed: _save,
-                        icon: const Icon(Icons.save_rounded),
-                        label: const Text('保存修改'),
-                        style: _primaryButtonStyle(context),
-                      ),
-                    ),
-                  ],
+            ),
+            SizedBox(width: 12.w),
+            Expanded(
+              child: _buildDropdown<EvidenceStatus>(
+                value: _status,
+                values: EvidenceStatus.values,
+                labelBuilder: (value) => value.label,
+                icon: Icons.verified_rounded,
+                fillColor: fillColor,
+                onChanged: (value) => setState(() => _status = value),
+              ),
+            ),
+          ],
+        ),
+        SizedBox(height: 12.h),
+        _buildPickerTile(
+          label: _tripDate == null ? '关联出差日期（可选）' : _formatDate(_tripDate!),
+          icon: Icons.luggage_rounded,
+          fillColor: fillColor,
+          trailing: _tripDate == null
+              ? null
+              : IconButton(
+                  icon: const Icon(Icons.clear_rounded),
+                  onPressed: () => setState(() => _tripDate = null),
                 ),
+          onTap: () => _pickDate(
+            initial: _tripDate ?? _evidenceDate,
+            onPicked: (date) => setState(() => _tripDate = date),
+          ),
+        ),
+        SizedBox(height: 12.h),
+        _buildTextField(
+          controller: _noteController,
+          label: '备注',
+          icon: Icons.edit_note_rounded,
+          fillColor: fillColor,
+          maxLines: 3,
+        ),
+        SizedBox(height: 20.h),
+        if (widget.existing == null)
+          SizedBox(
+            width: double.infinity,
+            height: 50.h,
+            child: ElevatedButton.icon(
+              onPressed: _save,
+              icon: const Icon(Icons.save_rounded),
+              label: const Text('保存凭证'),
+              style: _primaryButtonStyle(context),
+            ),
+          )
+        else
+          Row(
+            children: [
+              Expanded(
+                child: OutlinedButton.icon(
+                  onPressed: _confirmDelete,
+                  icon: Icon(
+                    Icons.delete_outline_rounded,
+                    color: theme.colorScheme.error,
+                  ),
+                  label: Text(
+                    '删除',
+                    style: TextStyle(color: theme.colorScheme.error),
+                  ),
+                  style: OutlinedButton.styleFrom(
+                    side: BorderSide(color: theme.colorScheme.error),
+                    padding: EdgeInsets.symmetric(vertical: 13.h),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                  ),
+                ),
+              ),
+              SizedBox(width: 12.w),
+              Expanded(
+                child: ElevatedButton.icon(
+                  onPressed: _save,
+                  icon: const Icon(Icons.save_rounded),
+                  label: const Text('保存修改'),
+                  style: _primaryButtonStyle(context),
+                ),
+              ),
+            ],
+          ),
+      ],
+    );
+
+    if (widget.asPage) {
+      return Scaffold(
+        backgroundColor: theme.scaffoldBackgroundColor,
+        body: SafeArea(
+          child: Column(
+            children: [
+              header,
+              Expanded(
+                child: SingleChildScrollView(
+                  keyboardDismissBehavior:
+                      ScrollViewKeyboardDismissBehavior.onDrag,
+                  padding: EdgeInsets.fromLTRB(20.w, 0, 20.w, 28.h),
+                  child: formContent,
+                ),
+              ),
             ],
           ),
         ),
-      ),
-    );
-    if (!widget.asPage) return content;
+      );
+    }
 
-    return Scaffold(
-      backgroundColor: theme.scaffoldBackgroundColor,
-      body: SafeArea(top: true, child: content),
+    final view = View.of(context);
+    final bottomInset = view.viewInsets.bottom / view.devicePixelRatio;
+    final rootHeight = view.physicalSize.height / view.devicePixelRatio;
+    final resizedByKeyboard = rootHeight - MediaQuery.sizeOf(context).height;
+    final keyboardInset = bottomInset > 0 ? bottomInset : resizedByKeyboard;
+    return SafeArea(
+      top: false,
+      child: Container(
+        constraints: BoxConstraints(maxHeight: 0.92.sh),
+        padding: EdgeInsets.only(bottom: 24.h),
+        decoration: BoxDecoration(
+          color: theme.scaffoldBackgroundColor,
+          borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
+          border: Border(top: BorderSide(color: semantic.border, width: 1)),
+        ),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            header,
+            Flexible(
+              child: SingleChildScrollView(
+                keyboardDismissBehavior:
+                    ScrollViewKeyboardDismissBehavior.onDrag,
+                padding: EdgeInsets.fromLTRB(20.w, 0, 20.w, keyboardInset),
+                child: formContent,
+              ),
+            ),
+          ],
+        ),
+      ),
     );
   }
 
@@ -323,19 +355,31 @@ class _EvidenceEditorSheetState extends State<EvidenceEditorSheet> {
     int maxLines = 1,
   }) {
     final theme = Theme.of(context);
+    final semantic = theme.semanticColors;
+    final border = OutlineInputBorder(
+      borderRadius: BorderRadius.circular(12),
+      borderSide: BorderSide(color: semantic.border, width: 1),
+    );
     return TextField(
       controller: controller,
       keyboardType: keyboardType,
       maxLines: maxLines,
+      scrollPadding: EdgeInsets.only(
+        bottom:
+            View.of(context).viewInsets.bottom /
+                View.of(context).devicePixelRatio +
+            96.h,
+      ),
       style: TextStyle(color: theme.colorScheme.onSurface),
       decoration: InputDecoration(
         labelText: label,
         prefixIcon: Icon(icon, color: theme.colorScheme.onSurfaceVariant),
         filled: true,
         fillColor: fillColor,
-        border: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(12),
-          borderSide: BorderSide.none,
+        border: border,
+        enabledBorder: border,
+        focusedBorder: border.copyWith(
+          borderSide: BorderSide(color: theme.colorScheme.primary, width: 1.5),
         ),
       ),
     );
@@ -349,6 +393,7 @@ class _EvidenceEditorSheetState extends State<EvidenceEditorSheet> {
     Widget? trailing,
   }) {
     final theme = Theme.of(context);
+    final semantic = theme.semanticColors;
     return InkWell(
       onTap: onTap,
       borderRadius: BorderRadius.circular(12),
@@ -358,6 +403,7 @@ class _EvidenceEditorSheetState extends State<EvidenceEditorSheet> {
         decoration: BoxDecoration(
           color: fillColor,
           borderRadius: BorderRadius.circular(12),
+          border: Border.all(color: semantic.border, width: 1),
         ),
         child: Row(
           children: [
@@ -391,12 +437,14 @@ class _EvidenceEditorSheetState extends State<EvidenceEditorSheet> {
     required ValueChanged<T> onChanged,
   }) {
     final theme = Theme.of(context);
+    final semantic = theme.semanticColors;
     return Container(
       height: 56.h,
       padding: EdgeInsets.symmetric(horizontal: 12.w),
       decoration: BoxDecoration(
         color: fillColor,
         borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: semantic.border, width: 1),
       ),
       child: Row(
         children: [
@@ -465,7 +513,7 @@ class _EvidenceEditorSheetState extends State<EvidenceEditorSheet> {
   void _save() {
     final projectName = _projectController.text.trim();
     if (projectName.isEmpty) {
-      Get.snackbar('错误', '项目名称不能为空');
+      Get.snackbar('错误', '请输入项目名称');
       return;
     }
 

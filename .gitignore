@@ -54,6 +54,7 @@ android/app/upload-keystore.jks
 android/local.properties
 
 # Local diagnostics / review scratch files
+.claude/
 analyze.txt
 doctor_output.txt
 diff*.txt

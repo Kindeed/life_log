@@ -2,6 +2,7 @@ import 'dart:io';
 import 'dart:typed_data';
 
 import 'package:flutter/material.dart';
+import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:get/get.dart';
 import 'package:photo_manager/photo_manager.dart';
 
@@ -133,20 +134,20 @@ class _GalleryImportViewState extends State<GalleryImportView> {
                 return false;
               },
               child: GridView.builder(
-                padding: const EdgeInsets.all(4),
-                gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                padding: EdgeInsets.all(4.w),
+                gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
                   crossAxisCount: 3,
-                  crossAxisSpacing: 4,
-                  mainAxisSpacing: 4,
+                  crossAxisSpacing: 4.w,
+                  mainAxisSpacing: 4.h,
                 ),
                 itemCount: _assets.length + (_hasMore ? 1 : 0),
                 itemBuilder: (context, index) {
                   if (index >= _assets.length) {
-                    return const Center(
+                    return Center(
                       child: SizedBox(
-                        width: 24,
-                        height: 24,
-                        child: CircularProgressIndicator(strokeWidth: 2),
+                        width: 24.w,
+                        height: 24.w,
+                        child: const CircularProgressIndicator(strokeWidth: 2),
                       ),
                     );
                   }
@@ -160,14 +161,14 @@ class _GalleryImportViewState extends State<GalleryImportView> {
               ),
             ),
       bottomNavigationBar: Container(
-        padding: const EdgeInsets.fromLTRB(16, 10, 16, 20),
+        padding: EdgeInsets.fromLTRB(16.w, 10.h, 16.w, 20.h),
         color: theme.cardColor,
         child: Text(
           "导入成功后会请求删除原相册照片，系统会弹出确认框。",
           textAlign: TextAlign.center,
           style: TextStyle(
             color: theme.colorScheme.onSurfaceVariant,
-            fontSize: 12,
+            fontSize: 12.sp,
           ),
         ),
       ),

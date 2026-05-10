@@ -2,6 +2,9 @@
 
 **日期**: 2026-04-29 | **版本**: v1.3.0 | **范围**: lib/ (66 dart) + supabase/migrations/ (3 sql)
 
+> Historical report. Active bug tracking moved to `BUG_TRACKER.md`.
+> Any recommendation to add cloud-sync fields or cloud-sync flows to `PhotoItem` is superseded by `AGENTS.md`: photos are local-only and must not enter Supabase sync.
+
 ---
 
 ## P0 — 关键 (数据泄露 / 数据丢失 / 崩溃)

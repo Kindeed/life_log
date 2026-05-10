@@ -43,7 +43,6 @@ class AppTheme {
         color: AppColors.lightTextPrimary,
         fontSize: 20,
         fontWeight: FontWeight.w700,
-        letterSpacing: 0,
       ),
     ),
     bottomNavigationBarTheme: const BottomNavigationBarThemeData(
@@ -53,6 +52,10 @@ class AppTheme {
       elevation: 0,
     ),
     bottomSheetTheme: const BottomSheetThemeData(
+      backgroundColor: AppColors.lightCard,
+      surfaceTintColor: Colors.transparent,
+    ),
+    dialogTheme: const DialogThemeData(
       backgroundColor: AppColors.lightCard,
       surfaceTintColor: Colors.transparent,
     ),
@@ -99,7 +102,6 @@ class AppTheme {
         color: Colors.white,
         fontSize: 20,
         fontWeight: FontWeight.w700,
-        letterSpacing: 0,
       ),
     ),
     bottomNavigationBarTheme: const BottomNavigationBarThemeData(
@@ -109,6 +111,10 @@ class AppTheme {
       elevation: 0,
     ),
     bottomSheetTheme: const BottomSheetThemeData(
+      backgroundColor: AppColors.darkCard,
+      surfaceTintColor: Colors.transparent,
+    ),
+    dialogTheme: const DialogThemeData(
       backgroundColor: AppColors.darkCard,
       surfaceTintColor: Colors.transparent,
     ),
@@ -134,47 +140,40 @@ class AppTheme {
         color: primary,
         fontSize: 34,
         fontWeight: FontWeight.w700,
-        letterSpacing: 0,
         height: 1.08,
       ),
       headlineMedium: TextStyle(
         color: primary,
         fontSize: 28,
         fontWeight: FontWeight.w700,
-        letterSpacing: 0,
       ),
       titleLarge: TextStyle(
         color: primary,
         fontSize: 22,
         fontWeight: FontWeight.w700,
-        letterSpacing: 0,
       ),
       titleMedium: TextStyle(
         color: primary,
         fontSize: 17,
         fontWeight: FontWeight.w600,
-        letterSpacing: 0,
       ),
       titleSmall: TextStyle(
         color: primary,
         fontSize: 15,
         fontWeight: FontWeight.w600,
-        letterSpacing: 0,
       ),
-      bodyLarge: TextStyle(color: primary, fontSize: 17, letterSpacing: 0),
-      bodyMedium: TextStyle(color: primary, fontSize: 15, letterSpacing: 0),
-      bodySmall: TextStyle(color: secondary, fontSize: 13, letterSpacing: 0),
+      bodyLarge: TextStyle(color: primary, fontSize: 17),
+      bodyMedium: TextStyle(color: primary, fontSize: 15),
+      bodySmall: TextStyle(color: secondary, fontSize: 13),
       labelLarge: TextStyle(
         color: primary,
         fontSize: 16,
         fontWeight: FontWeight.w600,
-        letterSpacing: 0,
       ),
       labelMedium: TextStyle(
         color: secondary,
         fontSize: 13,
         fontWeight: FontWeight.w500,
-        letterSpacing: 0,
       ),
     );
   }

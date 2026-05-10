@@ -1,5 +1,8 @@
 import 'package:get/get.dart';
 import 'package:life_log/common/db/db_service.dart';
+import 'package:life_log/common/services/log_service.dart';
+import 'package:life_log/common/services/sync_service.dart';
+import 'package:life_log/common/utils/sync_id_generator.dart';
 
 import 'project_model.dart';
 
@@ -14,8 +17,14 @@ class ProjectRepository extends GetxService {
     return DbService.to.watchProjects();
   }
 
-  Future<Project> ensureProject(String name) {
-    return DbService.to.ensureProject(name);
+  Future<Project> ensureProject(String name, {bool syncable = false}) {
+    return DbService.to.ensureProject(name, syncable: syncable);
+  }
+
+  Future<Project> ensureSyncableProject(String name) async {
+    final project = await ensureProject(name, syncable: true);
+    await _pushIfNeeded(project);
+    return project;
   }
 
   Future<Project> saveProject(Project project) async {
@@ -28,7 +37,26 @@ class ProjectRepository extends GetxService {
       project.createdAt = now;
     }
     project.updatedAt = now;
+    project.syncId ??= SyncIdGenerator.newSyncId();
+    project.isDirty = true;
     await DbService.to.addProject(project);
+    await _pushIfNeeded(project);
     return project;
+  }
+
+  Future<void> _pushIfNeeded(Project project) async {
+    if (!Get.isRegistered<SyncService>()) return;
+    if (project.remoteId != null && !project.isDirty && !project.pendingDelete) {
+      return;
+    }
+
+    try {
+      final success = await SyncService.to.pushProject(project);
+      if (!success) {
+        LogService.to.error('ProjectRepository', '云端同步未完成，保留待同步状态');
+      }
+    } catch (e) {
+      LogService.to.error('ProjectRepository', '云端同步失败: $e');
+    }
   }
 }

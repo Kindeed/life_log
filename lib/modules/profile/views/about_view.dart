@@ -123,7 +123,7 @@ class AboutView extends StatelessWidget {
 
             // 版权信息
             Text(
-              '© 2024 LifeLog. All rights reserved.',
+              '© ${DateTime.now().year} LifeLog. All rights reserved.',
               style: TextStyle(fontSize: 12.sp, color: textSecondary),
             ),
           ],

@@ -22,6 +22,8 @@ import 'package:life_log/common/services/auth_service.dart';
 import 'package:life_log/common/services/sync_service.dart';
 
 bool _appStarted = false;
+String? _cloudStartupWarning;
+bool _cloudStartupWarningShown = false;
 
 void main() {
   runZonedGuarded(
@@ -82,7 +84,12 @@ Future<void> _initializeCloudServices(
     Get.put(SyncService(), permanent: true);
     logService.info('Startup', '云服务已注册');
   } catch (error, stackTrace) {
-    logService.error('Startup', 'Supabase 初始化失败，已进入本地模式: $error', stackTrace);
+    _cloudStartupWarning = '云同步初始化失败，当前已进入本地模式';
+    logService.error(
+      'Startup',
+      '${_cloudStartupWarning!}: $error',
+      stackTrace,
+    );
   }
 }
 
@@ -173,6 +180,16 @@ class MyApp extends StatelessWidget {
           themeMode: themeController.flutterThemeMode,
           initialBinding: AppBinding(),
           initialRoute: '/',
+          builder: (context, child) {
+            final warning = _cloudStartupWarning;
+            if (warning != null && !_cloudStartupWarningShown) {
+              _cloudStartupWarningShown = true;
+              WidgetsBinding.instance.addPostFrameCallback((_) {
+                Get.snackbar('本地模式', warning);
+              });
+            }
+            return child ?? const SizedBox.shrink();
+          },
           getPages: [
             GetPage(
               name: '/',

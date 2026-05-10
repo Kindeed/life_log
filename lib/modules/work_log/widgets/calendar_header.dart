@@ -65,11 +65,11 @@ class CalendarHeader extends StatelessWidget {
           Obx(() {
             final isMonth = logic.calendarFormat.value == CalendarFormat.month;
             return Container(
-              padding: const EdgeInsets.all(4),
+              padding: EdgeInsets.all(4.w),
               decoration: BoxDecoration(
                 color: theme.cardColor,
                 borderRadius: BorderRadius.circular(AppRadius.xl),
-                border: Border.all(color: semantic.border, width: 0.7),
+                border: Border.all(color: semantic.border, width: 1),
               ),
               child: Row(
                 children: [

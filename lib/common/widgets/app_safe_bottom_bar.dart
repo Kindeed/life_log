@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:life_log/common/theme/theme_extensions.dart';
 
+import '../theme/app_elevations.dart';
 import '../theme/app_spacing.dart';
 
 class AppSafeBottomBar extends StatelessWidget {
@@ -36,7 +37,7 @@ class AppSafeBottomBar extends StatelessWidget {
               color: Colors.black.withValues(
                 alpha: theme.brightness == Brightness.dark ? 0.2 : 0.055,
               ),
-              blurRadius: 24,
+              blurRadius: AppElevations.shadowBlurHigh,
               offset: const Offset(0, -8),
             ),
           ],

@@ -9,6 +9,7 @@ import 'package:life_log/common/utils/file_path_utils.dart';
 import 'package:life_log/common/utils/record_validators.dart';
 import 'package:life_log/common/utils/sync_id_generator.dart';
 import 'package:life_log/modules/project/project_repository.dart';
+import 'package:path/path.dart' as p;
 import 'package:path_provider/path_provider.dart';
 
 import 'evidence_model.dart';
@@ -31,7 +32,7 @@ class EvidenceRepository extends GetxService {
   }) async {
     validateExpenseEvidence(evidence);
     evidence.syncId ??= SyncIdGenerator.newSyncId();
-    final project = await ProjectRepository.to.ensureProject(
+    final project = await ProjectRepository.to.ensureSyncableProject(
       evidence.projectName,
     );
     evidence.projectId = project.id;
@@ -99,7 +100,7 @@ class EvidenceRepository extends GetxService {
 
     await sourceFile.copy(targetPath);
     evidence.localFilePath = targetPath;
-    evidence.fileName = targetPath.substring(targetPath.lastIndexOf('/') + 1);
+    evidence.fileName = p.basename(targetPath);
     evidence.mimeType = normalizedExtension == '.png'
         ? 'image/png'
         : normalizedExtension == '.pdf'

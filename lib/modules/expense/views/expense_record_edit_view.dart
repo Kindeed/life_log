@@ -230,8 +230,9 @@ class _ExpenseRecordEditViewState extends State<ExpenseRecordEditView> {
       await ExpenseRecordController.to.saveRecord(next);
       Get.back();
       Get.snackbar('已保存', '消费记录已更新');
-    } catch (e) {
-      Get.snackbar('保存失败', e.toString());
+    } catch (_) {
+      // Controller already logs and shows the snackbar; stop the success flow.
+      return;
     }
   }
 
@@ -245,7 +246,12 @@ class _ExpenseRecordEditViewState extends State<ExpenseRecordEditView> {
       destructive: true,
     );
     if (!confirmed) return;
-    await ExpenseRecordController.to.deleteRecord(existing.id);
-    Get.back();
+    try {
+      await ExpenseRecordController.to.deleteRecord(existing.id);
+      Get.back();
+    } catch (_) {
+      // Controller already logs and shows the snackbar; stop the success flow.
+      return;
+    }
   }
 }

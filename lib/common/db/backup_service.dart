@@ -3,6 +3,7 @@ import 'package:file_picker/file_picker.dart';
 import 'package:get/get.dart';
 import 'package:life_log/common/db/db_service.dart';
 import 'package:life_log/modules/photo/photo_controller.dart';
+import 'package:life_log/modules/project/project_controller.dart';
 import 'package:life_log/modules/evidence/evidence_controller.dart';
 import 'package:life_log/modules/statistics/statistics_controller.dart';
 import 'package:life_log/modules/subscription/subscription_controller.dart';
@@ -17,29 +18,22 @@ import 'package:path/path.dart' as p;
 /// 设计说明：与其他 Service（GetxService）不同，BackupService 是纯静态工具类，
 /// 因为它没有需要管理的状态，仅执行一次性的文件操作。
 class BackupService {
+  static const databaseOnlyNotice = '当前备份仅包含本地数据库，不包含照片和凭证文件本体。';
+
   static Future<void> exportBackup() async {
     try {
-      // 1. 获取数据库目录
-      final dir = await getApplicationDocumentsDirectory();
-      final dbPath = p.join(dir.path, 'default.isar'); // Isar 默认的文件名通常是这样
-
-      final dbFile = File(dbPath);
-      if (!await dbFile.exists()) {
-        throw Exception("未找到数据库文件");
-      }
-
-      // 2. 创建临时副本以供分享
       final tempDir = await getTemporaryDirectory();
       final backupName =
           'LifeLog_Backup_${DateTime.now().millisecondsSinceEpoch}.isar';
       final backupPath = p.join(tempDir.path, backupName);
 
-      // 使用 isar 的 copyToFile 是最安全的备份方式
       await DbService.to.isar.copyToFile(backupPath);
 
-      // 3. 调用分享
       final xFile = XFile(backupPath);
-      await Share.shareXFiles([xFile], text: 'LifeLog 数据备份');
+      await Share.shareXFiles(
+        [xFile],
+        text: 'LifeLog 数据库备份。$databaseOnlyNotice',
+      );
     } catch (e) {
       throw Exception("备份异常: $e");
     }
@@ -63,8 +57,7 @@ class BackupService {
   }
 
   static Future<void> restoreFromBackup(File backupFile) async {
-    final dir = await getApplicationDocumentsDirectory();
-    final dbPath = p.join(dir.path, 'default.isar');
+    final dbPath = _currentDatabasePath();
     final existingDb = File(dbPath);
     final tempDir = await getTemporaryDirectory();
     final rollbackPath = p.join(
@@ -122,9 +115,18 @@ class BackupService {
     }
   }
 
+  static String _currentDatabasePath() {
+    final dbPath = DbService.to.isar.path;
+    if (dbPath == null || dbPath.isEmpty) {
+      throw Exception("当前平台不支持数据库文件恢复");
+    }
+    return dbPath;
+  }
+
   static Future<void> _rebuildDatabaseControllers() async {
     await _deleteIfRegistered<WorkLogController>();
     await _deleteIfRegistered<SubscriptionController>();
+    await _deleteIfRegistered<ProjectController>();
     await _deleteIfRegistered<PhotoController>();
     await _deleteIfRegistered<EvidenceController>();
     await _deleteIfRegistered<StatisticsController>();

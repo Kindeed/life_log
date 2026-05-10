@@ -10,7 +10,7 @@ class SubscriptionEditView extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      body: SafeArea(child: AddSubscriptionSheet(sub: sub)),
+      body: SafeArea(child: AddSubscriptionSheet(sub: sub, asPage: true)),
     );
   }
 }

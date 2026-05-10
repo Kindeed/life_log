@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:get/get.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../../common/services/log_service.dart';
@@ -7,6 +9,7 @@ class AuthService extends GetxService {
 
   final _client = Supabase.instance.client;
   final Rx<User?> currentUser = Rx<User?>(null);
+  StreamSubscription<AuthState>? _authStateSub;
 
   @override
   void onInit() {
@@ -15,7 +18,7 @@ class AuthService extends GetxService {
     currentUser.value = _client.auth.currentUser;
 
     // Listen to auth state changes
-    _client.auth.onAuthStateChange.listen((data) {
+    _authStateSub = _client.auth.onAuthStateChange.listen((data) {
       final AuthChangeEvent event = data.event;
       final Session? session = data.session;
 
@@ -27,6 +30,13 @@ class AuthService extends GetxService {
         LogService.to.info('Auth', 'User signed out');
       }
     });
+  }
+
+  @override
+  void onClose() {
+    _authStateSub?.cancel();
+    _authStateSub = null;
+    super.onClose();
   }
 
   // Sign In

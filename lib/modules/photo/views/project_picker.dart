@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:get/get.dart';
 import 'package:life_log/common/theme/app_colors.dart';
 import 'package:life_log/common/widgets/app_sheet_scaffold.dart';
@@ -24,7 +25,7 @@ void showProjectPicker({
         return AppSheetScaffold(
           title: "选择项目",
           height: Get.height * 0.7,
-          padding: const EdgeInsets.fromLTRB(20, 0, 20, 0),
+          padding: EdgeInsets.fromLTRB(20.w, 0, 20.w, 0),
           child: Column(
             children: [
               // Search Bar
@@ -47,7 +48,7 @@ void showProjectPicker({
                   }
                 },
               ),
-              const SizedBox(height: 16),
+              SizedBox(height: 16.h),
 
               // List
               Expanded(

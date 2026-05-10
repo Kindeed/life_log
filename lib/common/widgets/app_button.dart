@@ -110,8 +110,8 @@ class AppButton extends StatelessWidget {
           style: OutlinedButton.styleFrom(
             minimumSize: minimumSize,
             foregroundColor: Theme.of(context).colorScheme.primary,
-            backgroundColor: semantic.mutedSurface.withValues(alpha: 0.8),
-            side: BorderSide(color: semantic.border, width: 0.7),
+            backgroundColor: semantic.mutedSurface,
+            side: BorderSide(color: semantic.border, width: 1),
             shape: shape,
             textStyle: textStyle,
           ),
@@ -158,22 +158,31 @@ class _ButtonContent extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    if (isLoading) {
-      return const SizedBox(
-        width: 18,
-        height: 18,
-        child: CircularProgressIndicator(strokeWidth: 2),
-      );
-    }
+    final labelContent = icon == null
+        ? Text(label)
+        : Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Icon(icon, size: 18),
+              const SizedBox(width: AppSpacing.sm),
+              Text(label),
+            ],
+          );
 
-    if (icon == null) return Text(label);
-
-    return Row(
-      mainAxisSize: MainAxisSize.min,
+    return Stack(
+      alignment: Alignment.center,
       children: [
-        Icon(icon, size: 18),
-        const SizedBox(width: AppSpacing.sm),
-        Text(label),
+        AnimatedOpacity(
+          duration: const Duration(milliseconds: 120),
+          opacity: isLoading ? 0 : 1,
+          child: labelContent,
+        ),
+        if (isLoading)
+          const SizedBox(
+            width: 18,
+            height: 18,
+            child: CircularProgressIndicator(strokeWidth: 2),
+          ),
       ],
     );
   }
