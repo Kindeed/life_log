@@ -1,5 +1,51 @@
 # Changelog
 
+## [1.4.2] - 2026-05-12
+
+### 同步协议加固与导航修复
+
+#### 变更 (Changed)
+- 应用版本升级到 `1.4.2+8`。
+- 合并 GitHub Actions Node 24 兼容更新，确保 CI 构建环境稳定性。
+- 强化工作流与 UI 验证逻辑。
+
+## [1.4.1] - 2026-05-10
+
+### CI 稳定性与工作流加固
+
+#### 变更 (Changed)
+- 应用版本升级到 `1.4.1+7`。
+- GitHub Actions 迁移至 Node 24 运行时，修复 CI 构建兼容性问题。
+- 加固 Life Log 工作流与 UI 验证。
+
+## [1.4.0] - 2026-05-08
+
+### UI 重新设计与同步协议完善
+
+#### 新增 (Added)
+- 全新 Material 3 视觉风格，基于 `ColorScheme.fromSeed` 的 Apple-inspired 设计语言。
+- 统一的 Design Token 体系：`AppColors`、`AppSemanticColors`、`AppSpacing`、`AppRadius`、`AppMotion`、`AppElevations`。
+- 公共组件库：`AppButton`、`AppCard`、`AppTextField`、`AppMetricTile`、`AppSheetScaffold`、`AppFloatingActionPill`、`AppPill`、`AppEmptyState`、`AppSkeleton`、`AppActionSheet`、`AppFilterChipBar`、`AppSafeBottomBar`、`AppLoading`。
+- `ConstrainedPage` 响应式布局，支持折叠屏/平板宽屏约束。
+- 统计页全面重构：核心指标卡片网格、进度条对比组件、双模式切页动画。
+- 支出模块：双维度筛选引擎、拖拽排序守卫、过期账单红色警告高亮。
+- 工时模块：周视图日历、复合日志卡片（工作/出差/请假/休息）、农历与空状态界面。
+- 设置页：五大层级分组、账号卡片信息强化、开发者入口透明度弱化。
+
+#### 修复 (Fixed)
+- 修复 Supabase schema migration 兼容性问题。
+- 修复 LifeLog 导航与项目财务流程异常。
+- 修复关于页版本号显示。
+
+#### 同步 (Sync)
+- 完善 Pull-first-then-Push 同步协议，优化冲突检测与恢复逻辑。
+- 强化 SyncService 去抖机制与防重入保护。
+
+#### 验证 (Validation)
+- `flutter analyze` 通过。
+- `flutter build apk --debug` 通过。
+- 真机验证本地模式与云配置模式均可正常启动。
+
 ## [1.3.3] - 2026-05-06
 
 ### 启动稳定性、云配置与 Apple-inspired UI
