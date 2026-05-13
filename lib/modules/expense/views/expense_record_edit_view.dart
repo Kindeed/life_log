@@ -1,9 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:get/get.dart';
+import 'package:life_log/common/theme/app_semantic_colors.dart';
+import 'package:life_log/common/theme/theme_extensions.dart';
 import 'package:life_log/common/utils/formatters.dart';
 import 'package:life_log/common/widgets/app_button.dart';
+import 'package:life_log/common/widgets/app_card.dart';
 import 'package:life_log/common/widgets/app_confirm_dialog.dart';
+import 'package:life_log/common/widgets/app_pill.dart';
 import 'package:life_log/common/widgets/app_safe_bottom_bar.dart';
 import 'package:life_log/common/widgets/app_text_field.dart';
 import 'package:life_log/modules/expense/expense_record_controller.dart';
@@ -62,89 +66,93 @@ class _ExpenseRecordEditViewState extends State<ExpenseRecordEditView> {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final fillColor = theme.colorScheme.surfaceContainerHighest.withValues(
-      alpha: 0.55,
-    );
+    final semantic = theme.semanticColors;
+    final textSecondary = theme.colorScheme.onSurfaceVariant;
 
     return Scaffold(
-      appBar: AppBar(title: Text(widget.record == null ? '记一笔消费' : '编辑消费')),
+      appBar: AppBar(title: Text(widget.record == null ? '添加项目支出' : '编辑项目支出')),
       body: SafeArea(
         child: SingleChildScrollView(
-          padding: EdgeInsets.fromLTRB(20.w, 16.h, 20.w, 96.h),
+          keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
+          padding: EdgeInsets.fromLTRB(16.w, 10.h, 16.w, 96.h),
           child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              AppTextField(
-                controller: _amountController,
-                keyboardType: const TextInputType.numberWithOptions(
-                  decimal: true,
-                ),
-                hintText: '金额',
-                prefixIcon: const Icon(Icons.payments_rounded),
-              ),
-              SizedBox(height: 12.h),
-              AppTextField(
-                controller: _merchantController,
-                hintText: '商家/用途',
-                prefixIcon: const Icon(Icons.storefront_rounded),
-              ),
-              SizedBox(height: 12.h),
-              AppTextField(
-                controller: _projectController,
-                hintText: '关联项目（可选）',
-                prefixIcon: const Icon(Icons.folder_special_rounded),
-              ),
-              SizedBox(height: 12.h),
-              InkWell(
-                borderRadius: BorderRadius.circular(12),
-                onTap: _pickDate,
-                child: Container(
-                  height: 56.h,
-                  padding: EdgeInsets.symmetric(horizontal: 14.w),
-                  decoration: BoxDecoration(
-                    color: fillColor,
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                  child: Row(
-                    children: [
-                      const Icon(Icons.event_rounded),
-                      SizedBox(width: 12.w),
-                      Expanded(child: Text(formatDateYmd(_date))),
-                      const Icon(Icons.chevron_right_rounded),
-                    ],
-                  ),
-                ),
-              ),
-              SizedBox(height: 12.h),
-              DropdownButtonFormField<ExpenseCategory>(
-                initialValue: _category,
-                decoration: InputDecoration(
-                  labelText: '分类',
-                  prefixIcon: const Icon(Icons.category_rounded),
-                  filled: true,
-                  fillColor: fillColor,
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(12),
-                    borderSide: BorderSide.none,
-                  ),
-                ),
-                items: ExpenseCategory.values
-                    .map(
-                      (category) => DropdownMenuItem(
-                        value: category,
-                        child: Text(category.label),
+              AppCard(
+                padding: EdgeInsets.all(16.w),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text('金额', style: TextStyle(color: textSecondary)),
+                    SizedBox(height: 10.h),
+                    AppTextField(
+                      controller: _amountController,
+                      keyboardType: const TextInputType.numberWithOptions(
+                        decimal: true,
                       ),
-                    )
-                    .toList(),
-                onChanged: (value) {
-                  if (value != null) setState(() => _category = value);
-                },
+                      hintText: '0.00',
+                      prefixIcon: Icon(
+                        Icons.currency_yen_rounded,
+                        color: semantic.expense,
+                      ),
+                    ),
+                  ],
+                ),
               ),
-              SizedBox(height: 12.h),
-              AppTextField(
-                controller: _noteController,
-                hintText: '备注',
-                maxLines: 3,
-                prefixIcon: const Icon(Icons.edit_note_rounded),
+              SizedBox(height: 14.h),
+              AppCard(
+                padding: EdgeInsets.all(16.w),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text('分类', style: TextStyle(color: textSecondary)),
+                    SizedBox(height: 12.h),
+                    Wrap(
+                      spacing: 8.w,
+                      runSpacing: 8.h,
+                      children: ExpenseCategory.values.map((category) {
+                        final selected = _category == category;
+                        return GestureDetector(
+                          onTap: () => setState(() => _category = category),
+                          child: AppPill(
+                            icon: _categoryIcon(category),
+                            label: category.label,
+                            color: _categoryColor(category, semantic),
+                            selected: selected,
+                          ),
+                        );
+                      }).toList(),
+                    ),
+                  ],
+                ),
+              ),
+              SizedBox(height: 14.h),
+              AppCard(
+                padding: EdgeInsets.all(16.w),
+                child: Column(
+                  children: [
+                    AppTextField(
+                      controller: _merchantController,
+                      hintText: '商家/用途',
+                      prefixIcon: const Icon(Icons.storefront_rounded),
+                    ),
+                    SizedBox(height: 12.h),
+                    AppTextField(
+                      controller: _projectController,
+                      hintText: '项目名称（建议先填）',
+                      prefixIcon: const Icon(Icons.folder_special_rounded),
+                    ),
+                    SizedBox(height: 12.h),
+                    _DateTile(date: _date, onTap: _pickDate),
+                    SizedBox(height: 12.h),
+                    AppTextField(
+                      controller: _noteController,
+                      hintText: '备注',
+                      maxLines: 3,
+                      prefixIcon: const Icon(Icons.edit_note_rounded),
+                    ),
+                  ],
+                ),
               ),
             ],
           ),
@@ -175,6 +183,40 @@ class _ExpenseRecordEditViewState extends State<ExpenseRecordEditView> {
               ),
       ),
     );
+  }
+
+  IconData _categoryIcon(ExpenseCategory category) {
+    switch (category) {
+      case ExpenseCategory.meal:
+        return Icons.restaurant_rounded;
+      case ExpenseCategory.transport:
+        return Icons.directions_car_rounded;
+      case ExpenseCategory.shopping:
+        return Icons.shopping_bag_rounded;
+      case ExpenseCategory.travel:
+        return Icons.luggage_rounded;
+      case ExpenseCategory.office:
+        return Icons.business_center_rounded;
+      case ExpenseCategory.other:
+        return Icons.more_horiz_rounded;
+    }
+  }
+
+  Color _categoryColor(ExpenseCategory category, AppSemanticColors semantic) {
+    switch (category) {
+      case ExpenseCategory.meal:
+        return semantic.warning;
+      case ExpenseCategory.transport:
+        return semantic.stats;
+      case ExpenseCategory.shopping:
+        return semantic.expense;
+      case ExpenseCategory.travel:
+        return semantic.project;
+      case ExpenseCategory.office:
+        return semantic.work;
+      case ExpenseCategory.other:
+        return semantic.success;
+    }
   }
 
   Future<void> _pickDate() async {
@@ -253,5 +295,45 @@ class _ExpenseRecordEditViewState extends State<ExpenseRecordEditView> {
       // Controller already logs and shows the snackbar; stop the success flow.
       return;
     }
+  }
+}
+
+class _DateTile extends StatelessWidget {
+  final DateTime date;
+  final VoidCallback onTap;
+
+  const _DateTile({required this.date, required this.onTap});
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final semantic = theme.semanticColors;
+    return InkWell(
+      borderRadius: BorderRadius.circular(12),
+      onTap: onTap,
+      child: Container(
+        height: 56.h,
+        padding: EdgeInsets.symmetric(horizontal: 14.w),
+        decoration: BoxDecoration(
+          color: semantic.mutedSurface,
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(color: semantic.border),
+        ),
+        child: Row(
+          children: [
+            Icon(
+              Icons.event_rounded,
+              color: theme.colorScheme.onSurfaceVariant,
+            ),
+            SizedBox(width: 12.w),
+            Expanded(child: Text(formatDateYmd(date))),
+            Icon(
+              Icons.chevron_right_rounded,
+              color: theme.colorScheme.onSurfaceVariant,
+            ),
+          ],
+        ),
+      ),
+    );
   }
 }

@@ -7,6 +7,7 @@ import '../../modules/photo/photo_model.dart'; // Import PhotoModel
 import '../../modules/evidence/evidence_model.dart';
 import '../../modules/expense/expense_record_model.dart';
 import '../../modules/project/project_model.dart';
+import '../utils/date_utils.dart';
 import '../services/auth_service.dart';
 import '../utils/sync_id_generator.dart';
 // import '../services/sync_service.dart'; // Removed cyclic dependency
@@ -49,6 +50,83 @@ class DbService extends GetxService {
 
   void _stampProjectOwner(Project project) {
     project.ownerUserId ??= currentOwnerUserId;
+  }
+
+  DateTime _parseRemoteDateTime(dynamic value, {DateTime? fallback}) {
+    if (value is DateTime) return value.toUtc();
+    if (value is String) {
+      return DateTime.tryParse(value)?.toUtc() ??
+          fallback ??
+          DateTime.now().toUtc();
+    }
+    return fallback ?? DateTime.now().toUtc();
+  }
+
+  DateTime _parseRemoteDateOnly(dynamic value, {DateTime? fallback}) {
+    if (value is DateTime) return dateOnlyLocal(value);
+    if (value is String) {
+      final parsed = DateTime.tryParse(value);
+      if (parsed != null) return dateOnlyLocal(parsed);
+      return fallback == null ? DateTime.now() : dateOnlyLocal(fallback);
+    }
+    return fallback == null ? DateTime.now() : dateOnlyLocal(fallback);
+  }
+
+  double _parseRemoteDouble(dynamic value, {double fallback = 0.0}) {
+    if (value is num) return value.toDouble();
+    if (value is String) return double.tryParse(value) ?? fallback;
+    return fallback;
+  }
+
+  int? _parseRemoteInt(dynamic value) {
+    if (value is int) return value;
+    if (value is num) return value.toInt();
+    if (value is String) return int.tryParse(value);
+    return null;
+  }
+
+  String? _parseRemoteString(dynamic value) {
+    if (value == null) return null;
+    if (value is String) return value;
+    return value.toString();
+  }
+
+  bool _parseRemoteBool(dynamic value, {bool fallback = false}) {
+    if (value is bool) return value;
+    if (value is num) return value != 0;
+    if (value is String) {
+      final normalized = value.trim().toLowerCase();
+      if (normalized == 'true' || normalized == '1') return true;
+      if (normalized == 'false' || normalized == '0') return false;
+    }
+    return fallback;
+  }
+
+  void _stampWorkLogAudit(WorkLog log, WorkLog? existing) {
+    final now = DateTime.now().toUtc();
+    log.createdAt ??= existing?.createdAt ?? now;
+    final businessChanged =
+        existing == null || log.hasBusinessChangesComparedTo(existing);
+    log.updatedAt = businessChanged ? now : (existing.updatedAt ?? now);
+  }
+
+  void _stampEvidenceAudit(
+    ExpenseEvidence evidence,
+    ExpenseEvidence? existing,
+  ) {
+    final now = DateTime.now().toUtc();
+    evidence.createdAt ??= existing?.createdAt ?? now;
+    final businessChanged =
+        existing == null || evidence.hasBusinessChangesComparedTo(existing);
+    evidence.updatedAt = businessChanged ? now : (existing.updatedAt ?? now);
+  }
+
+  void _stampExpenseRecordAudit(ExpenseRecord record, ExpenseRecord? existing) {
+    final now = DateTime.now().toUtc();
+    record.createdAt ??= existing?.createdAt ?? now;
+    final businessChanged =
+        existing == null || record.hasBusinessChangesComparedTo(existing);
+    record.updatedAt = businessChanged ? now : (existing.updatedAt ?? now);
   }
 
   bool _isProjectSyncEligible(Project project) {
@@ -131,7 +209,10 @@ class DbService extends GetxService {
 
       final syncableProjectNames = await _getSyncableProjectNames();
 
-      final projects = await isar.projects.filter().ownerUserIdIsNull().findAll();
+      final projects = await isar.projects
+          .filter()
+          .ownerUserIdIsNull()
+          .findAll();
       for (final project in projects) {
         project.ownerUserId = currentUserId;
         final syncable = syncableProjectNames.contains(
@@ -163,7 +244,89 @@ class DbService extends GetxService {
       ProjectSchema,
     ], directory: dir.path);
 
+    await _backfillRecordAuditTimestamps();
+
     return this;
+  }
+
+  Future<void> _backfillRecordAuditTimestamps() async {
+    await isar.writeTxn(() async {
+      final logs = await isar.workLogs.filter().createdAtIsNull().findAll();
+      for (final log in logs) {
+        final fallback = log.deletedAt ?? log.date.toUtc();
+        log.createdAt = fallback;
+        log.updatedAt ??= fallback;
+      }
+      if (logs.isNotEmpty) {
+        await isar.workLogs.putAll(logs);
+      }
+
+      final evidence = await isar.expenseEvidences
+          .filter()
+          .createdAtIsNull()
+          .findAll();
+      for (final item in evidence) {
+        final fallback = item.deletedAt ?? item.evidenceDate.toUtc();
+        item.createdAt = fallback;
+        item.updatedAt ??= fallback;
+      }
+      if (evidence.isNotEmpty) {
+        await isar.expenseEvidences.putAll(evidence);
+      }
+
+      final expenseRecords = await isar.expenseRecords
+          .filter()
+          .createdAtIsNull()
+          .findAll();
+      for (final record in expenseRecords) {
+        final fallback = record.deletedAt ?? record.expenseDate.toUtc();
+        record.createdAt = fallback;
+        record.updatedAt ??= fallback;
+      }
+      if (expenseRecords.isNotEmpty) {
+        await isar.expenseRecords.putAll(expenseRecords);
+      }
+    });
+    await _normalizeDateOnlyFields();
+  }
+
+  Future<void> _normalizeDateOnlyFields() async {
+    await isar.writeTxn(() async {
+      final logs = await isar.workLogs.where().findAll();
+      for (final log in logs) {
+        log.date = dateOnlyLocal(log.date);
+      }
+      if (logs.isNotEmpty) {
+        await isar.workLogs.putAll(logs);
+      }
+
+      final subs = await isar.subscriptions.where().findAll();
+      for (final sub in subs) {
+        sub.nextPaymentDate = dateOnlyLocal(sub.nextPaymentDate);
+      }
+      if (subs.isNotEmpty) {
+        await isar.subscriptions.putAll(subs);
+      }
+
+      final evidence = await isar.expenseEvidences.where().findAll();
+      for (final item in evidence) {
+        item.evidenceDate = dateOnlyLocal(item.evidenceDate);
+        if (item.tripDate != null) {
+          item.tripDate = dateOnlyLocal(item.tripDate!);
+        }
+      }
+      if (evidence.isNotEmpty) {
+        await isar.expenseEvidences.putAll(evidence);
+      }
+
+      final records = await isar.expenseRecords.where().findAll();
+      for (final record in records) {
+        record.expenseDate = dateOnlyLocal(record.expenseDate);
+      }
+      if (records.isNotEmpty) {
+        await isar.expenseRecords.putAll(records);
+      }
+    });
   }
 
   @override
@@ -181,6 +344,7 @@ class DbService extends GetxService {
       final existing = log.id == Isar.autoIncrement
           ? null
           : await isar.workLogs.get(log.id);
+      _stampWorkLogAudit(log, existing);
       log.isDirty =
           existing?.isDirty == true ||
           log.isDirty ||
@@ -253,6 +417,7 @@ class DbService extends GetxService {
       if (log == null) return null;
       if (!_belongsToCurrentUser(log.ownerUserId)) return null;
       log.deletedAt = DateTime.now().toUtc();
+      log.updatedAt = log.deletedAt;
       log.pendingDelete = true;
       log.isDirty = true;
       await isar.workLogs.put(log);
@@ -430,6 +595,7 @@ class DbService extends GetxService {
       final existing = evidence.id == Isar.autoIncrement
           ? null
           : await isar.expenseEvidences.get(evidence.id);
+      _stampEvidenceAudit(evidence, existing);
       evidence.isDirty =
           existing?.isDirty == true ||
           evidence.isDirty ||
@@ -446,6 +612,7 @@ class DbService extends GetxService {
       if (item == null) return null;
       if (!_belongsToCurrentUser(item.ownerUserId)) return null;
       item.deletedAt = DateTime.now().toUtc();
+      item.updatedAt = item.deletedAt;
       item.pendingDelete = true;
       item.isDirty = true;
       await isar.expenseEvidences.put(item);
@@ -505,10 +672,13 @@ class DbService extends GetxService {
           : await isar.projects.get(project.id);
       if (existing != null) {
         project.isDirty =
-            project.isDirty || existing.isDirty || project.hasBusinessChangesComparedTo(existing);
+            project.isDirty ||
+            existing.isDirty ||
+            project.hasBusinessChangesComparedTo(existing);
       } else {
         project.isDirty =
-            project.isDirty || project.remoteId == null && project.syncId != null;
+            project.isDirty ||
+            project.remoteId == null && project.syncId != null;
       }
       return await isar.projects.put(project);
     });
@@ -517,7 +687,10 @@ class DbService extends GetxService {
 
   Future<List<Project>> getAllProjectsForSync() async {
     final syncableProjectNames = await _getSyncableProjectNames();
-    final projects = await isar.projects.where().sortByUpdatedAtDesc().findAll();
+    final projects = await isar.projects
+        .where()
+        .sortByUpdatedAtDesc()
+        .findAll();
     return projects
         .where(
           (project) =>
@@ -621,6 +794,7 @@ class DbService extends GetxService {
       final existing = record.id == Isar.autoIncrement
           ? null
           : await isar.expenseRecords.get(record.id);
+      _stampExpenseRecordAudit(record, existing);
       record.isDirty =
           existing?.isDirty == true ||
           record.isDirty ||
@@ -645,6 +819,7 @@ class DbService extends GetxService {
       if (record == null) return null;
       if (!_belongsToCurrentUser(record.ownerUserId)) return null;
       record.deletedAt = DateTime.now().toUtc();
+      record.updatedAt = record.deletedAt;
       record.pendingDelete = true;
       record.isDirty = true;
       await isar.expenseRecords.put(record);
@@ -666,13 +841,17 @@ class DbService extends GetxService {
 
   // Sync Remote -> Local (WorkLog)
   Future<void> syncRemoteLogToLocal(Map<String, dynamic> data) async {
-    final remoteId = data['id'] as int;
-    final remoteSyncId = data['sync_id'] as String?;
-    final remoteVersion = (data['version'] as num?)?.toInt() ?? 0;
-    final remoteUpdatedAt = DateTime.parse(data['updated_at'] as String);
+    final remoteId = _parseRemoteInt(data['id']);
+    if (remoteId == null) return;
+    final remoteSyncId = _parseRemoteString(data['sync_id']);
+    final remoteVersion = _parseRemoteInt(data['version']) ?? 0;
+    final remoteUpdatedAt = _parseRemoteDateTime(
+      data['updated_at'],
+      fallback: DateTime.now().toUtc(),
+    );
     final remoteDeletedAt = data['deleted_at'] == null
         ? null
-        : DateTime.parse(data['deleted_at'] as String);
+        : _parseRemoteDateTime(data['deleted_at']);
 
     await isar.writeTxn(() async {
       WorkLog? log;
@@ -733,24 +912,32 @@ class DbService extends GetxService {
       log.isDirty = false;
       log.deletedAt = null;
       log.pendingDelete = false;
-      log.date = DateTime.parse(data['date']);
+      final now = DateTime.now().toUtc();
+      log.createdAt ??= now;
+      log.updatedAt = now;
+      log.date = _parseRemoteDateOnly(data['date'], fallback: remoteUpdatedAt);
 
       // Parse Type
-      final typeStr = data['type'] as String;
+      final typeStr = _parseRemoteString(data['type']);
       log.type = LogType.values.firstWhere(
         (e) => e.name == typeStr,
         orElse: () => LogType.work,
       );
 
-      log.overtimeHours = (data['duration'] as num?)?.toDouble();
-      log.note = data['notes'];
-      log.transport = data['transport'];
-      log.expenses = (data['expenses'] as num?)?.toDouble();
-      log.isReimbursed = data['is_reimbursed'] ?? false;
+      log.overtimeHours = data['duration'] == null
+          ? null
+          : _parseRemoteDouble(data['duration']);
+      log.note = _parseRemoteString(data['notes']);
+      log.transport = _parseRemoteString(data['transport']);
+      log.expenses = data['expenses'] == null
+          ? null
+          : _parseRemoteDouble(data['expenses']);
+      log.isReimbursed = _parseRemoteBool(data['is_reimbursed']);
 
       if (log.type == LogType.businessTrip) {
-        log.location =
-            data['project_name']; // Map project_name back to location
+        log.location = _parseRemoteString(
+          data['project_name'],
+        ); // Map project_name back to location
       } else {
         log.location = null;
       }
@@ -762,13 +949,17 @@ class DbService extends GetxService {
 
   // Sync Remote -> Local (Subscription)
   Future<void> syncRemoteSubscriptionToLocal(Map<String, dynamic> data) async {
-    final remoteId = data['id'] as int;
-    final remoteSyncId = data['sync_id'] as String?;
-    final remoteVersion = (data['version'] as num?)?.toInt() ?? 0;
-    final remoteUpdatedAt = DateTime.parse(data['updated_at'] as String);
+    final remoteId = _parseRemoteInt(data['id']);
+    if (remoteId == null) return;
+    final remoteSyncId = _parseRemoteString(data['sync_id']);
+    final remoteVersion = _parseRemoteInt(data['version']) ?? 0;
+    final remoteUpdatedAt = _parseRemoteDateTime(
+      data['updated_at'],
+      fallback: DateTime.now().toUtc(),
+    );
     final remoteDeletedAt = data['deleted_at'] == null
         ? null
-        : DateTime.parse(data['deleted_at'] as String);
+        : _parseRemoteDateTime(data['deleted_at']);
 
     await isar.writeTxn(() async {
       Subscription? sub;
@@ -828,32 +1019,41 @@ class DbService extends GetxService {
       sub.isDirty = false;
       sub.deletedAt = null;
       sub.pendingDelete = false;
-      sub.name = data['name'];
-      sub.price = (data['price'] as num?)?.toDouble();
+      sub.name = _parseRemoteString(data['name']) ?? 'Untitled';
+      sub.price = data['price'] == null
+          ? null
+          : _parseRemoteDouble(data['price']);
 
-      final cycleStr = data['cycle'] as String;
+      final cycleStr = _parseRemoteString(data['cycle']);
       sub.cycle = SubscriptionCycle.values.firstWhere(
         (e) => e.name == cycleStr,
         orElse: () => SubscriptionCycle.monthly,
       );
 
       // Using nextPaymentDate as the date anchor
-      sub.nextPaymentDate = DateTime.parse(data['start_date']);
-      sub.note = data['description'];
-      sub.sortIndex = data['sort_index'];
+      sub.nextPaymentDate = _parseRemoteDateOnly(
+        data['start_date'],
+        fallback: remoteUpdatedAt,
+      );
+      sub.note = _parseRemoteString(data['description']);
+      sub.sortIndex = _parseRemoteInt(data['sort_index']);
 
       await isar.subscriptions.put(sub);
     });
   }
 
   Future<void> syncRemoteEvidenceToLocal(Map<String, dynamic> data) async {
-    final remoteId = data['id'] as int;
-    final remoteSyncId = data['sync_id'] as String?;
-    final remoteVersion = (data['version'] as num?)?.toInt() ?? 0;
-    final remoteUpdatedAt = DateTime.parse(data['updated_at'] as String);
+    final remoteId = _parseRemoteInt(data['id']);
+    if (remoteId == null) return;
+    final remoteSyncId = _parseRemoteString(data['sync_id']);
+    final remoteVersion = _parseRemoteInt(data['version']) ?? 0;
+    final remoteUpdatedAt = _parseRemoteDateTime(
+      data['updated_at'],
+      fallback: DateTime.now().toUtc(),
+    );
     final remoteDeletedAt = data['deleted_at'] == null
         ? null
-        : DateTime.parse(data['deleted_at'] as String);
+        : _parseRemoteDateTime(data['deleted_at']);
 
     await isar.writeTxn(() async {
       ExpenseEvidence? item;
@@ -910,43 +1110,56 @@ class DbService extends GetxService {
       item.isDirty = false;
       item.deletedAt = null;
       item.pendingDelete = false;
-      item.projectName = data['project_name'] ?? 'DefaultProject';
-      item.evidenceDate = DateTime.parse(data['evidence_date']);
-      item.amount = (data['amount'] as num?)?.toDouble();
-      item.currency = data['currency'] ?? 'CNY';
+      final now = DateTime.now().toUtc();
+      item.createdAt ??= now;
+      item.updatedAt = now;
+      item.projectName =
+          _parseRemoteString(data['project_name']) ?? 'DefaultProject';
+      item.evidenceDate = _parseRemoteDateOnly(
+        data['evidence_date'],
+        fallback: remoteUpdatedAt,
+      );
+      item.amount = data['amount'] == null
+          ? null
+          : _parseRemoteDouble(data['amount']);
+      item.currency = _parseRemoteString(data['currency']) ?? 'CNY';
       item.category = EvidenceCategory.values.firstWhere(
-        (value) => value.name == data['category'],
+        (value) => value.name == _parseRemoteString(data['category']),
         orElse: () => EvidenceCategory.invoice,
       );
       item.status = EvidenceStatus.values.firstWhere(
-        (value) => value.name == data['status'],
+        (value) => value.name == _parseRemoteString(data['status']),
         orElse: () => EvidenceStatus.pending,
       );
-      item.merchant = data['merchant'];
-      item.note = data['note'];
-      item.localFilePath = data['local_file_path'];
-      item.remoteStoragePath = data['remote_storage_path'];
-      item.fileName = data['file_name'];
-      item.mimeType = data['mime_type'];
+      item.merchant = _parseRemoteString(data['merchant']);
+      item.note = _parseRemoteString(data['note']);
+      item.localFilePath = _parseRemoteString(data['local_file_path']);
+      item.remoteStoragePath = _parseRemoteString(data['remote_storage_path']);
+      item.fileName = _parseRemoteString(data['file_name']);
+      item.mimeType = _parseRemoteString(data['mime_type']);
       item.uploadedAt = data['uploaded_at'] == null
           ? null
-          : DateTime.parse(data['uploaded_at'] as String);
+          : _parseRemoteDateTime(data['uploaded_at']);
       item.tripDate = data['trip_date'] == null
           ? null
-          : DateTime.parse(data['trip_date'] as String);
+          : _parseRemoteDateOnly(data['trip_date']);
 
       await isar.expenseEvidences.put(item);
     });
   }
 
   Future<void> syncRemoteExpenseRecordToLocal(Map<String, dynamic> data) async {
-    final remoteId = data['id'] as int;
-    final remoteSyncId = data['sync_id'] as String?;
-    final remoteVersion = (data['version'] as num?)?.toInt() ?? 0;
-    final remoteUpdatedAt = DateTime.parse(data['updated_at'] as String);
+    final remoteId = _parseRemoteInt(data['id']);
+    if (remoteId == null) return;
+    final remoteSyncId = _parseRemoteString(data['sync_id']);
+    final remoteVersion = _parseRemoteInt(data['version']) ?? 0;
+    final remoteUpdatedAt = _parseRemoteDateTime(
+      data['updated_at'],
+      fallback: DateTime.now().toUtc(),
+    );
     final remoteDeletedAt = data['deleted_at'] == null
         ? null
-        : DateTime.parse(data['deleted_at'] as String);
+        : _parseRemoteDateTime(data['deleted_at']);
 
     await isar.writeTxn(() async {
       ExpenseRecord? record;
@@ -992,7 +1205,7 @@ class DbService extends GetxService {
         return;
       }
 
-      final projectName = data['project_name'] as String?;
+      final projectName = _parseRemoteString(data['project_name']);
       int? projectId;
       if (projectName != null && projectName.trim().isNotEmpty) {
         final safeProjectName = projectName.trim();
@@ -1027,15 +1240,21 @@ class DbService extends GetxService {
       record.isDirty = false;
       record.deletedAt = null;
       record.pendingDelete = false;
-      record.expenseDate = DateTime.parse(data['expense_date'] as String);
-      record.amount = (data['amount'] as num).toDouble();
-      record.currency = data['currency'] ?? 'CNY';
+      final now = DateTime.now().toUtc();
+      record.createdAt ??= now;
+      record.updatedAt = now;
+      record.expenseDate = _parseRemoteDateOnly(
+        data['expense_date'],
+        fallback: remoteUpdatedAt,
+      );
+      record.amount = _parseRemoteDouble(data['amount']);
+      record.currency = _parseRemoteString(data['currency']) ?? 'CNY';
       record.category = ExpenseCategory.values.firstWhere(
-        (value) => value.name == data['category'],
+        (value) => value.name == _parseRemoteString(data['category']),
         orElse: () => ExpenseCategory.other,
       );
-      record.merchant = data['merchant'];
-      record.note = data['note'];
+      record.merchant = _parseRemoteString(data['merchant']);
+      record.note = _parseRemoteString(data['note']);
       record.projectName = projectName;
       record.projectId = projectId;
 
@@ -1044,13 +1263,17 @@ class DbService extends GetxService {
   }
 
   Future<void> syncRemoteProjectToLocal(Map<String, dynamic> data) async {
-    final remoteId = data['id'] as int;
-    final remoteSyncId = data['sync_id'] as String?;
-    final remoteVersion = (data['version'] as num?)?.toInt() ?? 0;
-    final remoteUpdatedAt = DateTime.parse(data['updated_at'] as String);
+    final remoteId = _parseRemoteInt(data['id']);
+    if (remoteId == null) return;
+    final remoteSyncId = _parseRemoteString(data['sync_id']);
+    final remoteVersion = _parseRemoteInt(data['version']) ?? 0;
+    final remoteUpdatedAt = _parseRemoteDateTime(
+      data['updated_at'],
+      fallback: DateTime.now().toUtc(),
+    );
     final remoteDeletedAt = data['deleted_at'] == null
         ? null
-        : DateTime.parse(data['deleted_at'] as String);
+        : _parseRemoteDateTime(data['deleted_at']);
 
     await isar.writeTxn(() async {
       Project? project;
@@ -1107,18 +1330,19 @@ class DbService extends GetxService {
       project.isDirty = false;
       project.deletedAt = null;
       project.pendingDelete = false;
-      project.name = data['name'] as String? ?? 'Untitled';
-      final statusStr = data['status'] as String? ?? ProjectStatus.active.name;
+      project.name = _parseRemoteString(data['name']) ?? 'Untitled';
+      final statusStr =
+          _parseRemoteString(data['status']) ?? ProjectStatus.active.name;
       project.status = ProjectStatus.values.firstWhere(
         (value) => value.name == statusStr,
         orElse: () => ProjectStatus.active,
       );
       project.createdAt = data['created_at'] == null
           ? remoteUpdatedAt
-          : DateTime.parse(data['created_at'] as String);
+          : _parseRemoteDateTime(data['created_at'], fallback: remoteUpdatedAt);
       project.updatedAt = data['updated_at'] == null
           ? remoteUpdatedAt
-          : DateTime.parse(data['updated_at'] as String);
+          : _parseRemoteDateTime(data['updated_at'], fallback: remoteUpdatedAt);
 
       await isar.projects.put(project);
     });

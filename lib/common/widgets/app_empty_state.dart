@@ -1,12 +1,10 @@
 import 'package:flutter/material.dart';
 
+import '../theme/app_sizes.dart';
 import '../theme/app_spacing.dart';
 import 'app_button.dart';
 
 class AppEmptyState extends StatelessWidget {
-  static const double iconContainerSize = 74;
-  static const double iconSize = 34;
-
   final IconData icon;
   final String title;
   final String message;
@@ -35,15 +33,15 @@ class AppEmptyState extends StatelessWidget {
           mainAxisSize: MainAxisSize.min,
           children: [
             Container(
-              width: iconContainerSize,
-              height: iconContainerSize,
+              width: AppSizes.emptyStateIconContainer,
+              height: AppSizes.emptyStateIconContainer,
               decoration: BoxDecoration(
                 color: primary.withValues(alpha: 0.09),
                 shape: BoxShape.circle,
               ),
               child: Icon(
                 icon,
-                size: iconSize,
+                size: AppSizes.emptyStateIcon,
                 color: primary.withValues(alpha: 0.8),
               ),
             ),

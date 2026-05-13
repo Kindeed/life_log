@@ -26,6 +26,7 @@ class DayCell extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final events = logic.getEventsForDay(day);
+    final event = events.isEmpty ? null : events.first;
     final isSelected = isSameDay(day, logic.selectedDay.value);
     final isToday = isSameDay(day, DateTime.now());
 
@@ -53,23 +54,26 @@ class DayCell extends StatelessWidget {
     // 获取自定义颜色扩展
     final logColors = Theme.of(context).logColors;
 
-    if (events.isNotEmpty) {
-      final log = events.first;
+    if (event != null) {
       isSpecial = true;
       bottomWeight = FontWeight.w900;
 
-      if (log.type == LogType.work) {
-        bottomText = (log.overtimeHours != null && log.overtimeHours! > 0)
-            ? "+${log.overtimeHours}"
-            : "正常";
-        bottomColor = logColors.work;
-      } else if (log.type == LogType.businessTrip) {
-        bottomText = "出差";
+      if (event.type == LogType.work) {
+        bottomText = (event.overtimeHours ?? 0) > 0
+            ? "+${_formatHours(event.overtimeHours ?? 0)}h"
+            : "工";
+        bottomColor = (event.overtimeHours ?? 0) > 0
+            ? logColors.overtime
+            : logColors.work;
+      } else if (event.type == LogType.businessTrip) {
+        bottomText = "差";
         bottomColor = logColors.businessTrip;
-      } else if (log.type == LogType.leave) {
-        bottomText = log.location ?? "假";
+      } else if (event.type == LogType.leave) {
+        bottomText = event.location?.trim().isNotEmpty == true
+            ? event.location!.trim()
+            : "假";
         bottomColor = logColors.leave;
-      } else if (log.type == LogType.rest) {
+      } else if (event.type == LogType.rest) {
         bottomText = "休";
         bottomColor = logColors.rest;
       }
@@ -80,7 +84,7 @@ class DayCell extends StatelessWidget {
     if (isSelected) {
       decoration = BoxDecoration(
         color: AppColors.primaryBlue,
-        borderRadius: BorderRadius.circular(16),
+        borderRadius: BorderRadius.circular(12),
         boxShadow: [
           BoxShadow(
             color: AppColors.primaryBlue.withValues(alpha: 0.28),
@@ -97,7 +101,7 @@ class DayCell extends StatelessWidget {
       decoration = BoxDecoration(
         color: AppColors.primaryBlue.withValues(alpha: 0.08),
         border: Border.all(color: AppColors.primaryBlue, width: 1),
-        borderRadius: BorderRadius.circular(16),
+        borderRadius: BorderRadius.circular(12),
       );
       dayColor = AppColors.primaryBlue;
     }
@@ -112,69 +116,94 @@ class DayCell extends StatelessWidget {
       }
     }
 
-    return Container(
-      margin: const EdgeInsets.all(4),
-      decoration: decoration,
-      child: Stack(
-        children: [
-          Padding(
-            padding: EdgeInsets.only(top: holiday != null ? 10.h : 0),
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                Text(
-                  '${day.day}',
-                  style: TextStyle(
-                    color: dayColor,
-                    fontWeight: FontWeight.bold,
-                    fontSize: 16.sp,
-                  ),
+    return Center(
+      child: Container(
+        width: 44.w,
+        height: 50.h,
+        margin: EdgeInsets.all(2.h),
+        decoration:
+            decoration ??
+            BoxDecoration(borderRadius: BorderRadius.circular(12)),
+        clipBehavior: Clip.antiAlias,
+        child: Stack(
+          children: [
+            Positioned.fill(
+              child: Padding(
+                padding: EdgeInsets.fromLTRB(
+                  3.w,
+                  holiday != null ? 7.h : 3.h,
+                  3.w,
+                  3.h,
                 ),
-                SizedBox(height: 2.h),
-                Text(
-                  bottomText,
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  style: TextStyle(
-                    color: bottomColor,
-                    fontSize: 10.sp,
-                    fontWeight: (isSelected || isSpecial)
-                        ? FontWeight.bold
-                        : bottomWeight,
-                  ),
-                ),
-              ],
-            ),
-          ),
-          if (holiday != null)
-            Positioned(
-              top: 2.h,
-              right: 0,
-              child: Container(
-                padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 2),
-                decoration: BoxDecoration(
-                  color: holiday.isWork()
-                      ? Theme.of(context).colorScheme.surfaceContainerHighest
-                      : Theme.of(context).colorScheme.errorContainer,
-                  borderRadius: const BorderRadius.only(
-                    bottomLeft: Radius.circular(6),
-                    topRight: Radius.circular(8),
-                  ),
-                ),
-                child: Text(
-                  holiday.isWork() ? "班" : "休",
-                  style: TextStyle(
-                    fontSize: 8.sp,
-                    color: holiday.isWork()
-                        ? Theme.of(context).colorScheme.onSurfaceVariant
-                        : Theme.of(context).colorScheme.onErrorContainer,
-                    fontWeight: FontWeight.bold,
-                  ),
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    Text(
+                      '${day.day}',
+                      textAlign: TextAlign.center,
+                      style: TextStyle(
+                        color: dayColor,
+                        fontWeight: FontWeight.bold,
+                        fontSize: 14.sp,
+                        height: 1,
+                      ),
+                    ),
+                    SizedBox(height: 2.h),
+                    Text(
+                      bottomText,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      textAlign: TextAlign.center,
+                      style: TextStyle(
+                        color: bottomColor,
+                        fontSize: 9.sp,
+                        height: 1.05,
+                        fontWeight: (isSelected || isSpecial)
+                            ? FontWeight.bold
+                            : bottomWeight,
+                      ),
+                    ),
+                  ],
                 ),
               ),
             ),
-        ],
+            if (holiday != null)
+              Positioned(
+                top: 0,
+                right: 0,
+                child: Container(
+                  padding: EdgeInsets.symmetric(horizontal: 3.w, vertical: 1.h),
+                  decoration: BoxDecoration(
+                    color: holiday.isWork()
+                        ? Theme.of(context).colorScheme.surfaceContainerHighest
+                        : Theme.of(context).colorScheme.errorContainer,
+                    borderRadius: const BorderRadius.only(
+                      bottomLeft: Radius.circular(6),
+                    ),
+                  ),
+                  child: Text(
+                    holiday.isWork() ? "班" : "休",
+                    style: TextStyle(
+                      fontSize: 7.5.sp,
+                      color: holiday.isWork()
+                          ? Theme.of(context).colorScheme.onSurfaceVariant
+                          : Theme.of(context).colorScheme.onErrorContainer,
+                      fontWeight: FontWeight.bold,
+                      height: 1,
+                    ),
+                  ),
+                ),
+              ),
+          ],
+        ),
       ),
     );
+  }
+
+  String _formatHours(double value) {
+    return value == value.roundToDouble()
+        ? value.toStringAsFixed(0)
+        : value.toStringAsFixed(1);
   }
 }

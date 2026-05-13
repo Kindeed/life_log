@@ -1,13 +1,11 @@
 import 'package:flutter/material.dart';
 
 import '../theme/app_radius.dart';
+import '../theme/app_sizes.dart';
 import '../theme/app_spacing.dart';
 import 'app_card.dart';
 
 class AppMetricTile extends StatelessWidget {
-  static const double iconContainerSize = 38;
-  static const double iconSize = 20;
-
   final String label;
   final String value;
   final IconData icon;
@@ -28,13 +26,13 @@ class AppMetricTile extends StatelessWidget {
       child: Row(
         children: [
           Container(
-            width: iconContainerSize,
-            height: iconContainerSize,
+            width: AppSizes.metricIconContainer,
+            height: AppSizes.metricIconContainer,
             decoration: BoxDecoration(
               color: color.withValues(alpha: 0.12),
               borderRadius: BorderRadius.circular(AppRadius.md),
             ),
-            child: Icon(icon, color: color, size: iconSize),
+            child: Icon(icon, color: color, size: AppSizes.metricIcon),
           ),
           const SizedBox(width: AppSpacing.md),
           Expanded(

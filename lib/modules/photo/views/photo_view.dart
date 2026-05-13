@@ -8,11 +8,9 @@ import 'package:life_log/common/layout/constrained_page.dart';
 import 'package:life_log/common/theme/app_radius.dart';
 import 'package:life_log/common/theme/app_semantic_colors.dart';
 import 'package:life_log/common/utils/formatters.dart';
-import 'package:life_log/common/widgets/app_action_sheet.dart';
 import 'package:life_log/common/widgets/app_card.dart';
 import 'package:life_log/common/widgets/app_empty_state.dart';
 import 'package:life_log/common/widgets/app_filter_chip_bar.dart';
-import 'package:life_log/common/widgets/app_floating_action_pill.dart';
 import 'package:life_log/common/widgets/app_loading.dart';
 import 'package:life_log/common/widgets/app_metric_tile.dart';
 import 'package:life_log/common/widgets/app_pill.dart';
@@ -22,7 +20,11 @@ import 'package:life_log/modules/evidence/evidence_model.dart';
 import 'package:life_log/modules/expense/expense_record_controller.dart';
 import 'package:life_log/modules/expense/expense_record_model.dart';
 import 'package:life_log/modules/photo/photo_controller.dart';
+import 'package:life_log/modules/photo/photo_model.dart';
+import 'package:life_log/modules/photo/views/create_project_sheet.dart';
 import 'package:life_log/modules/photo/views/project_gallery_view.dart';
+import 'package:life_log/modules/project/project_controller.dart';
+import 'package:life_log/modules/project/project_model.dart';
 
 class PhotoView extends StatefulWidget {
   const PhotoView({super.key});
@@ -35,6 +37,7 @@ class _PhotoViewState extends State<PhotoView> {
   late final PhotoController controller;
   late final EvidenceController evidenceController;
   late final ExpenseRecordController expenseController;
+  late final ProjectController projectController;
   late final Worker _messageWorker;
 
   @override
@@ -43,6 +46,7 @@ class _PhotoViewState extends State<PhotoView> {
     controller = Get.find<PhotoController>();
     evidenceController = Get.find<EvidenceController>();
     expenseController = Get.find<ExpenseRecordController>();
+    projectController = Get.find<ProjectController>();
     _messageWorker = ever<PhotoUiMessage?>(
       controller.uiMessage,
       _showUiMessage,
@@ -77,93 +81,94 @@ class _PhotoViewState extends State<PhotoView> {
         ],
       ),
       body: Obx(() {
-        final isLoading = controller.isLoading.value;
-        final photosCount = controller.photos.length;
+        final isLoading =
+            controller.isLoading.value || projectController.isLoading.value;
         final expenseRecords = expenseController.records.toList();
+        final projectCount = projectController.projects.length;
 
         if (isLoading) {
           return const AppLoading(label: "正在加载项目");
         }
 
-        if (photosCount == 0 && expenseRecords.isEmpty) {
+        final projects = _projectSummaries(
+          projects: projectController.projects,
+          photos: controller.photos,
+          evidence: evidenceController.evidence,
+          expenses: expenseRecords,
+          query: controller.projectSearchQuery.value,
+          sortMode: controller.projectSortMode.value,
+        );
+
+        if (projectCount == 0 && projects.isEmpty) {
           return AppEmptyState(
             icon: Icons.folder_open_rounded,
-            title: "暂无项目记录",
-            message: "添加照片、凭证或项目支出后会按项目归档",
-            actionLabel: "添加照片",
-            onAction: () => _showAddPhotoActions(context, controller),
+            title: "还没有项目",
+            message: "先创建第一个项目，再添加照片和凭证。",
+            actionLabel: "创建项目",
+            onAction: () => showCreateProjectSheet(
+              onCreated: (project) async {
+                await controller.loadPhotos();
+                await evidenceController.loadEvidence();
+                await expenseController.loadRecords();
+                if (!mounted) return;
+                await Get.to(
+                  () => ProjectGalleryView(projectName: project.name),
+                );
+              },
+            ),
           );
         }
 
-        final projects = controller.filteredProjectSummaries;
-
-        return NotificationListener<UserScrollNotification>(
-          onNotification: (notification) {
-            controller.onScroll(notification);
-            return true;
-          },
-          child: CustomScrollView(
-            slivers: [
-              SliverToBoxAdapter(
-                child: ConstrainedPage(
-                  child: _ProjectOverview(
-                    controller: controller,
-                    expenseRecords: expenseRecords,
-                    semantic: semantic,
-                    textSecondary: textSecondary,
-                  ),
+        return CustomScrollView(
+          slivers: [
+            SliverToBoxAdapter(
+              child: ConstrainedPage(
+                child: _ProjectOverview(
+                  controller: controller,
+                  projectCount: projectCount,
+                  expenseRecords: expenseRecords,
+                  semantic: semantic,
+                  textSecondary: textSecondary,
                 ),
               ),
-              if (projects.isEmpty)
-                SliverFillRemaining(
-                  hasScrollBody: false,
-                  child: Center(
-                    child: Text(
-                      "没有匹配的项目",
-                      style: TextStyle(color: textSecondary, fontSize: 14.sp),
-                    ),
-                  ),
-                )
-              else
-                SliverPadding(
-                  padding: EdgeInsets.fromLTRB(16.w, 10.h, 16.w, 92.h),
-                  sliver: SliverList.separated(
-                    itemCount: projects.length,
-                    separatorBuilder: (_, _) => SizedBox(height: 12.h),
-                    itemBuilder: (context, index) {
-                      final project = projects[index];
-                      return ConstrainedPage(
-                        child: _ProjectCard(
-                          summary: project,
-                          expenseTotal: _expenseTotalForProject(
-                            expenseRecords,
-                            project.name,
-                          ),
-                          isDark: isDark,
-                          semantic: semantic,
-                          textSecondary: textSecondary,
-                          onTap: () => Get.to(
-                            () => ProjectGalleryView(projectName: project.name),
-                          ),
-                        ),
-                      );
-                    },
+            ),
+            if (projects.isEmpty)
+              SliverFillRemaining(
+                hasScrollBody: false,
+                child: Center(
+                  child: Text(
+                    "没有匹配的项目",
+                    style: TextStyle(color: textSecondary, fontSize: 14.sp),
                   ),
                 ),
-            ],
-          ),
-        );
-      }),
-      floatingActionButtonLocation: FloatingActionButtonLocation.centerFloat,
-      floatingActionButton: Obx(() {
-        if (controller.photos.isEmpty) return const SizedBox.shrink();
-
-        return AppFloatingActionPill(
-          label: "添加照片",
-          icon: Icons.camera_alt_rounded,
-          color: semantic.project,
-          visible: controller.isFabVisible.value,
-          onPressed: () => _showAddPhotoActions(context, controller),
+              )
+            else
+              SliverPadding(
+                padding: EdgeInsets.fromLTRB(16.w, 10.h, 16.w, 92.h),
+                sliver: SliverList.separated(
+                  itemCount: projects.length,
+                  separatorBuilder: (_, _) => SizedBox(height: 12.h),
+                  itemBuilder: (context, index) {
+                    final project = projects[index];
+                    return ConstrainedPage(
+                      child: _ProjectCard(
+                        summary: project,
+                        expenseTotal: _expenseTotalForProject(
+                          expenseRecords,
+                          project.name,
+                        ),
+                        isDark: isDark,
+                        semantic: semantic,
+                        textSecondary: textSecondary,
+                        onTap: () => Get.to(
+                          () => ProjectGalleryView(projectName: project.name),
+                        ),
+                      ),
+                    );
+                  },
+                ),
+              ),
+          ],
         );
       }),
     );
@@ -173,6 +178,76 @@ class _PhotoViewState extends State<PhotoView> {
     return records
         .where((record) => record.projectName == project)
         .fold(0.0, (sum, record) => sum + record.amount);
+  }
+
+  List<ProjectSummary> _projectSummaries({
+    required List<Project> projects,
+    required List<PhotoItem> photos,
+    required List<ExpenseEvidence> evidence,
+    required List<ExpenseRecord> expenses,
+    required String query,
+    required ProjectSortMode sortMode,
+  }) {
+    final names = <String>{};
+    names.addAll(projects.map((project) => project.name));
+    names.addAll(photos.map((photo) => photo.projectName).whereType<String>());
+    names.addAll(evidence.map((item) => item.projectName));
+    names.addAll(
+      expenses
+          .map((record) => record.projectName)
+          .whereType<String>()
+          .where((name) => name.trim().isNotEmpty),
+    );
+
+    final lowerQuery = query.trim().toLowerCase();
+    final summaries = names
+        .where(
+          (name) =>
+              lowerQuery.isEmpty || name.toLowerCase().contains(lowerQuery),
+        )
+        .map((name) {
+          final projectPhotos =
+              photos.where((photo) => photo.projectName == name).toList()
+                ..sort((a, b) => b.createdAt.compareTo(a.createdAt));
+          final deviceNames = projectPhotos
+              .map((photo) => photo.deviceName)
+              .whereType<String>()
+              .where((name) => name.trim().isNotEmpty)
+              .toSet();
+          final untitledCount = projectPhotos
+              .where((photo) => photo.description?.trim().isNotEmpty != true)
+              .length;
+
+          return ProjectSummary(
+            name: name,
+            photos: projectPhotos,
+            latestPhoto: projectPhotos.isEmpty ? null : projectPhotos.first,
+            deviceCount: deviceNames.length,
+            untitledCount: untitledCount,
+          );
+        })
+        .toList();
+
+    switch (sortMode) {
+      case ProjectSortMode.recent:
+        summaries.sort(
+          (a, b) => (b.latestPhoto?.createdAt ?? DateTime(0)).compareTo(
+            a.latestPhoto?.createdAt ?? DateTime(0),
+          ),
+        );
+        break;
+      case ProjectSortMode.count:
+        summaries.sort((a, b) {
+          final countCompare = b.photoCount.compareTo(a.photoCount);
+          if (countCompare != 0) return countCompare;
+          return a.name.compareTo(b.name);
+        });
+        break;
+      case ProjectSortMode.name:
+        summaries.sort((a, b) => a.name.compareTo(b.name));
+        break;
+    }
+    return summaries;
   }
 
   void _showUiMessage(PhotoUiMessage? message) {
@@ -200,35 +275,18 @@ class _PhotoViewState extends State<PhotoView> {
       colorText: colorText,
     );
   }
-
-  void _showAddPhotoActions(BuildContext context, PhotoController controller) {
-    AppActionSheet.show(
-      title: "添加照片",
-      actions: [
-        AppActionSheetItem(
-          icon: Icons.camera_alt_rounded,
-          title: "拍摄照片",
-          onTap: controller.captureWithSystemCamera,
-        ),
-        AppActionSheetItem(
-          icon: Icons.photo_library_rounded,
-          title: "从相册导入",
-          subtitle: "导入后请求删除系统相册原图",
-          onTap: controller.importFromGallery,
-        ),
-      ],
-    );
-  }
 }
 
 class _ProjectOverview extends StatelessWidget {
   final PhotoController controller;
+  final int projectCount;
   final List<ExpenseRecord> expenseRecords;
   final AppSemanticColors semantic;
   final Color textSecondary;
 
   const _ProjectOverview({
     required this.controller,
+    required this.projectCount,
     required this.expenseRecords,
     required this.semantic,
     required this.textSecondary,
@@ -246,7 +304,7 @@ class _ProjectOverview extends StatelessWidget {
               Expanded(
                 child: AppMetricTile(
                   label: "项目",
-                  value: controller.totalProjectCount.toString(),
+                  value: projectCount.toString(),
                   icon: Icons.folder_special_rounded,
                   color: semantic.project,
                 ),
@@ -366,7 +424,9 @@ class _ProjectCard extends StatelessWidget {
                 ),
                 SizedBox(height: 6.h),
                 Text(
-                  "最近 ${_formatDate(summary.latestPhoto.createdAt)}",
+                  summary.latestPhoto == null
+                      ? "等待添加资料"
+                      : "最近 ${_formatDate(summary.latestPhoto!.createdAt)}",
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                   style: TextStyle(color: textSecondary, fontSize: 12.sp),
@@ -420,10 +480,11 @@ class _ProjectCard extends StatelessWidget {
   }
 
   String _formatDate(DateTime date) {
-    final month = date.month.toString().padLeft(2, '0');
-    final day = date.day.toString().padLeft(2, '0');
-    final hour = date.hour.toString().padLeft(2, '0');
-    final minute = date.minute.toString().padLeft(2, '0');
+    final local = date.toLocal();
+    final month = local.month.toString().padLeft(2, '0');
+    final day = local.day.toString().padLeft(2, '0');
+    final hour = local.hour.toString().padLeft(2, '0');
+    final minute = local.minute.toString().padLeft(2, '0');
     return '$month.$day $hour:$minute';
   }
 }
@@ -443,7 +504,16 @@ class _ProjectCover extends StatelessWidget {
       height: 98.w,
       child: ClipRRect(
         borderRadius: BorderRadius.circular(AppRadius.lg),
-        child: photos.length == 1
+        child: photos.isEmpty
+            ? Container(
+                color: isDark ? Colors.grey[850] : Colors.grey[100],
+                child: Icon(
+                  Icons.folder_open_rounded,
+                  color: isDark ? Colors.grey[600] : Colors.grey,
+                  size: 32.sp,
+                ),
+              )
+            : photos.length == 1
             ? Image.file(
                 File(photos.first.filePath),
                 fit: BoxFit.cover,

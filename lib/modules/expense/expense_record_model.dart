@@ -1,5 +1,7 @@
 import 'package:isar/isar.dart';
 
+import '../../common/utils/date_utils.dart';
+
 part 'expense_record_model.g.dart';
 
 @collection
@@ -16,6 +18,9 @@ class ExpenseRecord {
   bool isDirty = false;
   DateTime? deletedAt;
   bool pendingDelete = false;
+
+  DateTime? createdAt;
+  DateTime? updatedAt;
 
   @Index()
   late DateTime expenseDate;
@@ -73,8 +78,8 @@ extension ExpenseRecordListDomainLogic on Iterable<ExpenseRecord> {
   Iterable<ExpenseRecord> inMonth(DateTime monthYear) {
     return where(
       (item) =>
-          item.expenseDate.year == monthYear.year &&
-          item.expenseDate.month == monthYear.month,
+          dateOnlyLocal(item.expenseDate).year == monthYear.year &&
+          dateOnlyLocal(item.expenseDate).month == monthYear.month,
     );
   }
 

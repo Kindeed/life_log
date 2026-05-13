@@ -9,13 +9,13 @@
 
 ## P0 — 关键 (数据泄露 / 数据丢失 / 崩溃)
 
-### 1. PhotoItem 完全缺失用户隔离和同步字段
+### 1. PhotoItem 用户隔离缺失；同步字段建议已失效
 
 **文件**: `lib/modules/photo/photo_model.dart:6-24`, `lib/common/db/db_service.dart:244-265`
 
-PhotoItem 缺少 `ownerUserId`、`syncId`、`remoteId`、`isDirty`、`deletedAt`、`pendingDelete`、`remoteVersion` 等字段。`DbService.getAllPhotos()` 无 `_belongsToCurrentUser()` 过滤，`deletePhoto()` 为硬删除。
+历史审查同时建议为 `PhotoItem` 增加用户隔离字段和云同步字段。当前架构已明确照片本地-only，因此只有 `ownerUserId` 本地隔离仍然有效；`syncId`、`remoteId`、`isDirty`、`deletedAt`、`pendingDelete`、`remoteVersion` 等云同步字段建议已被 `AGENTS.md` 明确否决。
 
-**影响**: 不同 Supabase 用户在同一设备上可以看到彼此的照片。照片数据永远无法备份到云端。
+**当前结论**: 保留并验证本地用户隔离；不得把照片加入 Supabase 同步或为 `PhotoItem` 增加云同步字段。
 
 ---
 
@@ -187,9 +187,25 @@ await DbService.to.deletePhoto(photo.id);  // 再删 DB
 
 | 级别 | 数量 | 核心问题 |
 |------|------|---------|
-| P0 关键 | 4 | 照片无用户隔离、fileName 不一致、日志竞态写入、远程数据无校验 |
+| P0 关键 | 4 | 照片本地隔离、fileName 不一致、日志竞态写入、远程数据无校验 |
 | P1 高风险 | 4 | 备份文件名、UI/DB 不同步、退出登录状态、注册缺确认密码 |
 | P2 中等 | 4 | 异常吞掉、输入无校验、同步去重边界、Auth 事件遗漏 |
 | P3 低 | 3 | 无测试、环境变量 crash、照片删除无事务 |
 
-**最优先修复**: P0-1 (PhotoItem 加 ownerUserId/sync 字段) 是整个项目最严重的架构缺陷。
+**最优先修复（已按当前架构修正）**: P0-1 只允许补齐/验证 `PhotoItem.ownerUserId` 本地隔离；任何为 `PhotoItem` 添加云同步字段或同步流程的建议均已失效。
+
+## 2026-05-10 UI 参考与回顾
+
+本次入口改造参考了这些 Flutter 开源项目的交互方式：
+
+- [Flow](https://github.com/flow-mn/flow)
+- [Sossoldi](https://github.com/RIP-Comm/sossoldi)
+- [Planka App](https://github.com/LouisHDev/planka_app)
+- [Taskly](https://github.com/IMGIITRoorkee/Taskly)
+
+回顾结论：
+
+- 底部中心入口已改为按当前页切换动作。
+- 工时入口直接分流到工时 / 出差 / 请假 / 休息。
+- 页切换与入口按钮动画已改为更缓的节奏。
+- `flutter analyze` 与 `flutter test` 通过。

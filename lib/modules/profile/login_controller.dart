@@ -8,6 +8,7 @@ import '../../common/theme/app_colors.dart';
 class LoginController extends GetxController {
   final emailController = TextEditingController();
   final passwordController = TextEditingController();
+  final confirmPasswordController = TextEditingController();
   final formKey = GlobalKey<FormState>();
 
   final isLoading = false.obs;
@@ -22,6 +23,7 @@ class LoginController extends GetxController {
   void onClose() {
     emailController.dispose();
     passwordController.dispose();
+    confirmPasswordController.dispose();
     super.onClose();
   }
 
@@ -35,6 +37,16 @@ class LoginController extends GetxController {
       return;
     }
     if (!formKey.currentState!.validate()) return;
+    if (!isLogin.value &&
+        confirmPasswordController.text != passwordController.text) {
+      Get.snackbar(
+        '操作失败',
+        '两次输入的密码不一致。',
+        backgroundColor: Get.theme.colorScheme.error.withValues(alpha: 0.1),
+        colorText: Get.theme.colorScheme.error,
+      );
+      return;
+    }
 
     isLoading.value = true;
 
@@ -63,6 +75,7 @@ class LoginController extends GetxController {
           colorText: AppColors.successGreen,
         );
         isLogin.value = true;
+        confirmPasswordController.clear();
       }
     } on AuthException catch (e) {
       String message = e.message;

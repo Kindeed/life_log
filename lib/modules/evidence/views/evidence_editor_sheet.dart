@@ -1,10 +1,13 @@
 import 'dart:io';
 
+import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:get/get.dart';
+import 'package:image_picker/image_picker.dart';
 import 'package:life_log/common/theme/app_colors.dart';
 import 'package:life_log/common/theme/theme_extensions.dart';
+import 'package:life_log/common/utils/date_utils.dart';
 import 'package:life_log/common/utils/formatters.dart';
 import 'package:life_log/common/widgets/app_confirm_dialog.dart';
 import 'package:life_log/modules/evidence/evidence_controller.dart';
@@ -14,12 +17,14 @@ void showEvidenceEditorSheet({
   ExpenseEvidence? existing,
   String? initialProject,
   String? sourcePath,
+  String? sourceExtension,
 }) {
   Get.to(
     () => EvidenceEditorSheet(
       existing: existing,
       initialProject: initialProject,
       sourcePath: sourcePath,
+      sourceExtension: sourceExtension,
       asPage: true,
     ),
   );
@@ -29,12 +34,14 @@ void showEvidenceEditorBottomSheet({
   ExpenseEvidence? existing,
   String? initialProject,
   String? sourcePath,
+  String? sourceExtension,
 }) {
   Get.bottomSheet(
     EvidenceEditorSheet(
       existing: existing,
       initialProject: initialProject,
       sourcePath: sourcePath,
+      sourceExtension: sourceExtension,
     ),
     isScrollControlled: true,
     backgroundColor: Colors.transparent,
@@ -45,6 +52,7 @@ class EvidenceEditorSheet extends StatefulWidget {
   final ExpenseEvidence? existing;
   final String? initialProject;
   final String? sourcePath;
+  final String? sourceExtension;
   final bool asPage;
 
   const EvidenceEditorSheet({
@@ -52,6 +60,7 @@ class EvidenceEditorSheet extends StatefulWidget {
     this.existing,
     this.initialProject,
     this.sourcePath,
+    this.sourceExtension,
     this.asPage = false,
   });
 
@@ -66,6 +75,8 @@ class _EvidenceEditorSheetState extends State<EvidenceEditorSheet> {
   late final TextEditingController _noteController;
   late DateTime _evidenceDate;
   DateTime? _tripDate;
+  String? _pendingSourcePath;
+  String? _pendingSourceExtension;
   EvidenceCategory _category = EvidenceCategory.invoice;
   EvidenceStatus _status = EvidenceStatus.pending;
 
@@ -81,8 +92,12 @@ class _EvidenceEditorSheetState extends State<EvidenceEditorSheet> {
     );
     _merchantController = TextEditingController(text: existing?.merchant ?? '');
     _noteController = TextEditingController(text: existing?.note ?? '');
-    _evidenceDate = existing?.evidenceDate ?? DateTime.now();
-    _tripDate = existing?.tripDate;
+    _evidenceDate = dateOnlyLocal(existing?.evidenceDate ?? DateTime.now());
+    _tripDate = existing?.tripDate == null
+        ? null
+        : dateOnlyLocal(existing!.tripDate!);
+    _pendingSourcePath = widget.sourcePath;
+    _pendingSourceExtension = widget.sourceExtension;
     _category = existing?.category ?? EvidenceCategory.invoice;
     _status = existing?.status ?? EvidenceStatus.pending;
   }
@@ -132,19 +147,67 @@ class _EvidenceEditorSheetState extends State<EvidenceEditorSheet> {
       children: [
         if (_previewPath != null) ...[
           SizedBox(height: 12.h),
-          ClipRRect(
-            borderRadius: BorderRadius.circular(12),
-            child: Image.file(
-              File(_previewPath!),
-              height: 160.h,
-              width: double.infinity,
-              fit: BoxFit.cover,
-              errorBuilder: (_, _, _) => Container(
-                height: 120.h,
-                alignment: Alignment.center,
-                color: fillColor,
-                child: Icon(Icons.receipt_long_rounded, color: textSecondary),
+          _buildAttachmentPreview(
+            fillColor: fillColor,
+            textSecondary: textSecondary,
+          ),
+          SizedBox(height: 10.h),
+          Row(
+            children: [
+              Expanded(
+                child: OutlinedButton.icon(
+                  onPressed: _pickEvidenceFromCamera,
+                  icon: const Icon(Icons.camera_alt_rounded),
+                  label: const Text('重拍'),
+                ),
               ),
+              SizedBox(width: 12.w),
+              Expanded(
+                child: OutlinedButton.icon(
+                  onPressed: _pickEvidenceFromGallery,
+                  icon: const Icon(Icons.photo_library_rounded),
+                  label: const Text('更换'),
+                ),
+              ),
+            ],
+          ),
+          SizedBox(height: 10.h),
+          SizedBox(
+            width: double.infinity,
+            child: OutlinedButton.icon(
+              onPressed: _pickEvidenceFromFile,
+              icon: const Icon(Icons.upload_file_rounded),
+              label: const Text('导入文件'),
+            ),
+          ),
+        ] else ...[
+          SizedBox(height: 12.h),
+          Row(
+            children: [
+              Expanded(
+                child: OutlinedButton.icon(
+                  onPressed: _pickEvidenceFromCamera,
+                  icon: const Icon(Icons.camera_alt_rounded),
+                  label: const Text('拍摄凭证'),
+                ),
+              ),
+              SizedBox(width: 12.w),
+              Expanded(
+                child: OutlinedButton.icon(
+                  onPressed: _pickEvidenceFromGallery,
+                  icon: const Icon(Icons.photo_library_rounded),
+                  label: const Text('导入截图'),
+                ),
+              ),
+            ],
+          ),
+          SizedBox(height: 10.h),
+          SizedBox(
+            width: double.infinity,
+            child: OutlinedButton.icon(
+              onPressed: _pickEvidenceFromFile,
+              icon: const Icon(Icons.upload_file_rounded),
+              label: const Text('导入文件'),
             ),
           ),
         ],
@@ -344,7 +407,103 @@ class _EvidenceEditorSheetState extends State<EvidenceEditorSheet> {
   }
 
   String? get _previewPath =>
-      widget.sourcePath ?? widget.existing?.localFilePath;
+      _pendingSourcePath ?? widget.existing?.localFilePath;
+
+  Widget _buildAttachmentPreview({
+    required Color fillColor,
+    required Color textSecondary,
+  }) {
+    final path = _previewPath;
+    if (path == null) return const SizedBox.shrink();
+
+    if (_isImagePath(path)) {
+      return ClipRRect(
+        borderRadius: BorderRadius.circular(12),
+        child: Image.file(
+          File(path),
+          height: 160.h,
+          width: double.infinity,
+          fit: BoxFit.cover,
+          errorBuilder: (_, _, _) => _buildAttachmentFallback(
+            fillColor: fillColor,
+            textSecondary: textSecondary,
+            path: path,
+          ),
+        ),
+      );
+    }
+
+    return _buildAttachmentFallback(
+      fillColor: fillColor,
+      textSecondary: textSecondary,
+      path: path,
+    );
+  }
+
+  Widget _buildAttachmentFallback({
+    required Color fillColor,
+    required Color textSecondary,
+    required String path,
+  }) {
+    final theme = Theme.of(context);
+    return Container(
+      height: 160.h,
+      width: double.infinity,
+      padding: EdgeInsets.all(16.w),
+      decoration: BoxDecoration(
+        color: fillColor,
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: theme.semanticColors.border, width: 1),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Icon(
+            Icons.insert_drive_file_rounded,
+            color: textSecondary,
+            size: 30.sp,
+          ),
+          SizedBox(height: 12.h),
+          Text(
+            _fileName(path),
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+            style: TextStyle(
+              color: theme.colorScheme.onSurface,
+              fontWeight: FontWeight.w700,
+            ),
+          ),
+          SizedBox(height: 4.h),
+          Text(
+            _attachmentTypeLabel(path),
+            style: TextStyle(color: textSecondary, fontSize: 12.sp),
+          ),
+        ],
+      ),
+    );
+  }
+
+  bool _isImagePath(String path) {
+    final lower = path.toLowerCase();
+    return lower.endsWith('.png') ||
+        lower.endsWith('.jpg') ||
+        lower.endsWith('.jpeg') ||
+        lower.endsWith('.webp') ||
+        lower.endsWith('.gif') ||
+        lower.endsWith('.heic');
+  }
+
+  String _fileName(String path) {
+    return path.split(Platform.pathSeparator).last;
+  }
+
+  String _attachmentTypeLabel(String path) {
+    final lower = path.toLowerCase();
+    if (lower.endsWith('.pdf')) return 'PDF 发票';
+    if (_isImagePath(path)) return '图片附件';
+    return '文件附件';
+  }
 
   Widget _buildTextField({
     required TextEditingController controller,
@@ -495,7 +654,7 @@ class _EvidenceEditorSheetState extends State<EvidenceEditorSheet> {
       lastDate: DateTime(2100),
     );
     if (picked != null) {
-      onPicked(DateTime(picked.year, picked.month, picked.day));
+      onPicked(dateOnlyLocal(picked));
     }
   }
 
@@ -551,7 +710,11 @@ class _EvidenceEditorSheetState extends State<EvidenceEditorSheet> {
         existing.isDirty ||
         _hasBusinessChanges(existing, next);
 
-    EvidenceController.to.saveEvidence(next, sourcePath: widget.sourcePath);
+    EvidenceController.to.saveEvidence(
+      next,
+      sourcePath: _pendingSourcePath,
+      sourceExtension: _pendingSourceExtension,
+    );
   }
 
   bool _hasBusinessChanges(ExpenseEvidence original, ExpenseEvidence next) {
@@ -564,8 +727,47 @@ class _EvidenceEditorSheetState extends State<EvidenceEditorSheet> {
         original.merchant != next.merchant ||
         original.note != next.note ||
         original.tripDate != next.tripDate ||
-        widget.sourcePath != null;
+        _pendingSourcePath != null;
   }
 
   String _formatDate(DateTime date) => formatDateYmd(date);
+
+  Future<void> _pickEvidenceFromCamera() async {
+    final file = await ImagePicker().pickImage(
+      source: ImageSource.camera,
+      imageQuality: 95,
+    );
+    if (file == null) return;
+    setState(() {
+      _pendingSourcePath = file.path;
+      _pendingSourceExtension = null;
+    });
+  }
+
+  Future<void> _pickEvidenceFromGallery() async {
+    final file = await ImagePicker().pickImage(
+      source: ImageSource.gallery,
+      imageQuality: 95,
+    );
+    if (file == null) return;
+    setState(() {
+      _pendingSourcePath = file.path;
+      _pendingSourceExtension = null;
+    });
+  }
+
+  Future<void> _pickEvidenceFromFile() async {
+    final result = await FilePicker.platform.pickFiles(
+      allowMultiple: false,
+      type: FileType.custom,
+      allowedExtensions: const ['jpg', 'jpeg', 'png', 'pdf'],
+    );
+    final file = result?.files.single;
+    final path = file?.path;
+    if (path == null || path.isEmpty) return;
+    setState(() {
+      _pendingSourcePath = path;
+      _pendingSourceExtension = file?.extension;
+    });
+  }
 }

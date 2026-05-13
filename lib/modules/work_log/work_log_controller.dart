@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'package:get/get.dart';
 import 'package:table_calendar/table_calendar.dart';
+import '../../common/utils/date_utils.dart';
 import 'work_log_model.dart';
 import '../../common/services/log_service.dart';
 import 'work_log_repository.dart';
@@ -9,8 +10,8 @@ class WorkLogController extends GetxController {
   static WorkLogController get to => Get.find();
 
   // --- 1. 日历状态 ---
-  final focusedDay = DateTime.now().obs;
-  final selectedDay = DateTime.now().obs;
+  final focusedDay = dateOnlyLocal(DateTime.now()).obs;
+  final selectedDay = dateOnlyLocal(DateTime.now()).obs;
   final calendarFormat = CalendarFormat.week.obs;
 
   // --- 2. 数据源 ---
@@ -43,16 +44,15 @@ class WorkLogController extends GetxController {
   // --- 核心操作 ---
 
   void onDaySelected(DateTime selected, DateTime focused) {
-    final safeSelected = DateTime(selected.year, selected.month, selected.day);
+    final safeSelected = dateOnlyLocal(selected);
     if (!isSameDay(selectedDay.value, safeSelected)) {
       selectedDay.value = safeSelected;
-      focusedDay.value = focused;
-      update();
     }
+    focusedDay.value = dateOnlyLocal(focused);
   }
 
   void onPageChanged(DateTime focused) {
-    focusedDay.value = focused;
+    focusedDay.value = dateOnlyLocal(focused);
   }
 
   void onFormatChanged(CalendarFormat format) {
@@ -60,8 +60,13 @@ class WorkLogController extends GetxController {
   }
 
   List<WorkLog> getEventsForDay(DateTime day) {
-    final key = DateTime(day.year, day.month, day.day);
+    final key = dateOnlyLocal(day);
     return logsMap[key] ?? [];
+  }
+
+  WorkLog? getLogForDay(DateTime day) {
+    final logs = getEventsForDay(day);
+    return logs.isEmpty ? null : logs.first;
   }
 
   // 加载数据
@@ -70,15 +75,13 @@ class WorkLogController extends GetxController {
     try {
       LogService.to.debug('WorkLog', '开始加载数据...');
 
+      await WorkLogRepository.to.normalizeDuplicateDays();
       final allLogs = await WorkLogRepository.to.getAllLogs();
       LogService.to.debug('WorkLog', '从数据库获取到 ${allLogs.length} 条记录');
 
       final newMap = <DateTime, List<WorkLog>>{};
-      for (var log in allLogs) {
-        final date = log.date;
-        final key = DateTime(date.year, date.month, date.day);
-        if (newMap[key] == null) newMap[key] = [];
-        newMap[key]!.add(log);
+      for (final entry in allLogs.latestByLocalDate().entries) {
+        newMap[entry.key] = [entry.value];
       }
 
       logsMap.assignAll(newMap);

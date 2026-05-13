@@ -46,7 +46,9 @@ class ProjectRepository extends GetxService {
 
   Future<void> _pushIfNeeded(Project project) async {
     if (!Get.isRegistered<SyncService>()) return;
-    if (project.remoteId != null && !project.isDirty && !project.pendingDelete) {
+    if (project.remoteId != null &&
+        !project.isDirty &&
+        !project.pendingDelete) {
       return;
     }
 
@@ -57,6 +59,27 @@ class ProjectRepository extends GetxService {
       }
     } catch (e) {
       LogService.to.error('ProjectRepository', '云端同步失败: $e');
+    }
+  }
+
+  Future<void> deleteProject(Project project) async {
+    final deleted = await DbService.to.markProjectDeleted(project.id);
+    if (deleted == null) return;
+
+    try {
+      if (deleted.remoteId == null) {
+        await DbService.to.purgeDeletedProject(project.id);
+      } else if (!Get.isRegistered<SyncService>()) {
+        LogService.to.info('ProjectRepository', '本地模式：跳过云端删除');
+      } else {
+        final success = await SyncService.to.deleteProject(deleted);
+        if (success) {
+          await DbService.to.purgeDeletedProject(project.id);
+        }
+      }
+    } catch (e) {
+      LogService.to.error('ProjectRepository', '云端删除失败: $e');
+      rethrow;
     }
   }
 }

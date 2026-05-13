@@ -1,5 +1,7 @@
 import 'package:isar/isar.dart';
 
+import '../../common/utils/date_utils.dart';
+
 part 'evidence_model.g.dart';
 
 @collection
@@ -16,6 +18,9 @@ class ExpenseEvidence {
   bool isDirty = false;
   DateTime? deletedAt;
   bool pendingDelete = false;
+
+  DateTime? createdAt;
+  DateTime? updatedAt;
 
   @Index(caseSensitive: false)
   late String projectName;
@@ -115,8 +120,8 @@ extension ExpenseEvidenceListDomainLogic on Iterable<ExpenseEvidence> {
   Iterable<ExpenseEvidence> inMonth(DateTime monthYear) {
     return where(
       (item) =>
-          item.evidenceDate.year == monthYear.year &&
-          item.evidenceDate.month == monthYear.month,
+          dateOnlyLocal(item.evidenceDate).year == monthYear.year &&
+          dateOnlyLocal(item.evidenceDate).month == monthYear.month,
     );
   }
 

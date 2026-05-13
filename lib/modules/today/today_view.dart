@@ -11,7 +11,6 @@ import 'package:life_log/common/widgets/app_empty_state.dart';
 import 'package:life_log/common/widgets/app_metric_tile.dart';
 import 'package:life_log/common/widgets/app_pill.dart';
 import 'package:life_log/modules/evidence/evidence_controller.dart';
-import 'package:life_log/modules/evidence/views/evidence_editor_sheet.dart';
 import 'package:life_log/modules/expense/expense_record_controller.dart';
 import 'package:life_log/modules/expense/views/expense_record_edit_view.dart';
 import 'package:life_log/modules/subscription/subscription_controller.dart';
@@ -289,6 +288,9 @@ class _QuickActions extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final existingTodayLog = Get.isRegistered<WorkLogController>()
+        ? Get.find<WorkLogController>().getLogForDay(today)
+        : null;
     return AppCard(
       padding: EdgeInsets.all(14.w),
       child: Wrap(
@@ -296,7 +298,12 @@ class _QuickActions extends StatelessWidget {
         runSpacing: 8.h,
         children: [
           _action('工时', Icons.work_history_rounded, () {
-            Get.to(() => LogEditView(selectedDate: today));
+            Get.to(
+              () => LogEditView(
+                selectedDate: today,
+                existingLog: existingTodayLog,
+              ),
+            );
           }),
           _action('支出', Icons.payments_rounded, () {
             AppActionSheet.show(
@@ -317,7 +324,34 @@ class _QuickActions extends StatelessWidget {
             );
           }),
           _action('凭证', Icons.attach_file_rounded, () {
-            showEvidenceEditorSheet();
+            AppActionSheet.show(
+              title: '添加凭证',
+              actions: [
+                AppActionSheetItem(
+                  icon: Icons.camera_alt_rounded,
+                  title: '拍摄凭证',
+                  onTap: () => Get.find<EvidenceController>().captureEvidence(),
+                ),
+                AppActionSheetItem(
+                  icon: Icons.photo_library_rounded,
+                  title: '导入截图',
+                  onTap: () => Get.find<EvidenceController>().importEvidence(),
+                ),
+                AppActionSheetItem(
+                  icon: Icons.upload_file_rounded,
+                  title: '导入文件',
+                  subtitle: '发票 PDF 或图片文件',
+                  onTap: () =>
+                      Get.find<EvidenceController>().importEvidenceFile(),
+                ),
+                AppActionSheetItem(
+                  icon: Icons.edit_note_rounded,
+                  title: '手动记录',
+                  onTap: () =>
+                      Get.find<EvidenceController>().createManualEvidence(),
+                ),
+              ],
+            );
           }),
           _action('项目', Icons.folder_special_rounded, () {
             TabsController.to.changePage(3);
@@ -378,9 +412,7 @@ class _RecentLogs extends StatelessWidget {
             child: Row(
               children: [
                 Expanded(
-                  child: Text(
-                    '${log.date.month}/${log.date.day} · ${log.type.name}',
-                  ),
+                  child: Text('${formatDateYmd(log.date)} · ${log.type.name}'),
                 ),
                 const Icon(Icons.chevron_right_rounded),
               ],

@@ -1,5 +1,7 @@
 import 'package:isar/isar.dart';
 
+import '../../common/utils/date_utils.dart';
+
 part 'subscription_model.g.dart';
 
 @collection
@@ -50,14 +52,16 @@ extension SubscriptionDomainLogic on Subscription {
   /// 判断该订阅在指定月份是否需要扣费，并返回费用
   double costForMonth(DateTime targetMonth) {
     final p = price ?? 0.0;
+    final localTargetMonth = dateOnlyLocal(targetMonth);
+    final localPaymentDate = dateOnlyLocal(nextPaymentDate);
     if (cycle == SubscriptionCycle.monthly) return p;
     if (cycle == SubscriptionCycle.yearly &&
-        nextPaymentDate.month == targetMonth.month) {
+        localPaymentDate.month == localTargetMonth.month) {
       return p;
     }
     if (cycle == SubscriptionCycle.oneTime &&
-        nextPaymentDate.year == targetMonth.year &&
-        nextPaymentDate.month == targetMonth.month) {
+        localPaymentDate.year == localTargetMonth.year &&
+        localPaymentDate.month == localTargetMonth.month) {
       return p;
     }
     return 0.0;

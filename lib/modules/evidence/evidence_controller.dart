@@ -154,6 +154,27 @@ class EvidenceController extends GetxController {
     }
   }
 
+  Future<void> importEvidenceFile({String? initialProject}) async {
+    try {
+      final result = await FilePicker.platform.pickFiles(
+        allowMultiple: false,
+        type: FileType.custom,
+        allowedExtensions: const ['jpg', 'jpeg', 'png', 'pdf'],
+      );
+      final file = result?.files.single;
+      final path = file?.path;
+      if (path == null || path.isEmpty) return;
+      showEvidenceEditorSheet(
+        initialProject: initialProject,
+        sourcePath: path,
+        sourceExtension: file?.extension,
+      );
+    } catch (e, stackTrace) {
+      LogService.to.error('Evidence', '无法导入凭证文件: $e', stackTrace);
+      Get.snackbar('错误', '无法导入凭证文件: $e');
+    }
+  }
+
   void createManualEvidence({String? initialProject}) {
     showEvidenceEditorSheet(initialProject: initialProject);
   }

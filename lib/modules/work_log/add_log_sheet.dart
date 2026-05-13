@@ -5,6 +5,7 @@ import 'package:get/get.dart';
 import 'work_log_controller.dart';
 import 'work_log_model.dart';
 import '../../common/theme/app_colors.dart';
+import '../../common/utils/date_utils.dart';
 import '../../common/widgets/app_button.dart';
 import '../../common/widgets/app_confirm_dialog.dart';
 import '../../common/widgets/app_pill.dart';
@@ -15,12 +16,14 @@ import '../../common/widgets/app_text_field.dart';
 class AddLogSheet extends StatefulWidget {
   final DateTime selectedDate;
   final WorkLog? existingLog;
+  final LogType? initialType;
   final bool asPage;
 
   const AddLogSheet({
     super.key,
     required this.selectedDate,
     this.existingLog,
+    this.initialType,
     this.asPage = false,
   });
 
@@ -49,7 +52,6 @@ class _AddLogSheetState extends State<AddLogSheet> {
   String _selectedLeaveType = "年假";
   final TextEditingController _customLeaveController = TextEditingController();
   final FocusNode _customLeaveFocusNode = FocusNode();
-  bool _isTextFieldFocused = false;
 
   @override
   void initState() {
@@ -75,17 +77,13 @@ class _AddLogSheetState extends State<AddLogSheet> {
         }
       }
     } else {
-      _selectedType = LogType.work;
-    }
-    for (final node in _textFocusNodes) {
-      node.addListener(_syncTextFieldFocus);
+      _selectedType = widget.initialType ?? LogType.work;
     }
   }
 
   @override
   void dispose() {
     for (final node in _textFocusNodes) {
-      node.removeListener(_syncTextFieldFocus);
       node.dispose();
     }
     _noteController.dispose();
@@ -102,16 +100,6 @@ class _AddLogSheetState extends State<AddLogSheet> {
     _expenseFocusNode,
     _customLeaveFocusNode,
   ];
-
-  void _syncTextFieldFocus() {
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (!mounted) return;
-      final next = _textFocusNodes.any((node) => node.hasFocus);
-      if (next != _isTextFieldFocused) {
-        setState(() => _isTextFieldFocused = next);
-      }
-    });
-  }
 
   @override
   Widget build(BuildContext context) {
@@ -130,12 +118,10 @@ class _AddLogSheetState extends State<AddLogSheet> {
       height: widget.asPage ? null : sheetHeight,
       title: widget.existingLog != null ? "修改记录" : "记录一下",
       padding: EdgeInsets.zero,
-      bottomBar: _isTextFieldFocused
-          ? null
-          : AppSafeBottomBar(
-              padding: EdgeInsets.fromLTRB(24.w, 8.h, 24.w, 16.h),
-              child: _buildBottomActions(isDark),
-            ),
+      bottomBar: AppSafeBottomBar(
+        padding: EdgeInsets.fromLTRB(24.w, 8.h, 24.w, 16.h),
+        child: _buildBottomActions(isDark),
+      ),
       child: Column(
         children: [
           _buildTypeSelector(isDark, bgColor, textPrimary, textSecondary),
@@ -310,7 +296,7 @@ class _AddLogSheetState extends State<AddLogSheet> {
     }
 
     final log = WorkLog()
-      ..date = widget.existingLog?.date ?? widget.selectedDate
+      ..date = dateOnlyLocal(widget.existingLog?.date ?? widget.selectedDate)
       ..type = _selectedType
       ..note = _noteController.text;
 

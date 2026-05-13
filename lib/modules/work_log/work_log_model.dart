@@ -1,5 +1,7 @@
 import 'package:isar/isar.dart';
 
+import '../../common/utils/date_utils.dart';
+
 part 'work_log_model.g.dart';
 
 @collection
@@ -16,6 +18,9 @@ class WorkLog {
   bool isDirty = false;
   DateTime? deletedAt;
   bool pendingDelete = false;
+
+  DateTime? createdAt;
+  DateTime? updatedAt;
 
   late DateTime date; // 日期
 
@@ -44,6 +49,18 @@ enum LogType {
 }
 
 extension WorkLogListDomainLogic on Iterable<WorkLog> {
+  Map<DateTime, WorkLog> latestByLocalDate() {
+    final result = <DateTime, WorkLog>{};
+    for (final log in this) {
+      final key = dateOnlyLocal(log.date);
+      final existing = result[key];
+      if (existing == null || _isNewerWorkLog(log, existing)) {
+        result[key] = log;
+      }
+    }
+    return result;
+  }
+
   /// 计算总已报销金额
   double get totalReimbursedAmount {
     return where(
@@ -62,7 +79,8 @@ extension WorkLogListDomainLogic on Iterable<WorkLog> {
   Iterable<WorkLog> inMonth(DateTime monthYear) {
     return where(
       (log) =>
-          log.date.year == monthYear.year && log.date.month == monthYear.month,
+          dateOnlyLocal(log.date).year == monthYear.year &&
+          dateOnlyLocal(log.date).month == monthYear.month,
     );
   }
 
@@ -73,39 +91,21 @@ extension WorkLogListDomainLogic on Iterable<WorkLog> {
     int tDays = 0;
     int rDays = 0;
 
-    final monthLogsByDate = <DateTime, List<WorkLog>>{};
-    for (var log in inMonth(monthYear)) {
-      final dateKey = DateTime(log.date.year, log.date.month, log.date.day);
-      if (monthLogsByDate[dateKey] == null) {
-        monthLogsByDate[dateKey] = [];
+    for (final log in inMonth(monthYear).latestByLocalDate().values) {
+      switch (log.type) {
+        case LogType.work:
+          wDays++;
+          hours += log.overtimeHours ?? 0.0;
+          break;
+        case LogType.businessTrip:
+          tDays++;
+          break;
+        case LogType.leave:
+        case LogType.rest:
+          rDays++;
+          break;
       }
-      monthLogsByDate[dateKey]!.add(log);
     }
-
-    monthLogsByDate.forEach((date, dailyLogs) {
-      bool hasWork = false;
-      bool hasTrip = false;
-      bool hasRestOrLeave = false;
-
-      for (var log in dailyLogs) {
-        if (log.type == LogType.work) {
-          hasWork = true;
-          if (log.overtimeHours != null) hours += log.overtimeHours!;
-        } else if (log.type == LogType.businessTrip) {
-          hasTrip = true;
-        } else {
-          hasRestOrLeave = true;
-        }
-      }
-
-      if (hasWork) {
-        wDays++;
-      } else if (hasTrip) {
-        tDays++;
-      } else if (hasRestOrLeave) {
-        rDays++;
-      }
-    });
 
     return WorkMonthStats(
       workHours: hours,
@@ -114,6 +114,14 @@ extension WorkLogListDomainLogic on Iterable<WorkLog> {
       restDays: rDays,
     );
   }
+}
+
+bool _isNewerWorkLog(WorkLog next, WorkLog current) {
+  final nextTime = next.updatedAt ?? next.createdAt ?? next.date;
+  final currentTime = current.updatedAt ?? current.createdAt ?? current.date;
+  final timeCompare = nextTime.compareTo(currentTime);
+  if (timeCompare != 0) return timeCompare > 0;
+  return next.id > current.id;
 }
 
 class WorkMonthStats {

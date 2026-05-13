@@ -194,25 +194,12 @@ class _DayLogCard extends StatelessWidget {
   Future<void> _deleteLog(WorkLog log) async {
     final confirmed = await AppConfirmDialog.show(
       title: "删除记录",
-      message: "确定删除这条「${_typeLabel(log.type)}」记录吗？删除后无法恢复。",
+      message: "确定清空这一天的记录吗？删除后无法恢复。",
       confirmLabel: "删除",
       destructive: true,
     );
     if (confirmed) {
       await logic.deleteLog(log.id);
-    }
-  }
-
-  String _typeLabel(LogType type) {
-    switch (type) {
-      case LogType.work:
-        return "工作";
-      case LogType.businessTrip:
-        return "出差";
-      case LogType.leave:
-        return "请假";
-      case LogType.rest:
-        return "休息";
     }
   }
 }

@@ -82,6 +82,18 @@ class LoginView extends StatelessWidget {
                   validator: (v) =>
                       v != null && v.length >= 6 ? null : '密码至少6位',
                 ),
+                if (!controller.isLogin.value) ...[
+                  SizedBox(height: 20.h),
+                  AppTextField(
+                    enabled: controller.isCloudAvailable,
+                    controller: controller.confirmPasswordController,
+                    labelText: '确认密码',
+                    prefixIcon: const Icon(Icons.lock_outline),
+                    obscureText: true,
+                    validator: (v) =>
+                        v != null && v.length >= 6 ? null : '密码至少6位',
+                  ),
+                ],
                 SizedBox(height: 40.h),
                 AppButton.primary(
                   label: controller.isLogin.value ? '登录' : '注册',

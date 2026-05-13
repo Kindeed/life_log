@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:get/get.dart';
 import 'package:life_log/common/services/log_service.dart';
+import 'package:life_log/common/utils/date_utils.dart';
 
 import 'expense_record_model.dart';
 import 'expense_record_repository.dart';
@@ -68,8 +69,8 @@ class ExpenseRecordController extends GetxController {
     return records
         .where(
           (item) =>
-              item.expenseDate.year == month.year &&
-              item.expenseDate.month == month.month,
+              dateOnlyLocal(item.expenseDate).year == month.year &&
+              dateOnlyLocal(item.expenseDate).month == month.month,
         )
         .fold(0.0, (sum, item) => sum + item.amount);
   }

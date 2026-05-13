@@ -3,22 +3,15 @@ import 'package:get/get.dart';
 import '../../common/services/log_service.dart';
 import 'subscription_model.dart';
 import 'subscription_repository.dart';
-import 'package:flutter/material.dart';
-import 'package:flutter/rendering.dart';
 
 enum SubscriptionFilter { all, monthly, yearly, oneTime }
 
 enum SubscriptionSortMode { manual, date, price }
 
-enum FinanceSection { fixed, records }
-
 class SubscriptionController extends GetxController {
   static SubscriptionController get to => Get.find();
 
   final subs = <Subscription>[].obs;
-  // 控制 FAB 显示/隐藏
-  final isFabVisible = true.obs;
-  final section = FinanceSection.fixed.obs;
   final filter = SubscriptionFilter.all.obs;
   final sortMode = SubscriptionSortMode.manual.obs;
 
@@ -137,10 +130,6 @@ class SubscriptionController extends GetxController {
     filter.value = value;
   }
 
-  void setSection(FinanceSection value) {
-    section.value = value;
-  }
-
   void setSortMode(SubscriptionSortMode value) {
     sortMode.value = value;
   }
@@ -169,15 +158,6 @@ class SubscriptionController extends GetxController {
       LogService.to.error('Subscription', '重新排序订阅失败: $e', stackTrace);
       Get.snackbar('排序失败', e.toString());
       rethrow;
-    }
-  }
-
-  // --- 滚动监听 ---
-  void onScroll(UserScrollNotification notification) {
-    if (notification.direction == ScrollDirection.forward) {
-      if (!isFabVisible.value) isFabVisible.value = true;
-    } else if (notification.direction == ScrollDirection.reverse) {
-      if (isFabVisible.value) isFabVisible.value = false;
     }
   }
 }

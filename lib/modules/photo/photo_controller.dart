@@ -1,8 +1,7 @@
 import 'dart:async';
 import 'dart:io';
 import 'package:device_info_plus/device_info_plus.dart';
-import 'package:flutter/material.dart';
-import 'package:flutter/rendering.dart';
+import 'package:flutter/painting.dart';
 import 'package:get/get.dart';
 import 'package:life_log/modules/photo/photo_model.dart';
 import 'package:life_log/modules/photo/photo_repository.dart';
@@ -34,14 +33,14 @@ class PhotoUiMessage {
 class ProjectSummary {
   final String name;
   final List<PhotoItem> photos;
-  final PhotoItem latestPhoto;
+  final PhotoItem? latestPhoto;
   final int deviceCount;
   final int untitledCount;
 
   ProjectSummary({
     required this.name,
     required this.photos,
-    required this.latestPhoto,
+    this.latestPhoto,
     required this.deviceCount,
     required this.untitledCount,
   });
@@ -55,7 +54,6 @@ class PhotoController extends GetxController {
   // Observable state
   final photos = <PhotoItem>[].obs;
   final isLoading = false.obs;
-  final isFabVisible = true.obs;
   final projectSearchQuery = ''.obs;
   final projectSortMode = ProjectSortMode.recent.obs;
   final uiMessage = Rxn<PhotoUiMessage>();
@@ -80,15 +78,6 @@ class PhotoController extends GetxController {
   void onClose() {
     _dbSub?.cancel();
     super.onClose();
-  }
-
-  // --- 滚动监听 ---
-  void onScroll(UserScrollNotification notification) {
-    if (notification.direction == ScrollDirection.forward) {
-      if (!isFabVisible.value) isFabVisible.value = true;
-    } else if (notification.direction == ScrollDirection.reverse) {
-      if (isFabVisible.value) isFabVisible.value = false;
-    }
   }
 
   Future<void> _initDeviceInfo() async {
@@ -129,7 +118,6 @@ class PhotoController extends GetxController {
 
       if (image != null) {
         showCaptureDialog(
-          tempPath: image.path,
           initialProject: initialProject,
           onConfirm: (projectName, description) {
             _processAndSavePhoto(image.path, projectName, description);
@@ -150,7 +138,6 @@ class PhotoController extends GetxController {
       if (result == null) return;
 
       showCaptureDialog(
-        tempPath: result.file.path,
         initialProject: initialProject,
         onConfirm: (projectName, description) {
           _processAndSavePhoto(
@@ -271,7 +258,9 @@ class PhotoController extends GetxController {
     switch (projectSortMode.value) {
       case ProjectSortMode.recent:
         summaries.sort(
-          (a, b) => b.latestPhoto.createdAt.compareTo(a.latestPhoto.createdAt),
+          (a, b) => (b.latestPhoto?.createdAt ?? DateTime(0)).compareTo(
+            a.latestPhoto?.createdAt ?? DateTime(0),
+          ),
         );
         break;
       case ProjectSortMode.count:

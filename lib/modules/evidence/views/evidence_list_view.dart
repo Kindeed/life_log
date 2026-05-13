@@ -135,6 +135,12 @@ class EvidenceListView extends StatelessWidget {
           onTap: controller.importEvidence,
         ),
         AppActionSheetItem(
+          icon: Icons.upload_file_rounded,
+          title: '导入文件',
+          subtitle: '发票、PDF 或截图文件',
+          onTap: controller.importEvidenceFile,
+        ),
+        AppActionSheetItem(
           icon: Icons.edit_note_rounded,
           title: '手动记录',
           subtitle: '没有截图时先记录金额和状态',
@@ -236,6 +242,13 @@ class EvidenceListView extends StatelessWidget {
           onTap: () => controller.importEvidence(initialProject: projectName),
         ),
         AppActionSheetItem(
+          icon: Icons.upload_file_rounded,
+          title: '导入文件',
+          subtitle: '发票、PDF 或截图文件',
+          onTap: () =>
+              controller.importEvidenceFile(initialProject: projectName),
+        ),
+        AppActionSheetItem(
           icon: Icons.edit_note_rounded,
           title: '手动记录',
           onTap: () =>
@@ -332,7 +345,7 @@ class EvidenceListView extends StatelessWidget {
   }
 
   String _formatDate(DateTime date) {
-    return '${date.year}-${date.month.toString().padLeft(2, '0')}-${date.day.toString().padLeft(2, '0')}';
+    return formatDateYmd(date);
   }
 }
 
@@ -487,7 +500,8 @@ class _EvidenceProjectCard extends StatelessWidget {
   }
 
   String _formatDate(DateTime date) {
-    return '${date.month.toString().padLeft(2, '0')}.${date.day.toString().padLeft(2, '0')}';
+    final local = date.toLocal();
+    return '${local.month.toString().padLeft(2, '0')}.${local.day.toString().padLeft(2, '0')}';
   }
 }
 
@@ -564,7 +578,8 @@ class _EvidenceItemCard extends StatelessWidget {
   }
 
   String _formatDate(DateTime date) {
-    return '${date.month.toString().padLeft(2, '0')}.${date.day.toString().padLeft(2, '0')}';
+    final local = date.toLocal();
+    return '${local.month.toString().padLeft(2, '0')}.${local.day.toString().padLeft(2, '0')}';
   }
 }
 
@@ -590,7 +605,7 @@ class _EvidencePreview extends StatelessWidget {
         width: width ?? double.infinity,
         height: height,
         color: theme.colorScheme.surfaceContainerHighest,
-        child: path != null && File(path).existsSync()
+        child: path != null && File(path).existsSync() && _isImagePath(path)
             ? Image.file(
                 File(path),
                 fit: BoxFit.cover,
@@ -599,6 +614,16 @@ class _EvidencePreview extends StatelessWidget {
             : _placeholder(theme),
       ),
     );
+  }
+
+  bool _isImagePath(String path) {
+    final lower = path.toLowerCase();
+    return lower.endsWith('.png') ||
+        lower.endsWith('.jpg') ||
+        lower.endsWith('.jpeg') ||
+        lower.endsWith('.webp') ||
+        lower.endsWith('.gif') ||
+        lower.endsWith('.heic');
   }
 
   Widget _placeholder(ThemeData theme) {

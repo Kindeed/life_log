@@ -42,6 +42,9 @@ class ProfileController extends GetxController {
   Future<void> logout() async {
     try {
       await authService?.signOut();
+      if (Get.currentRoute != '/login') {
+        Get.offAllNamed('/login');
+      }
     } catch (e, stackTrace) {
       LogService.to.error('Profile', '退出登录失败: $e', stackTrace);
       rethrow;

@@ -22,7 +22,6 @@ class SyncService extends GetxService {
   final _storage = GetStorage();
   static const _evidenceBucket = 'evidence-files';
   Future<bool>? _activeSync;
-  DateTime? _lastSyncStartedAt;
   Future<void>? _claimUnownedRecordsFuture;
   String? _claimUnownedRecordsUserId;
   Worker? _authWorker;
@@ -47,6 +46,33 @@ class SyncService extends GetxService {
   String get _legacyLastSyncKey => _lastSyncKey;
 
   String newSyncId() => SyncIdGenerator.newSyncId();
+
+  int? _parseRemoteInt(dynamic value) {
+    if (value is int) return value;
+    if (value is num) return value.toInt();
+    if (value is String) return int.tryParse(value);
+    return null;
+  }
+
+  DateTime? _parseRemoteDateTime(dynamic value) {
+    if (value is DateTime) return value.toUtc();
+    if (value is String) return DateTime.tryParse(value)?.toUtc();
+    return value == null ? null : DateTime.tryParse(value.toString())?.toUtc();
+  }
+
+  String? _parseRemoteString(dynamic value) {
+    if (value == null) return null;
+    if (value is String) return value;
+    return value.toString();
+  }
+
+  int _requireRemoteId(Map<String, dynamic> response, String entityName) {
+    final id = _parseRemoteInt(response['id']);
+    if (id == null) {
+      throw StateError('$entityName sync response is missing a valid id');
+    }
+    return id;
+  }
 
   Future<void> _refreshRemoteWorkLog(WorkLog log) async {
     final user = AuthService.to.currentUser.value;
@@ -124,12 +150,10 @@ class SyncService extends GetxService {
   }
 
   void _applyWorkLogSyncResult(WorkLog log, Map<String, dynamic> response) {
-    log.remoteId = response['id'] as int;
-    log.syncId = response['sync_id'] as String? ?? log.syncId;
-    log.remoteVersion = (response['version'] as num?)?.toInt() ?? 0;
-    log.remoteUpdatedAt = response['updated_at'] == null
-        ? null
-        : DateTime.parse(response['updated_at'] as String);
+    log.remoteId = _requireRemoteId(response, 'WorkLog');
+    log.syncId = _parseRemoteString(response['sync_id']) ?? log.syncId;
+    log.remoteVersion = _parseRemoteInt(response['version']) ?? 0;
+    log.remoteUpdatedAt = _parseRemoteDateTime(response['updated_at']);
     log.syncedAt = DateTime.now();
     log.isDirty = false;
     log.pendingDelete = false;
@@ -139,24 +163,20 @@ class SyncService extends GetxService {
     Subscription sub,
     Map<String, dynamic> response,
   ) {
-    sub.remoteId = response['id'] as int;
-    sub.syncId = response['sync_id'] as String? ?? sub.syncId;
-    sub.remoteVersion = (response['version'] as num?)?.toInt() ?? 0;
-    sub.remoteUpdatedAt = response['updated_at'] == null
-        ? null
-        : DateTime.parse(response['updated_at'] as String);
+    sub.remoteId = _requireRemoteId(response, 'Subscription');
+    sub.syncId = _parseRemoteString(response['sync_id']) ?? sub.syncId;
+    sub.remoteVersion = _parseRemoteInt(response['version']) ?? 0;
+    sub.remoteUpdatedAt = _parseRemoteDateTime(response['updated_at']);
     sub.syncedAt = DateTime.now();
     sub.isDirty = false;
     sub.pendingDelete = false;
   }
 
   void _applyProjectSyncResult(Project project, Map<String, dynamic> response) {
-    project.remoteId = response['id'] as int;
-    project.syncId = response['sync_id'] as String? ?? project.syncId;
-    project.remoteVersion = (response['version'] as num?)?.toInt() ?? 0;
-    project.remoteUpdatedAt = response['updated_at'] == null
-        ? null
-        : DateTime.parse(response['updated_at'] as String);
+    project.remoteId = _requireRemoteId(response, 'Project');
+    project.syncId = _parseRemoteString(response['sync_id']) ?? project.syncId;
+    project.remoteVersion = _parseRemoteInt(response['version']) ?? 0;
+    project.remoteUpdatedAt = _parseRemoteDateTime(response['updated_at']);
     project.syncedAt = DateTime.now();
     project.isDirty = false;
     project.pendingDelete = false;
@@ -166,12 +186,11 @@ class SyncService extends GetxService {
     ExpenseEvidence evidence,
     Map<String, dynamic> response,
   ) {
-    evidence.remoteId = response['id'] as int;
-    evidence.syncId = response['sync_id'] as String? ?? evidence.syncId;
-    evidence.remoteVersion = (response['version'] as num?)?.toInt() ?? 0;
-    evidence.remoteUpdatedAt = response['updated_at'] == null
-        ? null
-        : DateTime.parse(response['updated_at'] as String);
+    evidence.remoteId = _requireRemoteId(response, 'ExpenseEvidence');
+    evidence.syncId =
+        _parseRemoteString(response['sync_id']) ?? evidence.syncId;
+    evidence.remoteVersion = _parseRemoteInt(response['version']) ?? 0;
+    evidence.remoteUpdatedAt = _parseRemoteDateTime(response['updated_at']);
     evidence.syncedAt = DateTime.now();
     evidence.isDirty = false;
     evidence.pendingDelete = false;
@@ -181,12 +200,10 @@ class SyncService extends GetxService {
     ExpenseRecord record,
     Map<String, dynamic> response,
   ) {
-    record.remoteId = response['id'] as int;
-    record.syncId = response['sync_id'] as String? ?? record.syncId;
-    record.remoteVersion = (response['version'] as num?)?.toInt() ?? 0;
-    record.remoteUpdatedAt = response['updated_at'] == null
-        ? null
-        : DateTime.parse(response['updated_at'] as String);
+    record.remoteId = _requireRemoteId(response, 'ExpenseRecord');
+    record.syncId = _parseRemoteString(response['sync_id']) ?? record.syncId;
+    record.remoteVersion = _parseRemoteInt(response['version']) ?? 0;
+    record.remoteUpdatedAt = _parseRemoteDateTime(response['updated_at']);
     record.syncedAt = DateTime.now();
     record.isDirty = false;
     record.pendingDelete = false;
@@ -935,15 +952,6 @@ class SyncService extends GetxService {
       return _activeSync!;
     }
 
-    final now = DateTime.now();
-    final lastStartedAt = _lastSyncStartedAt;
-    if (lastStartedAt != null &&
-        now.difference(lastStartedAt) < const Duration(seconds: 2)) {
-      LogService.to.debug('Sync', 'Skip duplicate sync trigger: $reason');
-      return true;
-    }
-
-    _lastSyncStartedAt = now;
     _activeSync = _runSyncAll(reason, forceFullRefresh: forceFullRefresh);
 
     try {
@@ -985,8 +993,11 @@ class SyncService extends GetxService {
     if (response == null) {
       throw StateError('get_server_time returned null');
     }
-    if (response is String) return DateTime.parse(response);
-    return DateTime.parse(response.toString());
+    final parsed = _parseRemoteDateTime(response);
+    if (parsed == null) {
+      throw StateError('get_server_time returned an invalid timestamp');
+    }
+    return parsed;
   }
 
   Future<List<Map<String, dynamic>>> _pullPagedRows({
@@ -1033,7 +1044,7 @@ class SyncService extends GetxService {
       final cursorStr =
           _storage.read(_lastPullCursorKey) ??
           _storage.read(_legacyLastSyncKey);
-      final lastCursor = cursorStr == null ? null : DateTime.parse(cursorStr);
+      final lastCursor = _parseRemoteDateTime(cursorStr);
       final fullRefresh = forceFullRefresh || lastCursor == null;
 
       final logsData = await _pullPagedRows(
@@ -1082,7 +1093,7 @@ class SyncService extends GetxService {
 
       for (var map in evidenceData) {
         await DbService.to.syncRemoteEvidenceToLocal(map);
-        final syncId = map['sync_id'] as String?;
+        final syncId = _parseRemoteString(map['sync_id']);
         if (map['deleted_at'] == null && syncId != null) {
           ExpenseEvidence? evidence;
           for (final item in await DbService.to.getAllEvidence()) {
@@ -1166,7 +1177,9 @@ class SyncService extends GetxService {
       var projectAttempts = 0;
       var projectFailures = 0;
       for (var project in allProjects) {
-        if (project.remoteId == null || project.isDirty || project.pendingDelete) {
+        if (project.remoteId == null ||
+            project.isDirty ||
+            project.pendingDelete) {
           projectAttempts++;
           final pushed = await pushProject(project);
           if (!pushed) projectFailures++;

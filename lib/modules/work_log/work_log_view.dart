@@ -10,7 +10,6 @@ import 'package:life_log/modules/work_log/widgets/day_log_list.dart';
 import 'package:life_log/modules/work_log/widgets/day_cell.dart';
 import 'work_log_controller.dart';
 import 'work_log_model.dart';
-import 'views/log_edit_view.dart';
 
 class WorkLogView extends StatelessWidget {
   const WorkLogView({super.key});
@@ -45,9 +44,7 @@ class WorkLogView extends StatelessWidget {
                       padding: EdgeInsets.fromLTRB(6.w, 8.h, 6.w, 8.h),
                       child: Obx(() {
                         return TableCalendar<WorkLog>(
-                          key: ValueKey(
-                            "${logic.selectedDay.value}_${logic.dataVersion.value}",
-                          ),
+                          key: ValueKey(logic.selectedDay.value),
                           locale: 'zh_CN',
                           firstDay: DateTime(2020, 1, 1),
                           lastDay: DateTime(2030, 12, 31),
@@ -96,7 +93,7 @@ class WorkLogView extends StatelessWidget {
             ),
             // 3. 详情区域
             SliverFillRemaining(
-              hasScrollBody: true,
+              hasScrollBody: false,
               child: ConstrainedPage(
                 padding: EdgeInsets.symmetric(horizontal: 14.w),
                 child: Obx(() {
@@ -108,26 +105,21 @@ class WorkLogView extends StatelessWidget {
                         horizontal: 16.w,
                         vertical: 26.h,
                       ),
-                      child: AppEmptyState(
+                      child: const AppEmptyState(
                         icon: Icons.edit_calendar_rounded,
                         title: "这天还没有记录",
-                        message: "添加工作、出差、请假或休息记录。",
-                        actionLabel: "记一笔",
-                        onAction: () => _showAddSheet(logic),
+                        message: "使用底部「记工时」添加工作、出差、请假或休息。",
                       ),
                     );
                   }
 
-                  return ListView(
+                  return Padding(
                     padding: EdgeInsets.only(bottom: 16.h),
-                    physics: const BouncingScrollPhysics(),
-                    children: [
-                      DayLogList(
-                        date: selectedDate,
-                        logs: events,
-                        logic: logic,
-                      ),
-                    ],
+                    child: DayLogList(
+                      date: selectedDate,
+                      logs: events,
+                      logic: logic,
+                    ),
                   );
                 }),
               ),
@@ -135,13 +127,6 @@ class WorkLogView extends StatelessWidget {
           ],
         ),
       ),
-    );
-  }
-
-  void _showAddSheet(WorkLogController logic, {WorkLog? log}) {
-    Get.to(
-      () =>
-          LogEditView(selectedDate: logic.selectedDay.value, existingLog: log),
     );
   }
 }

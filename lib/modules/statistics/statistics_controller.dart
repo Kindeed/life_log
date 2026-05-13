@@ -252,51 +252,58 @@ class StatisticsController extends GetxController {
     DateTime month,
     List<WorkLog> monthLogs,
   ) {
-    final logsByDay = <int, List<WorkLog>>{};
-    for (final log in monthLogs) {
-      logsByDay.putIfAbsent(log.date.day, () => <WorkLog>[]).add(log);
-    }
-
+    final latestLogsByDay = monthLogs.latestByLocalDate();
     final daysInMonth = DateTime(month.year, month.month + 1, 0).day;
+
     return List.generate(daysInMonth, (index) {
       final day = index + 1;
-      final logs = logsByDay[day] ?? const <WorkLog>[];
-      final overtimeHours = logs
-          .where((log) => log.type == LogType.work)
-          .fold(0.0, (sum, log) => sum + (log.overtimeHours ?? 0.0));
-
-      DailyWorkKind kind = DailyWorkKind.empty;
-      if (logs.any((log) => log.type == LogType.work)) {
-        kind = DailyWorkKind.work;
-      } else if (logs.any((log) => log.type == LogType.businessTrip)) {
-        kind = DailyWorkKind.trip;
-      } else if (logs.any(
-        (log) => log.type == LogType.rest || log.type == LogType.leave,
-      )) {
-        kind = DailyWorkKind.restOrLeave;
+      final log = latestLogsByDay[DateTime(month.year, month.month, day)];
+      if (log == null) {
+        return DailyWorkStat(
+          date: DateTime(month.year, month.month, day),
+          overtimeHours: 0.0,
+          hasWork: false,
+          hasTrip: false,
+          hasLeave: false,
+          hasRest: false,
+        );
       }
 
       return DailyWorkStat(
         date: DateTime(month.year, month.month, day),
-        kind: kind,
-        overtimeHours: overtimeHours,
+        overtimeHours: log.type == LogType.work
+            ? (log.overtimeHours ?? 0.0)
+            : 0.0,
+        hasWork: log.type == LogType.work,
+        hasTrip: log.type == LogType.businessTrip,
+        hasLeave: log.type == LogType.leave,
+        hasRest: log.type == LogType.rest,
       );
     });
   }
 }
 
-enum DailyWorkKind { empty, work, trip, restOrLeave }
-
 class DailyWorkStat {
   final DateTime date;
-  final DailyWorkKind kind;
   final double overtimeHours;
+  final bool hasWork;
+  final bool hasTrip;
+  final bool hasLeave;
+  final bool hasRest;
 
   const DailyWorkStat({
     required this.date,
-    required this.kind,
     required this.overtimeHours,
+    required this.hasWork,
+    required this.hasTrip,
+    required this.hasLeave,
+    required this.hasRest,
   });
+
+  bool get hasAnyStatus => hasWork || hasTrip || hasLeave || hasRest;
+
+  int get statusCount =>
+      [hasWork, hasTrip, hasLeave, hasRest].where((value) => value).length;
 }
 
 class ReimbursementStats {

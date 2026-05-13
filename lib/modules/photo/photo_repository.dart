@@ -2,6 +2,7 @@ import 'dart:io';
 import 'package:get/get.dart';
 import 'package:intl/intl.dart';
 import 'package:path_provider/path_provider.dart';
+import 'package:path/path.dart' as p;
 import '../../common/db/db_service.dart';
 import '../../common/utils/file_path_utils.dart';
 import '../project/project_repository.dart';
@@ -67,7 +68,7 @@ class PhotoRepository extends GetxService {
     // Save to DB
     final photoItem = PhotoItem()
       ..createdAt = now
-      ..fileName = fileName
+      ..fileName = p.basename(savePath)
       ..filePath = savePath
       ..deviceName = deviceName
       ..projectId = project.id
@@ -137,7 +138,7 @@ class PhotoRepository extends GetxService {
     if (newPath != currentPhoto.filePath) {
       oldPathToEvict = currentPhoto.filePath;
       await oldFile.rename(newPath);
-      currentPhoto.fileName = newFileName;
+      currentPhoto.fileName = p.basename(newPath);
       currentPhoto.filePath = newPath;
     }
 

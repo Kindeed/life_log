@@ -26,42 +26,49 @@ class CalendarHeader extends StatelessWidget {
     return Padding(
       padding: EdgeInsets.fromLTRB(20.w, 18.h, 20.w, 14.h),
       child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
-          GestureDetector(
-            onTap: () async {
-              final picked = await showDatePicker(
-                context: context,
-                initialDate: logic.focusedDay.value,
-                firstDate: DateTime(2020),
-                lastDate: DateTime(2030),
-              );
-              if (picked != null) {
-                logic.onPageChanged(picked);
-                logic.onDaySelected(picked, picked);
-              }
-            },
-            child: Row(
-              children: [
-                Obx(
-                  () => Text(
-                    DateFormat("yyyy年M月").format(logic.focusedDay.value),
-                    style: TextStyle(
-                      fontSize: 30.sp,
-                      fontWeight: FontWeight.w700,
-                      color: textPrimary,
-                      letterSpacing: 0,
-                      height: 1.08,
+          Expanded(
+            child: GestureDetector(
+              onTap: () async {
+                final picked = await showDatePicker(
+                  context: context,
+                  initialDate: logic.focusedDay.value,
+                  firstDate: DateTime(2020),
+                  lastDate: DateTime(2030),
+                );
+                if (picked != null) {
+                  logic.onPageChanged(picked);
+                  logic.onDaySelected(picked, picked);
+                }
+              },
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Flexible(
+                    child: Obx(
+                      () => Text(
+                        DateFormat("yyyy年M月").format(logic.focusedDay.value),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: TextStyle(
+                          fontSize: 27.sp,
+                          fontWeight: FontWeight.w700,
+                          color: textPrimary,
+                          letterSpacing: 0,
+                          height: 1.08,
+                        ),
+                      ),
                     ),
                   ),
-                ),
-                Icon(
-                  Icons.arrow_drop_down,
-                  color: Theme.of(context).colorScheme.onSurfaceVariant,
-                ),
-              ],
+                  Icon(
+                    Icons.arrow_drop_down,
+                    color: Theme.of(context).colorScheme.onSurfaceVariant,
+                  ),
+                ],
+              ),
             ),
           ),
+          SizedBox(width: 10.w),
           Obx(() {
             final isMonth = logic.calendarFormat.value == CalendarFormat.month;
             return Container(
@@ -72,6 +79,7 @@ class CalendarHeader extends StatelessWidget {
                 border: Border.all(color: semantic.border, width: 1),
               ),
               child: Row(
+                mainAxisSize: MainAxisSize.min,
                 children: [
                   _buildToggleItem(
                     context,
@@ -104,7 +112,7 @@ class CalendarHeader extends StatelessWidget {
       onTap: onTap,
       child: AnimatedContainer(
         duration: const Duration(milliseconds: 200),
-        padding: EdgeInsets.symmetric(horizontal: 18.w, vertical: 8.h),
+        padding: EdgeInsets.symmetric(horizontal: 14.w, vertical: 8.h),
         decoration: BoxDecoration(
           color: isActive
               ? Theme.of(context).colorScheme.primary.withValues(alpha: 0.12)

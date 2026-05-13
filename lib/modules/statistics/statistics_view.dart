@@ -375,23 +375,17 @@ class _CalendarDayCell extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final color = switch (day.kind) {
-      DailyWorkKind.work => semantic.work,
-      DailyWorkKind.trip => semantic.warning,
-      DailyWorkKind.restOrLeave => semantic.success,
-      DailyWorkKind.empty => Theme.of(context).colorScheme.outlineVariant,
-    };
-    final hasOvertime = day.overtimeHours > 0;
-    final textColor = day.kind == DailyWorkKind.empty
-        ? Theme.of(context).colorScheme.onSurfaceVariant
-        : color;
+    final theme = Theme.of(context);
+    final color = _primaryColor(theme);
+    final textColor = day.hasAnyStatus
+        ? color
+        : theme.colorScheme.onSurfaceVariant;
+    final label = _buildStatusLabel(day);
 
     return Container(
       alignment: Alignment.center,
       decoration: BoxDecoration(
-        color: color.withValues(
-          alpha: day.kind == DailyWorkKind.empty ? 0.08 : 0.14,
-        ),
+        color: color.withValues(alpha: day.hasAnyStatus ? 0.14 : 0.08),
         borderRadius: BorderRadius.circular(7),
         border: Border.all(color: color.withValues(alpha: 0.24), width: 1),
       ),
@@ -412,15 +406,14 @@ class _CalendarDayCell extends StatelessWidget {
                 height: 1,
               ),
             ),
-            if (hasOvertime) ...[
+            if (label.isNotEmpty) ...[
               SizedBox(height: 3.h),
               Text(
-                "${day.overtimeHours.toStringAsFixed(1)}h",
+                label,
                 maxLines: 1,
-                overflow: TextOverflow.fade,
-                softWrap: false,
+                overflow: TextOverflow.ellipsis,
                 style: TextStyle(
-                  color: semantic.work,
+                  color: textColor,
                   fontSize: 9.sp,
                   fontWeight: FontWeight.w700,
                   height: 1,
@@ -431,6 +424,32 @@ class _CalendarDayCell extends StatelessWidget {
         ),
       ),
     );
+  }
+
+  String _buildStatusLabel(DailyWorkStat day) {
+    if (day.hasWork) {
+      return day.overtimeHours > 0
+          ? '+${_formatHours(day.overtimeHours)}h'
+          : '工';
+    }
+    if (day.hasTrip) return '差';
+    if (day.hasLeave) return '假';
+    if (day.hasRest) return '休';
+    return '';
+  }
+
+  Color _primaryColor(ThemeData theme) {
+    if (day.hasWork) return semantic.work;
+    if (day.hasTrip) return semantic.warning;
+    if (day.hasLeave) return semantic.expense;
+    if (day.hasRest) return semantic.success;
+    return theme.colorScheme.outlineVariant;
+  }
+
+  String _formatHours(double value) {
+    return value == value.roundToDouble()
+        ? value.toStringAsFixed(0)
+        : value.toStringAsFixed(1);
   }
 }
 
@@ -447,7 +466,8 @@ class _WorkLegend extends StatelessWidget {
       children: [
         _LegendItem(label: "工作", color: semantic.work),
         _LegendItem(label: "出差", color: semantic.warning),
-        _LegendItem(label: "休息/请假", color: semantic.success),
+        _LegendItem(label: "请假", color: semantic.expense),
+        _LegendItem(label: "休息", color: semantic.success),
       ],
     );
   }
@@ -534,9 +554,15 @@ class _TotalCostHeader extends StatelessWidget {
                 ],
               ),
             ),
-            Text(
-              "固定年支 ${formatMoney(yearlyCost)}",
-              style: TextStyle(color: textSecondary, fontSize: 12.sp),
+            SizedBox(width: 8.w),
+            Flexible(
+              child: Text(
+                "固定年支 ${formatMoney(yearlyCost)}",
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                textAlign: TextAlign.right,
+                style: TextStyle(color: textSecondary, fontSize: 12.sp),
+              ),
             ),
           ],
         ),

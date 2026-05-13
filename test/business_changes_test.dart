@@ -25,13 +25,41 @@ void main() {
   }
 
   test('WorkLog business change detection ignores sync metadata', () {
-    final original = workLog()..remoteVersion = 1;
-    final next = workLog()..remoteVersion = 2;
+    final original = workLog()
+      ..remoteVersion = 1
+      ..createdAt = DateTime(2026, 5, 6, 8)
+      ..updatedAt = DateTime(2026, 5, 6, 9);
+    final next = workLog()
+      ..remoteVersion = 2
+      ..createdAt = DateTime(2026, 5, 7, 8)
+      ..updatedAt = DateTime(2026, 5, 7, 9);
 
     expect(next.hasBusinessChangesComparedTo(original), isFalse);
 
     next.overtimeHours = 2;
     expect(next.hasBusinessChangesComparedTo(original), isTrue);
+  });
+
+  test('WorkLog month stats keeps only the latest status for a day', () {
+    final date = DateTime(2026, 5, 9);
+    final logs = [
+      WorkLog()
+        ..date = date
+        ..type = LogType.work
+        ..overtimeHours = 2
+        ..updatedAt = DateTime(2026, 5, 9, 9),
+      WorkLog()
+        ..date = date
+        ..type = LogType.rest
+        ..updatedAt = DateTime(2026, 5, 9, 10),
+    ];
+
+    final stats = logs.getMonthStats(DateTime(2026, 5));
+
+    expect(stats.workDays, 0);
+    expect(stats.tripDays, 0);
+    expect(stats.restDays, 1);
+    expect(stats.workHours, 0);
   });
 
   test('Subscription business change detection ignores sync metadata', () {
@@ -54,8 +82,14 @@ void main() {
         ..merchant = 'Cafe';
     }
 
-    final original = record()..remoteVersion = 1;
-    final next = record()..remoteVersion = 2;
+    final original = record()
+      ..remoteVersion = 1
+      ..createdAt = DateTime(2026, 5, 6, 8)
+      ..updatedAt = DateTime(2026, 5, 6, 9);
+    final next = record()
+      ..remoteVersion = 2
+      ..createdAt = DateTime(2026, 5, 7, 8)
+      ..updatedAt = DateTime(2026, 5, 7, 9);
 
     expect(next.hasBusinessChangesComparedTo(original), isFalse);
 
@@ -74,8 +108,14 @@ void main() {
         ..status = EvidenceStatus.pending;
     }
 
-    final original = evidence()..remoteVersion = 1;
-    final next = evidence()..remoteVersion = 2;
+    final original = evidence()
+      ..remoteVersion = 1
+      ..createdAt = DateTime(2026, 5, 6, 8)
+      ..updatedAt = DateTime(2026, 5, 6, 9);
+    final next = evidence()
+      ..remoteVersion = 2
+      ..createdAt = DateTime(2026, 5, 7, 8)
+      ..updatedAt = DateTime(2026, 5, 7, 9);
 
     expect(next.hasBusinessChangesComparedTo(original), isFalse);
 

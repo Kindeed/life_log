@@ -3,6 +3,7 @@ import 'package:life_log/common/theme/theme_extensions.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:get/get.dart';
 import 'package:intl/intl.dart';
+import 'package:life_log/common/utils/date_utils.dart';
 import 'subscription_model.dart';
 import 'subscription_controller.dart';
 import '../../common/theme/app_colors.dart';
@@ -36,7 +37,7 @@ class _AddSubscriptionSheetState extends State<AddSubscriptionSheet> {
         _priceController.text = widget.sub!.price.toString();
       }
       _cycle = widget.sub!.cycle;
-      _nextPaymentDate = widget.sub!.nextPaymentDate;
+      _nextPaymentDate = dateOnlyLocal(widget.sub!.nextPaymentDate);
     }
   }
 
@@ -186,7 +187,7 @@ class _AddSubscriptionSheetState extends State<AddSubscriptionSheet> {
       lastDate: DateTime(2030),
     );
     if (picked != null) {
-      setState(() => _nextPaymentDate = picked);
+      setState(() => _nextPaymentDate = dateOnlyLocal(picked));
     }
   }
 
@@ -222,7 +223,7 @@ class _AddSubscriptionSheetState extends State<AddSubscriptionSheet> {
       ..name = _nameController.text
       ..price = price
       ..cycle = _cycle
-      ..nextPaymentDate = _nextPaymentDate
+      ..nextPaymentDate = dateOnlyLocal(_nextPaymentDate)
       ..reminderDays = widget.sub?.reminderDays ?? 1
       ..note = widget.sub?.note;
 
