@@ -70,6 +70,7 @@ This is the active defect ledger. `REVIEW_REPORT.md` is historical context only.
 | T1 | Medium | fixed | Flutter/Dart CLI | `flutter`/`dart` commands timed out inside the sandbox because the CLI could not write normal analytics/tool-state files under `C:\Users\WZH\AppData\Roaming`. | Fixed: reran with approved Flutter/Dart permissions; `flutter --version`, `dart --version`, `flutter analyze`, and `flutter test` complete successfully. |
 | T2 | Low | fixed | GitHub Actions | GitHub Actions warned that Node.js 20 action runtime is deprecated and will default to Node.js 24 on 2026-06-02. | Fixed: opted both APK workflows into Node.js 24 action runtime with `FORCE_JAVASCRIPT_ACTIONS_TO_NODE24=true`. |
 | T6 | High | fixed | Release content | `v1.4.2` / `v1.4.3` release builds did not include the full UI and business-content changes from the `codex/actions-node24-compat` test APK source commit `e115424`, even though the version number advanced. | Fixed: restored `e115424` UI/business-content changes onto `main`, kept the newer release metadata, revalidated, and prepared a corrected release. |
+| T7 | Low | fixed | Repository hygiene | A generated Gradle problems report was tracked, and repository guidance still described stale test, collection, and photo-sync behavior. | Fixed: removed the generated report from Git, ignored `android/build/`, and updated README/CLAUDE guidance to match current repo rules. |
 
 ## Maintenance / Cleanup
 

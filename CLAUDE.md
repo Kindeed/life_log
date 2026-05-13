@@ -24,11 +24,12 @@ flutter build apk --release --split-per-abi
 flutter doctor -v
 ```
 
-There are currently no unit/widget tests in `test/`.
+The repository has focused unit tests in `test/`; run `flutter test` before shipping behavior changes.
 
 ## Local workspace files
 
-- `.claude/` is local Claude tooling state. Do not inspect, edit, stage, or mention it during normal repo work.
+- `.claude/`, `.idea/`, `*.iml`, `.dart_tool/`, `build/`, platform `ephemeral/`, `android/.gradle/`, and `android/build/` are local/generated workspace state. Do not inspect, edit, stage, or commit them during normal repo work.
+- `android/local.properties`, `android/key.properties`, and `android/app/upload-keystore.jks` are local machine or signing files. Never commit them.
 
 ## Architecture Overview
 
@@ -62,13 +63,15 @@ lib/modules/<name>/
 ### Local database (Isar)
 
 - **Isar** (`isar: ^3.1.0`) — on-device NoSQL database.
-- Three collections: `WorkLog`, `Subscription`, `PhotoItem`.
-- `DbService` is the single entry point for raw DB operations. All queries filter by `ownerUserId` and exclude soft-deleted records (`deletedAt == null`) by default.
-- Each model has sync fields: `syncId` (UUID v4), `remoteVersion` (optimistic lock), `deletedAt` / `pendingDelete` (soft delete), `isDirty`, `remoteId`.
+- Six collections: `WorkLog`, `Subscription`, `Project`, `ExpenseRecord`, `ExpenseEvidence`, and `PhotoItem`.
+- `DbService` is the single entry point for raw DB operations. Cloud-eligible collections filter by `ownerUserId` and exclude soft-deleted records (`deletedAt == null`) by default.
+- Cloud-eligible models use sync fields such as `syncId`, `remoteId`, `remoteVersion`, `deletedAt`, `pendingDelete`, and `isDirty`.
+- `PhotoItem` is local-only. It may use `ownerUserId` for local account isolation, but it must not receive cloud-sync fields and must not enter Supabase pull/push/merge flows.
 
 ### Cloud sync (Supabase)
 
-- **Supabase** handles auth (email/password) and cloud storage for work_logs and subscriptions.
+- **Supabase** handles auth (email/password), cloud sync for work logs, subscriptions, projects, expense evidence, and expense records, plus Storage for expense evidence files.
+- Photos and photo metadata remain local-only and are explicitly excluded from cloud sync.
 - Sync is **Pull-first, then Push**: on startup and on auth state change, `SyncService.syncAll()` pulls remote changes (incremental via server time cursor, or full on first sync), then pushes local dirty records.
 - Push uses optimistic locking: updates include `version` condition check; conflicts trigger a remote re-fetch to refresh the local `remoteVersion`.
 - Deletes are soft (tombstone), purged locally only after confirmed cloud sync.
@@ -99,14 +102,11 @@ Shared widgets in `lib/common/widgets/` are pure UI, stateless — no controller
 
 ### Supabase migrations
 
-Located in `supabase/migrations/`:
-1. `20260426_sync_identity_version.sql` — adds `sync_id`, `version` columns with unique constraint
-2. `20260426_soft_delete_sync.sql` — adds `deleted_at`, `expenses`, `transport` columns
-3. `20260426_server_time_rpc.sql` — creates `get_server_time()` RPC function for server-authoritative time cursors
+Located in `supabase/migrations/`. New migrations should follow `supabase/migrations/README.md`: wrap related changes in transactions where practical, prefer idempotent statements, and add corrective migrations rather than rewriting already-applied files.
 
 ### CI/CD
 
-`.github/workflows/build.yml` triggers on `v*` tags: builds release APK (split per ABI) and publishes to GitHub Releases. Secrets required: `KEYSTORE_BASE64`, `STORE_PASSWORD`, `KEY_PASSWORD`, `KEY_ALIAS`.
+`.github/workflows/build.yml` triggers on `v*` tags: builds release APK (split per ABI) and publishes to GitHub Releases. Secrets required: `KEYSTORE_BASE64`, `STORE_PASSWORD`, `KEY_PASSWORD`, `KEY_ALIAS`, `SUPABASE_URL`, and `SUPABASE_ANON_KEY`.
 
 ### Internationalization
 

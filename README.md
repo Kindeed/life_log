@@ -73,6 +73,8 @@ flutter build apk --debug \
 
 ## 维护说明
 
-- 不提交本地诊断输出、diff 临时文件、构建产物和签名文件。
+- 不提交本地诊断输出、diff 临时文件、构建产物、Gradle 报告、IDE 缓存和签名文件。
+- `build/`、`.dart_tool/`、平台 `ephemeral/`、`.idea/`、`.claude/`、`*.iml`、`android/.gradle/`、`android/build/` 均为本地可再生内容。
+- `android/local.properties`、`android/key.properties`、`android/app/upload-keystore.jks` 只属于本机配置，不进入 Git。
 - Isar `.g.dart` 文件由 `build_runner` 生成，只有模型变更时才应更新。
 - 视觉系统集中在 `lib/common/theme/` 和 `lib/common/widgets/`，页面应优先复用公共组件。
