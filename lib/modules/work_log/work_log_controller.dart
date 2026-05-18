@@ -29,7 +29,7 @@ class WorkLogController extends GetxController {
   @override
   void onInit() {
     super.onInit();
-    _loadDataSafely('startup');
+    _loadStartupData();
     _dbSub = WorkLogRepository.to.watchLogs().listen((_) {
       _loadDataSafely('watch');
     });
@@ -75,7 +75,6 @@ class WorkLogController extends GetxController {
     try {
       LogService.to.debug('WorkLog', '开始加载数据...');
 
-      await WorkLogRepository.to.normalizeDuplicateDays();
       final allLogs = await WorkLogRepository.to.getAllLogs();
       LogService.to.debug('WorkLog', '从数据库获取到 ${allLogs.length} 条记录');
 
@@ -102,10 +101,24 @@ class WorkLogController extends GetxController {
     LogService.to.debug('WorkLog', '触发数据加载: $reason');
   }
 
+  Future<void> _loadStartupData() async {
+    try {
+      await WorkLogRepository.to.normalizeDuplicateDays();
+    } catch (e, stackTrace) {
+      LogService.to.error('WorkLog', '启动归并重复工时失败: $e', stackTrace);
+    }
+    await loadData();
+  }
+
+  Future<void> normalizeDuplicateDays() {
+    return WorkLogRepository.to.normalizeDuplicateDays();
+  }
+
   // 添加/修改日志
   Future<void> addLog(WorkLog log) async {
     try {
       await WorkLogRepository.to.saveLog(log);
+      await loadData();
       LogService.to.info('WorkLog', '添加/修改日志: ${log.date}');
     } catch (e, stackTrace) {
       LogService.to.error('WorkLog', '保存日志失败: $e', stackTrace);

@@ -52,10 +52,10 @@ class _TabsViewState extends State<TabsView> {
         controller: pageController,
         onPageChanged: controller.changePage,
         children: const [
-          WorkLogView(),
-          SubscriptionView(),
-          PhotoView(),
-          ProfileView(),
+          _KeepAliveTabPage(child: WorkLogView()),
+          _KeepAliveTabPage(child: SubscriptionView()),
+          _KeepAliveTabPage(child: PhotoView()),
+          _KeepAliveTabPage(child: ProfileView()),
         ],
       ),
       bottomNavigationBar: Obx(
@@ -228,6 +228,27 @@ class _TabsViewState extends State<TabsView> {
           ],
         );
     }
+  }
+}
+
+class _KeepAliveTabPage extends StatefulWidget {
+  final Widget child;
+
+  const _KeepAliveTabPage({required this.child});
+
+  @override
+  State<_KeepAliveTabPage> createState() => _KeepAliveTabPageState();
+}
+
+class _KeepAliveTabPageState extends State<_KeepAliveTabPage>
+    with AutomaticKeepAliveClientMixin {
+  @override
+  bool get wantKeepAlive => true;
+
+  @override
+  Widget build(BuildContext context) {
+    super.build(context);
+    return widget.child;
   }
 }
 

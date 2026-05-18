@@ -259,42 +259,57 @@ class _ProjectGalleryViewState extends State<ProjectGalleryView> {
           }
           return AppSafeBottomBar(
             padding: EdgeInsets.fromLTRB(20.w, 10.h, 20.w, 16.h),
-            child: Row(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Expanded(
-                  child: Text(
-                    selectedPhotos.isEmpty
-                        ? "已进入选择模式"
-                        : "选择了 ${selectedPhotos.length} 张",
-                    style: TextStyle(color: textPrimary),
-                  ),
+                Text(
+                  selectedPhotos.isEmpty
+                      ? "已进入选择模式"
+                      : "选择了 ${selectedPhotos.length} 张",
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: TextStyle(color: textPrimary),
                 ),
-                AppButton.secondary(
-                  onPressed: selectedPhotos.isEmpty
-                      ? null
-                      : _deleteSelectedPhotos,
-                  icon: Icons.delete_outline,
-                  label: "删除",
-                  height: 42.h,
-                ),
-                const SizedBox(width: 8),
-                AppButton.primary(
-                  onPressed: selectedPhotos.isEmpty
-                      ? null
-                      : () => controller.exportPhotos(selectedPhotos.toList()),
-                  icon: Icons.ios_share,
-                  label: "导出",
-                  height: 42.h,
-                ),
-                const SizedBox(width: 8),
-                AppButton.text(
-                  onPressed: () {
-                    isMultiSelectMode.value = false;
-                    selectedPhotos.clear();
-                  },
-                  icon: Icons.close_rounded,
-                  label: "完成",
-                  height: 42.h,
+                SizedBox(height: 10.h),
+                Row(
+                  children: [
+                    Expanded(
+                      child: AppButton.secondary(
+                        onPressed: selectedPhotos.isEmpty
+                            ? null
+                            : _deleteSelectedPhotos,
+                        icon: Icons.delete_outline,
+                        label: "删除",
+                        height: 42.h,
+                      ),
+                    ),
+                    SizedBox(width: 8.w),
+                    Expanded(
+                      child: AppButton.primary(
+                        onPressed: selectedPhotos.isEmpty
+                            ? null
+                            : () => controller.exportPhotos(
+                                selectedPhotos.toList(),
+                              ),
+                        icon: Icons.ios_share,
+                        label: "导出",
+                        height: 42.h,
+                      ),
+                    ),
+                    SizedBox(width: 8.w),
+                    Expanded(
+                      child: AppButton.text(
+                        onPressed: () {
+                          isMultiSelectMode.value = false;
+                          selectedPhotos.clear();
+                        },
+                        icon: Icons.close_rounded,
+                        label: "完成",
+                        height: 42.h,
+                      ),
+                    ),
+                  ],
                 ),
               ],
             ),

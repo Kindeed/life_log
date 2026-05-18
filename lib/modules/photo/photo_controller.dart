@@ -57,10 +57,14 @@ class PhotoController extends GetxController {
   final projectSearchQuery = ''.obs;
   final projectSortMode = ProjectSortMode.recent.obs;
   final uiMessage = Rxn<PhotoUiMessage>();
+  final _projectCacheVersion = 0.obs;
 
   // Device info
   String _deviceName = "UnknownDevice";
   Future<void>? _deviceInfoFuture;
+  Map<String, List<PhotoItem>> _groupedPhotosCache = const {};
+  List<ProjectSummary> _projectSummariesCache = const [];
+  List<ProjectSummary> _filteredProjectSummariesCache = const [];
 
   StreamSubscription? _dbSub;
 
@@ -100,6 +104,7 @@ class PhotoController extends GetxController {
     try {
       final allPhotos = await PhotoRepository.to.getAllPhotos();
       photos.assignAll(allPhotos);
+      _rebuildProjectCaches();
     } catch (e, stackTrace) {
       LogService.to.error('Photo', '加载照片失败: $e', stackTrace);
     } finally {
@@ -220,6 +225,32 @@ class PhotoController extends GetxController {
 
   // --- Grouping logic ---
   Map<String, List<PhotoItem>> get groupedPhotos {
+    _projectCacheVersion.value;
+    return _groupedPhotosCache;
+  }
+
+  List<ProjectSummary> get projectSummaries {
+    _projectCacheVersion.value;
+    return _projectSummariesCache;
+  }
+
+  List<ProjectSummary> get filteredProjectSummaries {
+    _projectCacheVersion.value;
+    return _filteredProjectSummariesCache;
+  }
+
+  int get totalProjectCount {
+    _projectCacheVersion.value;
+    return _groupedPhotosCache.length;
+  }
+
+  int get totalPhotoCount => photos.length;
+
+  void rebuildProjectCachesForTest() {
+    _rebuildProjectCaches();
+  }
+
+  void _rebuildProjectCaches() {
     final Map<String, List<PhotoItem>> groups = {};
     for (var photo in photos) {
       final name = photo.projectName ?? "Default";
@@ -228,14 +259,8 @@ class PhotoController extends GetxController {
       }
       groups[name]!.add(photo);
     }
-    for (final group in groups.values) {
-      group.sort((a, b) => b.createdAt.compareTo(a.createdAt));
-    }
-    return groups;
-  }
 
-  List<ProjectSummary> get projectSummaries {
-    final summaries = groupedPhotos.entries.map((entry) {
+    final summaries = groups.entries.map((entry) {
       final projectPhotos = entry.value;
       final deviceNames = projectPhotos
           .map((photo) => photo.deviceName)
@@ -255,47 +280,55 @@ class PhotoController extends GetxController {
       );
     }).toList();
 
+    _groupedPhotosCache = groups;
+    _projectSummariesCache = summaries;
+    _resortProjectSummaries();
+    _rebuildFilteredProjectSummaries();
+    _projectCacheVersion.value++;
+  }
+
+  void _resortProjectSummaries() {
     switch (projectSortMode.value) {
       case ProjectSortMode.recent:
-        summaries.sort(
+        _projectSummariesCache.sort(
           (a, b) => (b.latestPhoto?.createdAt ?? DateTime(0)).compareTo(
             a.latestPhoto?.createdAt ?? DateTime(0),
           ),
         );
         break;
       case ProjectSortMode.count:
-        summaries.sort((a, b) {
+        _projectSummariesCache.sort((a, b) {
           final countCompare = b.photoCount.compareTo(a.photoCount);
           if (countCompare != 0) return countCompare;
           return a.name.compareTo(b.name);
         });
         break;
       case ProjectSortMode.name:
-        summaries.sort((a, b) => a.name.compareTo(b.name));
+        _projectSummariesCache.sort((a, b) => a.name.compareTo(b.name));
         break;
     }
-
-    return summaries;
   }
 
-  List<ProjectSummary> get filteredProjectSummaries {
+  void _rebuildFilteredProjectSummaries() {
     final query = projectSearchQuery.value.trim().toLowerCase();
-    if (query.isEmpty) return projectSummaries;
-    return projectSummaries
-        .where((project) => project.name.toLowerCase().contains(query))
-        .toList();
+    _filteredProjectSummariesCache = query.isEmpty
+        ? _projectSummariesCache
+        : _projectSummariesCache
+              .where((project) => project.name.toLowerCase().contains(query))
+              .toList();
   }
-
-  int get totalProjectCount => groupedPhotos.length;
-
-  int get totalPhotoCount => photos.length;
 
   void updateProjectSearch(String value) {
     projectSearchQuery.value = value;
+    _rebuildFilteredProjectSummaries();
+    _projectCacheVersion.value++;
   }
 
   void setProjectSortMode(ProjectSortMode mode) {
     projectSortMode.value = mode;
+    _resortProjectSummaries();
+    _rebuildFilteredProjectSummaries();
+    _projectCacheVersion.value++;
   }
 
   // --- Delete logic (Single) ---

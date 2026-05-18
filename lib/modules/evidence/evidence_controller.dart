@@ -34,6 +34,11 @@ class EvidenceController extends GetxController {
   final isLoading = false.obs;
   final searchQuery = ''.obs;
   final sortMode = EvidenceSortMode.recent.obs;
+  final _summaryCacheVersion = 0.obs;
+  Map<String, List<ExpenseEvidence>> _groupedEvidenceCache = const {};
+  List<EvidenceProjectSummary> _projectSummariesCache = const [];
+  List<EvidenceProjectSummary> _filteredProjectSummariesCache = const [];
+  double _totalPendingAmountCache = 0;
 
   StreamSubscription? _dbSub;
 
@@ -57,6 +62,7 @@ class EvidenceController extends GetxController {
     try {
       final allEvidence = await EvidenceRepository.to.getAllEvidence();
       evidence.assignAll(allEvidence);
+      _rebuildSummaryCaches();
     } catch (e) {
       LogService.to.error('Evidence', '加载凭证失败: $e');
     } finally {
@@ -65,18 +71,38 @@ class EvidenceController extends GetxController {
   }
 
   Map<String, List<ExpenseEvidence>> get groupedEvidence {
+    _summaryCacheVersion.value;
+    return _groupedEvidenceCache;
+  }
+
+  List<EvidenceProjectSummary> get projectSummaries {
+    _summaryCacheVersion.value;
+    return _projectSummariesCache;
+  }
+
+  List<EvidenceProjectSummary> get filteredProjectSummaries {
+    _summaryCacheVersion.value;
+    return _filteredProjectSummariesCache;
+  }
+
+  int get totalEvidenceCount => evidence.length;
+
+  double get totalPendingAmount {
+    _summaryCacheVersion.value;
+    return _totalPendingAmountCache;
+  }
+
+  void rebuildSummaryCachesForTest() {
+    _rebuildSummaryCaches();
+  }
+
+  void _rebuildSummaryCaches() {
     final groups = <String, List<ExpenseEvidence>>{};
     for (final item in evidence) {
       groups.putIfAbsent(item.projectName, () => []).add(item);
     }
-    for (final items in groups.values) {
-      items.sort((a, b) => b.evidenceDate.compareTo(a.evidenceDate));
-    }
-    return groups;
-  }
 
-  List<EvidenceProjectSummary> get projectSummaries {
-    final summaries = groupedEvidence.entries
+    final summaries = groups.entries
         .map(
           (entry) => EvidenceProjectSummary(
             projectName: entry.key,
@@ -85,39 +111,56 @@ class EvidenceController extends GetxController {
         )
         .toList();
 
+    _groupedEvidenceCache = groups;
+    _projectSummariesCache = summaries;
+    _totalPendingAmountCache = evidence.totalPendingAmount;
+    _resortProjectSummaries();
+    _rebuildFilteredProjectSummaries();
+    _summaryCacheVersion.value++;
+  }
+
+  void _resortProjectSummaries() {
     switch (sortMode.value) {
       case EvidenceSortMode.recent:
-        summaries.sort(
+        _projectSummariesCache.sort(
           (a, b) => b.latest.evidenceDate.compareTo(a.latest.evidenceDate),
         );
         break;
       case EvidenceSortMode.amount:
-        summaries.sort((a, b) => b.pendingAmount.compareTo(a.pendingAmount));
+        _projectSummariesCache.sort(
+          (a, b) => b.pendingAmount.compareTo(a.pendingAmount),
+        );
         break;
       case EvidenceSortMode.project:
-        summaries.sort((a, b) => a.projectName.compareTo(b.projectName));
+        _projectSummariesCache.sort(
+          (a, b) => a.projectName.compareTo(b.projectName),
+        );
         break;
     }
-    return summaries;
   }
 
-  List<EvidenceProjectSummary> get filteredProjectSummaries {
+  void _rebuildFilteredProjectSummaries() {
     final query = searchQuery.value.trim().toLowerCase();
-    if (query.isEmpty) return projectSummaries;
-    return projectSummaries
-        .where((summary) => summary.projectName.toLowerCase().contains(query))
-        .toList();
+    _filteredProjectSummariesCache = query.isEmpty
+        ? _projectSummariesCache
+        : _projectSummariesCache
+              .where(
+                (summary) => summary.projectName.toLowerCase().contains(query),
+              )
+              .toList();
   }
-
-  int get totalEvidenceCount => evidence.length;
-  double get totalPendingAmount => evidence.totalPendingAmount;
 
   void updateSearch(String value) {
     searchQuery.value = value;
+    _rebuildFilteredProjectSummaries();
+    _summaryCacheVersion.value++;
   }
 
   void setSortMode(EvidenceSortMode mode) {
     sortMode.value = mode;
+    _resortProjectSummaries();
+    _rebuildFilteredProjectSummaries();
+    _summaryCacheVersion.value++;
   }
 
   Future<void> captureEvidence({String? initialProject}) async {

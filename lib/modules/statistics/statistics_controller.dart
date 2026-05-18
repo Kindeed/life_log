@@ -10,7 +10,29 @@ import '../work_log/work_log_model.dart';
 import '../work_log/work_log_repository.dart';
 import '../subscription/subscription_model.dart';
 
+enum StatisticsRefreshSource {
+  workLogs,
+  subscriptions,
+  evidence,
+  expenseRecords,
+}
+
 class StatisticsController extends GetxController {
+  StatisticsController({
+    Future<List<WorkLog>> Function()? getAllLogs,
+    Future<List<Subscription>> Function()? getAllSubscriptions,
+    Future<List<ExpenseEvidence>> Function()? getAllEvidence,
+    Future<List<ExpenseRecord>> Function()? getAllExpenseRecords,
+  }) : _getAllLogs = getAllLogs ?? (() => WorkLogRepository.to.getAllLogs()),
+       _getAllSubscriptions =
+           getAllSubscriptions ??
+           (() => SubscriptionRepository.to.getAllSubscriptions()),
+       _getAllEvidence =
+           getAllEvidence ?? (() => EvidenceRepository.to.getAllEvidence()),
+       _getAllExpenseRecords =
+           getAllExpenseRecords ??
+           (() => ExpenseRecordRepository.to.getAllExpenseRecords());
+
   // --- 1. 基础数据 ---
   final selectedMonth = DateTime(DateTime.now().year, DateTime.now().month).obs;
 
@@ -23,6 +45,7 @@ class StatisticsController extends GetxController {
   // --- 3. 财务统计 ---
   final selectedMonthSubCost = 0.0.obs;
   final selectedMonthExpenseRecordCost = 0.0.obs;
+  final selectedMonthTotalCost = 0.0.obs;
   final yearSubCost = 0.0.obs;
 
   final reimbursedAmount = 0.0.obs;
@@ -39,11 +62,11 @@ class StatisticsController extends GetxController {
   List<Subscription> _subs = const [];
   List<ExpenseEvidence> _evidence = const [];
   List<ExpenseRecord> _expenseRecords = const [];
-  final _allRefreshGate = _RefreshGate();
-  final _workRefreshGate = _RefreshGate();
-  final _subscriptionRefreshGate = _RefreshGate();
-  final _evidenceRefreshGate = _RefreshGate();
-  final _expenseRecordRefreshGate = _RefreshGate();
+  final Future<List<WorkLog>> Function() _getAllLogs;
+  final Future<List<Subscription>> Function() _getAllSubscriptions;
+  final Future<List<ExpenseEvidence>> Function() _getAllEvidence;
+  final Future<List<ExpenseRecord>> Function() _getAllExpenseRecords;
+  final _refreshGate = _RefreshGate<StatisticsRefreshSource>();
 
   // --- 4. 调试/验证 ---
   final lastUpdated = "".obs;
@@ -57,24 +80,36 @@ class StatisticsController extends GetxController {
     // 监听工时变化
     _logSub = WorkLogRepository.to.watchLogs().listen((_) {
       LogService.to.debug('Stats', 'WorkLogs Changed');
-      _refreshWorkStats();
+      _refreshStatsFromWatch(
+        StatisticsRefreshSource.workLogs,
+        reason: 'work logs',
+      );
     });
 
     // 监听订阅变化
     _subSub = SubscriptionRepository.to.watchSubscriptions().listen((_) {
       LogService.to.debug('Stats', 'Subscriptions Changed');
-      _refreshSubscriptionStats();
+      _refreshStatsFromWatch(
+        StatisticsRefreshSource.subscriptions,
+        reason: 'subscriptions',
+      );
     });
 
     _evidenceSub = EvidenceRepository.to.watchEvidence().listen((_) {
       LogService.to.debug('Stats', 'Evidence Changed');
-      _refreshEvidenceStats();
+      _refreshStatsFromWatch(
+        StatisticsRefreshSource.evidence,
+        reason: 'evidence',
+      );
     });
 
     _expenseRecordSub = ExpenseRecordRepository.to.watchExpenseRecords().listen(
       (_) {
         LogService.to.debug('Stats', 'ExpenseRecords Changed');
-        _refreshExpenseRecordStats();
+        _refreshStatsFromWatch(
+          StatisticsRefreshSource.expenseRecords,
+          reason: 'expense records',
+        );
       },
     );
   }
@@ -90,77 +125,71 @@ class StatisticsController extends GetxController {
   }
 
   Future<void> refreshStats() async {
-    return _allRefreshGate.run(() async {
-      try {
+    return _refreshGate.run(
+      StatisticsRefreshSource.values.toSet(),
+      _refreshChangedSources,
+    );
+  }
+
+  Future<void> refreshChangedSourcesForTest(
+    Set<StatisticsRefreshSource> sources,
+  ) {
+    return _refreshGate.run(sources, _refreshChangedSources);
+  }
+
+  void _refreshStatsFromWatch(
+    StatisticsRefreshSource source, {
+    required String reason,
+  }) {
+    unawaited(_refreshGate.run({source}, _refreshChangedSources));
+    LogService.to.debug('Stats', 'Queued stats refresh from $reason');
+  }
+
+  Future<void> _refreshChangedSources(
+    Set<StatisticsRefreshSource> sources,
+  ) async {
+    try {
+      final allSources = StatisticsRefreshSource.values.toSet();
+      if (sources.containsAll(allSources)) {
         final results = await Future.wait([
-          WorkLogRepository.to.getAllLogs(),
-          SubscriptionRepository.to.getAllSubscriptions(),
-          EvidenceRepository.to.getAllEvidence(),
-          ExpenseRecordRepository.to.getAllExpenseRecords(),
+          _getAllLogs(),
+          _getAllSubscriptions(),
+          _getAllEvidence(),
+          _getAllExpenseRecords(),
         ]);
         _logs = results[0] as List<WorkLog>;
         _subs = results[1] as List<Subscription>;
         _evidence = results[2] as List<ExpenseEvidence>;
         _expenseRecords = results[3] as List<ExpenseRecord>;
         _calculateAllStats();
-      } catch (e) {
-        LogService.to.error('Stats', '刷新统计失败: $e');
+        return;
       }
-    });
-  }
 
-  Future<void> _refreshWorkStats() async {
-    return _workRefreshGate.run(() async {
-      try {
-        _logs = await WorkLogRepository.to.getAllLogs();
+      if (sources.contains(StatisticsRefreshSource.workLogs)) {
+        _logs = await _getAllLogs();
         _calculateWorkStats();
-      } catch (e) {
-        LogService.to.error('Stats', '刷新工时统计失败: $e');
       }
-    });
-  }
-
-  Future<void> _refreshSubscriptionStats() async {
-    return _subscriptionRefreshGate.run(() async {
-      try {
-        _subs = await SubscriptionRepository.to.getAllSubscriptions();
+      if (sources.contains(StatisticsRefreshSource.subscriptions)) {
+        _subs = await _getAllSubscriptions();
         _calculateSubscriptionStats();
-      } catch (e) {
-        LogService.to.error('Stats', '刷新订阅统计失败: $e');
       }
-    });
-  }
-
-  Future<void> _refreshEvidenceStats() async {
-    return _evidenceRefreshGate.run(() async {
-      try {
-        _evidence = await EvidenceRepository.to.getAllEvidence();
+      if (sources.contains(StatisticsRefreshSource.evidence)) {
+        _evidence = await _getAllEvidence();
         _calculateEvidenceStats();
-      } catch (e) {
-        LogService.to.error('Stats', '刷新凭证统计失败: $e');
       }
-    });
-  }
-
-  Future<void> _refreshExpenseRecordStats() async {
-    return _expenseRecordRefreshGate.run(() async {
-      try {
-        _expenseRecords = await ExpenseRecordRepository.to
-            .getAllExpenseRecords();
+      if (sources.contains(StatisticsRefreshSource.expenseRecords)) {
+        _expenseRecords = await _getAllExpenseRecords();
         _calculateExpenseRecordStats();
-      } catch (e) {
-        LogService.to.error('Stats', '刷新一次性消费统计失败: $e');
       }
-    });
+    } catch (e) {
+      LogService.to.error('Stats', '刷新统计失败: $e');
+    }
   }
 
   String get selectedMonthLabel {
     final month = selectedMonth.value;
     return "${month.year}年${month.month}月";
   }
-
-  double get selectedMonthTotalCost =>
-      selectedMonthSubCost.value + selectedMonthExpenseRecordCost.value;
 
   ReimbursementStats get tripReimbursement => ReimbursementStats(
     pending: unreimbursedAmount.value,
@@ -181,19 +210,19 @@ class StatisticsController extends GetxController {
   void previousMonth() {
     final month = selectedMonth.value;
     selectedMonth.value = DateTime(month.year, month.month - 1);
-    refreshStats();
+    _calculateAllStats();
   }
 
   void nextMonth() {
     final month = selectedMonth.value;
     selectedMonth.value = DateTime(month.year, month.month + 1);
-    refreshStats();
+    _calculateAllStats();
   }
 
   void resetToCurrentMonth() {
     final now = DateTime.now();
     selectedMonth.value = DateTime(now.year, now.month);
-    refreshStats();
+    _calculateAllStats();
   }
 
   void _touchLastUpdated() {
@@ -209,6 +238,7 @@ class StatisticsController extends GetxController {
     _calculateEvidenceStats(updateTimestamp: false);
     _calculateSubscriptionStats(updateTimestamp: false);
     _calculateExpenseRecordStats(updateTimestamp: false);
+    _calculateSelectedMonthTotalCost();
   }
 
   void _calculateWorkStats({bool updateTimestamp = true}) {
@@ -239,6 +269,7 @@ class StatisticsController extends GetxController {
     final month = selectedMonth.value;
     selectedMonthSubCost.value = _subs.totalCostForMonth(month);
     yearSubCost.value = _subs.totalYearlyCost;
+    _calculateSelectedMonthTotalCost();
   }
 
   void _calculateExpenseRecordStats({bool updateTimestamp = true}) {
@@ -246,6 +277,12 @@ class StatisticsController extends GetxController {
     selectedMonthExpenseRecordCost.value = _expenseRecords
         .inMonth(selectedMonth.value)
         .totalAmount;
+    _calculateSelectedMonthTotalCost();
+  }
+
+  void _calculateSelectedMonthTotalCost() {
+    selectedMonthTotalCost.value =
+        selectedMonthSubCost.value + selectedMonthExpenseRecordCost.value;
   }
 
   List<DailyWorkStat> _buildDailyWorkStats(
@@ -315,14 +352,14 @@ class ReimbursementStats {
   double get total => pending + reimbursed;
 }
 
-class _RefreshGate {
+class _RefreshGate<T> {
   Future<void>? _inFlight;
-  bool _rerun = false;
+  final Set<T> _pending = {};
 
-  Future<void> run(Future<void> Function() operation) {
+  Future<void> run(Set<T> requested, Future<void> Function(Set<T>) operation) {
+    _pending.addAll(requested);
     final activeRefresh = _inFlight;
     if (activeRefresh != null) {
-      _rerun = true;
       return activeRefresh;
     }
 
@@ -330,12 +367,13 @@ class _RefreshGate {
     return _inFlight!;
   }
 
-  Future<void> _runLoop(Future<void> Function() operation) async {
+  Future<void> _runLoop(Future<void> Function(Set<T>) operation) async {
     try {
-      do {
-        _rerun = false;
-        await operation();
-      } while (_rerun);
+      while (_pending.isNotEmpty) {
+        final current = Set<T>.of(_pending);
+        _pending.clear();
+        await operation(current);
+      }
     } finally {
       _inFlight = null;
     }

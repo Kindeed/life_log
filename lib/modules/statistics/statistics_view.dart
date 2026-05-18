@@ -226,7 +226,7 @@ class _FinanceOverview extends StatelessWidget {
   Widget build(BuildContext context) {
     return AppCard(
       child: Obx(() {
-        final totalCost = logic.selectedMonthTotalCost;
+        final totalCost = logic.selectedMonthTotalCost.value;
         return Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [

@@ -71,6 +71,26 @@ class SubscriptionRepository extends GetxService {
 
   // 排序更新持久化
   Future<void> reorderSubscriptions(List<Subscription> subs) async {
-    await DbService.to.reorderSubscriptions(subs);
+    final changed = await DbService.to.reorderSubscriptions(subs);
+    if (changed.isEmpty) return;
+
+    if (!Get.isRegistered<SyncService>()) {
+      LogService.to.info('SubscriptionRepository', '本地模式：跳过排序云端同步');
+      return;
+    }
+
+    for (final sub in changed) {
+      try {
+        final success = await SyncService.to.pushSubscription(sub);
+        if (!success) {
+          LogService.to.error(
+            'SubscriptionRepository',
+            '排序云端同步未完成，保留待同步状态: ${sub.name}',
+          );
+        }
+      } catch (e) {
+        LogService.to.error('SubscriptionRepository', '排序云端同步失败: $e');
+      }
+    }
   }
 }

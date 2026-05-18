@@ -14,6 +14,11 @@ class SubscriptionController extends GetxController {
   final subs = <Subscription>[].obs;
   final filter = SubscriptionFilter.all.obs;
   final sortMode = SubscriptionSortMode.manual.obs;
+  final _derivedVersion = 0.obs;
+  List<Subscription> _visibleSubsCache = const [];
+  double _currentMonthCostCache = 0;
+  double _yearlyCostCache = 0;
+  List<Subscription> _dueSoonSubsCache = const [];
 
   StreamSubscription? _dbSub;
 
@@ -39,6 +44,7 @@ class SubscriptionController extends GetxController {
       // 排序逻辑：如果 sortIndex 为 null，默认为 0
       list.sort((a, b) => (a.sortIndex ?? 0).compareTo(b.sortIndex ?? 0));
       subs.value = list;
+      _rebuildDerivedState();
     } catch (e, stackTrace) {
       LogService.to.error('Subscription', '加载订阅失败: $e', stackTrace);
     }
@@ -75,6 +81,31 @@ class SubscriptionController extends GetxController {
   }
 
   List<Subscription> get visibleSubs {
+    _derivedVersion.value;
+    return _visibleSubsCache;
+  }
+
+  double get currentMonthCost {
+    _derivedVersion.value;
+    return _currentMonthCostCache;
+  }
+
+  double get yearlyCost {
+    _derivedVersion.value;
+    return _yearlyCostCache;
+  }
+
+  List<Subscription> get dueSoonSubs {
+    _derivedVersion.value;
+    return _dueSoonSubsCache;
+  }
+
+  int get dueSoonCount {
+    _derivedVersion.value;
+    return _dueSoonSubsCache.length;
+  }
+
+  void _rebuildDerivedState() {
     final filtered = subs.where((sub) {
       switch (filter.value) {
         case SubscriptionFilter.all:
@@ -100,21 +131,10 @@ class SubscriptionController extends GetxController {
         break;
     }
 
-    return filtered;
-  }
-
-  double get currentMonthCost {
     final now = DateTime.now();
-    return subs.totalCostForMonth(DateTime(now.year, now.month));
-  }
-
-  double get yearlyCost => subs.totalYearlyCost;
-
-  List<Subscription> get dueSoonSubs {
-    final today = DateTime.now();
-    final start = DateTime(today.year, today.month, today.day);
+    final start = DateTime(now.year, now.month, now.day);
     final end = start.add(const Duration(days: 7));
-    return subs.where((sub) {
+    final dueSoon = subs.where((sub) {
       final date = DateTime(
         sub.nextPaymentDate.year,
         sub.nextPaymentDate.month,
@@ -122,16 +142,24 @@ class SubscriptionController extends GetxController {
       );
       return !date.isBefore(start) && !date.isAfter(end);
     }).toList()..sort((a, b) => a.nextPaymentDate.compareTo(b.nextPaymentDate));
-  }
 
-  int get dueSoonCount => dueSoonSubs.length;
+    _visibleSubsCache = filtered;
+    _currentMonthCostCache = subs.totalCostForMonth(
+      DateTime(now.year, now.month),
+    );
+    _yearlyCostCache = subs.totalYearlyCost;
+    _dueSoonSubsCache = dueSoon;
+    _derivedVersion.value++;
+  }
 
   void setFilter(SubscriptionFilter value) {
     filter.value = value;
+    _rebuildDerivedState();
   }
 
   void setSortMode(SubscriptionSortMode value) {
     sortMode.value = value;
+    _rebuildDerivedState();
   }
 
   // --- 核心：拖拽排序逻辑 ---
@@ -149,6 +177,7 @@ class SubscriptionController extends GetxController {
     }
     final item = subs.removeAt(oldIndex);
     subs.insert(newIndex, item);
+    _rebuildDerivedState();
 
     // 重新写入数据库中的顺序
     try {

@@ -5,6 +5,7 @@ import 'package:table_calendar/table_calendar.dart';
 import 'package:life_log/common/layout/constrained_page.dart';
 import 'package:life_log/common/widgets/app_card.dart';
 import 'package:life_log/common/widgets/app_empty_state.dart';
+import 'package:life_log/common/widgets/app_loading.dart';
 import 'package:life_log/modules/work_log/widgets/calendar_header.dart';
 import 'package:life_log/modules/work_log/widgets/day_log_list.dart';
 import 'package:life_log/modules/work_log/widgets/day_cell.dart';
@@ -43,8 +44,8 @@ class WorkLogView extends StatelessWidget {
                     child: AppCard(
                       padding: EdgeInsets.fromLTRB(6.w, 8.h, 6.w, 8.h),
                       child: Obx(() {
+                        logic.dataVersion.value;
                         return TableCalendar<WorkLog>(
-                          key: ValueKey(logic.selectedDay.value),
                           locale: 'zh_CN',
                           firstDay: DateTime(2020, 1, 1),
                           lastDay: DateTime(2030, 12, 31),
@@ -97,8 +98,20 @@ class WorkLogView extends StatelessWidget {
               child: ConstrainedPage(
                 padding: EdgeInsets.symmetric(horizontal: 14.w),
                 child: Obx(() {
+                  final isInitialLoading =
+                      logic.isLoading.value && logic.logsMap.isEmpty;
                   final selectedDate = logic.selectedDay.value;
                   final events = logic.getEventsForDay(selectedDate);
+                  if (isInitialLoading) {
+                    return AppCard(
+                      padding: EdgeInsets.symmetric(
+                        horizontal: 16.w,
+                        vertical: 26.h,
+                      ),
+                      child: const AppLoading(label: "正在加载工时"),
+                    );
+                  }
+
                   if (events.isEmpty) {
                     return AppCard(
                       padding: EdgeInsets.symmetric(

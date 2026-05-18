@@ -389,8 +389,39 @@ class DbService extends GetxService {
         .toList();
   }
 
+  Future<List<WorkLog>> getLogsForDay(DateTime date) async {
+    final day = dateOnlyLocal(date);
+    final nextDay = day.add(const Duration(days: 1));
+    final logs = await isar.workLogs
+        .filter()
+        .dateGreaterThan(day, include: true)
+        .and()
+        .dateLessThan(nextDay, include: false)
+        .sortByDate()
+        .findAll();
+    return logs
+        .where(
+          (log) =>
+              log.deletedAt == null && _belongsToCurrentUser(log.ownerUserId),
+        )
+        .toList();
+  }
+
   Future<List<WorkLog>> getAllLogsForSync() async {
     final logs = await isar.workLogs.where().sortByDate().findAll();
+    return logs.where((log) => _belongsToCurrentUser(log.ownerUserId)).toList();
+  }
+
+  Future<List<WorkLog>> getPendingLogsForSync() async {
+    final logs = await isar.workLogs
+        .filter()
+        .remoteIdIsNull()
+        .or()
+        .isDirtyEqualTo(true)
+        .or()
+        .pendingDeleteEqualTo(true)
+        .sortByDate()
+        .findAll();
     return logs.where((log) => _belongsToCurrentUser(log.ownerUserId)).toList();
   }
 
@@ -455,6 +486,19 @@ class DbService extends GetxService {
     return subs.where((sub) => _belongsToCurrentUser(sub.ownerUserId)).toList();
   }
 
+  Future<List<Subscription>> getPendingSubscriptionsForSync() async {
+    final subs = await isar.subscriptions
+        .filter()
+        .remoteIdIsNull()
+        .or()
+        .isDirtyEqualTo(true)
+        .or()
+        .pendingDeleteEqualTo(true)
+        .sortByNextPaymentDate()
+        .findAll();
+    return subs.where((sub) => _belongsToCurrentUser(sub.ownerUserId)).toList();
+  }
+
   // 2. 获取单条订阅
   Future<Subscription?> getSubscription(int id) async {
     final sub = await isar.subscriptions.get(id);
@@ -509,14 +553,26 @@ class DbService extends GetxService {
   }
 
   // 4. Update Subscription Order
-  Future<void> reorderSubscriptions(List<Subscription> subs) async {
-    await isar.writeTxn(() async {
+  Future<List<Subscription>> reorderSubscriptions(
+    List<Subscription> subs,
+  ) async {
+    return await isar.writeTxn(() async {
+      final changed = <Subscription>[];
       for (int i = 0; i < subs.length; i++) {
-        _stampSubscriptionOwner(subs[i]);
-        subs[i].sortIndex = i;
-        subs[i].isDirty = true;
-        await isar.subscriptions.put(subs[i]);
+        final sub = subs[i];
+        _stampSubscriptionOwner(sub);
+        final existing = await isar.subscriptions.get(sub.id);
+        if (existing == null || !_belongsToCurrentUser(existing.ownerUserId)) {
+          continue;
+        }
+        if (existing.sortIndex == i) continue;
+
+        sub.sortIndex = i;
+        sub.isDirty = true;
+        await isar.subscriptions.put(sub);
+        changed.add(sub);
       }
+      return changed;
     });
   }
 
@@ -579,6 +635,30 @@ class DbService extends GetxService {
     return items
         .where((item) => _belongsToCurrentUser(item.ownerUserId))
         .toList();
+  }
+
+  Future<List<ExpenseEvidence>> getPendingEvidenceForSync() async {
+    final items = await isar.expenseEvidences
+        .filter()
+        .remoteIdIsNull()
+        .or()
+        .isDirtyEqualTo(true)
+        .or()
+        .pendingDeleteEqualTo(true)
+        .sortByEvidenceDateDesc()
+        .findAll();
+    return items
+        .where((item) => _belongsToCurrentUser(item.ownerUserId))
+        .toList();
+  }
+
+  Future<ExpenseEvidence?> getEvidenceBySyncId(String syncId) async {
+    final item = await isar.expenseEvidences
+        .filter()
+        .syncIdEqualTo(syncId)
+        .findFirst();
+    if (item == null || !_belongsToCurrentUser(item.ownerUserId)) return null;
+    return item;
   }
 
   Future<ExpenseEvidence?> getEvidence(int id) async {
@@ -703,6 +783,29 @@ class DbService extends GetxService {
         .toList();
   }
 
+  Future<List<Project>> getPendingProjectsForSync() async {
+    final syncableProjectNames = await _getSyncableProjectNames();
+    final projects = await isar.projects
+        .filter()
+        .remoteIdIsNull()
+        .or()
+        .isDirtyEqualTo(true)
+        .or()
+        .pendingDeleteEqualTo(true)
+        .sortByUpdatedAtDesc()
+        .findAll();
+    return projects
+        .where(
+          (project) =>
+              _belongsToCurrentUser(project.ownerUserId) &&
+              (_isProjectSyncEligible(project) ||
+                  syncableProjectNames.contains(
+                    project.name.trim().toLowerCase(),
+                  )),
+        )
+        .toList();
+  }
+
   Future<Project?> getProject(int id) async {
     final project = await isar.projects.get(id);
     if (project == null || !_belongsToCurrentUser(project.ownerUserId)) {
@@ -786,6 +889,21 @@ class DbService extends GetxService {
         .toList();
   }
 
+  Future<List<ExpenseRecord>> getPendingExpenseRecordsForSync() async {
+    final records = await isar.expenseRecords
+        .filter()
+        .remoteIdIsNull()
+        .or()
+        .isDirtyEqualTo(true)
+        .or()
+        .pendingDeleteEqualTo(true)
+        .sortByExpenseDateDesc()
+        .findAll();
+    return records
+        .where((record) => _belongsToCurrentUser(record.ownerUserId))
+        .toList();
+  }
+
   Stream<void> watchExpenseRecords() => isar.expenseRecords.watchLazy();
 
   Future<int> addExpenseRecord(ExpenseRecord record) async {
@@ -840,7 +958,20 @@ class DbService extends GetxService {
   }
 
   // Sync Remote -> Local (WorkLog)
-  Future<void> syncRemoteLogToLocal(Map<String, dynamic> data) async {
+  Future<void> syncRemoteLogsToLocal(List<Map<String, dynamic>> rows) async {
+    if (rows.isEmpty) return;
+    await isar.writeTxn(() async {
+      for (final data in rows) {
+        await _syncRemoteLogToLocalInTxn(data);
+      }
+    });
+  }
+
+  Future<void> syncRemoteLogToLocal(Map<String, dynamic> data) {
+    return syncRemoteLogsToLocal([data]);
+  }
+
+  Future<void> _syncRemoteLogToLocalInTxn(Map<String, dynamic> data) async {
     final remoteId = _parseRemoteInt(data['id']);
     if (remoteId == null) return;
     final remoteSyncId = _parseRemoteString(data['sync_id']);
@@ -853,102 +984,107 @@ class DbService extends GetxService {
         ? null
         : _parseRemoteDateTime(data['deleted_at']);
 
-    await isar.writeTxn(() async {
-      WorkLog? log;
-      if (remoteSyncId != null) {
-        log = await isar.workLogs
-            .filter()
-            .syncIdEqualTo(remoteSyncId)
-            .findFirst();
-      }
-      log ??= await isar.workLogs
+    WorkLog? log;
+    if (remoteSyncId != null) {
+      log = await isar.workLogs
           .filter()
-          .remoteIdEqualTo(remoteId)
+          .syncIdEqualTo(remoteSyncId)
           .findFirst();
+    }
+    log ??= await isar.workLogs.filter().remoteIdEqualTo(remoteId).findFirst();
 
-      if (remoteDeletedAt != null) {
-        if (log != null) {
-          if (!log.isDirty || log.pendingDelete) {
-            await isar.workLogs.delete(log.id);
-            return;
-          }
-          log.deletedAt = remoteDeletedAt;
-          log.ownerUserId = currentOwnerUserId;
-          log.pendingDelete = false;
-          log.remoteId = remoteId;
-          log.syncId = remoteSyncId ?? log.syncId;
-          log.remoteVersion = remoteVersion;
-          log.remoteUpdatedAt = remoteUpdatedAt;
-          log.syncedAt = remoteUpdatedAt;
-          await isar.workLogs.put(log);
+    if (remoteDeletedAt != null) {
+      if (log != null) {
+        if (!log.isDirty || log.pendingDelete) {
+          await isar.workLogs.delete(log.id);
+          return;
         }
-        return;
-      }
-
-      // 2. Create new if still null. Do not match by remote local_id: it is
-      // generated per device and can collide with unrelated rows.
-      log ??= WorkLog();
-
-      // 冲突检测：如果本地数据处于脏标记，优先保留本地修改等待 Push，防止被旧数据覆盖
-      if (log.isDirty) {
+        log.deletedAt = remoteDeletedAt;
         log.ownerUserId = currentOwnerUserId;
-        if (log.remoteId != remoteId) {
-          log.remoteId = remoteId;
-        }
+        log.pendingDelete = false;
+        log.remoteId = remoteId;
         log.syncId = remoteSyncId ?? log.syncId;
         log.remoteVersion = remoteVersion;
         log.remoteUpdatedAt = remoteUpdatedAt;
+        log.syncedAt = remoteUpdatedAt;
         await isar.workLogs.put(log);
-        return;
       }
+      return;
+    }
 
-      // 4. Update fields
-      log.remoteId = remoteId;
+    // Do not match by remote local_id: it is generated per device and can collide.
+    log ??= WorkLog();
+
+    if (log.isDirty) {
       log.ownerUserId = currentOwnerUserId;
+      if (log.remoteId != remoteId) {
+        log.remoteId = remoteId;
+      }
       log.syncId = remoteSyncId ?? log.syncId;
       log.remoteVersion = remoteVersion;
       log.remoteUpdatedAt = remoteUpdatedAt;
-      log.syncedAt = remoteUpdatedAt;
-      log.isDirty = false;
-      log.deletedAt = null;
-      log.pendingDelete = false;
-      final now = DateTime.now().toUtc();
-      log.createdAt ??= now;
-      log.updatedAt = now;
-      log.date = _parseRemoteDateOnly(data['date'], fallback: remoteUpdatedAt);
-
-      // Parse Type
-      final typeStr = _parseRemoteString(data['type']);
-      log.type = LogType.values.firstWhere(
-        (e) => e.name == typeStr,
-        orElse: () => LogType.work,
-      );
-
-      log.overtimeHours = data['duration'] == null
-          ? null
-          : _parseRemoteDouble(data['duration']);
-      log.note = _parseRemoteString(data['notes']);
-      log.transport = _parseRemoteString(data['transport']);
-      log.expenses = data['expenses'] == null
-          ? null
-          : _parseRemoteDouble(data['expenses']);
-      log.isReimbursed = _parseRemoteBool(data['is_reimbursed']);
-
-      if (log.type == LogType.businessTrip) {
-        log.location = _parseRemoteString(
-          data['project_name'],
-        ); // Map project_name back to location
-      } else {
-        log.location = null;
-      }
-
-      // Save
       await isar.workLogs.put(log);
-    });
+      return;
+    }
+
+    log.remoteId = remoteId;
+    log.ownerUserId = currentOwnerUserId;
+    log.syncId = remoteSyncId ?? log.syncId;
+    log.remoteVersion = remoteVersion;
+    log.remoteUpdatedAt = remoteUpdatedAt;
+    log.syncedAt = remoteUpdatedAt;
+    log.isDirty = false;
+    log.deletedAt = null;
+    log.pendingDelete = false;
+    final now = DateTime.now().toUtc();
+    log.createdAt ??= now;
+    log.updatedAt = now;
+    log.date = _parseRemoteDateOnly(data['date'], fallback: remoteUpdatedAt);
+
+    final typeStr = _parseRemoteString(data['type']);
+    log.type = LogType.values.firstWhere(
+      (e) => e.name == typeStr,
+      orElse: () => LogType.work,
+    );
+
+    log.overtimeHours = data['duration'] == null
+        ? null
+        : _parseRemoteDouble(data['duration']);
+    log.note = _parseRemoteString(data['notes']);
+    log.transport = _parseRemoteString(data['transport']);
+    log.expenses = data['expenses'] == null
+        ? null
+        : _parseRemoteDouble(data['expenses']);
+    log.isReimbursed = _parseRemoteBool(data['is_reimbursed']);
+
+    if (log.type == LogType.businessTrip) {
+      log.location = _parseRemoteString(data['project_name']);
+    } else {
+      log.location = null;
+    }
+
+    await isar.workLogs.put(log);
   }
 
   // Sync Remote -> Local (Subscription)
-  Future<void> syncRemoteSubscriptionToLocal(Map<String, dynamic> data) async {
+  Future<void> syncRemoteSubscriptionsToLocal(
+    List<Map<String, dynamic>> rows,
+  ) async {
+    if (rows.isEmpty) return;
+    await isar.writeTxn(() async {
+      for (final data in rows) {
+        await _syncRemoteSubscriptionToLocalInTxn(data);
+      }
+    });
+  }
+
+  Future<void> syncRemoteSubscriptionToLocal(Map<String, dynamic> data) {
+    return syncRemoteSubscriptionsToLocal([data]);
+  }
+
+  Future<void> _syncRemoteSubscriptionToLocalInTxn(
+    Map<String, dynamic> data,
+  ) async {
     final remoteId = _parseRemoteInt(data['id']);
     if (remoteId == null) return;
     final remoteSyncId = _parseRemoteString(data['sync_id']);
@@ -961,88 +1097,99 @@ class DbService extends GetxService {
         ? null
         : _parseRemoteDateTime(data['deleted_at']);
 
-    await isar.writeTxn(() async {
-      Subscription? sub;
-      if (remoteSyncId != null) {
-        sub = await isar.subscriptions
-            .filter()
-            .syncIdEqualTo(remoteSyncId)
-            .findFirst();
-      }
-      sub ??= await isar.subscriptions
+    Subscription? sub;
+    if (remoteSyncId != null) {
+      sub = await isar.subscriptions
           .filter()
-          .remoteIdEqualTo(remoteId)
+          .syncIdEqualTo(remoteSyncId)
           .findFirst();
+    }
+    sub ??= await isar.subscriptions
+        .filter()
+        .remoteIdEqualTo(remoteId)
+        .findFirst();
 
-      if (remoteDeletedAt != null) {
-        if (sub != null) {
-          if (!sub.isDirty || sub.pendingDelete) {
-            await isar.subscriptions.delete(sub.id);
-            return;
-          }
-          sub.deletedAt = remoteDeletedAt;
-          sub.ownerUserId = currentOwnerUserId;
-          sub.pendingDelete = false;
-          sub.remoteId = remoteId;
-          sub.syncId = remoteSyncId ?? sub.syncId;
-          sub.remoteVersion = remoteVersion;
-          sub.remoteUpdatedAt = remoteUpdatedAt;
-          sub.syncedAt = remoteUpdatedAt;
-          await isar.subscriptions.put(sub);
+    if (remoteDeletedAt != null) {
+      if (sub != null) {
+        if (!sub.isDirty || sub.pendingDelete) {
+          await isar.subscriptions.delete(sub.id);
+          return;
         }
-        return;
-      }
-
-      // 2. Create new if still null. Remote local_id belongs to the source
-      // device only and is unsafe for cross-device merging.
-      sub ??= Subscription();
-
-      // 冲突检测：如果本地数据处于脏标记，优先保留本地修改等待 Push
-      if (sub.isDirty) {
+        sub.deletedAt = remoteDeletedAt;
         sub.ownerUserId = currentOwnerUserId;
-        if (sub.remoteId != remoteId) {
-          sub.remoteId = remoteId;
-        }
+        sub.pendingDelete = false;
+        sub.remoteId = remoteId;
         sub.syncId = remoteSyncId ?? sub.syncId;
         sub.remoteVersion = remoteVersion;
         sub.remoteUpdatedAt = remoteUpdatedAt;
+        sub.syncedAt = remoteUpdatedAt;
         await isar.subscriptions.put(sub);
-        return;
       }
+      return;
+    }
 
-      sub.remoteId = remoteId;
+    sub ??= Subscription();
+
+    if (sub.isDirty) {
       sub.ownerUserId = currentOwnerUserId;
+      if (sub.remoteId != remoteId) {
+        sub.remoteId = remoteId;
+      }
       sub.syncId = remoteSyncId ?? sub.syncId;
       sub.remoteVersion = remoteVersion;
       sub.remoteUpdatedAt = remoteUpdatedAt;
-      sub.syncedAt = remoteUpdatedAt;
-      sub.isDirty = false;
-      sub.deletedAt = null;
-      sub.pendingDelete = false;
-      sub.name = _parseRemoteString(data['name']) ?? 'Untitled';
-      sub.price = data['price'] == null
-          ? null
-          : _parseRemoteDouble(data['price']);
-
-      final cycleStr = _parseRemoteString(data['cycle']);
-      sub.cycle = SubscriptionCycle.values.firstWhere(
-        (e) => e.name == cycleStr,
-        orElse: () => SubscriptionCycle.monthly,
-      );
-
-      // Using nextPaymentDate as the date anchor
-      sub.nextPaymentDate = _parseRemoteDateOnly(
-        data['start_date'],
-        fallback: remoteUpdatedAt,
-      );
-      sub.note = _parseRemoteString(data['description']);
-      sub.sortIndex = _parseRemoteInt(data['sort_index']);
-
       await isar.subscriptions.put(sub);
+      return;
+    }
+
+    sub.remoteId = remoteId;
+    sub.ownerUserId = currentOwnerUserId;
+    sub.syncId = remoteSyncId ?? sub.syncId;
+    sub.remoteVersion = remoteVersion;
+    sub.remoteUpdatedAt = remoteUpdatedAt;
+    sub.syncedAt = remoteUpdatedAt;
+    sub.isDirty = false;
+    sub.deletedAt = null;
+    sub.pendingDelete = false;
+    sub.name = _parseRemoteString(data['name']) ?? 'Untitled';
+    sub.price = data['price'] == null
+        ? null
+        : _parseRemoteDouble(data['price']);
+
+    final cycleStr = _parseRemoteString(data['cycle']);
+    sub.cycle = SubscriptionCycle.values.firstWhere(
+      (e) => e.name == cycleStr,
+      orElse: () => SubscriptionCycle.monthly,
+    );
+
+    sub.nextPaymentDate = _parseRemoteDateOnly(
+      data['start_date'],
+      fallback: remoteUpdatedAt,
+    );
+    sub.note = _parseRemoteString(data['description']);
+    sub.sortIndex = _parseRemoteInt(data['sort_index']);
+
+    await isar.subscriptions.put(sub);
+  }
+
+  Future<void> syncRemoteEvidenceRowsToLocal(
+    List<Map<String, dynamic>> rows,
+  ) async {
+    if (rows.isEmpty) return;
+    await isar.writeTxn(() async {
+      for (final data in rows) {
+        await _syncRemoteEvidenceToLocalInTxn(data);
+      }
     });
   }
 
-  Future<void> syncRemoteEvidenceToLocal(Map<String, dynamic> data) async {
+  Future<void> syncRemoteEvidenceToLocal(Map<String, dynamic> data) {
+    return syncRemoteEvidenceRowsToLocal([data]);
+  }
+
+  Future<void> _syncRemoteEvidenceToLocalInTxn(
+    Map<String, dynamic> data,
+  ) async {
     final remoteId = _parseRemoteInt(data['id']);
     if (remoteId == null) return;
     final remoteSyncId = _parseRemoteString(data['sync_id']);
@@ -1055,100 +1202,115 @@ class DbService extends GetxService {
         ? null
         : _parseRemoteDateTime(data['deleted_at']);
 
-    await isar.writeTxn(() async {
-      ExpenseEvidence? item;
-      if (remoteSyncId != null) {
-        item = await isar.expenseEvidences
-            .filter()
-            .syncIdEqualTo(remoteSyncId)
-            .findFirst();
-      }
-      item ??= await isar.expenseEvidences
+    ExpenseEvidence? item;
+    if (remoteSyncId != null) {
+      item = await isar.expenseEvidences
           .filter()
-          .remoteIdEqualTo(remoteId)
+          .syncIdEqualTo(remoteSyncId)
           .findFirst();
+    }
+    item ??= await isar.expenseEvidences
+        .filter()
+        .remoteIdEqualTo(remoteId)
+        .findFirst();
 
-      if (remoteDeletedAt != null) {
-        if (item != null) {
-          if (!item.isDirty || item.pendingDelete) {
-            await isar.expenseEvidences.delete(item.id);
-            return;
-          }
-          item.deletedAt = remoteDeletedAt;
-          item.ownerUserId = currentOwnerUserId;
-          item.pendingDelete = false;
-          item.remoteId = remoteId;
-          item.syncId = remoteSyncId ?? item.syncId;
-          item.remoteVersion = remoteVersion;
-          item.remoteUpdatedAt = remoteUpdatedAt;
-          item.syncedAt = remoteUpdatedAt;
-          await isar.expenseEvidences.put(item);
+    if (remoteDeletedAt != null) {
+      if (item != null) {
+        if (!item.isDirty || item.pendingDelete) {
+          await isar.expenseEvidences.delete(item.id);
+          return;
         }
-        return;
-      }
-
-      item ??= ExpenseEvidence();
-
-      if (item.isDirty) {
+        item.deletedAt = remoteDeletedAt;
         item.ownerUserId = currentOwnerUserId;
-        if (item.remoteId != remoteId) {
-          item.remoteId = remoteId;
-        }
+        item.pendingDelete = false;
+        item.remoteId = remoteId;
         item.syncId = remoteSyncId ?? item.syncId;
         item.remoteVersion = remoteVersion;
         item.remoteUpdatedAt = remoteUpdatedAt;
+        item.syncedAt = remoteUpdatedAt;
         await isar.expenseEvidences.put(item);
-        return;
       }
+      return;
+    }
 
-      item.remoteId = remoteId;
+    item ??= ExpenseEvidence();
+
+    if (item.isDirty) {
       item.ownerUserId = currentOwnerUserId;
+      if (item.remoteId != remoteId) {
+        item.remoteId = remoteId;
+      }
       item.syncId = remoteSyncId ?? item.syncId;
       item.remoteVersion = remoteVersion;
       item.remoteUpdatedAt = remoteUpdatedAt;
-      item.syncedAt = remoteUpdatedAt;
-      item.isDirty = false;
-      item.deletedAt = null;
-      item.pendingDelete = false;
-      final now = DateTime.now().toUtc();
-      item.createdAt ??= now;
-      item.updatedAt = now;
-      item.projectName =
-          _parseRemoteString(data['project_name']) ?? 'DefaultProject';
-      item.evidenceDate = _parseRemoteDateOnly(
-        data['evidence_date'],
-        fallback: remoteUpdatedAt,
-      );
-      item.amount = data['amount'] == null
-          ? null
-          : _parseRemoteDouble(data['amount']);
-      item.currency = _parseRemoteString(data['currency']) ?? 'CNY';
-      item.category = EvidenceCategory.values.firstWhere(
-        (value) => value.name == _parseRemoteString(data['category']),
-        orElse: () => EvidenceCategory.invoice,
-      );
-      item.status = EvidenceStatus.values.firstWhere(
-        (value) => value.name == _parseRemoteString(data['status']),
-        orElse: () => EvidenceStatus.pending,
-      );
-      item.merchant = _parseRemoteString(data['merchant']);
-      item.note = _parseRemoteString(data['note']);
-      item.localFilePath = _parseRemoteString(data['local_file_path']);
-      item.remoteStoragePath = _parseRemoteString(data['remote_storage_path']);
-      item.fileName = _parseRemoteString(data['file_name']);
-      item.mimeType = _parseRemoteString(data['mime_type']);
-      item.uploadedAt = data['uploaded_at'] == null
-          ? null
-          : _parseRemoteDateTime(data['uploaded_at']);
-      item.tripDate = data['trip_date'] == null
-          ? null
-          : _parseRemoteDateOnly(data['trip_date']);
-
       await isar.expenseEvidences.put(item);
+      return;
+    }
+
+    item.remoteId = remoteId;
+    item.ownerUserId = currentOwnerUserId;
+    item.syncId = remoteSyncId ?? item.syncId;
+    item.remoteVersion = remoteVersion;
+    item.remoteUpdatedAt = remoteUpdatedAt;
+    item.syncedAt = remoteUpdatedAt;
+    item.isDirty = false;
+    item.deletedAt = null;
+    item.pendingDelete = false;
+    final now = DateTime.now().toUtc();
+    item.createdAt ??= now;
+    item.updatedAt = now;
+    item.projectName =
+        _parseRemoteString(data['project_name']) ?? 'DefaultProject';
+    item.evidenceDate = _parseRemoteDateOnly(
+      data['evidence_date'],
+      fallback: remoteUpdatedAt,
+    );
+    item.amount = data['amount'] == null
+        ? null
+        : _parseRemoteDouble(data['amount']);
+    item.currency = _parseRemoteString(data['currency']) ?? 'CNY';
+    item.category = EvidenceCategory.values.firstWhere(
+      (value) => value.name == _parseRemoteString(data['category']),
+      orElse: () => EvidenceCategory.invoice,
+    );
+    item.status = EvidenceStatus.values.firstWhere(
+      (value) => value.name == _parseRemoteString(data['status']),
+      orElse: () => EvidenceStatus.pending,
+    );
+    item.merchant = _parseRemoteString(data['merchant']);
+    item.note = _parseRemoteString(data['note']);
+    item.localFilePath = _parseRemoteString(data['local_file_path']);
+    item.remoteStoragePath = _parseRemoteString(data['remote_storage_path']);
+    item.fileName = _parseRemoteString(data['file_name']);
+    item.mimeType = _parseRemoteString(data['mime_type']);
+    item.uploadedAt = data['uploaded_at'] == null
+        ? null
+        : _parseRemoteDateTime(data['uploaded_at']);
+    item.tripDate = data['trip_date'] == null
+        ? null
+        : _parseRemoteDateOnly(data['trip_date']);
+
+    await isar.expenseEvidences.put(item);
+  }
+
+  Future<void> syncRemoteExpenseRecordsToLocal(
+    List<Map<String, dynamic>> rows,
+  ) async {
+    if (rows.isEmpty) return;
+    await isar.writeTxn(() async {
+      for (final data in rows) {
+        await _syncRemoteExpenseRecordToLocalInTxn(data);
+      }
     });
   }
 
-  Future<void> syncRemoteExpenseRecordToLocal(Map<String, dynamic> data) async {
+  Future<void> syncRemoteExpenseRecordToLocal(Map<String, dynamic> data) {
+    return syncRemoteExpenseRecordsToLocal([data]);
+  }
+
+  Future<void> _syncRemoteExpenseRecordToLocalInTxn(
+    Map<String, dynamic> data,
+  ) async {
     final remoteId = _parseRemoteInt(data['id']);
     if (remoteId == null) return;
     final remoteSyncId = _parseRemoteString(data['sync_id']);
@@ -1161,108 +1323,123 @@ class DbService extends GetxService {
         ? null
         : _parseRemoteDateTime(data['deleted_at']);
 
-    await isar.writeTxn(() async {
-      ExpenseRecord? record;
-      if (remoteSyncId != null) {
-        record = await isar.expenseRecords
-            .filter()
-            .syncIdEqualTo(remoteSyncId)
-            .findFirst();
-      }
-      record ??= await isar.expenseRecords
+    ExpenseRecord? record;
+    if (remoteSyncId != null) {
+      record = await isar.expenseRecords
           .filter()
-          .remoteIdEqualTo(remoteId)
+          .syncIdEqualTo(remoteSyncId)
           .findFirst();
+    }
+    record ??= await isar.expenseRecords
+        .filter()
+        .remoteIdEqualTo(remoteId)
+        .findFirst();
 
-      if (remoteDeletedAt != null) {
-        if (record != null) {
-          if (!record.isDirty || record.pendingDelete) {
-            await isar.expenseRecords.delete(record.id);
-            return;
-          }
-          record.deletedAt = remoteDeletedAt;
-          record.ownerUserId = currentOwnerUserId;
-          record.pendingDelete = false;
-          record.remoteId = remoteId;
-          record.syncId = remoteSyncId ?? record.syncId;
-          record.remoteVersion = remoteVersion;
-          record.remoteUpdatedAt = remoteUpdatedAt;
-          record.syncedAt = remoteUpdatedAt;
-          await isar.expenseRecords.put(record);
+    if (remoteDeletedAt != null) {
+      if (record != null) {
+        if (!record.isDirty || record.pendingDelete) {
+          await isar.expenseRecords.delete(record.id);
+          return;
         }
-        return;
-      }
-
-      record ??= ExpenseRecord();
-
-      if (record.isDirty) {
+        record.deletedAt = remoteDeletedAt;
         record.ownerUserId = currentOwnerUserId;
+        record.pendingDelete = false;
         record.remoteId = remoteId;
         record.syncId = remoteSyncId ?? record.syncId;
         record.remoteVersion = remoteVersion;
         record.remoteUpdatedAt = remoteUpdatedAt;
+        record.syncedAt = remoteUpdatedAt;
         await isar.expenseRecords.put(record);
-        return;
       }
+      return;
+    }
 
-      final projectName = _parseRemoteString(data['project_name']);
-      int? projectId;
-      if (projectName != null && projectName.trim().isNotEmpty) {
-        final safeProjectName = projectName.trim();
-        final projects = await isar.projects.where().findAll();
-        Project? project;
-        for (final item in projects) {
-          if (_belongsToCurrentUser(item.ownerUserId) &&
-              item.name.toLowerCase() == safeProjectName.toLowerCase()) {
-            project = item;
-            break;
-          }
-        }
-        if (project == null) {
-          final now = DateTime.now();
-          project = Project()
-            ..name = safeProjectName
-            ..ownerUserId = currentOwnerUserId
-            ..createdAt = now
-            ..updatedAt = now
-            ..isDirty = false;
-          project.id = await isar.projects.put(project);
-        }
-        projectId = project.id;
-      }
+    record ??= ExpenseRecord();
 
-      record.remoteId = remoteId;
+    if (record.isDirty) {
       record.ownerUserId = currentOwnerUserId;
+      if (record.remoteId != remoteId) {
+        record.remoteId = remoteId;
+      }
       record.syncId = remoteSyncId ?? record.syncId;
       record.remoteVersion = remoteVersion;
       record.remoteUpdatedAt = remoteUpdatedAt;
-      record.syncedAt = remoteUpdatedAt;
-      record.isDirty = false;
-      record.deletedAt = null;
-      record.pendingDelete = false;
-      final now = DateTime.now().toUtc();
-      record.createdAt ??= now;
-      record.updatedAt = now;
-      record.expenseDate = _parseRemoteDateOnly(
-        data['expense_date'],
-        fallback: remoteUpdatedAt,
-      );
-      record.amount = _parseRemoteDouble(data['amount']);
-      record.currency = _parseRemoteString(data['currency']) ?? 'CNY';
-      record.category = ExpenseCategory.values.firstWhere(
-        (value) => value.name == _parseRemoteString(data['category']),
-        orElse: () => ExpenseCategory.other,
-      );
-      record.merchant = _parseRemoteString(data['merchant']);
-      record.note = _parseRemoteString(data['note']);
-      record.projectName = projectName;
-      record.projectId = projectId;
-
       await isar.expenseRecords.put(record);
+      return;
+    }
+
+    final projectName = _parseRemoteString(data['project_name']);
+    int? projectId;
+    if (projectName != null && projectName.trim().isNotEmpty) {
+      final safeProjectName = projectName.trim();
+      final projects = await isar.projects.where().findAll();
+      Project? project;
+      for (final item in projects) {
+        if (_belongsToCurrentUser(item.ownerUserId) &&
+            item.name.toLowerCase() == safeProjectName.toLowerCase()) {
+          project = item;
+          break;
+        }
+      }
+      if (project == null) {
+        final now = DateTime.now();
+        project = Project()
+          ..name = safeProjectName
+          ..ownerUserId = currentOwnerUserId
+          ..createdAt = now
+          ..updatedAt = now
+          ..isDirty = false;
+        project.id = await isar.projects.put(project);
+      }
+      projectId = project.id;
+    }
+
+    record.remoteId = remoteId;
+    record.ownerUserId = currentOwnerUserId;
+    record.syncId = remoteSyncId ?? record.syncId;
+    record.remoteVersion = remoteVersion;
+    record.remoteUpdatedAt = remoteUpdatedAt;
+    record.syncedAt = remoteUpdatedAt;
+    record.isDirty = false;
+    record.deletedAt = null;
+    record.pendingDelete = false;
+    final now = DateTime.now().toUtc();
+    record.createdAt ??= now;
+    record.updatedAt = now;
+    record.expenseDate = _parseRemoteDateOnly(
+      data['expense_date'],
+      fallback: remoteUpdatedAt,
+    );
+    record.amount = _parseRemoteDouble(data['amount']);
+    record.currency = _parseRemoteString(data['currency']) ?? 'CNY';
+    record.category = ExpenseCategory.values.firstWhere(
+      (value) => value.name == _parseRemoteString(data['category']),
+      orElse: () => ExpenseCategory.other,
+    );
+    record.merchant = _parseRemoteString(data['merchant']);
+    record.note = _parseRemoteString(data['note']);
+    record.projectName = projectName;
+    record.projectId = projectId;
+
+    await isar.expenseRecords.put(record);
+  }
+
+  Future<void> syncRemoteProjectsToLocal(
+    List<Map<String, dynamic>> rows,
+  ) async {
+    if (rows.isEmpty) return;
+    await isar.writeTxn(() async {
+      for (final data in rows) {
+        await _syncRemoteProjectToLocalInTxn(data);
+      }
     });
   }
 
-  Future<void> syncRemoteProjectToLocal(Map<String, dynamic> data) async {
+  Future<void> syncRemoteProjectToLocal(Map<String, dynamic> data) {
+    return syncRemoteProjectsToLocal([data]);
+  }
+
+  Future<void> _syncRemoteProjectToLocalInTxn(Map<String, dynamic> data) async {
     final remoteId = _parseRemoteInt(data['id']);
     if (remoteId == null) return;
     final remoteSyncId = _parseRemoteString(data['sync_id']);
@@ -1275,76 +1452,74 @@ class DbService extends GetxService {
         ? null
         : _parseRemoteDateTime(data['deleted_at']);
 
-    await isar.writeTxn(() async {
-      Project? project;
-      if (remoteSyncId != null) {
-        project = await isar.projects
-            .filter()
-            .syncIdEqualTo(remoteSyncId)
-            .findFirst();
-      }
-      project ??= await isar.projects
+    Project? project;
+    if (remoteSyncId != null) {
+      project = await isar.projects
           .filter()
-          .remoteIdEqualTo(remoteId)
+          .syncIdEqualTo(remoteSyncId)
           .findFirst();
+    }
+    project ??= await isar.projects
+        .filter()
+        .remoteIdEqualTo(remoteId)
+        .findFirst();
 
-      if (remoteDeletedAt != null) {
-        if (project != null) {
-          if (!project.isDirty || project.pendingDelete) {
-            await isar.projects.delete(project.id);
-            return;
-          }
-          project.deletedAt = remoteDeletedAt;
-          project.ownerUserId = currentOwnerUserId;
-          project.pendingDelete = false;
-          project.remoteId = remoteId;
-          project.syncId = remoteSyncId ?? project.syncId;
-          project.remoteVersion = remoteVersion;
-          project.remoteUpdatedAt = remoteUpdatedAt;
-          project.syncedAt = remoteUpdatedAt;
-          await isar.projects.put(project);
+    if (remoteDeletedAt != null) {
+      if (project != null) {
+        if (!project.isDirty || project.pendingDelete) {
+          await isar.projects.delete(project.id);
+          return;
         }
-        return;
-      }
-
-      project ??= Project();
-
-      if (project.isDirty) {
+        project.deletedAt = remoteDeletedAt;
         project.ownerUserId = currentOwnerUserId;
-        if (project.remoteId != remoteId) {
-          project.remoteId = remoteId;
-        }
+        project.pendingDelete = false;
+        project.remoteId = remoteId;
         project.syncId = remoteSyncId ?? project.syncId;
         project.remoteVersion = remoteVersion;
         project.remoteUpdatedAt = remoteUpdatedAt;
+        project.syncedAt = remoteUpdatedAt;
         await isar.projects.put(project);
-        return;
       }
+      return;
+    }
 
-      project.remoteId = remoteId;
+    project ??= Project();
+
+    if (project.isDirty) {
       project.ownerUserId = currentOwnerUserId;
+      if (project.remoteId != remoteId) {
+        project.remoteId = remoteId;
+      }
       project.syncId = remoteSyncId ?? project.syncId;
       project.remoteVersion = remoteVersion;
       project.remoteUpdatedAt = remoteUpdatedAt;
-      project.syncedAt = remoteUpdatedAt;
-      project.isDirty = false;
-      project.deletedAt = null;
-      project.pendingDelete = false;
-      project.name = _parseRemoteString(data['name']) ?? 'Untitled';
-      final statusStr =
-          _parseRemoteString(data['status']) ?? ProjectStatus.active.name;
-      project.status = ProjectStatus.values.firstWhere(
-        (value) => value.name == statusStr,
-        orElse: () => ProjectStatus.active,
-      );
-      project.createdAt = data['created_at'] == null
-          ? remoteUpdatedAt
-          : _parseRemoteDateTime(data['created_at'], fallback: remoteUpdatedAt);
-      project.updatedAt = data['updated_at'] == null
-          ? remoteUpdatedAt
-          : _parseRemoteDateTime(data['updated_at'], fallback: remoteUpdatedAt);
-
       await isar.projects.put(project);
-    });
+      return;
+    }
+
+    project.remoteId = remoteId;
+    project.ownerUserId = currentOwnerUserId;
+    project.syncId = remoteSyncId ?? project.syncId;
+    project.remoteVersion = remoteVersion;
+    project.remoteUpdatedAt = remoteUpdatedAt;
+    project.syncedAt = remoteUpdatedAt;
+    project.isDirty = false;
+    project.deletedAt = null;
+    project.pendingDelete = false;
+    project.name = _parseRemoteString(data['name']) ?? 'Untitled';
+    final statusStr =
+        _parseRemoteString(data['status']) ?? ProjectStatus.active.name;
+    project.status = ProjectStatus.values.firstWhere(
+      (value) => value.name == statusStr,
+      orElse: () => ProjectStatus.active,
+    );
+    project.createdAt = data['created_at'] == null
+        ? remoteUpdatedAt
+        : _parseRemoteDateTime(data['created_at'], fallback: remoteUpdatedAt);
+    project.updatedAt = data['updated_at'] == null
+        ? remoteUpdatedAt
+        : _parseRemoteDateTime(data['updated_at'], fallback: remoteUpdatedAt);
+
+    await isar.projects.put(project);
   }
 }

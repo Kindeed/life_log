@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:get/get.dart';
 import '../../../common/db/db_service.dart';
 import '../../../common/services/sync_service.dart';
@@ -72,6 +74,10 @@ class WorkLogRepository extends GetxService {
       await _deleteStoredLog(duplicate);
     }
 
+    _pushWorkLogInBackground(log);
+  }
+
+  void _pushWorkLogInBackground(WorkLog log) {
     if (!Get.isRegistered<SyncService>()) {
       LogService.to.info('WorkLogRepository', '本地模式：跳过云端同步');
       return;
@@ -81,7 +87,10 @@ class WorkLogRepository extends GetxService {
       return;
     }
 
-    // 2. 触发云端同步 (不抛出异常以保证离线可用)
+    unawaited(_pushWorkLogSafely(log));
+  }
+
+  Future<void> _pushWorkLogSafely(WorkLog log) async {
     try {
       final success = await SyncService.to.pushWorkLog(log);
       if (!success) {
@@ -93,10 +102,7 @@ class WorkLogRepository extends GetxService {
   }
 
   Future<List<WorkLog>> _sameDayLogs(DateTime date) async {
-    final day = dateOnlyLocal(date);
-    return (await getAllLogs())
-        .where((item) => dateOnlyLocal(item.date) == day)
-        .toList();
+    return DbService.to.getLogsForDay(date);
   }
 
   WorkLog? _resolveCanonicalLog(WorkLog incoming, List<WorkLog> sameDayLogs) {

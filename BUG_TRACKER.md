@@ -1,6 +1,6 @@
 # LifeLog BUG Tracker
 
-**Last updated**: 2026-05-13  
+**Last updated**: 2026-05-18
 **Status values**: `open`, `in_progress`, `fixed`, `deferred`, `invalidated`
 
 This is the active defect ledger. `REVIEW_REPORT.md` is historical context only. Photo sync findings from older reports are superseded by `AGENTS.md`: photos remain local-only and must not enter Supabase sync.
@@ -56,6 +56,10 @@ This is the active defect ledger. `REVIEW_REPORT.md` is historical context only.
 | U38 | Medium | fixed | project deletion | 创建项目后项目页没有明确删除入口，用户无法删除空项目或不再需要的项目。 | Fixed: project detail now exposes a visible destructive delete action, confirms impact, removes the project and its linked local records, and does not leave orphan project cards behind. |
 | U39 | Medium | fixed | `DayCell` alignment | 日历日期数字和状态文本没有相对整个日期格居中，尤其是带 `+2h...` 状态时视觉偏移明显。 | Fixed: day-cell content now fills the whole cell before centering text, so date and status labels align to the cell center. |
 | U40 | High | fixed | work log duplicate days | 旧数据中同一天可同时保留加班、出差等多条状态记录，显示层局部归并后仍可能在详情/编辑路径暴露冲突状态。 | Fixed: work-log loading now normalizes existing same-day duplicates through the repository, keeps the latest canonical record, and deletes duplicate records. |
+| U42 | High | fixed | work log save | 工时保存会等待云端推送且没有保存中状态，网络慢或云同步失败时用户需要反复点击保存才看到结果。 | Fixed: work-log save now returns after local Isar persistence and duplicate cleanup, pushes cloud sync in the background, and disables the save button with loading while the local save is in flight. |
+| U43 | High | fixed | work log startup refresh | 冷启动进入工时页时，日历没有显式订阅 `dataVersion`，异步记录加载完成后可能不重建，必须点一下页面才显示已有记录。 | Fixed: the calendar now observes `dataVersion`, and the detail area shows an initial loading state instead of a false empty state while logs are loading. |
+| U44 | Medium | fixed | project creation | 创建第一个项目后，项目主页缺少持续可见的新建项目入口，只能依赖深层动作表。 | Fixed: project overview AppBar now exposes a create-project button and the empty state reuses the same project creation flow. |
+| U45 | Medium | fixed | project photo export | 项目图片多选底部栏在窄屏会把“选择了 N 张”挤成竖排，导致导出按钮看起来错位或不可用。 | Fixed: multi-select uses a stable stacked bottom bar with one-line selection text and equal-width delete/export/finish actions. |
 | D7 | High | fixed | sync parsing | Remote row parsing and push response handling used `DateTime.parse` / direct casts and could abort a sync path on malformed or null fields. | Fixed: pull rows, push responses, server-time reads, and stored cursors now use safe numeric/string/date parsing with fallbacks or controlled failure for invalid remote IDs. |
 | D8 | Medium | fixed | sync trigger dedupe | `syncAll` skipped a fresh manual sync for 2 seconds after the previous one finished. | Fixed: only an in-flight sync is reused now. |
 | U14 | Medium | fixed | `ExpenseRecordEditView` | One-time expense add/edit UI is visually inconsistent with the current finance design system. | Fixed: reworked to a clearer amount-first card, category chips, tokenized surfaces, and stable bottom actions. |
@@ -77,6 +81,56 @@ This is the active defect ledger. `REVIEW_REPORT.md` is historical context only.
 | ID | Severity | Status | Area | Finding | Fix / Acceptance |
 | --- | --- | --- | --- | --- | --- |
 | C1 | Low | fixed | project cache | Regenerable Flutter project caches were present after prior local builds. | Fixed: ran `flutter clean`, restored dependency metadata with `flutter pub get`, verified the project, then removed test-regenerated `build` cache while keeping required `.dart_tool` metadata. |
+
+## Performance / Startup / Sync
+
+| ID | Severity | Status | Area | Finding | Fix / Acceptance |
+| --- | --- | --- | --- | --- | --- |
+| P25 | High | fixed | startup / sync watchers | Startup and sync writes can trigger multiple controller watch callbacks, causing repeated full reloads across work logs, subscriptions, projects, evidence, expenses, and statistics. | Fixed: bootstrap sync reuses/skips duplicate same-user auth/startup triggers, and pull writes are batched per collection to reduce watch fan-out. |
+| P26 | High | fixed | Sync pull transactions | `_pullAll()` applies each remote row through an independent Isar `writeTxn()`, so large pulls create excessive transaction overhead. | Fixed: pulled rows are applied per collection in batched local transactions while preserving conflict behavior. |
+| P27 | Medium | fixed | Sync push queries | `_pushUnsyncedData()` fetches all syncable rows and filters `remoteId == null || isDirty || pendingDelete` in Dart. | Fixed: push loops query only pending rows from Isar before pushing. |
+| P28 | Medium | fixed | Statistics month navigation | `previousMonth()`, `nextMonth()`, and `resetToCurrentMonth()` call `refreshStats()` even though cached data is sufficient for recalculation. | Fixed: month navigation recalculates from cached lists without querying all four data sources. |
+| P29 | Medium | fixed | WorkLog duplicate normalization | `WorkLogController.loadData()` runs duplicate-day normalization on every reload, including watch-triggered reloads. | Fixed: duplicate normalization runs during startup initialization, not every watch reload. |
+| P30 | Medium | fixed | WorkLog same-day lookup | `_sameDayLogs()` calls `getAllLogs()` and filters in Dart, causing full scans for day-level operations. | Fixed: same-day lookup queries the target day range directly. |
+| P31 | Low | fixed | WorkLog calendar rebuild | `TableCalendar` is keyed by `selectedDay`, forcing a calendar subtree rebuild on every day selection. | Fixed: removed the selected-day key and kept selection driven by `selectedDayPredicate`. |
+| P32 | Medium | fixed | tabs page lifecycle | `PageView` tab pages are plain children without explicit keep-alive, so heavier tab subtrees can be rebuilt when switching pages. | Fixed: each tab child is wrapped in a keep-alive page shell without changing visual layout. |
+| P33 | Medium | fixed | Photo derived data | Photo project grouping and summary getters rebuild maps/lists and sort data every time they are accessed by reactive builders; the first cache pass still re-sorted each already date-sorted group and rebuilt grouping on search/sort changes. | Fixed: photo project grouping, summaries, filtering, and counts are cached; group order relies on the DB `createdAt desc` query contract, search only rebuilds filtered results, and sort only reorders summaries. |
+| P34 | Medium | fixed | Evidence derived data | Evidence project grouping and summary getters rebuild maps/lists and sort data every time they are accessed by reactive builders; the first cache pass still re-sorted each already date-sorted group and rebuilt grouping on search/sort changes. | Fixed: evidence grouping, summaries, filtering, and totals are cached; group order relies on the DB `evidenceDate desc` query contract, search only rebuilds filtered results, and sort only reorders summaries. |
+| P35 | Medium | fixed | Subscription derived data | Subscription visible list, cost totals, and due-soon list are recomputed by getters on every reactive rebuild. | Fixed: visible subscriptions, totals, due-soon list, and due-soon count are cached and invalidated only when subscription/filter/sort inputs change. |
+| P36 | Medium | fixed | Subscription reorder dirty marking | `reorderSubscriptions()` writes and marks every subscription dirty even if only a subset of sort indexes changed. | Fixed: reorder writes only changed rows, marks only changed rows dirty, and pushes changed rows when cloud sync is available. |
+| P37 | Medium | fixed | Statistics watch refresh | Statistics watch coalescing regressed to a shared full refresh, so editing one table re-queried work logs, subscriptions, evidence, and expense records. | Fixed: collection watches share one refresh gate but carry changed-source sets, so normal watch events re-query only the changed tables while full refresh still loads all sources. |
+| P38 | Low | fixed | Statistics derived total | `selectedMonthTotalCost` was a computed getter that read subscription and expense observables inside the same `Obx`, causing redundant dependency reads for one displayed total. | Fixed: selected-month total cost is now an observable updated with subscription and expense-record stat recalculation. |
+
+### P1 Performance Remediation Tasks
+
+| Task | Status | Scope | Acceptance |
+| --- | --- | --- | --- |
+| P1-1 | fixed | Sync startup/auth dedupe | Same logged-in user does not run duplicate bootstrap syncs from auth and startup callbacks. |
+| P1-2 | fixed | Sync pull batch transactions | Pull writes are applied per collection instead of one transaction per row. |
+| P1-3 | fixed | Pending sync query pushdown | Push loops receive only pending rows from Isar queries. |
+| P1-4 | fixed | Statistics cached month recalculation | Month navigation recalculates cached stats without DB refresh. |
+| P1-5 | fixed | WorkLog load/query optimization | Normalization is startup-only and same-day lookup avoids full scans. |
+| P1-6 | fixed | Calendar key removal | Selected-day changes no longer recreate the whole `TableCalendar`. |
+| P1-7 | in_progress | Validation | `flutter analyze` and `flutter test` passed on 2026-05-14; real-device smoke checks are still pending. |
+
+### P2 Performance Remediation Tasks
+
+| Task | Status | Scope | Acceptance |
+| --- | --- | --- | --- |
+| P2-1 | fixed | Tab page keep-alive | Switching tabs preserves page subtrees through a keep-alive wrapper without visual changes. |
+| P2-2 | fixed | Photo derived data cache | Project grouping is recomputed only after photo data changes; search only filters cached summaries and sort only reorders cached summaries. |
+| P2-3 | fixed | Evidence derived data cache | Project grouping is recomputed only after evidence data changes; search only filters cached summaries and sort only reorders cached summaries. |
+| P2-4 | fixed | Subscription derived data cache | Visible list and subscription totals are recomputed only after subscription/filter/sort input changes. |
+| P2-5 | in_progress | Validation | `flutter analyze` and `flutter test` passed on 2026-05-14; real-device smoke checks are still pending. |
+
+### P3 Performance Remediation Tasks
+
+| Task | Status | Scope | Acceptance |
+| --- | --- | --- | --- |
+| P3-1 | fixed | Subscription reorder dirty scope | Reorder persists only rows whose sort index changed and does not dirty untouched rows. |
+| P3-2 | fixed | Subscription reorder sync | Changed reorder rows are pushed immediately when cloud sync is registered. |
+| P3-3 | fixed | Statistics watch coalescing | Work/subscription/evidence/expense watches share one refresh gate and coalesced source set while preserving targeted table refreshes. |
+| P3-4 | in_progress | Validation | `flutter analyze` and `flutter test` passed on 2026-05-14; real-device smoke checks are still pending. |
 
 ## Invalidated Historical Findings
 

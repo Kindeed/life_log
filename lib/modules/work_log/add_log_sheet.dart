@@ -52,6 +52,7 @@ class _AddLogSheetState extends State<AddLogSheet> {
   String _selectedLeaveType = "年假";
   final TextEditingController _customLeaveController = TextEditingController();
   final FocusNode _customLeaveFocusNode = FocusNode();
+  bool _isSaving = false;
 
   @override
   void initState() {
@@ -236,7 +237,8 @@ class _AddLogSheetState extends State<AddLogSheet> {
         width: double.infinity,
         child: AppButton.primary(
           label: "保存",
-          onPressed: _saveLog,
+          onPressed: _isSaving ? null : _saveLog,
+          isLoading: _isSaving,
           height: 50.h,
         ),
       );
@@ -246,7 +248,7 @@ class _AddLogSheetState extends State<AddLogSheet> {
           Expanded(
             child: AppButton.destructive(
               label: "删除",
-              onPressed: _deleteLog,
+              onPressed: _isSaving ? null : _deleteLog,
               height: 50.h,
             ),
           ),
@@ -254,7 +256,8 @@ class _AddLogSheetState extends State<AddLogSheet> {
           Expanded(
             child: AppButton.primary(
               label: "保存修改",
-              onPressed: _saveLog,
+              onPressed: _isSaving ? null : _saveLog,
+              isLoading: _isSaving,
               height: 50.h,
             ),
           ),
@@ -276,6 +279,8 @@ class _AddLogSheetState extends State<AddLogSheet> {
   }
 
   Future<void> _saveLog() async {
+    if (_isSaving) return;
+
     double? tripExpense;
     if (_selectedType == LogType.businessTrip) {
       final expenseText = _expenseController.text.trim();
@@ -358,11 +363,15 @@ class _AddLogSheetState extends State<AddLogSheet> {
         existing.isDirty ||
         log.hasBusinessChangesComparedTo(existing);
 
+    setState(() => _isSaving = true);
     try {
       await WorkLogController.to.addLog(log);
       Get.back();
     } catch (_) {
       // Controller already logs and shows the snackbar; stop the success flow.
+      if (mounted) {
+        setState(() => _isSaving = false);
+      }
       return;
     }
   }

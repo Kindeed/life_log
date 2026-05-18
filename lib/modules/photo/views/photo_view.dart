@@ -71,6 +71,11 @@ class _PhotoViewState extends State<PhotoView> {
         title: const Text("项目资料"),
         actions: [
           IconButton(
+            icon: const Icon(Icons.create_new_folder_rounded),
+            tooltip: "创建项目",
+            onPressed: _openCreateProjectSheet,
+          ),
+          IconButton(
             icon: const Icon(Icons.refresh_rounded),
             tooltip: "刷新",
             onPressed: () {
@@ -105,17 +110,7 @@ class _PhotoViewState extends State<PhotoView> {
             title: "还没有项目",
             message: "先创建第一个项目，再添加照片和凭证。",
             actionLabel: "创建项目",
-            onAction: () => showCreateProjectSheet(
-              onCreated: (project) async {
-                await controller.loadPhotos();
-                await evidenceController.loadEvidence();
-                await expenseController.loadRecords();
-                if (!mounted) return;
-                await Get.to(
-                  () => ProjectGalleryView(projectName: project.name),
-                );
-              },
-            ),
+            onAction: _openCreateProjectSheet,
           );
         }
 
@@ -178,6 +173,18 @@ class _PhotoViewState extends State<PhotoView> {
     return records
         .where((record) => record.projectName == project)
         .fold(0.0, (sum, record) => sum + record.amount);
+  }
+
+  void _openCreateProjectSheet() {
+    showCreateProjectSheet(
+      onCreated: (project) async {
+        await controller.loadPhotos();
+        await evidenceController.loadEvidence();
+        await expenseController.loadRecords();
+        if (!mounted) return;
+        await Get.to(() => ProjectGalleryView(projectName: project.name));
+      },
+    );
   }
 
   List<ProjectSummary> _projectSummaries({

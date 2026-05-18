@@ -24,6 +24,9 @@ class SyncService extends GetxService {
   Future<bool>? _activeSync;
   Future<void>? _claimUnownedRecordsFuture;
   String? _claimUnownedRecordsUserId;
+  Future<void>? _bootstrapSyncFuture;
+  String? _bootstrapSyncUserId;
+  DateTime? _lastBootstrapSyncAt;
   Worker? _authWorker;
   static const int _pullPageSize = 500;
   static const Duration _serverTimeTimeout = Duration(seconds: 10);
@@ -238,6 +241,35 @@ class SyncService extends GetxService {
   }
 
   Future<void> _claimUnownedRecordsThenSync(
+    String userId, {
+    required String reason,
+  }) async {
+    final activeBootstrap = _bootstrapSyncFuture;
+    if (activeBootstrap != null && _bootstrapSyncUserId == userId) {
+      LogService.to.debug('Sync', 'Reuse bootstrap sync for $reason');
+      return activeBootstrap;
+    }
+
+    final lastBootstrapAt = _lastBootstrapSyncAt;
+    if (_bootstrapSyncUserId == userId &&
+        lastBootstrapAt != null &&
+        DateTime.now().difference(lastBootstrapAt) <
+            const Duration(seconds: 2)) {
+      LogService.to.debug('Sync', 'Skip duplicate bootstrap sync for $reason');
+      return;
+    }
+
+    _bootstrapSyncUserId = userId;
+    _bootstrapSyncFuture = _runBootstrapSync(userId, reason: reason);
+    try {
+      await _bootstrapSyncFuture;
+      _lastBootstrapSyncAt = DateTime.now();
+    } finally {
+      _bootstrapSyncFuture = null;
+    }
+  }
+
+  Future<void> _runBootstrapSync(
     String userId, {
     required String reason,
   }) async {
@@ -1055,9 +1087,7 @@ class SyncService extends GetxService {
         pullStartedAt: pullStartedAt,
       );
 
-      for (var map in logsData) {
-        await DbService.to.syncRemoteLogToLocal(map);
-      }
+      await DbService.to.syncRemoteLogsToLocal(logsData);
 
       final subsData = await _pullPagedRows(
         table: _subscriptionsTable,
@@ -1067,9 +1097,7 @@ class SyncService extends GetxService {
         pullStartedAt: pullStartedAt,
       );
 
-      for (var map in subsData) {
-        await DbService.to.syncRemoteSubscriptionToLocal(map);
-      }
+      await DbService.to.syncRemoteSubscriptionsToLocal(subsData);
 
       final projectsData = await _pullPagedRows(
         table: _projectsTable,
@@ -1079,9 +1107,7 @@ class SyncService extends GetxService {
         pullStartedAt: pullStartedAt,
       );
 
-      for (var map in projectsData) {
-        await DbService.to.syncRemoteProjectToLocal(map);
-      }
+      await DbService.to.syncRemoteProjectsToLocal(projectsData);
 
       final evidenceData = await _pullPagedRows(
         table: _expenseEvidenceTable,
@@ -1091,17 +1117,11 @@ class SyncService extends GetxService {
         pullStartedAt: pullStartedAt,
       );
 
+      await DbService.to.syncRemoteEvidenceRowsToLocal(evidenceData);
       for (var map in evidenceData) {
-        await DbService.to.syncRemoteEvidenceToLocal(map);
         final syncId = _parseRemoteString(map['sync_id']);
         if (map['deleted_at'] == null && syncId != null) {
-          ExpenseEvidence? evidence;
-          for (final item in await DbService.to.getAllEvidence()) {
-            if (item.syncId == syncId) {
-              evidence = item;
-              break;
-            }
-          }
+          final evidence = await DbService.to.getEvidenceBySyncId(syncId);
           if (evidence != null) {
             try {
               await downloadEvidenceFile(evidence);
@@ -1123,9 +1143,7 @@ class SyncService extends GetxService {
         pullStartedAt: pullStartedAt,
       );
 
-      for (var map in expenseRecordsData) {
-        await DbService.to.syncRemoteExpenseRecordToLocal(map);
-      }
+      await DbService.to.syncRemoteExpenseRecordsToLocal(expenseRecordsData);
 
       _storage.write(_lastPullCursorKey, pullStartedAt.toIso8601String());
 
@@ -1147,69 +1165,57 @@ class SyncService extends GetxService {
   Future<bool> _pushUnsyncedData() async {
     try {
       // Work Logs: unsynced (remoteId == null) or dirty
-      final allLogs = await DbService.to.getAllLogsForSync();
+      final allLogs = await DbService.to.getPendingLogsForSync();
       var success = true;
       var workLogAttempts = 0;
       var workLogFailures = 0;
       for (var log in allLogs) {
-        if (log.remoteId == null || log.isDirty || log.pendingDelete) {
-          workLogAttempts++;
-          final pushed = await pushWorkLog(log);
-          if (!pushed) workLogFailures++;
-          success = pushed && success;
-        }
+        workLogAttempts++;
+        final pushed = await pushWorkLog(log);
+        if (!pushed) workLogFailures++;
+        success = pushed && success;
       }
 
       // Subscriptions
-      final allSubs = await DbService.to.getAllSubscriptionsForSync();
+      final allSubs = await DbService.to.getPendingSubscriptionsForSync();
       var subscriptionAttempts = 0;
       var subscriptionFailures = 0;
       for (var sub in allSubs) {
-        if (sub.remoteId == null || sub.isDirty || sub.pendingDelete) {
-          subscriptionAttempts++;
-          final pushed = await pushSubscription(sub);
-          if (!pushed) subscriptionFailures++;
-          success = pushed && success;
-        }
+        subscriptionAttempts++;
+        final pushed = await pushSubscription(sub);
+        if (!pushed) subscriptionFailures++;
+        success = pushed && success;
       }
 
-      final allProjects = await DbService.to.getAllProjectsForSync();
+      final allProjects = await DbService.to.getPendingProjectsForSync();
       var projectAttempts = 0;
       var projectFailures = 0;
       for (var project in allProjects) {
-        if (project.remoteId == null ||
-            project.isDirty ||
-            project.pendingDelete) {
-          projectAttempts++;
-          final pushed = await pushProject(project);
-          if (!pushed) projectFailures++;
-          success = pushed && success;
-        }
+        projectAttempts++;
+        final pushed = await pushProject(project);
+        if (!pushed) projectFailures++;
+        success = pushed && success;
       }
 
-      final allEvidence = await DbService.to.getAllEvidenceForSync();
+      final allEvidence = await DbService.to.getPendingEvidenceForSync();
       var evidenceAttempts = 0;
       var evidenceFailures = 0;
       for (var item in allEvidence) {
-        if (item.remoteId == null || item.isDirty || item.pendingDelete) {
-          evidenceAttempts++;
-          final pushed = await pushEvidence(item);
-          if (!pushed) evidenceFailures++;
-          success = pushed && success;
-        }
+        evidenceAttempts++;
+        final pushed = await pushEvidence(item);
+        if (!pushed) evidenceFailures++;
+        success = pushed && success;
       }
 
       final allExpenseRecords = await DbService.to
-          .getAllExpenseRecordsForSync();
+          .getPendingExpenseRecordsForSync();
       var expenseRecordAttempts = 0;
       var expenseRecordFailures = 0;
       for (var item in allExpenseRecords) {
-        if (item.remoteId == null || item.isDirty || item.pendingDelete) {
-          expenseRecordAttempts++;
-          final pushed = await pushExpenseRecord(item);
-          if (!pushed) expenseRecordFailures++;
-          success = pushed && success;
-        }
+        expenseRecordAttempts++;
+        final pushed = await pushExpenseRecord(item);
+        if (!pushed) expenseRecordFailures++;
+        success = pushed && success;
       }
 
       LogService.to.info(
