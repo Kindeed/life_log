@@ -12,14 +12,17 @@ class ThemeController extends GetxController {
 
   final _storage = GetStorage();
   static const _key = 'theme_mode';
+  static const _dynamicColorKey = 'dynamic_color_enabled';
 
   // 当前主题模式
   final Rx<AppThemeMode> themeMode = AppThemeMode.system.obs;
+  final RxBool dynamicColorEnabled = true.obs;
 
   @override
   void onInit() {
     super.onInit();
     _loadThemeMode();
+    _loadDynamicColor();
   }
 
   /// 从本地存储加载主题模式
@@ -28,6 +31,10 @@ class ThemeController extends GetxController {
     if (savedMode != null && savedMode < AppThemeMode.values.length) {
       themeMode.value = AppThemeMode.values[savedMode];
     }
+  }
+
+  void _loadDynamicColor() {
+    dynamicColorEnabled.value = _storage.read<bool>(_dynamicColorKey) ?? true;
   }
 
   /// 设置主题模式
@@ -47,6 +54,12 @@ class ThemeController extends GetxController {
         Get.changeThemeMode(ThemeMode.dark);
         break;
     }
+  }
+
+  void setDynamicColorEnabled(bool enabled) {
+    if (dynamicColorEnabled.value == enabled) return;
+    dynamicColorEnabled.value = enabled;
+    _storage.write(_dynamicColorKey, enabled);
   }
 
   /// 获取 Flutter ThemeMode

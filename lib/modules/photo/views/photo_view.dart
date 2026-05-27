@@ -85,6 +85,11 @@ class _PhotoViewState extends State<PhotoView> {
           ),
         ],
       ),
+      floatingActionButton: FloatingActionButton.extended(
+        onPressed: _openCreateProjectSheet,
+        icon: const Icon(Icons.create_new_folder_rounded),
+        label: const Text("创建项目"),
+      ),
       body: Obx(() {
         final isLoading =
             controller.isLoading.value || projectController.isLoading.value;

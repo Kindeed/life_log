@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'dart:ui';
 
+import 'package:dynamic_color/dynamic_color.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
@@ -85,11 +86,7 @@ Future<void> _initializeCloudServices(
     logService.info('Startup', '云服务已注册');
   } catch (error, stackTrace) {
     _cloudStartupWarning = '云同步初始化失败，当前已进入本地模式';
-    logService.error(
-      'Startup',
-      '${_cloudStartupWarning!}: $error',
-      stackTrace,
-    );
+    logService.error('Startup', '${_cloudStartupWarning!}: $error', stackTrace);
   }
 }
 
@@ -172,36 +169,43 @@ class MyApp extends StatelessWidget {
       minTextAdapt: true,
       splitScreenMode: true,
       builder: (context, child) {
-        return GetMaterialApp(
-          debugShowCheckedModeBanner: false,
-          title: 'LifeLog',
-          theme: AppTheme.light,
-          darkTheme: AppTheme.dark,
-          themeMode: themeController.flutterThemeMode,
-          initialBinding: AppBinding(),
-          initialRoute: '/',
-          builder: (context, child) {
-            final warning = _cloudStartupWarning;
-            if (warning != null && !_cloudStartupWarningShown) {
-              _cloudStartupWarningShown = true;
-              WidgetsBinding.instance.addPostFrameCallback((_) {
-                Get.snackbar('本地模式', warning);
-              });
-            }
-            return child ?? const SizedBox.shrink();
-          },
-          getPages: [
-            GetPage(
-              name: '/',
-              page: () => const TabsView(),
-              binding: TabsBinding(),
-            ),
-            GetPage(
-              name: '/login',
-              page: () => const LoginView(),
-              binding: LoginBinding(),
-            ),
-          ],
+        return Obx(
+          () => DynamicColorBuilder(
+            builder: (lightDynamic, darkDynamic) {
+              final useDynamic = themeController.dynamicColorEnabled.value;
+              return GetMaterialApp(
+                debugShowCheckedModeBanner: false,
+                title: 'LifeLog',
+                theme: AppTheme.lightWith(useDynamic ? lightDynamic : null),
+                darkTheme: AppTheme.darkWith(useDynamic ? darkDynamic : null),
+                themeMode: themeController.flutterThemeMode,
+                initialBinding: AppBinding(),
+                initialRoute: '/',
+                builder: (context, child) {
+                  final warning = _cloudStartupWarning;
+                  if (warning != null && !_cloudStartupWarningShown) {
+                    _cloudStartupWarningShown = true;
+                    WidgetsBinding.instance.addPostFrameCallback((_) {
+                      Get.snackbar('本地模式', warning);
+                    });
+                  }
+                  return child ?? const SizedBox.shrink();
+                },
+                getPages: [
+                  GetPage(
+                    name: '/',
+                    page: () => const TabsView(),
+                    binding: TabsBinding(),
+                  ),
+                  GetPage(
+                    name: '/login',
+                    page: () => const LoginView(),
+                    binding: LoginBinding(),
+                  ),
+                ],
+              );
+            },
+          ),
         );
       },
     );

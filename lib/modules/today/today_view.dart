@@ -254,7 +254,8 @@ class _DueSoonCard extends StatelessWidget {
               ),
               const Spacer(),
               TextButton(
-                onPressed: () => TabsController.to.changePage(2),
+                onPressed: () =>
+                    TabsController.to.goTo(TabsDestination.finance),
                 child: const Text('查看全部'),
               ),
             ],
@@ -354,7 +355,7 @@ class _QuickActions extends StatelessWidget {
             );
           }),
           _action('项目', Icons.folder_special_rounded, () {
-            TabsController.to.changePage(3);
+            TabsController.to.goTo(TabsDestination.project);
           }),
         ],
       ),

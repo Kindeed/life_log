@@ -4,6 +4,7 @@
 
 list(APPEND FLUTTER_PLUGIN_LIST
   app_links
+  dynamic_color
   file_selector_windows
   geolocator_windows
   isar_flutter_libs

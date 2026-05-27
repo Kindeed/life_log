@@ -62,6 +62,7 @@ This is the active defect ledger. `REVIEW_REPORT.md` is historical context only.
 | U45 | Medium | fixed | project photo export | 项目图片多选底部栏在窄屏会把“选择了 N 张”挤成竖排，导致导出按钮看起来错位或不可用。 | Fixed: multi-select uses a stable stacked bottom bar with one-line selection text and equal-width delete/export/finish actions. |
 | U46 | High | fixed | work log startup refresh | 冷启动进入工时页后，已有工时记录仍可能不显示，必须点击页面或切换状态才刷新，说明日历单元格和详情区仍存在响应式订阅缺口。 | Fixed: day cells and the selected-day detail area now explicitly observe the work-log refresh version, so async startup loads repaint without user interaction. |
 | U47 | Medium | fixed | work log calendar default | 工时页默认打开为周视图，不符合当前希望“打开默认是月视图”的产品行为。 | Fixed: the work-log controller now initializes the calendar format to month while preserving the existing month/week toggle. |
+| U48 | Medium | fixed | main tabs / Material 3 UI | 底部导航实际只有四个页面，但中间快捷添加入口让主导航看起来像五栏；添加入口和页面主任务也不符合当前 Material 3 方向。 | Fixed: replaced the custom Apple-style tab bar with Material 3 `NavigationBar` / wide-screen `NavigationRail`, moved primary add actions into work/finance/project pages, and added dynamic color support in appearance settings. |
 | D7 | High | fixed | sync parsing | Remote row parsing and push response handling used `DateTime.parse` / direct casts and could abort a sync path on malformed or null fields. | Fixed: pull rows, push responses, server-time reads, and stored cursors now use safe numeric/string/date parsing with fallbacks or controlled failure for invalid remote IDs. |
 | D8 | Medium | fixed | sync trigger dedupe | `syncAll` skipped a fresh manual sync for 2 seconds after the previous one finished. | Fixed: only an in-flight sync is reused now. |
 | U14 | Medium | fixed | `ExpenseRecordEditView` | One-time expense add/edit UI is visually inconsistent with the current finance design system. | Fixed: reworked to a clearer amount-first card, category chips, tokenized surfaces, and stable bottom actions. |
@@ -168,7 +169,7 @@ This is the active defect ledger. `REVIEW_REPORT.md` is historical context only.
 
 | ID | Severity | Status | Area | Finding | Fix / Acceptance |
 | --- | --- | --- | --- | --- | --- |
-| U41 | Low | open | TodayView | `today_view.dart` 中 `TabsController.to.changePage(2)` 为硬编码 Tab 索引。若 Tab 顺序变更，将跳转至错误页面。 | 替换为命名路由或定义常量。 |
+| U41 | Low | fixed | TodayView | `today_view.dart` 中 `TabsController.to.changePage(2)` 为硬编码 Tab 索引。若 Tab 顺序变更，将跳转至错误页面。 | Fixed: added `TabsDestination` constants and replaced hard-coded TodayView tab jumps with destination-based navigation; `TabsView` now observes external tab changes and syncs the `PageView`. |
 
 ### Tooling / Configuration
 

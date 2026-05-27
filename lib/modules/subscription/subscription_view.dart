@@ -29,15 +29,31 @@ class SubscriptionView extends StatelessWidget {
 
     return Scaffold(
       backgroundColor: theme.scaffoldBackgroundColor,
-      appBar: AppBar(title: const Text("财务")),
+      appBar: AppBar(
+        title: const Text("财务"),
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.add_rounded),
+            tooltip: "添加支出",
+            onPressed: () => _showAddSheet(),
+          ),
+        ],
+      ),
+      floatingActionButton: FloatingActionButton.extended(
+        onPressed: () => _showAddSheet(),
+        icon: const Icon(Icons.add_rounded),
+        label: const Text("添加支出"),
+      ),
       body: SafeArea(
         child: Obx(() {
           final visibleSubs = logic.visibleSubs;
           if (visibleSubs.isEmpty) {
-            return const AppEmptyState(
+            return AppEmptyState(
               icon: Icons.subscriptions_outlined,
               title: "还没有固定支出",
-              message: "使用底部「添加支出」新增订阅、房租或月度开销。",
+              message: "使用右下角「添加支出」新增订阅、房租或月度开销。",
+              actionLabel: "添加支出",
+              onAction: () => _showAddSheet(),
             );
           }
 

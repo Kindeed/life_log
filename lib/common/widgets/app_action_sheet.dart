@@ -40,12 +40,12 @@ class AppActionSheet {
                 AppSpacing.xl,
               ),
               decoration: BoxDecoration(
-                color: theme.cardColor,
+                color: theme.colorScheme.surface,
                 borderRadius: const BorderRadius.vertical(
                   top: Radius.circular(AppRadius.sheet),
                 ),
                 border: Border(
-                  top: BorderSide(color: semantic.border, width: 1),
+                  top: BorderSide(color: theme.colorScheme.outlineVariant),
                 ),
               ),
               child: Column(
@@ -68,7 +68,6 @@ class AppActionSheet {
                       title,
                       style: theme.textTheme.titleMedium?.copyWith(
                         fontWeight: FontWeight.w700,
-                        letterSpacing: 0,
                       ),
                     ),
                     const SizedBox(height: AppSpacing.sm),

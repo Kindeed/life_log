@@ -89,29 +89,22 @@ class AppButton extends StatelessWidget {
 
     switch (variant) {
       case AppButtonVariant.primary:
-        return ElevatedButton(
+        return FilledButton(
           onPressed: callback,
-          style: ElevatedButton.styleFrom(
+          style: FilledButton.styleFrom(
             minimumSize: minimumSize,
-            backgroundColor: Theme.of(context).colorScheme.primary,
-            foregroundColor: Theme.of(context).colorScheme.onPrimary,
             disabledBackgroundColor: semantic.mutedSurface,
             disabledForegroundColor: Theme.of(context).disabledColor,
-            elevation: 0,
-            shadowColor: Colors.transparent,
             shape: shape,
             textStyle: textStyle,
           ),
           child: child,
         );
       case AppButtonVariant.secondary:
-        return OutlinedButton(
+        return FilledButton.tonal(
           onPressed: callback,
-          style: OutlinedButton.styleFrom(
+          style: FilledButton.styleFrom(
             minimumSize: minimumSize,
-            foregroundColor: Theme.of(context).colorScheme.primary,
-            backgroundColor: semantic.mutedSurface,
-            side: BorderSide(color: semantic.border, width: 1),
             shape: shape,
             textStyle: textStyle,
           ),
@@ -128,14 +121,12 @@ class AppButton extends StatelessWidget {
           child: child,
         );
       case AppButtonVariant.destructive:
-        return ElevatedButton(
+        return FilledButton(
           onPressed: callback,
-          style: ElevatedButton.styleFrom(
+          style: FilledButton.styleFrom(
             minimumSize: minimumSize,
             backgroundColor: Theme.of(context).colorScheme.errorContainer,
             foregroundColor: Theme.of(context).colorScheme.onErrorContainer,
-            elevation: 0,
-            shadowColor: Colors.transparent,
             shape: shape,
             textStyle: textStyle,
           ),

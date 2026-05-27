@@ -60,7 +60,7 @@ class ProfileView extends StatelessWidget {
                       icon: Icons.palette_outlined,
                       iconColor: semantic.expense,
                       title: '外观设置',
-                      subtitle: '主题、深色模式',
+                      subtitle: '主题、深色模式、动态取色',
                       onTap: () => Get.to(() => const AppearanceView()),
                     ),
                   ],

@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:get/get.dart';
-import '../../../common/theme/app_colors.dart';
 import '../../../common/theme/theme_controller.dart';
 import '../../../common/widgets/app_card.dart';
 
@@ -33,6 +32,10 @@ class AppearanceView extends StatelessWidget {
               textPrimary,
               textSecondary,
             ),
+            SizedBox(height: 22.h),
+            _buildSectionTitle('颜色', textPrimary),
+            SizedBox(height: 12.h),
+            _buildDynamicColorOption(themeController, theme, textSecondary),
           ],
         ),
       ),
@@ -108,6 +111,7 @@ class AppearanceView extends StatelessWidget {
     required Color textPrimary,
     required Color textSecondary,
   }) {
+    final selectedColor = theme.colorScheme.primary;
     return InkWell(
       onTap: onTap,
       borderRadius: BorderRadius.circular(16.r),
@@ -117,7 +121,7 @@ class AppearanceView extends StatelessWidget {
           children: [
             Icon(
               icon,
-              color: isSelected ? AppColors.primaryBlue : textSecondary,
+              color: isSelected ? selectedColor : textSecondary,
               size: 24.sp,
             ),
             SizedBox(width: 14.w),
@@ -127,17 +131,38 @@ class AppearanceView extends StatelessWidget {
                 style: TextStyle(
                   fontSize: 15.sp,
                   fontWeight: FontWeight.w500,
-                  color: isSelected ? AppColors.primaryBlue : textPrimary,
+                  color: isSelected ? selectedColor : textPrimary,
                 ),
               ),
             ),
             if (isSelected)
-              Icon(
-                Icons.check_rounded,
-                color: AppColors.primaryBlue,
-                size: 22.sp,
-              ),
+              Icon(Icons.check_rounded, color: selectedColor, size: 22.sp),
           ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildDynamicColorOption(
+    ThemeController controller,
+    ThemeData theme,
+    Color textSecondary,
+  ) {
+    return AppCard(
+      padding: EdgeInsets.zero,
+      child: Obx(
+        () => SwitchListTile(
+          value: controller.dynamicColorEnabled.value,
+          onChanged: controller.setDynamicColorEnabled,
+          secondary: Icon(
+            Icons.auto_awesome_rounded,
+            color: theme.colorScheme.primary,
+          ),
+          title: const Text('动态取色'),
+          subtitle: Text(
+            'Android 12 及以上跟随系统壁纸颜色，其他平台自动使用默认主题色。',
+            style: TextStyle(color: textSecondary),
+          ),
         ),
       ),
     );

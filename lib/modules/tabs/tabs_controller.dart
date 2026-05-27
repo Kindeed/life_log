@@ -1,5 +1,7 @@
 import 'package:get/get.dart';
 
+enum TabsDestination { work, finance, project, profile }
+
 class TabsController extends GetxController {
   static TabsController get to => Get.find();
 
@@ -7,7 +9,12 @@ class TabsController extends GetxController {
   final currentIndex = 0.obs;
 
   void changePage(int index) {
+    index = index.clamp(0, TabsDestination.values.length - 1).toInt();
     if (index == currentIndex.value) return;
     currentIndex.value = index;
+  }
+
+  void goTo(TabsDestination destination) {
+    changePage(destination.index);
   }
 }

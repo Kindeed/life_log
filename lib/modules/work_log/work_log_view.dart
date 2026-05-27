@@ -9,6 +9,7 @@ import 'package:life_log/common/widgets/app_loading.dart';
 import 'package:life_log/modules/work_log/widgets/calendar_header.dart';
 import 'package:life_log/modules/work_log/widgets/day_log_list.dart';
 import 'package:life_log/modules/work_log/widgets/day_cell.dart';
+import 'package:life_log/modules/work_log/views/log_edit_view.dart';
 import 'work_log_controller.dart';
 import 'work_log_model.dart';
 
@@ -25,6 +26,11 @@ class WorkLogView extends StatelessWidget {
 
     return Scaffold(
       backgroundColor: theme.scaffoldBackgroundColor,
+      floatingActionButton: FloatingActionButton.extended(
+        onPressed: () => _openLogEdit(logic),
+        icon: const Icon(Icons.edit_calendar_rounded),
+        label: const Text('记工时'),
+      ),
       body: SafeArea(
         child: CustomScrollView(
           slivers: [
@@ -122,7 +128,7 @@ class WorkLogView extends StatelessWidget {
                       child: const AppEmptyState(
                         icon: Icons.edit_calendar_rounded,
                         title: "这天还没有记录",
-                        message: "使用底部「记工时」添加工作、出差、请假或休息。",
+                        message: "使用右下角「记工时」添加工作、出差、请假或休息。",
                       ),
                     );
                   }
@@ -140,6 +146,17 @@ class WorkLogView extends StatelessWidget {
             ),
           ],
         ),
+      ),
+    );
+  }
+
+  void _openLogEdit(WorkLogController logic) {
+    final selectedDate = logic.selectedDay.value;
+    Get.to(
+      () => LogEditView(
+        selectedDate: selectedDate,
+        existingLog: logic.getLogForDay(selectedDate),
+        initialType: LogType.work,
       ),
     );
   }

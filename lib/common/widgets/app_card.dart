@@ -15,41 +15,37 @@ class AppCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final semantic = theme.semanticColors;
-
-    final content = Container(
-      padding: padding ?? const EdgeInsets.all(AppSpacing.lg),
-      decoration: BoxDecoration(
-        color: theme.cardColor,
-        borderRadius: BorderRadius.circular(AppRadius.lg),
-        border: Border.all(
-          color: semantic.border.withValues(
-            alpha: theme.brightness == Brightness.dark ? 0.62 : 0.9,
-          ),
-          width: 1,
-        ),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(
-              alpha: theme.brightness == Brightness.dark ? 0.18 : 0.035,
-            ),
-            blurRadius: 22,
-            offset: const Offset(0, 8),
-          ),
-        ],
+    final isDark = theme.brightness == Brightness.dark;
+    final radius = BorderRadius.circular(AppRadius.lg);
+    final color = Color.alphaBlend(
+      theme.colorScheme.primary.withValues(alpha: isDark ? 0.05 : 0.025),
+      theme.colorScheme.surfaceContainerHighest.withValues(
+        alpha: isDark ? 0.36 : 0.52,
       ),
+    );
+
+    final content = Padding(
+      padding: padding ?? const EdgeInsets.all(AppSpacing.lg),
       child: child,
     );
 
-    if (onTap == null) return content;
-
-    return Material(
-      color: Colors.transparent,
-      borderRadius: BorderRadius.circular(AppRadius.lg),
-      child: InkWell(
-        onTap: onTap,
-        borderRadius: BorderRadius.circular(AppRadius.lg),
-        child: content,
+    return Card(
+      margin: EdgeInsets.zero,
+      elevation: 0,
+      shadowColor: Colors.transparent,
+      surfaceTintColor: Colors.transparent,
+      color: color,
+      shape: RoundedRectangleBorder(
+        borderRadius: radius,
+        side: BorderSide(
+          color: semantic.border.withValues(alpha: isDark ? 0.5 : 0.72),
+          width: 1,
+        ),
       ),
+      clipBehavior: Clip.antiAlias,
+      child: onTap == null
+          ? content
+          : InkWell(onTap: onTap, borderRadius: radius, child: content),
     );
   }
 }
