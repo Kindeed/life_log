@@ -3,7 +3,7 @@ import 'package:life_log/common/db/db_service.dart';
 import 'package:life_log/common/services/log_service.dart';
 import 'package:life_log/common/services/sync_service.dart';
 import 'package:life_log/common/utils/record_validators.dart';
-import 'package:life_log/common/utils/sync_id_generator.dart';
+import 'package:life_log/common/utils/sync_id_policy.dart';
 import 'package:life_log/modules/project/project_repository.dart';
 
 import 'expense_record_model.dart';
@@ -21,7 +21,7 @@ class ExpenseRecordRepository extends GetxService {
 
   Future<ExpenseRecord> saveExpenseRecord(ExpenseRecord record) async {
     validateExpenseRecord(record);
-    record.syncId ??= SyncIdGenerator.newSyncId();
+    record.syncId = ensureSyncId(record.syncId);
     if (record.projectName?.trim().isNotEmpty == true) {
       final project = await ProjectRepository.to.ensureSyncableProject(
         record.projectName!.trim(),

@@ -21,6 +21,7 @@ class AuthService extends GetxService {
     _authStateSub = _client.auth.onAuthStateChange.listen((data) {
       final AuthChangeEvent event = data.event;
       final Session? session = data.session;
+      final hadUser = currentUser.value != null;
 
       currentUser.value = session?.user;
 
@@ -28,6 +29,9 @@ class AuthService extends GetxService {
         LogService.to.info('Auth', 'User signed in: ${session?.user.email}');
       } else if (event == AuthChangeEvent.signedOut) {
         LogService.to.info('Auth', 'User signed out');
+      } else if (session == null && hadUser) {
+        LogService.to.warning('Auth', 'Auth session cleared by Supabase');
+        _redirectToLogin();
       }
     });
   }
@@ -63,9 +67,47 @@ class AuthService extends GetxService {
   Future<void> signOut() async {
     try {
       await _client.auth.signOut();
+      currentUser.value = null;
     } catch (e) {
       LogService.to.error('Auth', 'Sign out failed: $e');
       rethrow;
+    }
+  }
+
+  Future<void> handleSessionExpired(
+    Object error, {
+    String source = 'unknown',
+  }) async {
+    if (!isSessionExpiredError(error)) return;
+
+    LogService.to.warning(
+      'Auth',
+      'Session expired during $source; signing out locally',
+    );
+    currentUser.value = null;
+    try {
+      await _client.auth.signOut();
+    } catch (e) {
+      LogService.to.warning('Auth', 'Remote sign out after expiry failed: $e');
+    }
+    _redirectToLogin();
+  }
+
+  bool isSessionExpiredError(Object error) {
+    final text = error.toString().toLowerCase();
+    return text.contains('401') ||
+        text.contains('unauthorized') ||
+        text.contains('jwt expired') ||
+        text.contains('invalid jwt') ||
+        text.contains('invalid refresh token') ||
+        text.contains('refresh token not found') ||
+        text.contains('session_not_found') ||
+        text.contains('invalid_session');
+  }
+
+  void _redirectToLogin() {
+    if (Get.currentRoute != '/login') {
+      Get.offAllNamed('/login');
     }
   }
 

@@ -16,6 +16,7 @@ class ExpenseRecord {
   DateTime? remoteUpdatedAt;
   DateTime? syncedAt;
   bool isDirty = false;
+  @Index()
   DateTime? deletedAt;
   bool pendingDelete = false;
 

@@ -6,7 +6,7 @@ import '../../../common/services/sync_service.dart';
 import '../../../common/services/log_service.dart';
 import '../../../common/utils/date_utils.dart';
 import '../../../common/utils/record_validators.dart';
-import '../../../common/utils/sync_id_generator.dart';
+import '../../../common/utils/sync_id_policy.dart';
 import 'work_log_model.dart';
 
 class WorkLogRepository extends GetxService {
@@ -90,7 +90,7 @@ class WorkLogRepository extends GetxService {
     }
 
     validateWorkLog(log);
-    log.syncId ??= SyncIdGenerator.newSyncId();
+    log.syncId = ensureSyncId(log.syncId);
 
     // 1. 本地存储 (包含产生 dirty/remoteId)
     await DbService.to.addLog(log);

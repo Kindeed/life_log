@@ -56,6 +56,7 @@ class ProfileController extends GetxController {
     return await SyncService.to.syncAll(
       reason: 'manual',
       forceFullRefresh: true,
+      forceNew: true,
     );
   }
 }

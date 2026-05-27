@@ -5,6 +5,22 @@
 
 This is the active defect ledger. `REVIEW_REPORT.md` is historical context only. Photo sync findings from older reports are superseded by `AGENTS.md`: photos remain local-only and must not enter Supabase sync.
 
+## Regression Audit (2026-05-27)
+
+- Scope: checked every tracker entry against the current working tree by static code inspection, then reran `flutter analyze --no-fatal-infos`, `flutter test`, and `git diff --check`.
+- Reopened: U20. `SubscriptionView` again exposes duplicate add-entry actions in the empty state (`AppBar` add button, FAB, and `AppEmptyState` action all point to the same flow).
+- Newly closed from this audit: D10. The baseline `20260429_expense_evidence.sql` migration now includes `updated_at timestamptz not null default now()`.
+- Still open / still reproducible in current code: D13, D18, D21, D22, T3, T4, T5.
+- Still pending external validation: P1-7, P2-5, P3-4. Local analyze/test can pass, but the tracked real-device smoke checks are not represented by local CLI validation.
+- No same-problem recurrence found in this pass: D1, D2, D3, D4, D5, D6, D7, D8, D9, D11, D12, D14, D15, D16, D17, D19, D20, D23, D24, U1, U2, U3, U4, U5, U6, U7, U8, U9, U10, U11, U12, U13, U14, U15, U16, U17, U18, U19, U21, U22, U23, U24, U25, U26, U27, U28, U29, U30, U31, U32, U33, U34, U35, U36, U37, U38, U39, U40, U41, U42, U43, U44, U45, U46, U47, U48, U49, T1, T2, T6, T7, T8, C1, P25, P26, P27, P28, P29, P30, P31, P32, P33, P34, P35, P36, P37, P38, P1-1, P1-2, P1-3, P1-4, P1-5, P1-6, P2-1, P2-2, P2-3, P2-4, P3-1, P3-2, P3-3, H1, H2.
+
+## Remediation Audit (2026-05-27)
+
+- Fixed in this remediation pass: U20, D13, D18, D21, D22, T3, T4, T5.
+- Newly discovered and recorded: T9. `dart run build_runner build --delete-conflicting-outputs` succeeds but warns that the current `analyzer` version may not fully support the current SDK language version. Follow-up investigation confirmed this is blocked by `isar_generator 3.1.0+1` constraining `analyzer` to `<6.0.0`; fixing it requires an Isar/generator migration rather than a lockfile refresh.
+- Re-audit result after fixes: no recurrence found for U20, D13, D18, D21, D22, T3, T4, or T5 by static inspection; local CLI validation is listed at the end of this document.
+- Still pending external validation: P1-7, P2-5, P3-4. These remain real-device smoke tasks and were not marked fixed by local CLI checks alone.
+
 ## Data / Sync
 
 | ID | Severity | Status | Area | Finding | Fix / Acceptance |
@@ -35,7 +51,7 @@ This is the active defect ledger. `REVIEW_REPORT.md` is historical context only.
 | U13 | Medium | fixed | `WorkLogView` | Empty work-log detail area can overscroll indefinitely and the "记一笔" action feels unbounded. | Fixed: empty state occupies remaining viewport without an inner scroll body. |
 | U18 | High | fixed | `WorkLogView` / `DayCell` | Selected calendar day can look oval and clip content on tighter layouts. | Fixed: calendar cell uses a smaller tokenized box, tighter margin, and reduced corner radius to keep selected content legible. |
 | U19 | High | fixed | `WorkLogView` | Calendar rebuilds with `dataVersion` in the key and can discard taps in flight. | Fixed: table key now tracks the selected day only, so data refreshes do not recreate the calendar subtree. |
-| U20 | Medium | fixed | `SubscriptionView` | Empty state and FAB both expose "添加支出", creating duplicate entry points. | Fixed: the FAB is hidden when there are no fixed costs or project expenses yet. |
+| U20 | Medium | fixed | `SubscriptionView` | Empty state and FAB both expose "添加支出", creating duplicate entry points. Regression 2026-05-27: current empty state also kept an AppBar add button, so the same add flow could appear in three places. | Fixed: empty fixed-cost state now keeps only the AppBar add action, hides the FAB, and removes the empty-state action button. |
 | U21 | Medium | fixed | `CaptureDialog` | New-photo flow defaults to `DefaultProject`, which hides the create-project path. | Fixed: the project field starts blank and prompts the user to choose or create a project. |
 | U22 | Medium | fixed | `CaptureDialog` | Function-scoped text controllers are never disposed. | Fixed: capture dialog now uses a stateful sheet and disposes its controllers with the sheet lifecycle. |
 | U23 | High | fixed | `PhotoRepository` | Saved photo `fileName` can diverge from the actual archived filename after collision handling or rename. | Fixed: `fileName` now mirrors the basename of the real stored path. |
@@ -151,19 +167,19 @@ This is the active defect ledger. `REVIEW_REPORT.md` is historical context only.
 | ID | Severity | Status | Area | Finding | Fix / Acceptance |
 | --- | --- | --- | --- | --- | --- |
 | D9 | Critical | fixed | Sync - ExpenseRecord | `syncRemoteExpenseRecordToLocal` 中 `record.remoteId = remoteId` 为无条件赋值，而 WorkLog/Subscription/Evidence/Project 均使用条件赋值。不一致写法可能导致脏记录的 remoteId 被错误覆盖。 | Fixed: dirty ExpenseRecord remote pulls now use conditional `remoteId` assignment, matching the other sync entities. |
-| D10 | Critical | open | Sync - Migration | 迁移 `20260429_expense_evidence.sql` 创建表时缺少 `updated_at` 列，该列在后续迁移 `20260507_remote_schema_repair.sql` 中才添加。两个迁移之间存在窗口期，依赖 `updated_at` 的同步逻辑可能失败。 | 在 `20260429_expense_evidence.sql` 中添加 `updated_at timestamptz not null default now()` 列。 |
+| D10 | Critical | fixed | Sync - Migration | 迁移 `20260429_expense_evidence.sql` 创建表时缺少 `updated_at` 列，该列在后续迁移 `20260507_remote_schema_repair.sql` 中才添加。两个迁移之间存在窗口期，依赖 `updated_at` 的同步逻辑可能失败。 | Fixed: `20260429_expense_evidence.sql` now defines `updated_at timestamptz not null default now()` in the original table creation. |
 | D11 | Critical | invalidated | Sync - WorkLog | `saveLog` 在同日已有记录时，先通过 `_adoptCanonicalIdentity` 复制旧记录身份，再调用 `addLog`。若 `addLog` 抛出异常，旧记录身份已被覆盖但新数据未持久化，存在数据丢失风险。 | Invalidated: current code only mutates the incoming in-memory object before `addLog`; the existing Isar row is not overwritten before a successful write. Same-day mutation concurrency is tracked separately by D15. |
 | D12 | High | fixed | Local owner claim - PhotoItem | `claimUnownedRecordsForCurrentUser()` 认领 WorkLog、Subscription、ExpenseEvidence、ExpenseRecord、Project，但未认领本地 `PhotoItem`。未登录时创建的照片在登录后可能因本地账号隔离而不可见。 | Fixed: local-only `PhotoItem.ownerUserId` is claimed during owner migration without adding photo cloud-sync fields or photo sync paths. |
-| D13 | High | open | Sync - Backup | `restoreFromBackup` 关闭数据库后到重新初始化之间存在状态窗口，期间任何数据库访问都可能失败。`_rebuildDatabaseControllers` 仅删除控制器并依赖懒加载重建。 | 在关闭旧 DB 前预加载新 DB；或提供明确恢复状态 UI，防止期间访问。 |
+| D13 | High | fixed | Sync - Backup | `restoreFromBackup` 关闭数据库后到重新初始化之间存在状态窗口，期间任何数据库访问都可能失败。`_rebuildDatabaseControllers` 仅删除控制器并依赖懒加载重建。 | Fixed: restore now blocks the UI with a non-dismissible restoring state, prevents concurrent restore calls, deletes DB-backed controllers before closing Isar, and refreshes the app after reinitialization. |
 | D14 | High | fixed | Sync - Statistics | `refreshStats()` 使用 `Future.wait` 并发获取 4 个数据源，任一失败则 `catch` 仅记录错误，`_calculateAllStats()` 不执行，可能导致所有统计指标保持陈旧。 | Fixed: each statistics source loads with independent error handling, and full refresh recalculates from successful sources plus existing cached data. |
 | D15 | High | fixed | Sync - WorkLog race | `_normalizeDuplicateDays` 与 `saveLog` 均会删除同日重复记录，但 `saveLog` 运行在归一化保护锁之外，可能出现竞态。 | Fixed: duplicate-day normalization and same-day save cleanup now share one serialized mutation gate. |
 | D16 | High | fixed | Sync - Subscription | `reorderSubscriptions` 标记 `isDirty=true` 但不显式触发同步，用户关闭应用前排序变更可能丢失。 | Fixed: `SubscriptionRepository.reorderSubscriptions` pushes changed rows when cloud sync is registered. |
 | D17 | Medium | fixed | Sync - Project auto-create | `syncRemoteExpenseRecordToLocal` 自动创建缺失 Project 时，设置 `isDirty = false` 且无 `syncId`，该项目不会同步到云端。 | Fixed: remote expense pull auto-created projects now receive a `syncId` and `isDirty = true`. |
-| D18 | Medium | open | Performance - Index | 多个模型的 `deletedAt` 字段未建立索引，而查询会按 `deletedAt == null` 过滤软删除记录。记录数增长后查询性能可能下降。 | 为包含 `deletedAt` 过滤的模型评估并添加 `@Index()` 注解。 |
+| D18 | Medium | fixed | Performance - Index | 多个模型的 `deletedAt` 字段未建立索引，而查询会按 `deletedAt == null` 过滤软删除记录。记录数增长后查询性能可能下降。 | Fixed: added `@Index()` to `deletedAt` for WorkLog, Subscription, Project, ExpenseEvidence, and ExpenseRecord, then regenerated Isar code. |
 | D19 | Medium | invalidated | Sync - ExpenseRecord txn | `syncRemoteExpenseRecordToLocal` 在 writeTxn 内嵌套项目创建写入，Isar 事务行为需验证，可能导致不可预期错误。 | Invalidated: current code creates the missing Project with `isar.projects.put()` inside the existing outer transaction; it does not open a nested `writeTxn`. |
 | D20 | Medium | invalidated | Validation | `validateExpenseEvidence` 调用 `evidence.projectName.trim()` 时未判空，`projectName` 为 null 时会抛出异常。 | Invalidated: `ExpenseEvidence.projectName` is a non-null `late String` schema field, and the validator intentionally rejects empty strings while defaulting currency. |
-| D21 | Medium | open | Sync dedup | `syncAll` 复用 `_activeSync` 防重复，但手动下拉刷新等场景无法强制启动新同步。 | 增加 `forceNew` 参数，允许绕过复用机制。 |
-| D22 | Medium | open | Sync - syncId consistency | `syncId` 分配在不同实体间条件不一致，维护成本高且容易引入行为差异。 | 统一 syncId 分配策略，并补充回归测试。 |
+| D21 | Medium | fixed | Sync dedup | `syncAll` 复用 `_activeSync` 防重复，但手动下拉刷新等场景无法强制启动新同步。 | Fixed: `syncAll` now supports `forceNew`, and the profile/manual sync path uses it with full refresh. |
+| D22 | Medium | fixed | Sync - syncId consistency | `syncId` 分配在不同实体间条件不一致，维护成本高且容易引入行为差异。 | Fixed: sync ID assignment now goes through shared `ensureSyncId`, all syncable save/push paths use the same policy, and regression tests cover missing/blank/existing IDs. |
 | D23 | Low | fixed | Sync - RefreshGate loop | `_RefreshGate._runLoop` 在 `_rerun` 被触发时可能长时间循环。 | Fixed: statistics refresh gate caps one drain cycle at 8 reruns and drops excess pending requests with a log entry. |
 
 ### UI / Design System
@@ -176,9 +192,10 @@ This is the active defect ledger. `REVIEW_REPORT.md` is historical context only.
 
 | ID | Severity | Status | Area | Finding | Fix / Acceptance |
 | --- | --- | --- | --- | --- | --- |
-| T3 | Medium | open | CI/CD | `build.yml` 中 Supabase Secret 验证发生在依赖安装、代码生成、分析之后。若 Secret 缺失，前面步骤会白白执行。 | 将 Secret 验证移至 job 开始第一步。 |
-| T4 | Low | open | Dependencies | `pubspec.yaml` 中 `get: ^4.6.6` 使用 `^` 范围，未来大版本变化可能带来构建风险。 | 定期运行 `flutter pub outdated`，或按需要锁定依赖范围。 |
-| T5 | Medium | open | Auth | `AuthService` 无显式会话过期处理逻辑。Supabase 会话过期后，应用可能静默进入未登录状态，同步操作无声失败。 | 添加会话状态检查，在检测到 401 时自动登出并跳转登录页。 |
+| T3 | Medium | fixed | CI/CD | `build.yml` 中 Supabase Secret 验证发生在依赖安装、代码生成、分析之后。若 Secret 缺失，前面步骤会白白执行。 | Fixed: Supabase secret validation now runs as the first job step in both release and manual test APK workflows. |
+| T4 | Low | fixed | Dependencies | `pubspec.yaml` 中 `get: ^4.6.6` 使用 `^` 范围，未来大版本变化可能带来构建风险。 | Fixed: `get` is pinned to the currently resolved `4.7.3`, matching `pubspec.lock`. |
+| T5 | Medium | fixed | Auth | `AuthService` 无显式会话过期处理逻辑。Supabase 会话过期后，应用可能静默进入未登录状态，同步操作无声失败。 | Fixed: Auth and sync errors that look like expired/invalid sessions now clear local auth state, sign out, and redirect to `/login`. |
+| T9 | Low | deferred | Tooling | `dart run build_runner build --delete-conflicting-outputs` succeeds but warns that `analyzer 5.13.0` may not fully support the current SDK language version. `flutter pub upgrade analyzer build_runner --dry-run` reports no dependency changes, and local `isar_generator 3.1.0+1` constrains `analyzer` to `>=4.6.0 <6.0.0`. | Deferred: remove the warning by migrating the Isar generator/tooling stack to a version compatible with the current Flutter/Dart SDK, then rerun build_runner without the analyzer language-version warning. |
 
 ### Backup / Restore
 

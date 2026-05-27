@@ -7,7 +7,7 @@ import 'package:life_log/common/services/log_service.dart';
 import 'package:life_log/common/services/sync_service.dart';
 import 'package:life_log/common/utils/file_path_utils.dart';
 import 'package:life_log/common/utils/record_validators.dart';
-import 'package:life_log/common/utils/sync_id_generator.dart';
+import 'package:life_log/common/utils/sync_id_policy.dart';
 import 'package:life_log/modules/project/project_repository.dart';
 import 'package:path/path.dart' as p;
 import 'package:path_provider/path_provider.dart';
@@ -31,7 +31,7 @@ class EvidenceRepository extends GetxService {
     String? sourceExtension,
   }) async {
     validateExpenseEvidence(evidence);
-    evidence.syncId ??= SyncIdGenerator.newSyncId();
+    evidence.syncId = ensureSyncId(evidence.syncId);
     final project = await ProjectRepository.to.ensureSyncableProject(
       evidence.projectName,
     );

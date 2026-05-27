@@ -109,7 +109,34 @@ class DataManagementView extends StatelessWidget {
       );
 
       if (confirmed) {
-        await BackupService.restoreFromBackup(file);
+        Get.dialog(
+          const PopScope(
+            canPop: false,
+            child: Center(
+              child: Card(
+                child: Padding(
+                  padding: EdgeInsets.all(24),
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      CircularProgressIndicator(strokeWidth: 2.5),
+                      SizedBox(height: 16),
+                      Text('正在恢复数据，请勿操作'),
+                    ],
+                  ),
+                ),
+              ),
+            ),
+          ),
+          barrierDismissible: false,
+        );
+        try {
+          await BackupService.restoreFromBackup(file);
+        } finally {
+          if (Get.isDialogOpen == true) {
+            Get.back();
+          }
+        }
         Get.offAllNamed('/');
         Get.snackbar("恢复成功", "数据已恢复，应用已刷新。");
       }

@@ -10,7 +10,7 @@ import '../../modules/expense/expense_record_model.dart';
 import '../../modules/project/project_model.dart';
 import '../utils/date_utils.dart';
 import '../services/auth_service.dart';
-import '../utils/sync_id_generator.dart';
+import '../utils/sync_id_policy.dart';
 // import '../services/sync_service.dart'; // Removed cyclic dependency
 
 class DbService extends GetxService {
@@ -249,7 +249,7 @@ class DbService extends GetxService {
           project.name.trim().toLowerCase(),
         );
         if (syncable || _isProjectSyncEligible(project)) {
-          project.syncId ??= SyncIdGenerator.newSyncId();
+          project.syncId = ensureSyncId(project.syncId);
           project.isDirty = true;
         }
       }
@@ -874,7 +874,7 @@ class DbService extends GetxService {
     for (final project in await getAllProjects()) {
       if (project.name.toLowerCase() == safeName.toLowerCase()) {
         if (syncable && project.syncId == null) {
-          project.syncId = SyncIdGenerator.newSyncId();
+          project.syncId = ensureSyncId(project.syncId);
           project.isDirty = true;
           await addProject(project);
         }
@@ -887,7 +887,7 @@ class DbService extends GetxService {
       ..name = safeName
       ..createdAt = now
       ..updatedAt = now
-      ..syncId = syncable ? SyncIdGenerator.newSyncId() : null
+      ..syncId = syncable ? ensureSyncId(null) : null
       ..isDirty = syncable;
     project.id = await addProject(project);
     return project;
@@ -1418,7 +1418,7 @@ class DbService extends GetxService {
           ..ownerUserId = currentOwnerUserId
           ..createdAt = now
           ..updatedAt = now
-          ..syncId = SyncIdGenerator.newSyncId()
+          ..syncId = ensureSyncId(null)
           ..isDirty = true;
         project.id = await isar.projects.put(project);
       }

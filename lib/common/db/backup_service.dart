@@ -19,6 +19,7 @@ import 'package:path/path.dart' as p;
 /// 因为它没有需要管理的状态，仅执行一次性的文件操作。
 class BackupService {
   static const databaseOnlyNotice = '当前备份仅包含本地数据库，不包含照片和凭证文件本体。';
+  static bool _restoreInProgress = false;
 
   static Future<void> exportBackup() async {
     try {
@@ -30,10 +31,9 @@ class BackupService {
       await DbService.to.isar.copyToFile(backupPath);
 
       final xFile = XFile(backupPath);
-      await Share.shareXFiles(
-        [xFile],
-        text: 'LifeLog 数据库备份。$databaseOnlyNotice',
-      );
+      await Share.shareXFiles([
+        xFile,
+      ], text: 'LifeLog 数据库备份。$databaseOnlyNotice');
     } catch (e) {
       throw Exception("备份异常: $e");
     }
@@ -57,30 +57,40 @@ class BackupService {
   }
 
   static Future<void> restoreFromBackup(File backupFile) async {
-    final dbPath = _currentDatabasePath();
-    final existingDb = File(dbPath);
-    final tempDir = await getTemporaryDirectory();
-    final rollbackPath = p.join(
-      tempDir.path,
-      'LifeLog_Rollback_${DateTime.now().millisecondsSinceEpoch}.isar',
-    );
-    final candidatePath = p.join(
-      tempDir.path,
-      'LifeLog_Restore_${DateTime.now().millisecondsSinceEpoch}.isar',
-    );
-    final rollbackFile = File(rollbackPath);
-    final candidateFile = File(candidatePath);
-
-    if (!await backupFile.exists()) {
-      throw Exception("备份文件不存在");
+    if (_restoreInProgress) {
+      throw StateError('已有恢复任务正在进行，请等待完成');
     }
-
-    if (await existingDb.exists()) {
-      await DbService.to.isar.copyToFile(rollbackPath);
-    }
-    await backupFile.copy(candidatePath);
+    _restoreInProgress = true;
+    String? dbPath;
+    File? existingDb;
+    File? rollbackFile;
+    File? candidateFile;
 
     try {
+      dbPath = _currentDatabasePath();
+      existingDb = File(dbPath);
+      final tempDir = await getTemporaryDirectory();
+      final rollbackPath = p.join(
+        tempDir.path,
+        'LifeLog_Rollback_${DateTime.now().millisecondsSinceEpoch}.isar',
+      );
+      final candidatePath = p.join(
+        tempDir.path,
+        'LifeLog_Restore_${DateTime.now().millisecondsSinceEpoch}.isar',
+      );
+      rollbackFile = File(rollbackPath);
+      candidateFile = File(candidatePath);
+
+      if (!await backupFile.exists()) {
+        throw Exception("备份文件不存在");
+      }
+
+      if (await existingDb.exists()) {
+        await DbService.to.isar.copyToFile(rollbackPath);
+      }
+      await backupFile.copy(candidatePath);
+
+      await _deleteDatabaseControllers();
       await DbService.to.isar.close();
 
       if (await existingDb.exists()) {
@@ -89,16 +99,17 @@ class BackupService {
       await candidateFile.copy(dbPath);
 
       await DbService.to.init();
-      await _rebuildDatabaseControllers();
     } catch (e) {
       try {
-        if (await rollbackFile.exists()) {
+        if (rollbackFile != null &&
+            existingDb != null &&
+            dbPath != null &&
+            await rollbackFile.exists()) {
           if (await existingDb.exists()) {
             await existingDb.delete();
           }
           await rollbackFile.copy(dbPath);
           await DbService.to.init();
-          await _rebuildDatabaseControllers();
         }
       } catch (_) {
         // Keep the original error visible; the app may need a restart if the
@@ -106,12 +117,13 @@ class BackupService {
       }
       throw Exception("恢复备份失败，已尝试回滚: $e");
     } finally {
-      if (await candidateFile.exists()) {
+      if (candidateFile != null && await candidateFile.exists()) {
         await candidateFile.delete();
       }
-      if (await rollbackFile.exists()) {
+      if (rollbackFile != null && await rollbackFile.exists()) {
         await rollbackFile.delete();
       }
+      _restoreInProgress = false;
     }
   }
 
@@ -123,7 +135,7 @@ class BackupService {
     return dbPath;
   }
 
-  static Future<void> _rebuildDatabaseControllers() async {
+  static Future<void> _deleteDatabaseControllers() async {
     await _deleteIfRegistered<WorkLogController>();
     await _deleteIfRegistered<SubscriptionController>();
     await _deleteIfRegistered<ProjectController>();

@@ -3,7 +3,7 @@ import '../../../common/db/db_service.dart';
 import '../../../common/services/sync_service.dart';
 import '../../../common/services/log_service.dart';
 import '../../../common/utils/record_validators.dart';
-import '../../../common/utils/sync_id_generator.dart';
+import '../../../common/utils/sync_id_policy.dart';
 import 'subscription_model.dart';
 
 class SubscriptionRepository extends GetxService {
@@ -21,7 +21,7 @@ class SubscriptionRepository extends GetxService {
   // --- 修改业务 ---
   Future<void> saveSubscription(Subscription sub, int currentCount) async {
     validateSubscription(sub);
-    sub.syncId ??= SyncIdGenerator.newSyncId();
+    sub.syncId = ensureSyncId(sub.syncId);
 
     // 如果是新增（没有 sortIndex），把它排到最后
     sub.sortIndex ??= currentCount;

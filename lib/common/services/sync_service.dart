@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:io';
 
 import 'package:flutter/widgets.dart';
@@ -14,6 +15,7 @@ import '../db/db_service.dart';
 import '../services/auth_service.dart';
 import '../services/log_service.dart';
 import '../utils/sync_id_generator.dart';
+import '../utils/sync_id_policy.dart';
 
 class SyncService extends GetxService {
   static SyncService get to => Get.find();
@@ -49,6 +51,14 @@ class SyncService extends GetxService {
   String get _legacyLastSyncKey => _lastSyncKey;
 
   String newSyncId() => SyncIdGenerator.newSyncId();
+
+  String _ensureSyncId(String? current) =>
+      ensureSyncId(current, generator: newSyncId);
+
+  void _handlePossibleSessionExpired(Object error, String source) {
+    if (!Get.isRegistered<AuthService>()) return;
+    unawaited(AuthService.to.handleSessionExpired(error, source: source));
+  }
 
   int? _parseRemoteInt(dynamic value) {
     if (value is int) return value;
@@ -277,6 +287,7 @@ class SyncService extends GetxService {
       await _claimUnownedRecordsForCurrentUser(userId);
       await syncAll(reason: reason);
     } catch (e) {
+      _handlePossibleSessionExpired(e, '$reason sync bootstrap');
       LogService.to.error('Sync', '$reason sync bootstrap failed: $e');
     }
   }
@@ -291,6 +302,7 @@ class SyncService extends GetxService {
         .claimUnownedRecordsForCurrentUser()
         .catchError((Object e) {
           _claimUnownedRecordsFuture = null;
+          _handlePossibleSessionExpired(e, 'claim unowned records');
           LogService.to.error('Sync', 'Claim unowned records failed: $e');
           throw e;
         });
@@ -316,9 +328,7 @@ class SyncService extends GetxService {
 
     try {
       final user = AuthService.to.currentUser.value!;
-      if (log.remoteId == null) {
-        log.syncId ??= newSyncId();
-      }
+      log.syncId = _ensureSyncId(log.syncId);
       final data = {
         'user_id': user.id,
         'local_id': log.id,
@@ -377,6 +387,7 @@ class SyncService extends GetxService {
       LogService.to.info('Sync', 'WorkLog $operation success: ${log.id}');
       return true;
     } catch (e) {
+      _handlePossibleSessionExpired(e, 'push WorkLog');
       LogService.to.error(
         'Sync',
         'Push WorkLog failed localId=${log.id} remoteId=${log.remoteId}: $e',
@@ -417,6 +428,7 @@ class SyncService extends GetxService {
       LogService.to.info('Sync', 'WorkLog delete success: ${log.remoteId}');
       return true;
     } catch (e) {
+      _handlePossibleSessionExpired(e, 'delete WorkLog');
       LogService.to.error(
         'Sync',
         'Delete WorkLog failed localId=${log.id} remoteId=${log.remoteId}: $e',
@@ -445,9 +457,7 @@ class SyncService extends GetxService {
 
     try {
       final user = AuthService.to.currentUser.value!;
-      if (sub.remoteId == null) {
-        sub.syncId ??= newSyncId();
-      }
+      sub.syncId = _ensureSyncId(sub.syncId);
       final data = {
         'user_id': user.id,
         'local_id': sub.id,
@@ -500,6 +510,7 @@ class SyncService extends GetxService {
       LogService.to.info('Sync', 'Subscription $operation success: ${sub.id}');
       return true;
     } catch (e) {
+      _handlePossibleSessionExpired(e, 'push Subscription');
       LogService.to.error(
         'Sync',
         'Push Subscription failed localId=${sub.id} remoteId=${sub.remoteId}: $e',
@@ -525,7 +536,7 @@ class SyncService extends GetxService {
 
     try {
       final user = AuthService.to.currentUser.value!;
-      project.syncId ??= newSyncId();
+      project.syncId = _ensureSyncId(project.syncId);
       final data = {
         'user_id': user.id,
         'local_id': project.id,
@@ -570,6 +581,7 @@ class SyncService extends GetxService {
       LogService.to.info('Sync', 'Project $operation success: ${project.id}');
       return true;
     } catch (e) {
+      _handlePossibleSessionExpired(e, 'push Project');
       LogService.to.error(
         'Sync',
         'Push Project failed localId=${project.id} remoteId=${project.remoteId}: $e',
@@ -608,6 +620,7 @@ class SyncService extends GetxService {
       LogService.to.info('Sync', 'Project delete success: ${project.remoteId}');
       return true;
     } catch (e) {
+      _handlePossibleSessionExpired(e, 'delete Project');
       LogService.to.error(
         'Sync',
         'Delete Project failed localId=${project.id} remoteId=${project.remoteId}: $e',
@@ -649,6 +662,7 @@ class SyncService extends GetxService {
       );
       return true;
     } catch (e) {
+      _handlePossibleSessionExpired(e, 'delete Subscription');
       LogService.to.error(
         'Sync',
         'Delete Subscription failed localId=${sub.id} remoteId=${sub.remoteId}: $e',
@@ -667,7 +681,7 @@ class SyncService extends GetxService {
     final file = File(localPath);
     if (!await file.exists()) return evidence.remoteStoragePath;
 
-    evidence.syncId ??= newSyncId();
+    evidence.syncId = _ensureSyncId(evidence.syncId);
     final fileName =
         evidence.fileName ?? localPath.split(Platform.pathSeparator).last;
     final storagePath = '${user.id}/${evidence.syncId}/$fileName';
@@ -734,7 +748,7 @@ class SyncService extends GetxService {
 
     try {
       final user = AuthService.to.currentUser.value!;
-      evidence.syncId ??= newSyncId();
+      evidence.syncId = _ensureSyncId(evidence.syncId);
       await _uploadEvidenceFile(evidence);
 
       final data = {
@@ -791,6 +805,7 @@ class SyncService extends GetxService {
       LogService.to.info('Sync', 'Evidence $operation success: ${evidence.id}');
       return true;
     } catch (e) {
+      _handlePossibleSessionExpired(e, 'push Evidence');
       LogService.to.error(
         'Sync',
         'Push Evidence failed localId=${evidence.id} remoteId=${evidence.remoteId} storage=${evidence.remoteStoragePath}: $e',
@@ -837,6 +852,7 @@ class SyncService extends GetxService {
       );
       return true;
     } catch (e) {
+      _handlePossibleSessionExpired(e, 'delete Evidence');
       LogService.to.error(
         'Sync',
         'Delete Evidence failed localId=${evidence.id} remoteId=${evidence.remoteId} storage=${evidence.remoteStoragePath}: $e',
@@ -864,9 +880,7 @@ class SyncService extends GetxService {
 
     try {
       final user = AuthService.to.currentUser.value!;
-      if (record.remoteId == null) {
-        record.syncId ??= newSyncId();
-      }
+      record.syncId = _ensureSyncId(record.syncId);
       final data = {
         'user_id': user.id,
         'local_id': record.id,
@@ -920,6 +934,7 @@ class SyncService extends GetxService {
       );
       return true;
     } catch (e) {
+      _handlePossibleSessionExpired(e, 'push ExpenseRecord');
       LogService.to.error(
         'Sync',
         'Push ExpenseRecord failed localId=${record.id} remoteId=${record.remoteId}: $e',
@@ -961,6 +976,7 @@ class SyncService extends GetxService {
       );
       return true;
     } catch (e) {
+      _handlePossibleSessionExpired(e, 'delete ExpenseRecord');
       LogService.to.error(
         'Sync',
         'Delete ExpenseRecord failed localId=${record.id} remoteId=${record.remoteId}: $e',
@@ -976,12 +992,18 @@ class SyncService extends GetxService {
   Future<bool> syncAll({
     String reason = 'manual',
     bool forceFullRefresh = false,
+    bool forceNew = false,
   }) async {
     if (!AuthService.to.isLoggedIn) return false;
 
-    if (_activeSync != null) {
+    if (_activeSync != null && !forceNew) {
       LogService.to.debug('Sync', 'Reuse active sync for $reason');
       return _activeSync!;
+    }
+
+    if (forceNew) {
+      LogService.to.info('Sync', 'Start independent sync for $reason');
+      return _runSyncAll(reason, forceFullRefresh: forceFullRefresh);
     }
 
     _activeSync = _runSyncAll(reason, forceFullRefresh: forceFullRefresh);
@@ -1126,6 +1148,7 @@ class SyncService extends GetxService {
             try {
               await downloadEvidenceFile(evidence);
             } catch (e) {
+              _handlePossibleSessionExpired(e, 'download Evidence file');
               LogService.to.error(
                 'Sync',
                 'Download Evidence file failed syncId=${evidence.syncId} remoteId=${evidence.remoteId} storage=${evidence.remoteStoragePath}: $e',
@@ -1157,6 +1180,7 @@ class SyncService extends GetxService {
       );
       return true;
     } catch (e) {
+      _handlePossibleSessionExpired(e, 'pull');
       LogService.to.error('Sync', 'Pull failed: $e');
       return false;
     }
@@ -1229,6 +1253,7 @@ class SyncService extends GetxService {
       );
       return success;
     } catch (e) {
+      _handlePossibleSessionExpired(e, 'push pending data');
       LogService.to.error('Sync', 'Push failed: $e');
       return false;
     }

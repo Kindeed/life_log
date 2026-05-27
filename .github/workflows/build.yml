@@ -30,6 +30,11 @@ jobs:
     timeout-minutes: 30
 
     steps:
+      - name: Validate Supabase secrets
+        run: |
+          test -n "${{ secrets.SUPABASE_URL }}" || (echo "Missing SUPABASE_URL secret" && exit 1)
+          test -n "${{ secrets.SUPABASE_ANON_KEY }}" || (echo "Missing SUPABASE_ANON_KEY secret" && exit 1)
+
       # ── 1. 拉取代码 ──────────────────────────────────
       - name: Checkout code
         uses: actions/checkout@v4
@@ -75,12 +80,6 @@ jobs:
       # ── 7. 静态分析 ──────────────────────────────────
       - name: Analyze code
         run: flutter analyze --no-fatal-infos
-
-      # ── 8. 打包 APK（分架构）──────────────────────────
-      - name: Validate Supabase secrets
-        run: |
-          test -n "${{ secrets.SUPABASE_URL }}" || (echo "Missing SUPABASE_URL secret" && exit 1)
-          test -n "${{ secrets.SUPABASE_ANON_KEY }}" || (echo "Missing SUPABASE_ANON_KEY secret" && exit 1)
 
       - name: Build APK (split per ABI)
         run: >

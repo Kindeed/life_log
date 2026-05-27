@@ -2,7 +2,7 @@ import 'package:get/get.dart';
 import 'package:life_log/common/db/db_service.dart';
 import 'package:life_log/common/services/log_service.dart';
 import 'package:life_log/common/services/sync_service.dart';
-import 'package:life_log/common/utils/sync_id_generator.dart';
+import 'package:life_log/common/utils/sync_id_policy.dart';
 
 import 'project_model.dart';
 
@@ -37,7 +37,7 @@ class ProjectRepository extends GetxService {
       project.createdAt = now;
     }
     project.updatedAt = now;
-    project.syncId ??= SyncIdGenerator.newSyncId();
+    project.syncId = ensureSyncId(project.syncId);
     project.isDirty = true;
     await DbService.to.addProject(project);
     await _pushIfNeeded(project);
