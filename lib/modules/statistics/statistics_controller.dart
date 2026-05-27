@@ -148,41 +148,56 @@ class StatisticsController extends GetxController {
   Future<void> _refreshChangedSources(
     Set<StatisticsRefreshSource> sources,
   ) async {
-    try {
-      final allSources = StatisticsRefreshSource.values.toSet();
-      if (sources.containsAll(allSources)) {
-        final results = await Future.wait([
-          _getAllLogs(),
-          _getAllSubscriptions(),
-          _getAllEvidence(),
-          _getAllExpenseRecords(),
-        ]);
-        _logs = results[0] as List<WorkLog>;
-        _subs = results[1] as List<Subscription>;
-        _evidence = results[2] as List<ExpenseEvidence>;
-        _expenseRecords = results[3] as List<ExpenseRecord>;
-        _calculateAllStats();
-        return;
-      }
+    final allSources = StatisticsRefreshSource.values.toSet();
+    final loaded = <StatisticsRefreshSource>{};
 
-      if (sources.contains(StatisticsRefreshSource.workLogs)) {
-        _logs = await _getAllLogs();
-        _calculateWorkStats();
+    for (final source in StatisticsRefreshSource.values) {
+      if (!sources.contains(source)) continue;
+      if (await _loadStatsSource(source)) {
+        loaded.add(source);
       }
-      if (sources.contains(StatisticsRefreshSource.subscriptions)) {
-        _subs = await _getAllSubscriptions();
-        _calculateSubscriptionStats();
-      }
-      if (sources.contains(StatisticsRefreshSource.evidence)) {
-        _evidence = await _getAllEvidence();
-        _calculateEvidenceStats();
-      }
-      if (sources.contains(StatisticsRefreshSource.expenseRecords)) {
-        _expenseRecords = await _getAllExpenseRecords();
-        _calculateExpenseRecordStats();
+    }
+
+    if (loaded.isEmpty) return;
+
+    if (sources.containsAll(allSources)) {
+      _calculateAllStats();
+      return;
+    }
+
+    if (loaded.contains(StatisticsRefreshSource.workLogs)) {
+      _calculateWorkStats();
+    }
+    if (loaded.contains(StatisticsRefreshSource.subscriptions)) {
+      _calculateSubscriptionStats();
+    }
+    if (loaded.contains(StatisticsRefreshSource.evidence)) {
+      _calculateEvidenceStats();
+    }
+    if (loaded.contains(StatisticsRefreshSource.expenseRecords)) {
+      _calculateExpenseRecordStats();
+    }
+  }
+
+  Future<bool> _loadStatsSource(StatisticsRefreshSource source) async {
+    try {
+      switch (source) {
+        case StatisticsRefreshSource.workLogs:
+          _logs = await _getAllLogs();
+          return true;
+        case StatisticsRefreshSource.subscriptions:
+          _subs = await _getAllSubscriptions();
+          return true;
+        case StatisticsRefreshSource.evidence:
+          _evidence = await _getAllEvidence();
+          return true;
+        case StatisticsRefreshSource.expenseRecords:
+          _expenseRecords = await _getAllExpenseRecords();
+          return true;
       }
     } catch (e) {
-      LogService.to.error('Stats', '刷新统计失败: $e');
+      LogService.to.error('Stats', '刷新统计数据失败($source): $e');
+      return false;
     }
   }
 
@@ -353,6 +368,8 @@ class ReimbursementStats {
 }
 
 class _RefreshGate<T> {
+  static const _maxRunsPerDrain = 8;
+
   Future<void>? _inFlight;
   final Set<T> _pending = {};
 
@@ -363,16 +380,31 @@ class _RefreshGate<T> {
       return activeRefresh;
     }
 
-    _inFlight = _runLoop(operation);
-    return _inFlight!;
+    final completer = Completer<void>();
+    _inFlight = completer.future;
+    unawaited(
+      _runLoop(operation).then(completer.complete).catchError((error, stack) {
+        completer.completeError(error, stack);
+      }),
+    );
+    return completer.future;
   }
 
   Future<void> _runLoop(Future<void> Function(Set<T>) operation) async {
     try {
-      while (_pending.isNotEmpty) {
+      var runs = 0;
+      while (_pending.isNotEmpty && runs < _maxRunsPerDrain) {
+        runs++;
         final current = Set<T>.of(_pending);
         _pending.clear();
         await operation(current);
+      }
+      if (_pending.isNotEmpty) {
+        _pending.clear();
+        LogService.to.error(
+          'Stats',
+          '统计刷新循环超过 $_maxRunsPerDrain 次，已丢弃本轮剩余刷新请求',
+        );
       }
     } finally {
       _inFlight = null;

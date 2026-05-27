@@ -162,50 +162,51 @@ class MyApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final themeController = Get.find<ThemeController>();
-
     return ScreenUtilInit(
       designSize: const Size(375, 812),
       minTextAdapt: true,
       splitScreenMode: true,
       builder: (context, child) {
-        return Obx(
-          () => DynamicColorBuilder(
-            builder: (lightDynamic, darkDynamic) {
-              final useDynamic = themeController.dynamicColorEnabled.value;
-              return GetMaterialApp(
-                debugShowCheckedModeBanner: false,
-                title: 'LifeLog',
-                theme: AppTheme.lightWith(useDynamic ? lightDynamic : null),
-                darkTheme: AppTheme.darkWith(useDynamic ? darkDynamic : null),
-                themeMode: themeController.flutterThemeMode,
-                initialBinding: AppBinding(),
-                initialRoute: '/',
-                builder: (context, child) {
-                  final warning = _cloudStartupWarning;
-                  if (warning != null && !_cloudStartupWarningShown) {
-                    _cloudStartupWarningShown = true;
-                    WidgetsBinding.instance.addPostFrameCallback((_) {
-                      Get.snackbar('本地模式', warning);
-                    });
-                  }
-                  return child ?? const SizedBox.shrink();
-                },
-                getPages: [
-                  GetPage(
-                    name: '/',
-                    page: () => const TabsView(),
-                    binding: TabsBinding(),
-                  ),
-                  GetPage(
-                    name: '/login',
-                    page: () => const LoginView(),
-                    binding: LoginBinding(),
-                  ),
-                ],
-              );
-            },
-          ),
+        return DynamicColorBuilder(
+          builder: (lightDynamic, darkDynamic) {
+            return GetBuilder<ThemeController>(
+              id: ThemeController.appThemeBuilderId,
+              builder: (themeController) {
+                final useDynamic = themeController.dynamicColorEnabled.value;
+                return GetMaterialApp(
+                  debugShowCheckedModeBanner: false,
+                  title: 'LifeLog',
+                  theme: AppTheme.lightWith(useDynamic ? lightDynamic : null),
+                  darkTheme: AppTheme.darkWith(useDynamic ? darkDynamic : null),
+                  themeMode: themeController.flutterThemeMode,
+                  initialBinding: AppBinding(),
+                  initialRoute: '/',
+                  builder: (context, child) {
+                    final warning = _cloudStartupWarning;
+                    if (warning != null && !_cloudStartupWarningShown) {
+                      _cloudStartupWarningShown = true;
+                      WidgetsBinding.instance.addPostFrameCallback((_) {
+                        Get.snackbar('本地模式', warning);
+                      });
+                    }
+                    return child ?? const SizedBox.shrink();
+                  },
+                  getPages: [
+                    GetPage(
+                      name: '/',
+                      page: () => const TabsView(),
+                      binding: TabsBinding(),
+                    ),
+                    GetPage(
+                      name: '/login',
+                      page: () => const LoginView(),
+                      binding: LoginBinding(),
+                    ),
+                  ],
+                );
+              },
+            );
+          },
         );
       },
     );

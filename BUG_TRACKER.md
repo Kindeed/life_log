@@ -63,6 +63,7 @@ This is the active defect ledger. `REVIEW_REPORT.md` is historical context only.
 | U46 | High | fixed | work log startup refresh | 冷启动进入工时页后，已有工时记录仍可能不显示，必须点击页面或切换状态才刷新，说明日历单元格和详情区仍存在响应式订阅缺口。 | Fixed: day cells and the selected-day detail area now explicitly observe the work-log refresh version, so async startup loads repaint without user interaction. |
 | U47 | Medium | fixed | work log calendar default | 工时页默认打开为周视图，不符合当前希望“打开默认是月视图”的产品行为。 | Fixed: the work-log controller now initializes the calendar format to month while preserving the existing month/week toggle. |
 | U48 | Medium | fixed | main tabs / Material 3 UI | 底部导航实际只有四个页面，但中间快捷添加入口让主导航看起来像五栏；添加入口和页面主任务也不符合当前 Material 3 方向。 | Fixed: replaced the custom Apple-style tab bar with Material 3 `NavigationBar` / wide-screen `NavigationRail`, moved primary add actions into work/finance/project pages, and added dynamic color support in appearance settings. |
+| U49 | High | fixed | startup / dynamic color | `MyApp` 在根级 `Obx` 中返回 `DynamicColorBuilder`，但实际读取 `dynamicColorEnabled` 发生在嵌套 builder 中，导致启动时 GetX 报 improper use 并红屏。 | Fixed: removed the root `Obx`, rebuilt app theme through a targeted `GetBuilder<ThemeController>`, and kept theme-mode switching on `Get.changeThemeMode()`. |
 | D7 | High | fixed | sync parsing | Remote row parsing and push response handling used `DateTime.parse` / direct casts and could abort a sync path on malformed or null fields. | Fixed: pull rows, push responses, server-time reads, and stored cursors now use safe numeric/string/date parsing with fallbacks or controlled failure for invalid remote IDs. |
 | D8 | Medium | fixed | sync trigger dedupe | `syncAll` skipped a fresh manual sync for 2 seconds after the previous one finished. | Fixed: only an in-flight sync is reused now. |
 | U14 | Medium | fixed | `ExpenseRecordEditView` | One-time expense add/edit UI is visually inconsistent with the current finance design system. | Fixed: reworked to a clearer amount-first card, category chips, tokenized surfaces, and stable bottom actions. |
@@ -149,21 +150,21 @@ This is the active defect ledger. `REVIEW_REPORT.md` is historical context only.
 
 | ID | Severity | Status | Area | Finding | Fix / Acceptance |
 | --- | --- | --- | --- | --- | --- |
-| D9 | Critical | open | Sync - ExpenseRecord | `syncRemoteExpenseRecordToLocal` 中 `record.remoteId = remoteId` 为无条件赋值，而 WorkLog/Subscription/Evidence/Project 均使用条件赋值。不一致写法可能导致脏记录的 remoteId 被错误覆盖。 | 修正为条件赋值 `if (record.remoteId != remoteId) { record.remoteId = remoteId; }`，与其他实体保持一致。 |
+| D9 | Critical | fixed | Sync - ExpenseRecord | `syncRemoteExpenseRecordToLocal` 中 `record.remoteId = remoteId` 为无条件赋值，而 WorkLog/Subscription/Evidence/Project 均使用条件赋值。不一致写法可能导致脏记录的 remoteId 被错误覆盖。 | Fixed: dirty ExpenseRecord remote pulls now use conditional `remoteId` assignment, matching the other sync entities. |
 | D10 | Critical | open | Sync - Migration | 迁移 `20260429_expense_evidence.sql` 创建表时缺少 `updated_at` 列，该列在后续迁移 `20260507_remote_schema_repair.sql` 中才添加。两个迁移之间存在窗口期，依赖 `updated_at` 的同步逻辑可能失败。 | 在 `20260429_expense_evidence.sql` 中添加 `updated_at timestamptz not null default now()` 列。 |
-| D11 | Critical | open | Sync - WorkLog | `saveLog` 在同日已有记录时，先通过 `_adoptCanonicalIdentity` 复制旧记录身份，再调用 `addLog`。若 `addLog` 抛出异常，旧记录身份已被覆盖但新数据未持久化，存在数据丢失风险。 | 重构保存逻辑：先持久化新数据，成功后再处理同日旧记录清理。 |
-| D12 | High | open | Local owner claim - PhotoItem | `claimUnownedRecordsForCurrentUser()` 认领 WorkLog、Subscription、ExpenseEvidence、ExpenseRecord、Project，但未认领本地 `PhotoItem`。未登录时创建的照片在登录后可能因本地账号隔离而不可见。 | 在不接入云同步、不添加云同步字段的前提下，仅补充本地 `PhotoItem.ownerUserId` 认领处理。 |
+| D11 | Critical | invalidated | Sync - WorkLog | `saveLog` 在同日已有记录时，先通过 `_adoptCanonicalIdentity` 复制旧记录身份，再调用 `addLog`。若 `addLog` 抛出异常，旧记录身份已被覆盖但新数据未持久化，存在数据丢失风险。 | Invalidated: current code only mutates the incoming in-memory object before `addLog`; the existing Isar row is not overwritten before a successful write. Same-day mutation concurrency is tracked separately by D15. |
+| D12 | High | fixed | Local owner claim - PhotoItem | `claimUnownedRecordsForCurrentUser()` 认领 WorkLog、Subscription、ExpenseEvidence、ExpenseRecord、Project，但未认领本地 `PhotoItem`。未登录时创建的照片在登录后可能因本地账号隔离而不可见。 | Fixed: local-only `PhotoItem.ownerUserId` is claimed during owner migration without adding photo cloud-sync fields or photo sync paths. |
 | D13 | High | open | Sync - Backup | `restoreFromBackup` 关闭数据库后到重新初始化之间存在状态窗口，期间任何数据库访问都可能失败。`_rebuildDatabaseControllers` 仅删除控制器并依赖懒加载重建。 | 在关闭旧 DB 前预加载新 DB；或提供明确恢复状态 UI，防止期间访问。 |
-| D14 | High | open | Sync - Statistics | `refreshStats()` 使用 `Future.wait` 并发获取 4 个数据源，任一失败则 `catch` 仅记录错误，`_calculateAllStats()` 不执行，可能导致所有统计指标保持陈旧。 | 将各数据源的错误处理独立到每个 future 内部，确保部分成功时仍能计算已有数据。 |
-| D15 | High | open | Sync - WorkLog race | `_normalizeDuplicateDays` 与 `saveLog` 均会删除同日重复记录，但 `saveLog` 运行在归一化保护锁之外，可能出现竞态。 | 将 `saveLog` 的同日去重逻辑纳入 `_normalizeDuplicateDaysFuture` 保护。 |
-| D16 | High | open | Sync - Subscription | `reorderSubscriptions` 标记 `isDirty=true` 但不显式触发同步，用户关闭应用前排序变更可能丢失。 | 在 `reorderSubscriptions` 末尾显式调用 `SyncService.to.pushSubscription` 或 `syncAll`。 |
-| D17 | Medium | open | Sync - Project auto-create | `syncRemoteExpenseRecordToLocal` 自动创建缺失 Project 时，设置 `isDirty = false` 且无 `syncId`，该项目不会同步到云端。 | 创建时分配 `syncId` 并标记 `isDirty = true`。 |
+| D14 | High | fixed | Sync - Statistics | `refreshStats()` 使用 `Future.wait` 并发获取 4 个数据源，任一失败则 `catch` 仅记录错误，`_calculateAllStats()` 不执行，可能导致所有统计指标保持陈旧。 | Fixed: each statistics source loads with independent error handling, and full refresh recalculates from successful sources plus existing cached data. |
+| D15 | High | fixed | Sync - WorkLog race | `_normalizeDuplicateDays` 与 `saveLog` 均会删除同日重复记录，但 `saveLog` 运行在归一化保护锁之外，可能出现竞态。 | Fixed: duplicate-day normalization and same-day save cleanup now share one serialized mutation gate. |
+| D16 | High | fixed | Sync - Subscription | `reorderSubscriptions` 标记 `isDirty=true` 但不显式触发同步，用户关闭应用前排序变更可能丢失。 | Fixed: `SubscriptionRepository.reorderSubscriptions` pushes changed rows when cloud sync is registered. |
+| D17 | Medium | fixed | Sync - Project auto-create | `syncRemoteExpenseRecordToLocal` 自动创建缺失 Project 时，设置 `isDirty = false` 且无 `syncId`，该项目不会同步到云端。 | Fixed: remote expense pull auto-created projects now receive a `syncId` and `isDirty = true`. |
 | D18 | Medium | open | Performance - Index | 多个模型的 `deletedAt` 字段未建立索引，而查询会按 `deletedAt == null` 过滤软删除记录。记录数增长后查询性能可能下降。 | 为包含 `deletedAt` 过滤的模型评估并添加 `@Index()` 注解。 |
-| D19 | Medium | open | Sync - ExpenseRecord txn | `syncRemoteExpenseRecordToLocal` 在 writeTxn 内嵌套项目创建写入，Isar 事务行为需验证，可能导致不可预期错误。 | 将项目创建逻辑提取到外层单独事务，或避免嵌套写事务。 |
-| D20 | Medium | open | Validation | `validateExpenseEvidence` 调用 `evidence.projectName.trim()` 时未判空，`projectName` 为 null 时会抛出异常。 | 增加 `evidence.projectName?.trim().isNotEmpty` 空值安全检查。 |
+| D19 | Medium | invalidated | Sync - ExpenseRecord txn | `syncRemoteExpenseRecordToLocal` 在 writeTxn 内嵌套项目创建写入，Isar 事务行为需验证，可能导致不可预期错误。 | Invalidated: current code creates the missing Project with `isar.projects.put()` inside the existing outer transaction; it does not open a nested `writeTxn`. |
+| D20 | Medium | invalidated | Validation | `validateExpenseEvidence` 调用 `evidence.projectName.trim()` 时未判空，`projectName` 为 null 时会抛出异常。 | Invalidated: `ExpenseEvidence.projectName` is a non-null `late String` schema field, and the validator intentionally rejects empty strings while defaulting currency. |
 | D21 | Medium | open | Sync dedup | `syncAll` 复用 `_activeSync` 防重复，但手动下拉刷新等场景无法强制启动新同步。 | 增加 `forceNew` 参数，允许绕过复用机制。 |
 | D22 | Medium | open | Sync - syncId consistency | `syncId` 分配在不同实体间条件不一致，维护成本高且容易引入行为差异。 | 统一 syncId 分配策略，并补充回归测试。 |
-| D23 | Low | open | Sync - RefreshGate loop | `_RefreshGate._runLoop` 在 `_rerun` 被触发时可能长时间循环。 | 增加最大循环次数限制。 |
+| D23 | Low | fixed | Sync - RefreshGate loop | `_RefreshGate._runLoop` 在 `_rerun` 被触发时可能长时间循环。 | Fixed: statistics refresh gate caps one drain cycle at 8 reruns and drops excess pending requests with a log entry. |
 
 ### UI / Design System
 
@@ -183,4 +184,4 @@ This is the active defect ledger. `REVIEW_REPORT.md` is historical context only.
 
 | ID | Severity | Status | Area | Finding | Fix / Acceptance |
 | --- | --- | --- | --- | --- | --- |
-| D24 | Low | open | Backup | `restoreFromBackup` 缺少明确警告：备份文件仅含数据库，不含照片、凭证等媒体文件。恢复后用户可能误以为数据完整。 | 恢复确认对话框中增加“照片和凭证文件需要单独备份”的提示。 |
+| D24 | Low | fixed | Backup | `restoreFromBackup` 缺少明确警告：备份文件仅含数据库，不含照片、凭证等媒体文件。恢复后用户可能误以为数据完整。 | Fixed: restore confirmation explicitly warns that backups do not include photo or evidence file bodies and missing local files cannot be restored automatically. |

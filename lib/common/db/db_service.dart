@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:get/get.dart';
 import 'package:isar/isar.dart';
 import 'package:path_provider/path_provider.dart';
@@ -135,21 +136,29 @@ class DbService extends GetxService {
         project.pendingDelete;
   }
 
-  Future<Set<String>> _getSyncableProjectNames() async {
+  bool _belongsToOwner(String? recordOwnerUserId, String ownerUserId) {
+    return recordOwnerUserId == ownerUserId;
+  }
+
+  Future<Set<String>> _getSyncableProjectNames({String? ownerUserId}) async {
     final syncableProjectNames = <String>{};
 
     final evidenceRefs = await isar.expenseEvidences.where().findAll();
     for (final item in evidenceRefs) {
-      if (_belongsToCurrentUser(item.ownerUserId) &&
-          item.projectName.trim().isNotEmpty) {
+      final belongs = ownerUserId == null
+          ? _belongsToCurrentUser(item.ownerUserId)
+          : _belongsToOwner(item.ownerUserId, ownerUserId);
+      if (belongs && item.projectName.trim().isNotEmpty) {
         syncableProjectNames.add(item.projectName.trim().toLowerCase());
       }
     }
 
     final expenseRecordRefs = await isar.expenseRecords.where().findAll();
     for (final item in expenseRecordRefs) {
-      if (_belongsToCurrentUser(item.ownerUserId) &&
-          (item.projectName?.trim().isNotEmpty ?? false)) {
+      final belongs = ownerUserId == null
+          ? _belongsToCurrentUser(item.ownerUserId)
+          : _belongsToOwner(item.ownerUserId, ownerUserId);
+      if (belongs && (item.projectName?.trim().isNotEmpty ?? false)) {
         syncableProjectNames.add(item.projectName!.trim().toLowerCase());
       }
     }
@@ -160,11 +169,19 @@ class DbService extends GetxService {
   Future<void> claimUnownedRecordsForCurrentUser() async {
     final currentUserId = currentOwnerUserId;
     if (currentUserId == null) return;
+    await _claimUnownedRecordsForOwner(currentUserId);
+  }
 
+  @visibleForTesting
+  Future<void> claimUnownedRecordsForOwnerForTest(String ownerUserId) {
+    return _claimUnownedRecordsForOwner(ownerUserId);
+  }
+
+  Future<void> _claimUnownedRecordsForOwner(String ownerUserId) async {
     await isar.writeTxn(() async {
       final logs = await isar.workLogs.filter().ownerUserIdIsNull().findAll();
       for (final log in logs) {
-        log.ownerUserId = currentUserId;
+        log.ownerUserId = ownerUserId;
         log.isDirty = true;
       }
       if (logs.isNotEmpty) {
@@ -176,7 +193,7 @@ class DbService extends GetxService {
           .ownerUserIdIsNull()
           .findAll();
       for (final sub in subs) {
-        sub.ownerUserId = currentUserId;
+        sub.ownerUserId = ownerUserId;
         sub.isDirty = true;
       }
       if (subs.isNotEmpty) {
@@ -188,7 +205,7 @@ class DbService extends GetxService {
           .ownerUserIdIsNull()
           .findAll();
       for (final item in evidence) {
-        item.ownerUserId = currentUserId;
+        item.ownerUserId = ownerUserId;
         item.isDirty = true;
       }
       if (evidence.isNotEmpty) {
@@ -200,21 +217,34 @@ class DbService extends GetxService {
           .ownerUserIdIsNull()
           .findAll();
       for (final item in expenseRecords) {
-        item.ownerUserId = currentUserId;
+        item.ownerUserId = ownerUserId;
         item.isDirty = true;
       }
       if (expenseRecords.isNotEmpty) {
         await isar.expenseRecords.putAll(expenseRecords);
       }
 
-      final syncableProjectNames = await _getSyncableProjectNames();
+      final photos = await isar.photoItems
+          .filter()
+          .ownerUserIdIsNull()
+          .findAll();
+      for (final photo in photos) {
+        photo.ownerUserId = ownerUserId;
+      }
+      if (photos.isNotEmpty) {
+        await isar.photoItems.putAll(photos);
+      }
+
+      final syncableProjectNames = await _getSyncableProjectNames(
+        ownerUserId: ownerUserId,
+      );
 
       final projects = await isar.projects
           .filter()
           .ownerUserIdIsNull()
           .findAll();
       for (final project in projects) {
-        project.ownerUserId = currentUserId;
+        project.ownerUserId = ownerUserId;
         final syncable = syncableProjectNames.contains(
           project.name.trim().toLowerCase(),
         );
@@ -1388,7 +1418,8 @@ class DbService extends GetxService {
           ..ownerUserId = currentOwnerUserId
           ..createdAt = now
           ..updatedAt = now
-          ..isDirty = false;
+          ..syncId = SyncIdGenerator.newSyncId()
+          ..isDirty = true;
         project.id = await isar.projects.put(project);
       }
       projectId = project.id;

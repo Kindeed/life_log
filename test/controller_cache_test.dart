@@ -91,6 +91,24 @@ void main() {
       expect(controller.selectedMonthTotalCost.value, 17);
     });
 
+    test('full refresh keeps partial results when one source fails', () async {
+      final controller = StatisticsController(
+        getAllLogs: () async => [workLog(DateTime(2026, 5, 1))],
+        getAllSubscriptions: () async => throw StateError('subscriptions down'),
+        getAllEvidence: () async => [
+          evidenceItem('Alpha', DateTime(2026, 5, 3), 5),
+        ],
+        getAllExpenseRecords: () async => [expenseRecord(7)],
+      );
+
+      await controller.refreshStats();
+
+      expect(controller.workDays.value, 1);
+      expect(controller.evidenceUnreimbursedAmount.value, 5);
+      expect(controller.selectedMonthExpenseRecordCost.value, 7);
+      expect(controller.selectedMonthTotalCost.value, 7);
+    });
+
     test('targeted refresh queries only changed sources', () async {
       var logQueries = 0;
       var subQueries = 0;
@@ -161,6 +179,33 @@ void main() {
 
       expect(logQueries, 1);
       expect(evidenceQueries, 1);
+    });
+
+    test('shared gate bounds repeated reruns', () async {
+      late final StatisticsController controller;
+      var logQueries = 0;
+      controller = StatisticsController(
+        getAllLogs: () async {
+          logQueries++;
+          if (logQueries < 20) {
+            unawaited(
+              controller.refreshChangedSourcesForTest({
+                StatisticsRefreshSource.workLogs,
+              }),
+            );
+          }
+          return [workLog(DateTime(2026, 5, 1))];
+        },
+        getAllSubscriptions: () async => const [],
+        getAllEvidence: () async => const [],
+        getAllExpenseRecords: () async => const [],
+      );
+
+      await controller.refreshChangedSourcesForTest({
+        StatisticsRefreshSource.workLogs,
+      });
+
+      expect(logQueries, 8);
     });
   });
 

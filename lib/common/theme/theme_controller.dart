@@ -9,6 +9,7 @@ enum AppThemeMode { system, light, dark }
 /// 管理主题切换和持久化存储
 class ThemeController extends GetxController {
   static ThemeController get to => Get.find();
+  static const appThemeBuilderId = 'app_theme';
 
   final _storage = GetStorage();
   static const _key = 'theme_mode';
@@ -60,6 +61,7 @@ class ThemeController extends GetxController {
     if (dynamicColorEnabled.value == enabled) return;
     dynamicColorEnabled.value = enabled;
     _storage.write(_dynamicColorKey, enabled);
+    update([appThemeBuilderId]);
   }
 
   /// 获取 Flutter ThemeMode

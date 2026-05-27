@@ -11,7 +11,7 @@ import 'work_log_model.dart';
 
 class WorkLogRepository extends GetxService {
   static WorkLogRepository get to => Get.find();
-  Future<void>? _normalizeDuplicateDaysFuture;
+  Future<void>? _duplicateDayMutationFuture;
 
   // --- 查询业务 ---
   Future<List<WorkLog>> getAllLogs() async {
@@ -26,9 +26,31 @@ class WorkLogRepository extends GetxService {
     return DbService.to.watchWorkLogs();
   }
 
-  Future<void> normalizeDuplicateDays() {
-    return _normalizeDuplicateDaysFuture ??= _normalizeDuplicateDays()
-        .whenComplete(() => _normalizeDuplicateDaysFuture = null);
+  Future<void> normalizeDuplicateDays() =>
+      _runDuplicateDayMutation(_normalizeDuplicateDays);
+
+  Future<void> _runDuplicateDayMutation(Future<void> Function() operation) {
+    final previous = _duplicateDayMutationFuture;
+
+    Future<void> runAfterPrevious() async {
+      if (previous != null) {
+        try {
+          await previous;
+        } catch (_) {
+          // Keep later duplicate-day work from being permanently blocked.
+        }
+      }
+      await operation();
+    }
+
+    late final Future<void> tracked;
+    tracked = runAfterPrevious().whenComplete(() {
+      if (identical(_duplicateDayMutationFuture, tracked)) {
+        _duplicateDayMutationFuture = null;
+      }
+    });
+    _duplicateDayMutationFuture = tracked;
+    return tracked;
   }
 
   Future<void> _normalizeDuplicateDays() async {
@@ -55,7 +77,11 @@ class WorkLogRepository extends GetxService {
   }
 
   // --- 修改业务 ---
-  Future<void> saveLog(WorkLog log) async {
+  Future<void> saveLog(WorkLog log) {
+    return _runDuplicateDayMutation(() => _saveLog(log));
+  }
+
+  Future<void> _saveLog(WorkLog log) async {
     log.date = dateOnlyLocal(log.date);
     final sameDayLogs = await _sameDayLogs(log.date);
     final existing = _resolveCanonicalLog(log, sameDayLogs);
