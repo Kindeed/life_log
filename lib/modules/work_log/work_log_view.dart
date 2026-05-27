@@ -98,6 +98,7 @@ class WorkLogView extends StatelessWidget {
               child: ConstrainedPage(
                 padding: EdgeInsets.symmetric(horizontal: 14.w),
                 child: Obx(() {
+                  logic.dataVersion.value;
                   final isInitialLoading =
                       logic.isLoading.value && logic.logsMap.isEmpty;
                   final selectedDate = logic.selectedDay.value;

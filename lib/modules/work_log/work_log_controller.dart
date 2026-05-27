@@ -12,7 +12,7 @@ class WorkLogController extends GetxController {
   // --- 1. 日历状态 ---
   final focusedDay = dateOnlyLocal(DateTime.now()).obs;
   final selectedDay = dateOnlyLocal(DateTime.now()).obs;
-  final calendarFormat = CalendarFormat.week.obs;
+  final calendarFormat = CalendarFormat.month.obs;
 
   // --- 2. 数据源 ---
   final logsMap = <DateTime, List<WorkLog>>{}.obs;
@@ -25,6 +25,8 @@ class WorkLogController extends GetxController {
   final monthStatsHours = 0.0.obs;
 
   StreamSubscription? _dbSub;
+  Future<void>? _activeLoad;
+  bool _reloadRequested = false;
 
   @override
   void onInit() {
@@ -71,6 +73,26 @@ class WorkLogController extends GetxController {
 
   // 加载数据
   Future<void> loadData() async {
+    final activeLoad = _activeLoad;
+    if (activeLoad != null) {
+      _reloadRequested = true;
+      return activeLoad;
+    }
+
+    _activeLoad = _runLoadLoop().whenComplete(() {
+      _activeLoad = null;
+    });
+    return _activeLoad;
+  }
+
+  Future<void> _runLoadLoop() async {
+    do {
+      _reloadRequested = false;
+      await _loadDataOnce();
+    } while (_reloadRequested);
+  }
+
+  Future<void> _loadDataOnce() async {
     isLoading.value = true;
     try {
       LogService.to.debug('WorkLog', '开始加载数据...');

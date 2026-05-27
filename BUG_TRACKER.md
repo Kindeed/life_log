@@ -1,6 +1,6 @@
 # LifeLog BUG Tracker
 
-**Last updated**: 2026-05-18
+**Last updated**: 2026-05-27
 **Status values**: `open`, `in_progress`, `fixed`, `deferred`, `invalidated`
 
 This is the active defect ledger. `REVIEW_REPORT.md` is historical context only. Photo sync findings from older reports are superseded by `AGENTS.md`: photos remain local-only and must not enter Supabase sync.
@@ -60,6 +60,8 @@ This is the active defect ledger. `REVIEW_REPORT.md` is historical context only.
 | U43 | High | fixed | work log startup refresh | 冷启动进入工时页时，日历没有显式订阅 `dataVersion`，异步记录加载完成后可能不重建，必须点一下页面才显示已有记录。 | Fixed: the calendar now observes `dataVersion`, and the detail area shows an initial loading state instead of a false empty state while logs are loading. |
 | U44 | Medium | fixed | project creation | 创建第一个项目后，项目主页缺少持续可见的新建项目入口，只能依赖深层动作表。 | Fixed: project overview AppBar now exposes a create-project button and the empty state reuses the same project creation flow. |
 | U45 | Medium | fixed | project photo export | 项目图片多选底部栏在窄屏会把“选择了 N 张”挤成竖排，导致导出按钮看起来错位或不可用。 | Fixed: multi-select uses a stable stacked bottom bar with one-line selection text and equal-width delete/export/finish actions. |
+| U46 | High | fixed | work log startup refresh | 冷启动进入工时页后，已有工时记录仍可能不显示，必须点击页面或切换状态才刷新，说明日历单元格和详情区仍存在响应式订阅缺口。 | Fixed: day cells and the selected-day detail area now explicitly observe the work-log refresh version, so async startup loads repaint without user interaction. |
+| U47 | Medium | fixed | work log calendar default | 工时页默认打开为周视图，不符合当前希望“打开默认是月视图”的产品行为。 | Fixed: the work-log controller now initializes the calendar format to month while preserving the existing month/week toggle. |
 | D7 | High | fixed | sync parsing | Remote row parsing and push response handling used `DateTime.parse` / direct casts and could abort a sync path on malformed or null fields. | Fixed: pull rows, push responses, server-time reads, and stored cursors now use safe numeric/string/date parsing with fallbacks or controlled failure for invalid remote IDs. |
 | D8 | Medium | fixed | sync trigger dedupe | `syncAll` skipped a fresh manual sync for 2 seconds after the previous one finished. | Fixed: only an in-flight sync is reused now. |
 | U14 | Medium | fixed | `ExpenseRecordEditView` | One-time expense add/edit UI is visually inconsistent with the current finance design system. | Fixed: reworked to a clearer amount-first card, category chips, tokenized surfaces, and stable bottom actions. |
