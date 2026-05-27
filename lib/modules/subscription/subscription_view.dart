@@ -29,16 +29,7 @@ class SubscriptionView extends StatelessWidget {
 
     return Scaffold(
       backgroundColor: theme.scaffoldBackgroundColor,
-      appBar: AppBar(
-        title: const Text("财务"),
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.add_rounded),
-            tooltip: "添加支出",
-            onPressed: () => _showAddSheet(),
-          ),
-        ],
-      ),
+      appBar: AppBar(title: const Text("财务")),
       body: SafeArea(
         child: Obx(() {
           final visibleSubs = logic.visibleSubs;
@@ -46,7 +37,7 @@ class SubscriptionView extends StatelessWidget {
             return const AppEmptyState(
               icon: Icons.subscriptions_outlined,
               title: "还没有固定支出",
-              message: "使用右上角「添加」新增订阅、房租或月度开销。",
+              message: "使用右下角「添加支出」新增订阅、房租或月度开销。",
             );
           }
 
@@ -123,14 +114,10 @@ class SubscriptionView extends StatelessWidget {
           );
         }),
       ),
-      floatingActionButton: Obx(
-        () => logic.visibleSubs.isEmpty
-            ? const SizedBox.shrink()
-            : FloatingActionButton.extended(
-                onPressed: () => _showAddSheet(),
-                icon: const Icon(Icons.add_rounded),
-                label: const Text("添加支出"),
-              ),
+      floatingActionButton: FloatingActionButton.extended(
+        onPressed: () => _showAddSheet(),
+        icon: const Icon(Icons.add_rounded),
+        label: const Text("添加支出"),
       ),
     );
   }

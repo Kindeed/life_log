@@ -18,6 +18,7 @@ This is the active defect ledger. `REVIEW_REPORT.md` is historical context only.
 
 - Fixed in this remediation pass: U20, D13, D18, D21, D22, T3, T4, T5.
 - Newly discovered and recorded: T9. `dart run build_runner build --delete-conflicting-outputs` succeeds but warns that the current `analyzer` version may not fully support the current SDK language version. Follow-up investigation confirmed this is blocked by `isar_generator 3.1.0+1` constraining `analyzer` to `<6.0.0`; fixing it requires an Isar/generator migration rather than a lockfile refresh.
+- Newly discovered and fixed in the project UI pass: U50, U51, U52, U53.
 - Re-audit result after fixes: no recurrence found for U20, D13, D18, D21, D22, T3, T4, or T5 by static inspection; local CLI validation is listed at the end of this document.
 - Still pending external validation: P1-7, P2-5, P3-4. These remain real-device smoke tasks and were not marked fixed by local CLI checks alone.
 
@@ -80,6 +81,10 @@ This is the active defect ledger. `REVIEW_REPORT.md` is historical context only.
 | U47 | Medium | fixed | work log calendar default | 工时页默认打开为周视图，不符合当前希望“打开默认是月视图”的产品行为。 | Fixed: the work-log controller now initializes the calendar format to month while preserving the existing month/week toggle. |
 | U48 | Medium | fixed | main tabs / Material 3 UI | 底部导航实际只有四个页面，但中间快捷添加入口让主导航看起来像五栏；添加入口和页面主任务也不符合当前 Material 3 方向。 | Fixed: replaced the custom Apple-style tab bar with Material 3 `NavigationBar` / wide-screen `NavigationRail`, moved primary add actions into work/finance/project pages, and added dynamic color support in appearance settings. |
 | U49 | High | fixed | startup / dynamic color | `MyApp` 在根级 `Obx` 中返回 `DynamicColorBuilder`，但实际读取 `dynamicColorEnabled` 发生在嵌套 builder 中，导致启动时 GetX 报 improper use 并红屏。 | Fixed: removed the root `Obx`, rebuilt app theme through a targeted `GetBuilder<ThemeController>`, and kept theme-mode switching on `Get.changeThemeMode()`. |
+| U50 | Medium | fixed | work / finance / project add entry | 工时、财务和项目模块的新增入口位置不一致，财务页使用右上角添加，项目页同时存在顶部和右下角创建入口。 | Fixed: finance and project creation now use right-bottom FABs as their primary add entry; AppBar keeps only non-primary tools such as refresh. |
+| U51 | Medium | fixed | `ProjectGalleryView` contextual add | 项目详情页在照片、凭证、支出栏目内点击添加后仍弹出总类型菜单，和当前栏目语义不一致。 | Fixed: project-detail FAB follows the active tab: photos open photo actions, evidence opens evidence actions, and expense opens project-expense editing with the project prefilled. |
+| U52 | Low | fixed | `CreateProjectSheet` copy | 创建第一个项目后再次创建时，项目名称输入提示仍显示“输入第一个项目名称”。 | Fixed: the project-name hint now uses the neutral copy “输入项目名称”. |
+| U53 | Medium | fixed | `ProjectGalleryView` multi-select | 照片多选底部三按钮在窄屏下容易挤压错位，“完成”含义不清，安卓返回/侧滑会返回上级而不是退出选择模式。 | Fixed: the bottom bar keeps only delete/export actions, top cancel remains the explicit exit, and system back/edge-back exits multi-select before leaving the page. |
 | D7 | High | fixed | sync parsing | Remote row parsing and push response handling used `DateTime.parse` / direct casts and could abort a sync path on malformed or null fields. | Fixed: pull rows, push responses, server-time reads, and stored cursors now use safe numeric/string/date parsing with fallbacks or controlled failure for invalid remote IDs. |
 | D8 | Medium | fixed | sync trigger dedupe | `syncAll` skipped a fresh manual sync for 2 seconds after the previous one finished. | Fixed: only an in-flight sync is reused now. |
 | U14 | Medium | fixed | `ExpenseRecordEditView` | One-time expense add/edit UI is visually inconsistent with the current finance design system. | Fixed: reworked to a clearer amount-first card, category chips, tokenized surfaces, and stable bottom actions. |

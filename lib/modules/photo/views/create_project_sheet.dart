@@ -57,7 +57,7 @@ class _CreateProjectSheetState extends State<_CreateProjectSheet> {
             controller: _nameController,
             autofocus: true,
             labelText: '项目名称',
-            hintText: '输入第一个项目名称',
+            hintText: '输入项目名称',
             prefixIcon: Icon(
               Icons.folder_special_rounded,
               color: Theme.of(context).colorScheme.onSurfaceVariant,

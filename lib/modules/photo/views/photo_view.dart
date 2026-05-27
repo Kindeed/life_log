@@ -71,11 +71,6 @@ class _PhotoViewState extends State<PhotoView> {
         title: const Text("项目资料"),
         actions: [
           IconButton(
-            icon: const Icon(Icons.create_new_folder_rounded),
-            tooltip: "创建项目",
-            onPressed: _openCreateProjectSheet,
-          ),
-          IconButton(
             icon: const Icon(Icons.refresh_rounded),
             tooltip: "刷新",
             onPressed: () {
@@ -110,12 +105,10 @@ class _PhotoViewState extends State<PhotoView> {
         );
 
         if (projectCount == 0 && projects.isEmpty) {
-          return AppEmptyState(
+          return const AppEmptyState(
             icon: Icons.folder_open_rounded,
             title: "还没有项目",
-            message: "先创建第一个项目，再添加照片和凭证。",
-            actionLabel: "创建项目",
-            onAction: _openCreateProjectSheet,
+            message: "使用右下角「创建项目」建立项目，再添加照片和凭证。",
           );
         }
 
