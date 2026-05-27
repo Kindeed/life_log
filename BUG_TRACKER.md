@@ -77,6 +77,7 @@ This is the active defect ledger. `REVIEW_REPORT.md` is historical context only.
 | T2 | Low | fixed | GitHub Actions | GitHub Actions warned that Node.js 20 action runtime is deprecated and will default to Node.js 24 on 2026-06-02. | Fixed: opted both APK workflows into Node.js 24 action runtime with `FORCE_JAVASCRIPT_ACTIONS_TO_NODE24=true`. |
 | T6 | High | fixed | Release content | `v1.4.2` / `v1.4.3` release builds did not include the full UI and business-content changes from the `codex/actions-node24-compat` test APK source commit `e115424`, even though the version number advanced. | Fixed: restored `e115424` UI/business-content changes onto `main`, kept the newer release metadata, revalidated, and prepared a corrected release. |
 | T7 | Low | fixed | Repository hygiene | A generated Gradle problems report was tracked, and repository guidance still described stale test, collection, and photo-sync behavior. | Fixed: removed the generated report from Git, ignored `android/build/`, and updated README/CLAUDE guidance to match current repo rules. |
+| T8 | High | fixed | Release build | `v1.4.5` release workflow failed in `Build APK (split per ABI)` because Gradle could not resolve the Kotlin Android plugin marker `org.jetbrains.kotlin.android:org.jetbrains.kotlin.android.gradle.plugin:2.2.20`. | Fixed: Gradle plugin management now maps the Kotlin Android plugin directly to `org.jetbrains.kotlin:kotlin-gradle-plugin`, and the release is retried as `v1.4.6`. |
 
 ## Maintenance / Cleanup
 

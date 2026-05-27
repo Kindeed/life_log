@@ -1,5 +1,21 @@
 # Changelog
 
+## [1.4.6] - 2026-05-27
+
+### Release 构建修复
+
+#### 变更 (Changed)
+- 应用版本升级到 `1.4.6+12`。
+- 保留 `1.4.5` 中的工时默认月视图和冷启动刷新修复。
+
+#### 修复 (Fixed)
+- 修复 GitHub Actions release 构建中 Kotlin Gradle 插件 marker 解析失败的问题，改为直接解析 Kotlin Gradle plugin 模块。
+
+#### 验证 (Validation)
+- `flutter analyze --no-fatal-infos` 通过。
+- `flutter test` 通过。
+- `git diff --check` 通过。
+
 ## [1.4.5] - 2026-05-27
 
 ### 工时启动刷新修复

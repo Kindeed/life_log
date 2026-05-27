@@ -10,6 +10,14 @@ pluginManagement {
 
     includeBuild("$flutterSdkPath/packages/flutter_tools/gradle")
 
+    resolutionStrategy {
+        eachPlugin {
+            if (requested.id.id == "org.jetbrains.kotlin.android") {
+                useModule("org.jetbrains.kotlin:kotlin-gradle-plugin:${requested.version}")
+            }
+        }
+    }
+
     repositories {
         // 插件下载镜像（你之前配好的）
         maven { url = uri("https://maven.aliyun.com/repository/google") }
