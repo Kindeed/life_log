@@ -1,9 +1,15 @@
 # LifeLog BUG Tracker
 
-**Last updated**: 2026-05-27
+**Last updated**: 2026-05-28
 **Status values**: `open`, `in_progress`, `fixed`, `deferred`, `invalidated`
 
 This is the active defect ledger. `REVIEW_REPORT.md` is historical context only. Photo sync findings from older reports are superseded by `AGENTS.md`: photos remain local-only and must not enter Supabase sync.
+
+## Repository Hygiene Audit (2026-05-28)
+
+- Fixed in this cleanup pass: C2. A hidden AI-tool skill document under `.agent/` was tracked and present on GitHub even though repository guidance should live in `AGENTS.md`, `CLAUDE.md`, and project documentation.
+- Hardened ignore rules for local AI attachments and APK/debug build artifact folders so `.codex-remote-attachments/` and `build_artifacts/` stay local.
+- GitHub file-tree check found no tracked APK/AAB/IPA/ZIP artifacts, signing keys, `local.properties`, `.claude/`, `.codex-remote-attachments/`, or `build_artifacts/` on `origin/main`.
 
 ## Regression Audit (2026-05-27)
 
@@ -107,6 +113,7 @@ This is the active defect ledger. `REVIEW_REPORT.md` is historical context only.
 | ID | Severity | Status | Area | Finding | Fix / Acceptance |
 | --- | --- | --- | --- | --- | --- |
 | C1 | Low | fixed | project cache | Regenerable Flutter project caches were present after prior local builds. | Fixed: ran `flutter clean`, restored dependency metadata with `flutter pub get`, verified the project, then removed test-regenerated `build` cache while keeping required `.dart_tool` metadata. |
+| C2 | Low | fixed | repository docs | Hidden AI-tool guidance under `.agent/skills/flutter_architecture/SKILL.md` was tracked and uploaded to GitHub, duplicating and partially conflicting with the canonical `AGENTS.md` / `CLAUDE.md` guidance. | Fixed: removed the tracked `.agent/` document and ignored `.agent/`, `.codex-remote-attachments/`, and `build_artifacts/` as local-only workspace state. |
 
 ## Performance / Startup / Sync
 

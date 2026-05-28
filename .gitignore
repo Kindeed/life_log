@@ -56,6 +56,9 @@ android/local.properties
 
 # Local diagnostics / review scratch files
 .claude/
+.agent/
+.codex-remote-attachments/
+build_artifacts/
 analyze.txt
 doctor_output.txt
 diff*.txt
