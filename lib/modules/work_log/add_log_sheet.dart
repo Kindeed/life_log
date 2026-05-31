@@ -119,6 +119,7 @@ class _AddLogSheetState extends State<AddLogSheet> {
       height: widget.asPage ? null : sheetHeight,
       title: widget.existingLog != null ? "修改记录" : "记录一下",
       padding: EdgeInsets.zero,
+      hideBottomBarWhenKeyboardVisible: false,
       bottomBar: AppSafeBottomBar(
         padding: EdgeInsets.fromLTRB(24.w, 8.h, 24.w, 16.h),
         child: _buildBottomActions(isDark),

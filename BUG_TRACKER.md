@@ -1,6 +1,6 @@
 # LifeLog BUG Tracker
 
-**Last updated**: 2026-05-28
+**Last updated**: 2026-05-31
 **Status values**: `open`, `in_progress`, `fixed`, `deferred`, `invalidated`
 
 This is the active defect ledger. `REVIEW_REPORT.md` is historical context only. Photo sync findings from older reports are superseded by `AGENTS.md`: photos remain local-only and must not enter Supabase sync.
@@ -91,6 +91,8 @@ This is the active defect ledger. `REVIEW_REPORT.md` is historical context only.
 | U51 | Medium | fixed | `ProjectGalleryView` contextual add | 项目详情页在照片、凭证、支出栏目内点击添加后仍弹出总类型菜单，和当前栏目语义不一致。 | Fixed: project-detail FAB follows the active tab: photos open photo actions, evidence opens evidence actions, and expense opens project-expense editing with the project prefilled. |
 | U52 | Low | fixed | `CreateProjectSheet` copy | 创建第一个项目后再次创建时，项目名称输入提示仍显示“输入第一个项目名称”。 | Fixed: the project-name hint now uses the neutral copy “输入项目名称”. |
 | U53 | Medium | fixed | `ProjectGalleryView` multi-select | 照片多选底部三按钮在窄屏下容易挤压错位，“完成”含义不清，安卓返回/侧滑会返回上级而不是退出选择模式。 | Fixed: the bottom bar keeps only delete/export actions, top cancel remains the explicit exit, and system back/edge-back exits multi-select before leaving the page. |
+| U54 | Medium | fixed | `WorkLogView` dark calendar | 暗色模式下工时日历仅依赖小号状态文字颜色区分工作、出差、请假和休息，选中日、今天或跨月日期容易让状态不明显。 | Fixed: work-log day cells now render logged statuses with a compact high-contrast fill and border while preserving selected/today/outside-month semantics. |
+| U55 | Medium | fixed | `AddLogSheet` save action | 工时记录表单在手动输入加班时长、出差地点/金额、请假原因或备注时，键盘弹起会隐藏底部保存栏，让用户以为没有保存按钮。 | Fixed: work-log add/edit sheets keep the save bottom bar visible above the keyboard without changing the default sheet behavior used by other modules. |
 | D7 | High | fixed | sync parsing | Remote row parsing and push response handling used `DateTime.parse` / direct casts and could abort a sync path on malformed or null fields. | Fixed: pull rows, push responses, server-time reads, and stored cursors now use safe numeric/string/date parsing with fallbacks or controlled failure for invalid remote IDs. |
 | D8 | Medium | fixed | sync trigger dedupe | `syncAll` skipped a fresh manual sync for 2 seconds after the previous one finished. | Fixed: only an in-flight sync is reused now. |
 | U14 | Medium | fixed | `ExpenseRecordEditView` | One-time expense add/edit UI is visually inconsistent with the current finance design system. | Fixed: reworked to a clearer amount-first card, category chips, tokenized surfaces, and stable bottom actions. |
@@ -208,6 +210,7 @@ This is the active defect ledger. `REVIEW_REPORT.md` is historical context only.
 | T4 | Low | fixed | Dependencies | `pubspec.yaml` 中 `get: ^4.6.6` 使用 `^` 范围，未来大版本变化可能带来构建风险。 | Fixed: `get` is pinned to the currently resolved `4.7.3`, matching `pubspec.lock`. |
 | T5 | Medium | fixed | Auth | `AuthService` 无显式会话过期处理逻辑。Supabase 会话过期后，应用可能静默进入未登录状态，同步操作无声失败。 | Fixed: Auth and sync errors that look like expired/invalid sessions now clear local auth state, sign out, and redirect to `/login`. |
 | T9 | Low | deferred | Tooling | `dart run build_runner build --delete-conflicting-outputs` succeeds but warns that `analyzer 5.13.0` may not fully support the current SDK language version. `flutter pub upgrade analyzer build_runner --dry-run` reports no dependency changes, and local `isar_generator 3.1.0+1` constrains `analyzer` to `>=4.6.0 <6.0.0`. | Deferred: remove the warning by migrating the Isar generator/tooling stack to a version compatible with the current Flutter/Dart SDK, then rerun build_runner without the analyzer language-version warning. |
+| T10 | Low | fixed | GitHub APK naming | Release 和手动测试包上传的 APK 文件名沿用 Flutter 默认 `app-...apk`，下载后无法从文件名看出是 LifeLog 应用。 | Fixed: GitHub workflows rename APK assets to `lifelog-...apk` before uploading them. |
 
 ### Backup / Restore
 

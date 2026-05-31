@@ -89,6 +89,12 @@ jobs:
           --dart-define=SUPABASE_URL=${{ secrets.SUPABASE_URL }}
           --dart-define=SUPABASE_ANON_KEY=${{ secrets.SUPABASE_ANON_KEY }}
 
+      - name: Rename APK file
+        run: |
+          for apk in build/app/outputs/flutter-apk/app-*.apk; do
+            mv "$apk" "$(dirname "$apk")/lifelog-${apk##*app-}"
+          done
+
       - name: Upload APK artifact
         uses: actions/upload-artifact@v4
         with:

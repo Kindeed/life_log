@@ -46,6 +46,7 @@ class DayCell extends StatelessWidget {
       var bottomColor = Theme.of(context).colorScheme.onSurfaceVariant;
       var bottomWeight = FontWeight.normal;
       var isSpecial = false;
+      Color? statusColor;
 
       if (jieQi.isNotEmpty) {
         bottomText = jieQi;
@@ -81,10 +82,12 @@ class DayCell extends StatelessWidget {
           bottomText = "休";
           bottomColor = logColors.rest;
         }
+        statusColor = bottomColor;
       }
 
       BoxDecoration? decoration;
       var dayColor = textPrimary;
+      final colorScheme = Theme.of(context).colorScheme;
       if (isSelected) {
         decoration = BoxDecoration(
           color: AppColors.primaryBlue,
@@ -97,10 +100,8 @@ class DayCell extends StatelessWidget {
             ),
           ],
         );
-        dayColor = Theme.of(context).colorScheme.onPrimary;
-        bottomColor = Theme.of(
-          context,
-        ).colorScheme.onPrimary.withValues(alpha: 0.9);
+        dayColor = colorScheme.onPrimary;
+        bottomColor = colorScheme.onPrimary.withValues(alpha: 0.95);
       } else if (isToday) {
         decoration = BoxDecoration(
           color: AppColors.primaryBlue.withValues(alpha: 0.08),
@@ -116,9 +117,22 @@ class DayCell extends StatelessWidget {
         dayColor = isDark ? AppColors.darkDivider : AppColors.lightDivider;
         bottomColor = isDark ? AppColors.darkDivider : AppColors.lightDivider;
         if (isSpecial) {
-          bottomColor = bottomColor.withValues(alpha: 0.5);
+          bottomColor = (statusColor ?? bottomColor).withValues(
+            alpha: isDark ? 0.72 : 0.58,
+          );
         }
       }
+
+      final statusFillColor = statusColor == null
+          ? Colors.transparent
+          : isSelected
+          ? colorScheme.onPrimary.withValues(alpha: 0.18)
+          : statusColor.withValues(alpha: isDark ? 0.24 : 0.12);
+      final statusBorderColor = statusColor == null
+          ? Colors.transparent
+          : isSelected
+          ? colorScheme.onPrimary.withValues(alpha: 0.34)
+          : statusColor.withValues(alpha: isDark ? 0.62 : 0.38);
 
       return Center(
         child: Container(
@@ -154,18 +168,38 @@ class DayCell extends StatelessWidget {
                         ),
                       ),
                       SizedBox(height: 2.h),
-                      Text(
-                        bottomText,
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                        textAlign: TextAlign.center,
-                        style: TextStyle(
-                          color: bottomColor,
-                          fontSize: 9.sp,
-                          height: 1.05,
-                          fontWeight: (isSelected || isSpecial)
-                              ? FontWeight.bold
-                              : bottomWeight,
+                      Align(
+                        alignment: Alignment.center,
+                        child: Container(
+                          width: double.infinity,
+                          padding: EdgeInsets.symmetric(
+                            horizontal: isSpecial ? 3.w : 0,
+                            vertical: isSpecial ? 1.h : 0,
+                          ),
+                          decoration: isSpecial
+                              ? BoxDecoration(
+                                  color: statusFillColor,
+                                  borderRadius: BorderRadius.circular(6),
+                                  border: Border.all(
+                                    color: statusBorderColor,
+                                    width: 0.8,
+                                  ),
+                                )
+                              : null,
+                          child: Text(
+                            bottomText,
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            textAlign: TextAlign.center,
+                            style: TextStyle(
+                              color: bottomColor,
+                              fontSize: 9.sp,
+                              height: 1.05,
+                              fontWeight: (isSelected || isSpecial)
+                                  ? FontWeight.bold
+                                  : bottomWeight,
+                            ),
+                          ),
                         ),
                       ),
                     ],

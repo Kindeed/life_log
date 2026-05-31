@@ -87,6 +87,12 @@ jobs:
           --dart-define=SUPABASE_URL=${{ secrets.SUPABASE_URL }}
           --dart-define=SUPABASE_ANON_KEY=${{ secrets.SUPABASE_ANON_KEY }}
 
+      - name: Rename release APK files
+        run: |
+          mv build/app/outputs/flutter-apk/app-arm64-v8a-release.apk build/app/outputs/flutter-apk/lifelog-arm64-v8a-release.apk
+          mv build/app/outputs/flutter-apk/app-armeabi-v7a-release.apk build/app/outputs/flutter-apk/lifelog-armeabi-v7a-release.apk
+          mv build/app/outputs/flutter-apk/app-x86_64-release.apk build/app/outputs/flutter-apk/lifelog-x86_64-release.apk
+
       # ── 9. 提取版本号用于 Release 标题 ────────────────
       - name: Extract version from tag
         id: version
@@ -101,9 +107,9 @@ jobs:
             ## 📱 LifeLog ${{ steps.version.outputs.TAG_NAME }}
 
             ### 下载安装包
-            - **arm64-v8a** (推荐，适用于绝大多数现代手机)
-            - **armeabi-v7a** (旧款32位手机)
-            - **x86_64** (模拟器/特殊设备)
+            - **lifelog-arm64-v8a-release.apk** (推荐，适用于绝大多数现代手机)
+            - **lifelog-armeabi-v7a-release.apk** (旧款32位手机)
+            - **lifelog-x86_64-release.apk** (模拟器/特殊设备)
 
             ### 安装方式
             1. 下载对应你手机架构的 APK 文件
@@ -114,8 +120,8 @@ jobs:
           draft: false
           prerelease: false
           files: |
-            build/app/outputs/flutter-apk/app-arm64-v8a-release.apk
-            build/app/outputs/flutter-apk/app-armeabi-v7a-release.apk
-            build/app/outputs/flutter-apk/app-x86_64-release.apk
+            build/app/outputs/flutter-apk/lifelog-arm64-v8a-release.apk
+            build/app/outputs/flutter-apk/lifelog-armeabi-v7a-release.apk
+            build/app/outputs/flutter-apk/lifelog-x86_64-release.apk
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
