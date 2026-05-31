@@ -211,6 +211,7 @@ This is the active defect ledger. `REVIEW_REPORT.md` is historical context only.
 | T5 | Medium | fixed | Auth | `AuthService` 无显式会话过期处理逻辑。Supabase 会话过期后，应用可能静默进入未登录状态，同步操作无声失败。 | Fixed: Auth and sync errors that look like expired/invalid sessions now clear local auth state, sign out, and redirect to `/login`. |
 | T9 | Low | deferred | Tooling | `dart run build_runner build --delete-conflicting-outputs` succeeds but warns that `analyzer 5.13.0` may not fully support the current SDK language version. `flutter pub upgrade analyzer build_runner --dry-run` reports no dependency changes, and local `isar_generator 3.1.0+1` constrains `analyzer` to `>=4.6.0 <6.0.0`. | Deferred: remove the warning by migrating the Isar generator/tooling stack to a version compatible with the current Flutter/Dart SDK, then rerun build_runner without the analyzer language-version warning. |
 | T10 | Low | fixed | GitHub APK naming | Release 和手动测试包上传的 APK 文件名沿用 Flutter 默认 `app-...apk`，下载后无法从文件名看出是 LifeLog 应用。 | Fixed: GitHub workflows rename APK assets to `lifelog-...apk` before uploading them. |
+| T11 | Medium | fixed | GitHub release dependency drift | `v1.4.8` release 构建中 CI 的 `flutter pub get` 更新了锁定依赖，导致本地验证和 GitHub release 构建使用不同依赖集合，并在 Android release 构建阶段失败。 | Fixed: GitHub workflows now use the same pub / Flutter mirrors as the lockfile and run `flutter pub get --enforce-lockfile` so CI fails fast instead of silently changing dependencies. |
 
 ### Backup / Restore
 

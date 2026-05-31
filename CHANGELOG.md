@@ -1,5 +1,21 @@
 # Changelog
 
+## [1.4.9] - 2026-05-31
+
+### Release 构建稳定性修复
+
+#### 变更 (Changed)
+- 应用版本升级到 `1.4.9+15`。
+- GitHub Actions 安装依赖时强制使用 `pubspec.lock`，并固定到与锁文件一致的 pub / Flutter 镜像，避免 CI 依赖漂移。
+
+#### 修复 (Fixed)
+- 修复 `v1.4.8` release 构建中 `flutter pub get` 自动更新锁定依赖后，Android release 构建失败的问题。
+
+#### 验证 (Validation)
+- `flutter analyze --no-fatal-infos` 通过。
+- `flutter test` 通过。
+- `git diff --check` 通过。
+
 ## [1.4.8] - 2026-05-31
 
 ### 工时暗色模式与发布包命名修复
