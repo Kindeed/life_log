@@ -27,6 +27,7 @@ class WorkLogView extends StatelessWidget {
     return Scaffold(
       backgroundColor: theme.scaffoldBackgroundColor,
       floatingActionButton: FloatingActionButton.extended(
+        heroTag: 'work_log_add_fab',
         onPressed: () => _openLogEdit(logic),
         icon: const Icon(Icons.edit_calendar_rounded),
         label: const Text('记工时'),

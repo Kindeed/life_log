@@ -4,6 +4,8 @@ import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:get/get.dart';
 import 'package:life_log/modules/evidence/evidence_controller.dart';
 import 'package:life_log/modules/evidence/evidence_model.dart';
+import 'package:life_log/modules/evidence/evidence_summary_utils.dart';
+import 'package:life_log/modules/evidence/views/evidence_detail_sheet.dart';
 import 'package:life_log/modules/expense/expense_record_controller.dart';
 import 'package:life_log/modules/expense/expense_record_model.dart';
 import 'package:life_log/modules/expense/views/expense_record_edit_view.dart';
@@ -463,19 +465,24 @@ class _ProjectGalleryViewState extends State<ProjectGalleryView>
       separatorBuilder: (_, _) => SizedBox(height: 10.h),
       itemBuilder: (context, index) {
         final item = items[index];
-        final title = item.merchant?.trim().isNotEmpty == true
-            ? item.merchant!
-            : item.category.label;
         return ListTile(
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(12),
           ),
           tileColor: theme.cardColor,
           leading: const Icon(Icons.receipt_long_rounded),
-          title: Text(title),
-          subtitle: Text(formatDateYmd(item.evidenceDate)),
+          title: Text(
+            evidenceDisplayTitle(item),
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+          ),
+          subtitle: Text(
+            evidenceDisplaySubtitle(item),
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+          ),
           trailing: Text('¥${(item.amount ?? 0).toStringAsFixed(2)}'),
-          onTap: () => evidenceController.editEvidence(item),
+          onTap: () => showEvidenceDetailSheet(item),
         );
       },
     );

@@ -81,6 +81,7 @@ class _PhotoViewState extends State<PhotoView> {
         ],
       ),
       floatingActionButton: FloatingActionButton.extended(
+        heroTag: 'project_overview_create_fab',
         onPressed: _openCreateProjectSheet,
         icon: const Icon(Icons.create_new_folder_rounded),
         label: const Text("创建项目"),

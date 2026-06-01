@@ -12,6 +12,7 @@ import 'package:life_log/modules/project/project_repository.dart';
 import 'package:path/path.dart' as p;
 import 'package:path_provider/path_provider.dart';
 
+import 'evidence_file_utils.dart';
 import 'evidence_model.dart';
 
 class EvidenceRepository extends GetxService {
@@ -85,14 +86,10 @@ class EvidenceRepository extends GetxService {
     }
 
     final sourceFile = File(sourcePath);
-    final extension = (sourceExtension?.trim().isNotEmpty == true)
-        ? sourceExtension!.trim()
-        : sourcePath.contains('.')
-        ? sourcePath.substring(sourcePath.lastIndexOf('.'))
-        : '.jpg';
-    final normalizedExtension = extension.startsWith('.')
-        ? extension.toLowerCase()
-        : '.${extension.toLowerCase()}';
+    final normalizedExtension = evidenceExtensionForPath(
+      sourcePath,
+      fallbackExtension: sourceExtension,
+    );
     final dateStr = DateFormat('yyyyMMdd_HHmmss').format(evidence.evidenceDate);
     final category = evidence.category.name;
     final fileName = '${category}_$dateStr$normalizedExtension';
@@ -101,11 +98,7 @@ class EvidenceRepository extends GetxService {
     await sourceFile.copy(targetPath);
     evidence.localFilePath = targetPath;
     evidence.fileName = p.basename(targetPath);
-    evidence.mimeType = normalizedExtension == '.png'
-        ? 'image/png'
-        : normalizedExtension == '.pdf'
-        ? 'application/pdf'
-        : 'image/jpeg';
+    evidence.mimeType = evidenceMimeTypeForPath(targetPath);
     evidence.uploadedAt = null;
     evidence.remoteStoragePath = null;
   }

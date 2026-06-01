@@ -11,7 +11,9 @@ import 'package:life_log/common/utils/date_utils.dart';
 import 'package:life_log/common/utils/formatters.dart';
 import 'package:life_log/common/widgets/app_confirm_dialog.dart';
 import 'package:life_log/modules/evidence/evidence_controller.dart';
+import 'package:life_log/modules/evidence/evidence_file_utils.dart';
 import 'package:life_log/modules/evidence/evidence_model.dart';
+import 'package:life_log/modules/evidence/evidence_parse_service.dart';
 
 void showEvidenceEditorSheet({
   ExpenseEvidence? existing,
@@ -77,6 +79,7 @@ class _EvidenceEditorSheetState extends State<EvidenceEditorSheet> {
   DateTime? _tripDate;
   String? _pendingSourcePath;
   String? _pendingSourceExtension;
+  bool _isParsingAttachment = false;
   EvidenceCategory _category = EvidenceCategory.invoice;
   EvidenceStatus _status = EvidenceStatus.pending;
 
@@ -180,6 +183,18 @@ class _EvidenceEditorSheetState extends State<EvidenceEditorSheet> {
               label: const Text('导入文件'),
             ),
           ),
+          if (_previewPath != null &&
+              isEvidenceParseablePath(_previewPath!)) ...[
+            SizedBox(height: 10.h),
+            SizedBox(
+              width: double.infinity,
+              child: OutlinedButton.icon(
+                onPressed: _isParsingAttachment ? null : _parseAttachment,
+                icon: const Icon(Icons.document_scanner_rounded),
+                label: Text(_isParsingAttachment ? '正在解析' : '解析附件'),
+              ),
+            ),
+          ],
         ] else ...[
           SizedBox(height: 12.h),
           Row(
@@ -416,7 +431,7 @@ class _EvidenceEditorSheetState extends State<EvidenceEditorSheet> {
     final path = _previewPath;
     if (path == null) return const SizedBox.shrink();
 
-    if (_isImagePath(path)) {
+    if (isEvidenceImagePath(path)) {
       return ClipRRect(
         borderRadius: BorderRadius.circular(12),
         child: Image.file(
@@ -484,26 +499,11 @@ class _EvidenceEditorSheetState extends State<EvidenceEditorSheet> {
     );
   }
 
-  bool _isImagePath(String path) {
-    final lower = path.toLowerCase();
-    return lower.endsWith('.png') ||
-        lower.endsWith('.jpg') ||
-        lower.endsWith('.jpeg') ||
-        lower.endsWith('.webp') ||
-        lower.endsWith('.gif') ||
-        lower.endsWith('.heic');
-  }
-
   String _fileName(String path) {
-    return path.split(Platform.pathSeparator).last;
+    return evidenceFileName(path);
   }
 
-  String _attachmentTypeLabel(String path) {
-    final lower = path.toLowerCase();
-    if (lower.endsWith('.pdf')) return 'PDF 发票';
-    if (_isImagePath(path)) return '图片附件';
-    return '文件附件';
-  }
+  String _attachmentTypeLabel(String path) => evidenceAttachmentTypeLabel(path);
 
   Widget _buildTextField({
     required TextEditingController controller,
@@ -760,7 +760,7 @@ class _EvidenceEditorSheetState extends State<EvidenceEditorSheet> {
     final result = await FilePicker.platform.pickFiles(
       allowMultiple: false,
       type: FileType.custom,
-      allowedExtensions: const ['jpg', 'jpeg', 'png', 'pdf'],
+      allowedExtensions: evidenceImportExtensions,
     );
     final file = result?.files.single;
     final path = file?.path;
@@ -769,5 +769,82 @@ class _EvidenceEditorSheetState extends State<EvidenceEditorSheet> {
       _pendingSourcePath = path;
       _pendingSourceExtension = file?.extension;
     });
+  }
+
+  Future<void> _parseAttachment() async {
+    final path = _previewPath;
+    if (path == null) return;
+    if (!isEvidenceParseablePath(path)) {
+      Get.snackbar('无法解析', '当前仅支持解析图片或 PDF 凭证');
+      return;
+    }
+
+    setState(() => _isParsingAttachment = true);
+    try {
+      final parser = Get.isRegistered<EvidenceParseService>()
+          ? EvidenceParseService.to
+          : Get.put(EvidenceParseService(), permanent: true);
+      final result = await parser.parseFile(path);
+      var changed = false;
+
+      if (result.amount != null && _amountController.text.trim().isEmpty) {
+        _amountController.text = result.amount!.toStringAsFixed(2);
+        changed = true;
+      }
+      if (result.merchant != null && _merchantController.text.trim().isEmpty) {
+        _merchantController.text = result.merchant!;
+        changed = true;
+      }
+      if (result.evidenceDate != null && _shouldApplyParsedDate()) {
+        _evidenceDate = result.evidenceDate!;
+        changed = true;
+      }
+      final nextNote = _appendParsedNoteLines(
+        _noteController.text,
+        result.noteLines,
+      );
+      if (nextNote != _noteController.text.trim()) {
+        _noteController.text = nextNote;
+        changed = true;
+      }
+
+      setState(() {});
+      Get.snackbar('解析完成', changed ? '已填入识别到的空字段' : '没有识别到可自动填入的字段');
+    } catch (e) {
+      Get.snackbar('解析失败', e.toString());
+    } finally {
+      if (mounted) {
+        setState(() => _isParsingAttachment = false);
+      }
+    }
+  }
+
+  bool _shouldApplyParsedDate() {
+    if (widget.existing != null) return false;
+    final today = dateOnlyLocal(DateTime.now());
+    return _evidenceDate.year == today.year &&
+        _evidenceDate.month == today.month &&
+        _evidenceDate.day == today.day;
+  }
+
+  String _appendParsedNoteLines(String current, List<String> lines) {
+    final nextLines = current
+        .split('\n')
+        .map((line) => line.trim())
+        .where((line) => line.isNotEmpty && !_isGeneratedParsedNoteLine(line))
+        .toList();
+    final existing = nextLines.join('\n');
+    for (final line in lines) {
+      if (line.trim().isEmpty || existing.contains(line)) continue;
+      nextLines.add(line);
+    }
+    return nextLines.join('\n');
+  }
+
+  bool _isGeneratedParsedNoteLine(String line) {
+    return line.startsWith('发票号：') ||
+        line.startsWith('消费内容：') ||
+        line.startsWith('购买方：') ||
+        line.startsWith('纳税号：');
   }
 }

@@ -7,6 +7,7 @@ import '../../modules/subscription/subscription_repository.dart';
 import '../../modules/photo/photo_controller.dart';
 import '../../modules/photo/photo_repository.dart';
 import '../../modules/evidence/evidence_controller.dart';
+import '../../modules/evidence/evidence_parse_service.dart';
 import '../../modules/evidence/evidence_repository.dart';
 import '../../modules/expense/expense_record_controller.dart';
 import '../../modules/expense/expense_record_repository.dart';
@@ -30,6 +31,7 @@ class TabsBinding extends Bindings {
     Get.lazyPut(() => PhotoRepository(), fenix: true);
     Get.lazyPut(() => PhotoController(), fenix: true);
     Get.lazyPut(() => EvidenceRepository(), fenix: true);
+    Get.lazyPut(() => EvidenceParseService(), fenix: true);
     Get.lazyPut(() => EvidenceController(), fenix: true);
     Get.lazyPut(() => StatisticsController(), fenix: true);
     Get.lazyPut(() => ProfileController(), fenix: true);

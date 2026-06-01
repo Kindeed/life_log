@@ -115,6 +115,7 @@ class SubscriptionView extends StatelessWidget {
         }),
       ),
       floatingActionButton: FloatingActionButton.extended(
+        heroTag: 'subscription_add_fab',
         onPressed: () => _showAddSheet(),
         icon: const Icon(Icons.add_rounded),
         label: const Text("添加支出"),

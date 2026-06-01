@@ -81,6 +81,7 @@ void main() {
           return [expenseRecord(7)];
         },
       );
+      controller.selectedMonth.value = DateTime(2026, 5);
 
       await controller.refreshStats();
 
@@ -100,6 +101,7 @@ void main() {
         ],
         getAllExpenseRecords: () async => [expenseRecord(7)],
       );
+      controller.selectedMonth.value = DateTime(2026, 5);
 
       await controller.refreshStats();
 
@@ -132,6 +134,7 @@ void main() {
           return [expenseRecord(8)];
         },
       );
+      controller.selectedMonth.value = DateTime(2026, 5);
 
       await controller.refreshChangedSourcesForTest({
         StatisticsRefreshSource.subscriptions,

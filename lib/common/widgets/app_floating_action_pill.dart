@@ -10,6 +10,7 @@ class AppFloatingActionPill extends StatelessWidget {
   final Color color;
   final bool visible;
   final VoidCallback onPressed;
+  final Object? heroTag;
 
   const AppFloatingActionPill({
     super.key,
@@ -18,6 +19,7 @@ class AppFloatingActionPill extends StatelessWidget {
     required this.color,
     required this.visible,
     required this.onPressed,
+    this.heroTag,
   });
 
   @override
@@ -31,6 +33,7 @@ class AppFloatingActionPill extends StatelessWidget {
         curve: AppMotion.standardDecelerate,
         opacity: visible ? 1 : 0,
         child: FloatingActionButton.extended(
+          heroTag: heroTag,
           backgroundColor: color,
           elevation: 0,
           highlightElevation: 0,

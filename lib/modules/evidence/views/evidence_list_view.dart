@@ -1,5 +1,3 @@
-import 'dart:io';
-
 import 'package:flutter/material.dart';
 import 'package:life_log/common/theme/theme_extensions.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
@@ -17,6 +15,8 @@ import 'package:life_log/common/widgets/app_metric_tile.dart';
 import 'package:life_log/common/widgets/app_text_field.dart';
 import 'package:life_log/modules/evidence/evidence_controller.dart';
 import 'package:life_log/modules/evidence/evidence_model.dart';
+import 'package:life_log/modules/evidence/evidence_summary_utils.dart';
+import 'package:life_log/modules/evidence/views/evidence_detail_sheet.dart';
 
 class EvidenceListView extends StatelessWidget {
   const EvidenceListView({super.key});
@@ -102,6 +102,7 @@ class EvidenceListView extends StatelessWidget {
             bottom: 18.h,
             child: Center(
               child: FloatingActionButton.extended(
+                heroTag: 'evidence_list_add_fab',
                 backgroundColor: semantic.warning,
                 foregroundColor: Colors.white,
                 elevation: 0,
@@ -209,8 +210,7 @@ class EvidenceListView extends StatelessWidget {
                     return _EvidenceItemCard(
                       item: item,
                       textSecondary: textSecondary,
-                      onTap: () =>
-                          _showEvidenceDetail(context, controller, item),
+                      onTap: () => showEvidenceDetailSheet(item),
                     );
                   },
                 ),
@@ -256,96 +256,6 @@ class EvidenceListView extends StatelessWidget {
         ),
       ],
     );
-  }
-
-  void _showEvidenceDetail(
-    BuildContext context,
-    EvidenceController controller,
-    ExpenseEvidence item,
-  ) {
-    final theme = Theme.of(context);
-    final textSecondary = theme.colorScheme.onSurfaceVariant;
-
-    Get.bottomSheet(
-      SafeArea(
-        top: false,
-        child: Container(
-          padding: EdgeInsets.fromLTRB(18.w, 16.h, 18.w, 24.h),
-          decoration: BoxDecoration(
-            color: theme.scaffoldBackgroundColor,
-            borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
-          ),
-          child: SingleChildScrollView(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Row(
-                  children: [
-                    Expanded(
-                      child: Text(
-                        item.merchant?.isNotEmpty == true
-                            ? item.merchant!
-                            : item.category.label,
-                        style: TextStyle(
-                          fontSize: 18.sp,
-                          fontWeight: FontWeight.w800,
-                        ),
-                      ),
-                    ),
-                    IconButton(
-                      icon: Icon(Icons.close_rounded, color: textSecondary),
-                      onPressed: Get.back,
-                    ),
-                  ],
-                ),
-                SizedBox(height: 12.h),
-                _EvidencePreview(item: item, height: 220.h),
-                SizedBox(height: 16.h),
-                _InfoRow(label: '项目', value: item.projectName),
-                _InfoRow(label: '日期', value: _formatDate(item.evidenceDate)),
-                _InfoRow(label: '金额', value: formatMoney(item.amount ?? 0)),
-                _InfoRow(label: '类型', value: item.category.label),
-                _InfoRow(label: '状态', value: item.status.label),
-                if (item.tripDate != null)
-                  _InfoRow(label: '出差日期', value: _formatDate(item.tripDate!)),
-                if (item.note?.isNotEmpty == true)
-                  _InfoRow(label: '备注', value: item.note!),
-                SizedBox(height: 18.h),
-                Row(
-                  children: [
-                    Expanded(
-                      child: OutlinedButton.icon(
-                        onPressed: () => controller.exportEvidenceFile(item),
-                        icon: const Icon(Icons.ios_share_rounded),
-                        label: const Text('导出'),
-                      ),
-                    ),
-                    SizedBox(width: 10.w),
-                    Expanded(
-                      child: FilledButton.icon(
-                        onPressed: () {
-                          Get.back();
-                          controller.editEvidence(item);
-                        },
-                        icon: const Icon(Icons.edit_rounded),
-                        label: const Text('编辑'),
-                      ),
-                    ),
-                  ],
-                ),
-              ],
-            ),
-          ),
-        ),
-      ),
-      isScrollControlled: true,
-      backgroundColor: Colors.transparent,
-    );
-  }
-
-  String _formatDate(DateTime date) {
-    return formatDateYmd(date);
   }
 }
 
@@ -443,7 +353,11 @@ class _EvidenceProjectCard extends StatelessWidget {
       padding: EdgeInsets.all(10.w),
       child: Row(
         children: [
-          _EvidencePreview(item: summary.latest, width: 86.w, height: 86.w),
+          EvidenceAttachmentPreview(
+            item: summary.latest,
+            width: 86.w,
+            height: 86.w,
+          ),
           SizedBox(width: 12.w),
           Expanded(
             child: Column(
@@ -465,7 +379,10 @@ class _EvidenceProjectCard extends StatelessWidget {
                 ),
                 SizedBox(height: 6.h),
                 Text(
-                  '最近 ${_formatDate(summary.latest.evidenceDate)}',
+                  evidenceContentSummary(summary.latest) ??
+                      '最近 ${_formatDate(summary.latest.evidenceDate)}',
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
                   style: TextStyle(color: textSecondary, fontSize: 12.sp),
                 ),
                 SizedBox(height: 10.h),
@@ -530,16 +447,14 @@ class _EvidenceItemCard extends StatelessWidget {
       padding: EdgeInsets.all(10.w),
       child: Row(
         children: [
-          _EvidencePreview(item: item, width: 58.w, height: 58.w),
+          EvidenceAttachmentPreview(item: item, width: 58.w, height: 58.w),
           SizedBox(width: 12.w),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  item.merchant?.isNotEmpty == true
-                      ? item.merchant!
-                      : item.category.label,
+                  evidenceDisplayTitle(item),
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                   style: theme.textTheme.titleSmall?.copyWith(
@@ -548,7 +463,9 @@ class _EvidenceItemCard extends StatelessWidget {
                 ),
                 SizedBox(height: 5.h),
                 Text(
-                  '${_formatDate(item.evidenceDate)} · ${item.category.label}',
+                  evidenceDisplaySubtitle(item),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
                   style: TextStyle(color: textSecondary, fontSize: 12.sp),
                 ),
               ],
@@ -571,96 +488,6 @@ class _EvidenceItemCard extends StatelessWidget {
                 color: statusColor,
               ),
             ],
-          ),
-        ],
-      ),
-    );
-  }
-
-  String _formatDate(DateTime date) {
-    final local = date.toLocal();
-    return '${local.month.toString().padLeft(2, '0')}.${local.day.toString().padLeft(2, '0')}';
-  }
-}
-
-class _EvidencePreview extends StatelessWidget {
-  final ExpenseEvidence item;
-  final double? width;
-  final double height;
-
-  const _EvidencePreview({
-    required this.item,
-    this.width,
-    required this.height,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    final path = item.localFilePath;
-    final theme = Theme.of(context);
-
-    return ClipRRect(
-      borderRadius: BorderRadius.circular(8),
-      child: Container(
-        width: width ?? double.infinity,
-        height: height,
-        color: theme.colorScheme.surfaceContainerHighest,
-        child: path != null && File(path).existsSync() && _isImagePath(path)
-            ? Image.file(
-                File(path),
-                fit: BoxFit.cover,
-                errorBuilder: (_, _, _) => _placeholder(theme),
-              )
-            : _placeholder(theme),
-      ),
-    );
-  }
-
-  bool _isImagePath(String path) {
-    final lower = path.toLowerCase();
-    return lower.endsWith('.png') ||
-        lower.endsWith('.jpg') ||
-        lower.endsWith('.jpeg') ||
-        lower.endsWith('.webp') ||
-        lower.endsWith('.gif') ||
-        lower.endsWith('.heic');
-  }
-
-  Widget _placeholder(ThemeData theme) {
-    return Icon(
-      Icons.receipt_long_rounded,
-      color: theme.colorScheme.onSurfaceVariant,
-      size: 28.sp,
-    );
-  }
-}
-
-class _InfoRow extends StatelessWidget {
-  final String label;
-  final String value;
-
-  const _InfoRow({required this.label, required this.value});
-
-  @override
-  Widget build(BuildContext context) {
-    final textSecondary = Theme.of(context).colorScheme.onSurfaceVariant;
-    return Padding(
-      padding: EdgeInsets.symmetric(vertical: 5.h),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          SizedBox(
-            width: 78.w,
-            child: Text(
-              label,
-              style: TextStyle(color: textSecondary, fontSize: 13.sp),
-            ),
-          ),
-          Expanded(
-            child: Text(
-              value,
-              style: TextStyle(fontSize: 13.sp, fontWeight: FontWeight.w600),
-            ),
           ),
         ],
       ),

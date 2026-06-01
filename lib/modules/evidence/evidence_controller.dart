@@ -5,8 +5,12 @@ import 'package:file_picker/file_picker.dart';
 import 'package:get/get.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:life_log/common/services/log_service.dart';
+import 'package:life_log/common/services/sync_service.dart';
+import 'package:open_filex/open_filex.dart';
 
+import 'evidence_file_utils.dart';
 import 'evidence_model.dart';
+import 'evidence_parse_service.dart';
 import 'evidence_repository.dart';
 import 'views/evidence_editor_sheet.dart';
 
@@ -32,6 +36,7 @@ class EvidenceController extends GetxController {
 
   final evidence = <ExpenseEvidence>[].obs;
   final isLoading = false.obs;
+  final isParsing = false.obs;
   final searchQuery = ''.obs;
   final sortMode = EvidenceSortMode.recent.obs;
   final _summaryCacheVersion = 0.obs;
@@ -202,7 +207,7 @@ class EvidenceController extends GetxController {
       final result = await FilePicker.platform.pickFiles(
         allowMultiple: false,
         type: FileType.custom,
-        allowedExtensions: const ['jpg', 'jpeg', 'png', 'pdf'],
+        allowedExtensions: evidenceImportExtensions,
       );
       final file = result?.files.single;
       final path = file?.path;
@@ -263,8 +268,9 @@ class EvidenceController extends GetxController {
   }
 
   Future<void> exportEvidenceFile(ExpenseEvidence item) async {
+    final hasFile = await ensureLocalEvidenceFile(item);
     final path = item.localFilePath;
-    if (path == null || !await File(path).exists()) {
+    if (!hasFile || path == null) {
       Get.snackbar('无法导出', '本机没有可导出的凭证文件');
       return;
     }
@@ -281,6 +287,84 @@ class EvidenceController extends GetxController {
     } catch (e, stackTrace) {
       LogService.to.error('Evidence', '导出凭证文件失败: $e', stackTrace);
       Get.snackbar('导出失败', e.toString());
+    }
+  }
+
+  Future<void> openEvidenceFile(ExpenseEvidence item) async {
+    final hasFile = await ensureLocalEvidenceFile(item);
+    final path = item.localFilePath;
+    if (!hasFile || path == null) {
+      Get.snackbar('无法打开', '本机没有可打开的凭证文件');
+      return;
+    }
+
+    try {
+      final result = await OpenFilex.open(path);
+      if (result.type != ResultType.done) {
+        Get.snackbar('无法打开', result.message);
+      }
+    } catch (e, stackTrace) {
+      LogService.to.error('Evidence', '打开凭证文件失败: $e', stackTrace);
+      Get.snackbar('打开失败', e.toString());
+    }
+  }
+
+  Future<EvidenceParseResult?> parseEvidenceFile(ExpenseEvidence item) async {
+    final hasFile = await ensureLocalEvidenceFile(item);
+    final path = item.localFilePath;
+    if (!hasFile || path == null) {
+      Get.snackbar('无法解析', '本机没有可解析的凭证文件');
+      return null;
+    }
+    if (!isEvidenceParseablePath(path)) {
+      Get.snackbar('无法解析', '当前仅支持解析图片或 PDF 凭证');
+      return null;
+    }
+
+    try {
+      isParsing.value = true;
+      final parser = Get.isRegistered<EvidenceParseService>()
+          ? EvidenceParseService.to
+          : Get.put(EvidenceParseService(), permanent: true);
+      final result = await parser.parseFile(path);
+      if (!result.hasAnyField) {
+        Get.snackbar('解析完成', '没有识别到可自动填入的字段');
+      }
+      return result;
+    } catch (e, stackTrace) {
+      LogService.to.error('Evidence', '解析凭证失败: $e', stackTrace);
+      Get.snackbar('解析失败', e.toString());
+      return null;
+    } finally {
+      isParsing.value = false;
+    }
+  }
+
+  Future<bool> ensureLocalEvidenceFile(
+    ExpenseEvidence item, {
+    bool notify = false,
+  }) async {
+    final path = item.localFilePath;
+    if (path != null && await File(path).exists()) return true;
+
+    if (item.remoteStoragePath == null || !Get.isRegistered<SyncService>()) {
+      if (notify) Get.snackbar('文件缺失', '本机没有此凭证文件');
+      return false;
+    }
+
+    try {
+      await SyncService.to.downloadEvidenceFile(item);
+      final restoredPath = item.localFilePath;
+      final restored =
+          restoredPath != null && await File(restoredPath).exists();
+      if (restored && notify) {
+        Get.snackbar('已恢复', '凭证文件已从云端下载到本机');
+      }
+      return restored;
+    } catch (e, stackTrace) {
+      LogService.to.error('Evidence', '恢复凭证文件失败: $e', stackTrace);
+      if (notify) Get.snackbar('文件缺失', '无法从云端恢复此凭证文件');
+      return false;
     }
   }
 }
