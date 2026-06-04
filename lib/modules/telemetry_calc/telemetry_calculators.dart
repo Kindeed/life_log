@@ -605,11 +605,7 @@ class TelemetryCalculatorRegistry {
         label: '编码后码率',
         unitId: 'bps',
       ),
-      TelemetryOutputDefinition(
-        id: 'symbol_rate',
-        label: '符号率',
-        unitId: 'Msps',
-      ),
+      TelemetryOutputDefinition(id: 'symbol_rate', label: '符号率', unitId: 'Hz'),
       TelemetryOutputDefinition(
         id: 'occupied_bandwidth',
         label: '占用带宽',
@@ -638,7 +634,7 @@ class TelemetryCalculatorRegistry {
     final codingRate = context.number('coding_rate', 'ratio');
     final bitsPerSymbol = context.optionValue('modulation');
     final rolloff = context.number('rolloff', 'ratio');
-    final overhead = context.number('overhead', 'percent');
+    final overhead = context.number('overhead', 'ratio');
 
     final codedRate = payloadRate / codingRate / (1 - overhead);
     final symbolRate = codedRate / bitsPerSymbol;
@@ -648,7 +644,7 @@ class TelemetryCalculatorRegistry {
     return TelemetryCalculationResult(
       outputs: [
         context.output('coded_rate', codedRate, unitId: 'Mbps'),
-        context.output('symbol_rate', symbolRate),
+        context.output('symbol_rate', symbolRate, unitId: 'Msps'),
         context.output('occupied_bandwidth', occupiedBandwidth, unitId: 'MHz'),
         context.output('spectral_efficiency', spectralEfficiency),
       ],

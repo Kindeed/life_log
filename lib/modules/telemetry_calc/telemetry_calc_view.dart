@@ -206,6 +206,10 @@ class _TelemetryCalcDetailViewState extends State<TelemetryCalcDetailView> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
+                    _FormulaPanel(definition: widget.definition, color: color),
+                    SizedBox(height: 16.h),
+                    Divider(color: theme.semanticColors.border, height: 1),
+                    SizedBox(height: 14.h),
                     _ResultPanel(result: _result, color: color),
                     SizedBox(height: 16.h),
                     Divider(color: theme.semanticColors.border, height: 1),
@@ -260,8 +264,6 @@ class _TelemetryCalcDetailViewState extends State<TelemetryCalcDetailView> {
                   ],
                 ),
               ),
-              SizedBox(height: 16.h),
-              _FormulaPanel(definition: widget.definition),
             ],
           ),
         ),
@@ -1365,64 +1367,183 @@ class _AdvancedToggle extends StatelessWidget {
 
 class _FormulaPanel extends StatelessWidget {
   final TelemetryCalculatorDefinition definition;
+  final Color color;
 
-  const _FormulaPanel({required this.definition});
+  const _FormulaPanel({required this.definition, required this.color});
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final formulas = definition.formulas;
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        const AppSectionHeader(title: '公式与依据'),
-        SizedBox(height: 10.h),
-        for (final formula in definition.formulas)
+        _SectionTitle(
+          title: '公式与依据',
+          subtitle: '先确认计算关系，再调整参数',
+          icon: Icons.functions_rounded,
+          color: color,
+        ),
+        SizedBox(height: 12.h),
+        for (var i = 0; i < formulas.length; i++)
           Padding(
-            padding: EdgeInsets.only(bottom: 10.h),
-            child: AppCard(
-              padding: EdgeInsets.all(14.w),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Row(
+            padding: EdgeInsets.only(
+              bottom: i == formulas.length - 1 ? 0 : 10.h,
+            ),
+            child: Container(
+              width: double.infinity,
+              padding: EdgeInsets.all(12.w),
+              decoration: BoxDecoration(
+                color: theme.semanticColors.mutedSurface.withValues(
+                  alpha: 0.62,
+                ),
+                borderRadius: BorderRadius.circular(8),
+                border: Border.all(color: theme.semanticColors.border),
+              ),
+              child: Builder(
+                builder: (context) {
+                  final formula = formulas[i];
+                  return Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Expanded(
-                        child: Text(
-                          formula.title,
-                          style: const TextStyle(fontWeight: FontWeight.w800),
+                      Row(
+                        children: [
+                          Expanded(
+                            child: Text(
+                              formula.title,
+                              style: const TextStyle(
+                                fontWeight: FontWeight.w800,
+                              ),
+                            ),
+                          ),
+                          IconButton(
+                            tooltip: '复制公式',
+                            onPressed: () {
+                              Clipboard.setData(
+                                ClipboardData(text: formula.expression),
+                              );
+                              Get.snackbar('已复制', formula.title);
+                            },
+                            icon: const Icon(Icons.copy_rounded),
+                            style: IconButton.styleFrom(
+                              minimumSize: Size(34.w, 34.w),
+                              tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                            ),
+                          ),
+                        ],
+                      ),
+                      SizedBox(height: 8.h),
+                      _FormulaExpression(
+                        expression: formula.expression,
+                        color: color,
+                      ),
+                      SizedBox(height: 8.h),
+                      Text(
+                        formula.source,
+                        style: TextStyle(
+                          color: Theme.of(context).colorScheme.onSurfaceVariant,
+                          fontSize: 12.sp,
                         ),
                       ),
-                      IconButton(
-                        tooltip: '复制公式',
-                        onPressed: () {
-                          Clipboard.setData(
-                            ClipboardData(text: formula.expression),
-                          );
-                          Get.snackbar('已复制', formula.title);
-                        },
-                        icon: const Icon(Icons.copy_rounded),
-                      ),
+                      if (formula.note.isNotEmpty) ...[
+                        SizedBox(height: 6.h),
+                        Text(formula.note),
+                      ],
                     ],
-                  ),
-                  SelectableText(formula.expression),
-                  SizedBox(height: 8.h),
-                  Text(
-                    formula.source,
-                    style: TextStyle(
-                      color: Theme.of(context).colorScheme.onSurfaceVariant,
-                      fontSize: 12.sp,
-                    ),
-                  ),
-                  if (formula.note.isNotEmpty) ...[
-                    SizedBox(height: 6.h),
-                    Text(formula.note),
-                  ],
-                ],
+                  );
+                },
               ),
             ),
           ),
       ],
     );
   }
+}
+
+class _FormulaExpression extends StatelessWidget {
+  final String expression;
+  final Color color;
+
+  const _FormulaExpression({required this.expression, required this.color});
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    return Container(
+      width: double.infinity,
+      padding: EdgeInsets.symmetric(horizontal: 10.w, vertical: 10.h),
+      decoration: BoxDecoration(
+        color: theme.colorScheme.surface.withValues(alpha: 0.72),
+        borderRadius: BorderRadius.circular(8),
+        border: Border.all(color: color.withValues(alpha: 0.18)),
+      ),
+      child: SingleChildScrollView(
+        scrollDirection: Axis.horizontal,
+        child: SelectableText.rich(
+          TextSpan(children: _formulaSpans(context, expression, color)),
+          style: TextStyle(
+            fontFamily: 'Roboto',
+            fontSize: 13.sp,
+            height: 1.35,
+            color: theme.colorScheme.onSurface,
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+List<TextSpan> _formulaSpans(
+  BuildContext context,
+  String expression,
+  Color color,
+) {
+  final theme = Theme.of(context);
+  final secondary = theme.colorScheme.onSurfaceVariant;
+  final spans = <TextSpan>[];
+  final buffer = StringBuffer();
+
+  void flushBuffer() {
+    if (buffer.isEmpty) return;
+    final text = buffer.toString();
+    buffer.clear();
+    final isNumber = double.tryParse(text) != null;
+    spans.add(
+      TextSpan(
+        text: text,
+        style: TextStyle(
+          color: isNumber ? color : theme.colorScheme.onSurface,
+          fontWeight: isNumber ? FontWeight.w800 : FontWeight.w700,
+          fontStyle: isNumber ? FontStyle.normal : FontStyle.italic,
+        ),
+      ),
+    );
+  }
+
+  for (final rune in expression.runes) {
+    final char = String.fromCharCode(rune);
+    if ('+-*/=^(),'.contains(char)) {
+      flushBuffer();
+      spans.add(
+        TextSpan(
+          text: ' $char ',
+          style: TextStyle(color: color, fontWeight: FontWeight.w900),
+        ),
+      );
+    } else if (char == '_') {
+      flushBuffer();
+      spans.add(
+        TextSpan(
+          text: '_',
+          style: TextStyle(color: secondary, fontWeight: FontWeight.w600),
+        ),
+      );
+    } else {
+      buffer.write(char);
+    }
+  }
+  flushBuffer();
+  return spans;
 }
 
 String _categoryLabel(TelemetryCalculatorCategory category) {

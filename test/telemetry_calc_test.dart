@@ -83,6 +83,23 @@ void main() {
       expect(efficiency.unitId, 'percent');
     });
 
+    test('computes rate bandwidth with percent overhead as a ratio', () {
+      final definition = TelemetryCalculatorRegistry.byId('rate_bandwidth');
+      final result = TelemetryCalculatorEngine.calculate(
+        definition,
+        TelemetryCalculatorRegistry.defaultValues(definition),
+      );
+
+      expect(result.errors, isEmpty);
+      final outputs = {
+        for (final output in result.outputs) output.id: output.value,
+      };
+      expect(outputs['coded_rate'], closeTo(4.2105, 0.001));
+      expect(outputs['symbol_rate'], closeTo(2.1053, 0.001));
+      expect(outputs['occupied_bandwidth'], closeTo(2.8421, 0.001));
+      expect(outputs['spectral_efficiency'], closeTo(0.7037, 0.001));
+    });
+
     test('validates invalid numeric input before running formulas', () {
       final definition = TelemetryCalculatorRegistry.byId('link_budget');
       final values = TelemetryCalculatorRegistry.defaultValues(definition);
@@ -133,8 +150,19 @@ void main() {
         expect(find.text('输入参数'), findsOneWidget);
         expect(find.text('链路余量'), findsWidgets);
 
+        await tester.drag(
+          find
+              .byWidgetPredicate(
+                (widget) =>
+                    widget is Scrollable &&
+                    widget.axisDirection == AxisDirection.down,
+              )
+              .first,
+          const Offset(0, -720),
+        );
+        await tester.pumpAndSettle();
+
         final unitButton = find.byTooltip('选择单位').first;
-        await tester.ensureVisible(unitButton);
         await tester.tap(unitButton);
         await tester.pumpAndSettle();
         expect(find.text('dBm'), findsWidgets);
@@ -144,5 +172,38 @@ void main() {
         expect(tester.takeException(), isNull);
       },
     );
+
+    testWidgets('renders formula before results on rate bandwidth page', (
+      tester,
+    ) async {
+      tester.view.physicalSize = const Size(390, 844);
+      tester.view.devicePixelRatio = 1;
+      addTearDown(tester.view.resetPhysicalSize);
+      addTearDown(tester.view.resetDevicePixelRatio);
+
+      final definition = TelemetryCalculatorRegistry.byId('rate_bandwidth');
+      await tester.pumpWidget(
+        ScreenUtilInit(
+          designSize: const Size(375, 812),
+          builder: (context, child) => GetMaterialApp(
+            theme: AppTheme.lightWith(null),
+            home: TelemetryCalcDetailView(definition: definition),
+          ),
+        ),
+      );
+
+      expect(find.text('公式与依据'), findsOneWidget);
+      expect(find.text('计算结果'), findsOneWidget);
+      expect(find.text('输入参数'), findsOneWidget);
+      expect(find.textContaining('Rs'), findsWidgets);
+
+      final formulaTop = tester.getTopLeft(find.text('公式与依据')).dy;
+      final resultTop = tester.getTopLeft(find.text('计算结果')).dy;
+      final inputTop = tester.getTopLeft(find.text('输入参数')).dy;
+
+      expect(formulaTop, lessThan(resultTop));
+      expect(resultTop, lessThan(inputTop));
+      expect(tester.takeException(), isNull);
+    });
   });
 }
