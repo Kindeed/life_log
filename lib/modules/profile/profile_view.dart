@@ -13,6 +13,7 @@ import '../../common/widgets/app_metric_tile.dart';
 import '../../common/widgets/app_section_header.dart';
 import '../statistics/statistics_controller.dart';
 import '../statistics/statistics_view.dart';
+import '../telemetry_calc/telemetry_calc_view.dart';
 import 'profile_controller.dart';
 import 'views/about_view.dart';
 import 'views/appearance_view.dart';
@@ -62,6 +63,19 @@ class ProfileView extends StatelessWidget {
                       title: '外观设置',
                       subtitle: '主题、深色模式、动态取色',
                       onTap: () => Get.to(() => const AppearanceView()),
+                    ),
+                  ],
+                ),
+                SizedBox(height: 18.h),
+                _SettingsGroup(
+                  title: '专业工具',
+                  children: [
+                    _SettingsTile(
+                      icon: Icons.settings_input_antenna_rounded,
+                      iconColor: semantic.stats,
+                      title: '遥测遥控计算',
+                      subtitle: '链路、码率、PCM、测距与公式模板',
+                      onTap: () => Get.to(() => const TelemetryCalcView()),
                     ),
                   ],
                 ),

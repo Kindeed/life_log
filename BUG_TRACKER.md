@@ -1,6 +1,6 @@
 # LifeLog BUG Tracker
 
-**Last updated**: 2026-06-01
+**Last updated**: 2026-06-04
 **Status values**: `open`, `in_progress`, `fixed`, `deferred`, `invalidated`
 
 This is the active defect ledger. `REVIEW_REPORT.md` is historical context only. Photo sync findings from older reports are superseded by `AGENTS.md`: photos remain local-only and must not enter Supabase sync.
@@ -219,6 +219,7 @@ This is the active defect ledger. `REVIEW_REPORT.md` is historical context only.
 | T10 | Low | fixed | GitHub APK naming | Release 和手动测试包上传的 APK 文件名沿用 Flutter 默认 `app-...apk`，下载后无法从文件名看出是 LifeLog 应用。 | Fixed: GitHub workflows rename APK assets to `lifelog-...apk` before uploading them. |
 | T11 | Medium | fixed | GitHub release dependency drift | `v1.4.8` release 构建中 CI 的 `flutter pub get` 更新了锁定依赖，导致本地验证和 GitHub release 构建使用不同依赖集合，并在 Android release 构建阶段失败。 | Fixed: GitHub workflows now use the same pub / Flutter mirrors as the lockfile and run `flutter pub get --enforce-lockfile` so CI fails fast instead of silently changing dependencies. |
 | T12 | Low | fixed | statistics tests | `StatisticsController` 缓存测试使用 2026-05 数据，但依赖控制器默认选中当前月份；进入 2026-06 后测试统计 6 月导致断言失败。 | Fixed: affected tests now set `selectedMonth` to 2026-05 before refresh, keeping the fixture deterministic. |
+| T13 | Low | open | Flutter web preview | `flutter run -d web-server` is blocked by existing Isar generated `.g.dart` 64-bit integer literals that JavaScript cannot represent exactly, so browser-based UI verification cannot run until web build compatibility is addressed. | Fix: either exclude Isar-generated web-incompatible code from web targets or migrate the persistence/codegen stack to a web-compatible path; then rerun web-server preview. |
 
 ### Backup / Restore
 
