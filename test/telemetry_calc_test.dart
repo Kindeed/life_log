@@ -124,6 +124,21 @@ void main() {
       expect(result.errors, isEmpty);
       expect(result.outputs.single.value, 7);
     });
+
+    test('all default calculators produce finite outputs', () {
+      for (final definition in TelemetryCalculatorRegistry.definitions) {
+        final result = TelemetryCalculatorEngine.calculate(
+          definition,
+          TelemetryCalculatorRegistry.defaultValues(definition),
+        );
+
+        expect(result.errors, isEmpty, reason: definition.id);
+        expect(result.outputs, isNotEmpty, reason: definition.id);
+        for (final output in result.outputs) {
+          expect(output.value.isFinite, isTrue, reason: definition.id);
+        }
+      }
+    });
   });
 
   group('TelemetryCalcDetailView', () {
@@ -205,5 +220,38 @@ void main() {
       expect(resultTop, lessThan(inputTop));
       expect(tester.takeException(), isNull);
     });
+
+    for (final definition in TelemetryCalculatorRegistry.definitions) {
+      testWidgets('uses unified workbench layout for ${definition.id}', (
+        tester,
+      ) async {
+        tester.view.physicalSize = const Size(390, 844);
+        tester.view.devicePixelRatio = 1;
+        addTearDown(tester.view.resetPhysicalSize);
+        addTearDown(tester.view.resetDevicePixelRatio);
+
+        await tester.pumpWidget(
+          ScreenUtilInit(
+            designSize: const Size(375, 812),
+            builder: (context, child) => GetMaterialApp(
+              theme: AppTheme.lightWith(null),
+              home: TelemetryCalcDetailView(definition: definition),
+            ),
+          ),
+        );
+
+        expect(find.text('公式与依据'), findsWidgets, reason: definition.id);
+        expect(find.text('计算结果'), findsWidgets, reason: definition.id);
+        expect(find.text('输入参数'), findsWidgets, reason: definition.id);
+
+        final formulaTop = tester.getTopLeft(find.text('公式与依据').first).dy;
+        final resultTop = tester.getTopLeft(find.text('计算结果').first).dy;
+        final inputTop = tester.getTopLeft(find.text('输入参数').first).dy;
+
+        expect(formulaTop, lessThan(resultTop), reason: definition.id);
+        expect(resultTop, lessThan(inputTop), reason: definition.id);
+        expect(tester.takeException(), isNull, reason: definition.id);
+      });
+    }
   });
 }

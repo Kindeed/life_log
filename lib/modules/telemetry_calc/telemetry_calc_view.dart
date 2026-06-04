@@ -10,7 +10,6 @@ import 'package:life_log/common/widgets/app_card.dart';
 import 'package:life_log/common/widgets/app_empty_state.dart';
 import 'package:life_log/common/widgets/app_filter_chip_bar.dart';
 import 'package:life_log/common/widgets/app_section_header.dart';
-import 'package:life_log/common/widgets/app_text_field.dart';
 
 import 'telemetry_calculators.dart';
 import 'telemetry_template_store.dart';
@@ -832,7 +831,20 @@ class _ResultPanel extends StatelessWidget {
   TelemetryCalculationOutput _primaryOutput(
     List<TelemetryCalculationOutput> outputs,
   ) {
-    const priority = ['margin', 'guard_margin', 'result', 'ebn0', 'cn0'];
+    const priority = [
+      'margin',
+      'guard_margin',
+      'occupied_bandwidth',
+      'bit_rate',
+      'coded_rate',
+      'range_resolution',
+      'total_time',
+      'effective_rate',
+      'doppler_shift',
+      'result',
+      'ebn0',
+      'cn0',
+    ];
     for (final id in priority) {
       final matched = outputs.where((output) => output.id == id);
       if (matched.isNotEmpty) return matched.first;
@@ -844,7 +856,16 @@ class _ResultPanel extends StatelessWidget {
     List<TelemetryCalculationOutput> outputs,
     TelemetryCalculationOutput primary,
   ) {
-    const priority = ['ebn0', 'cn0', 'total_error', 'occupied_bandwidth'];
+    const priority = [
+      'ebn0',
+      'cn0',
+      'symbol_rate',
+      'frame_efficiency',
+      'total_error',
+      'effective_rate',
+      'round_trip_delay',
+      'occupied_bandwidth',
+    ];
     for (final id in priority) {
       final matched = outputs.where(
         (output) => output.id == id && output.id != primary.id,
@@ -1289,17 +1310,18 @@ class _SelectInput extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return AppCard(
-      padding: EdgeInsets.all(12.w),
+    final theme = Theme.of(context);
+    return Container(
+      padding: EdgeInsets.fromLTRB(12.w, 10.h, 10.w, 12.h),
+      decoration: BoxDecoration(
+        color: theme.semanticColors.mutedSurface.withValues(alpha: 0.72),
+        borderRadius: BorderRadius.circular(8),
+        border: Border.all(color: theme.semanticColors.border),
+      ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(
-            input.label,
-            style: Theme.of(
-              context,
-            ).textTheme.labelLarge?.copyWith(fontWeight: FontWeight.w700),
-          ),
+          _InputLabel(input: input),
           SizedBox(height: 10.h),
           AppFilterChipBar<String>(
             value: selectedId,
@@ -1328,13 +1350,90 @@ class _ExpressionInput extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return AppTextField(
-      controller: controller,
-      labelText: input.label,
-      hintText: input.helper,
-      maxLines: 3,
-      keyboardType: TextInputType.text,
-      onChanged: (text) => onChanged(input.id, text),
+    final theme = Theme.of(context);
+    return Container(
+      padding: EdgeInsets.fromLTRB(12.w, 10.h, 10.w, 10.h),
+      decoration: BoxDecoration(
+        color: theme.semanticColors.mutedSurface.withValues(alpha: 0.72),
+        borderRadius: BorderRadius.circular(8),
+        border: Border.all(color: theme.semanticColors.border),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          _InputLabel(input: input),
+          SizedBox(height: 8.h),
+          TextField(
+            controller: controller,
+            maxLines: 3,
+            minLines: 2,
+            keyboardType: TextInputType.text,
+            onChanged: (text) => onChanged(input.id, text),
+            style: theme.textTheme.bodyMedium?.copyWith(
+              fontFamily: 'Roboto',
+              height: 1.35,
+              fontWeight: FontWeight.w600,
+            ),
+            decoration: InputDecoration(
+              hintText: input.helper,
+              isDense: true,
+              filled: true,
+              fillColor: theme.colorScheme.surface.withValues(alpha: 0.72),
+              border: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(8),
+                borderSide: BorderSide(color: theme.semanticColors.border),
+              ),
+              enabledBorder: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(8),
+                borderSide: BorderSide(color: theme.semanticColors.border),
+              ),
+              focusedBorder: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(8),
+                borderSide: BorderSide(color: theme.colorScheme.primary),
+              ),
+              contentPadding: EdgeInsets.symmetric(
+                horizontal: 10.w,
+                vertical: 9.h,
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _InputLabel extends StatelessWidget {
+  final TelemetryInputDefinition input;
+
+  const _InputLabel({required this.input});
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    return Row(
+      children: [
+        Expanded(
+          child: Text(
+            input.label,
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+            style: theme.textTheme.labelMedium?.copyWith(
+              color: theme.colorScheme.onSurfaceVariant,
+              fontWeight: FontWeight.w700,
+            ),
+          ),
+        ),
+        if (input.helper.isNotEmpty)
+          Tooltip(
+            message: input.helper,
+            child: Icon(
+              Icons.info_outline_rounded,
+              size: 15.sp,
+              color: theme.colorScheme.onSurfaceVariant,
+            ),
+          ),
+      ],
     );
   }
 }
