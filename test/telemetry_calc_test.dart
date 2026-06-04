@@ -1,4 +1,9 @@
 import 'package:flutter_test/flutter_test.dart';
+import 'package:flutter/material.dart';
+import 'package:flutter_screenutil/flutter_screenutil.dart';
+import 'package:get/get.dart';
+import 'package:life_log/common/theme/app_theme.dart';
+import 'package:life_log/modules/telemetry_calc/telemetry_calc_view.dart';
 import 'package:life_log/modules/telemetry_calc/telemetry_calculators.dart';
 import 'package:life_log/modules/telemetry_calc/telemetry_formula_engine.dart';
 import 'package:life_log/modules/telemetry_calc/telemetry_units.dart';
@@ -102,5 +107,42 @@ void main() {
       expect(result.errors, isEmpty);
       expect(result.outputs.single.value, 7);
     });
+  });
+
+  group('TelemetryCalcDetailView', () {
+    testWidgets(
+      'renders compact workbench and opens unit selector without crash',
+      (tester) async {
+        tester.view.physicalSize = const Size(390, 844);
+        tester.view.devicePixelRatio = 1;
+        addTearDown(tester.view.resetPhysicalSize);
+        addTearDown(tester.view.resetDevicePixelRatio);
+
+        final definition = TelemetryCalculatorRegistry.byId('link_budget');
+        await tester.pumpWidget(
+          ScreenUtilInit(
+            designSize: const Size(375, 812),
+            builder: (context, child) => GetMaterialApp(
+              theme: AppTheme.lightWith(null),
+              home: TelemetryCalcDetailView(definition: definition),
+            ),
+          ),
+        );
+
+        expect(find.text('计算结果'), findsOneWidget);
+        expect(find.text('输入参数'), findsOneWidget);
+        expect(find.text('链路余量'), findsWidgets);
+
+        final unitButton = find.byTooltip('选择单位').first;
+        await tester.ensureVisible(unitButton);
+        await tester.tap(unitButton);
+        await tester.pumpAndSettle();
+        expect(find.text('dBm'), findsWidgets);
+
+        await tester.tap(find.text('dBm').last);
+        await tester.pumpAndSettle();
+        expect(tester.takeException(), isNull);
+      },
+    );
   });
 }
