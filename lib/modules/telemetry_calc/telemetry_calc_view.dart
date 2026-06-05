@@ -5,7 +5,6 @@ import 'package:get/get.dart';
 import 'package:life_log/common/layout/constrained_page.dart';
 import 'package:life_log/common/theme/app_semantic_colors.dart';
 import 'package:life_log/common/theme/theme_extensions.dart';
-import 'package:life_log/common/widgets/app_button.dart';
 import 'package:life_log/common/widgets/app_card.dart';
 import 'package:life_log/common/widgets/app_empty_state.dart';
 import 'package:life_log/common/widgets/app_filter_chip_bar.dart';
@@ -179,12 +178,17 @@ class _TelemetryCalcDetailViewState extends State<TelemetryCalcDetailView> {
 
     return Scaffold(
       appBar: AppBar(
-        title: Text(widget.definition.title),
+        title: Text(_detailTitle(widget.definition)),
         actions: [
           IconButton(
             tooltip: '载入模板',
             onPressed: _showTemplates,
             icon: const Icon(Icons.folder_open_rounded),
+          ),
+          IconButton(
+            tooltip: '恢复默认',
+            onPressed: _resetDefaults,
+            icon: const Icon(Icons.refresh_rounded),
           ),
           IconButton(
             tooltip: '保存模板',
@@ -205,61 +209,21 @@ class _TelemetryCalcDetailViewState extends State<TelemetryCalcDetailView> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    _FormulaPanel(definition: widget.definition, color: color),
-                    SizedBox(height: 16.h),
-                    Divider(color: theme.semanticColors.border, height: 1),
-                    SizedBox(height: 14.h),
-                    _ResultPanel(result: _result, color: color),
-                    SizedBox(height: 16.h),
-                    Divider(color: theme.semanticColors.border, height: 1),
-                    SizedBox(height: 14.h),
-                    _SectionTitle(
-                      title: '输入参数',
-                      subtitle: '实时校验，结果随输入刷新',
-                      icon: Icons.tune_rounded,
+                    _CalculationWorkbench(
+                      result: _result,
                       color: color,
+                      primaryInputs: primaryInputs
+                          .map(_buildCompactInput)
+                          .toList(growable: false),
+                      advancedInputs: advancedInputs
+                          .map(_buildCompactInput)
+                          .toList(growable: false),
+                      showAdvanced: _showAdvanced,
+                      onToggleAdvanced: () =>
+                          setState(() => _showAdvanced = !_showAdvanced),
                     ),
                     SizedBox(height: 12.h),
-                    ...primaryInputs
-                        .map(_buildInput)
-                        .expand((widget) => [widget, SizedBox(height: 10.h)]),
-                    if (advancedInputs.isNotEmpty) ...[
-                      _AdvancedToggle(
-                        expanded: _showAdvanced,
-                        onTap: () =>
-                            setState(() => _showAdvanced = !_showAdvanced),
-                      ),
-                      if (_showAdvanced) ...[
-                        SizedBox(height: 10.h),
-                        ...advancedInputs
-                            .map(_buildInput)
-                            .expand(
-                              (widget) => [widget, SizedBox(height: 10.h)],
-                            ),
-                      ],
-                    ],
-                    SizedBox(height: 6.h),
-                    Row(
-                      children: [
-                        Expanded(
-                          child: AppButton.secondary(
-                            label: '恢复默认',
-                            icon: Icons.refresh_rounded,
-                            onPressed: _resetDefaults,
-                            height: 44,
-                          ),
-                        ),
-                        SizedBox(width: 10.w),
-                        Expanded(
-                          child: AppButton.primary(
-                            label: '保存模板',
-                            icon: Icons.bookmark_add_outlined,
-                            onPressed: _saveTemplate,
-                            height: 44,
-                          ),
-                        ),
-                      ],
-                    ),
+                    _FormulaPanel(definition: widget.definition, color: color),
                   ],
                 ),
               ),
@@ -270,21 +234,21 @@ class _TelemetryCalcDetailViewState extends State<TelemetryCalcDetailView> {
     );
   }
 
-  Widget _buildInput(TelemetryInputDefinition input) {
+  Widget _buildCompactInput(TelemetryInputDefinition input) {
     return switch (input.kind) {
-      TelemetryInputKind.number => _NumberInput(
+      TelemetryInputKind.number => _CompactNumberInput(
         input: input,
         value: _values[input.id]!,
         controller: _controllers[input.id]!,
         onChanged: _updateNumber,
         onUnitChanged: _updateUnit,
       ),
-      TelemetryInputKind.select => _SelectInput(
+      TelemetryInputKind.select => _CompactSelectInput(
         input: input,
-        selectedId: _values[input.id]?.optionId ?? input.defaultOptionId!,
+        selectedId: _values[input.id]!.optionId ?? input.defaultOptionId ?? '',
         onChanged: _updateOption,
       ),
-      TelemetryInputKind.expression => _ExpressionInput(
+      TelemetryInputKind.expression => _CompactExpressionInput(
         input: input,
         controller: _controllers[input.id]!,
         onChanged: _updateExpression,
@@ -698,15 +662,26 @@ class _DetailHeader extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
+                  _detailTitle(definition),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                    fontWeight: FontWeight.w900,
+                  ),
+                ),
+                SizedBox(height: 4.h),
+                Text(
                   definition.subtitle,
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
                   style: TextStyle(
                     color: secondary,
-                    fontSize: 13.sp,
+                    fontSize: 12.sp,
                     height: 1.3,
                     fontWeight: FontWeight.w600,
                   ),
                 ),
-                SizedBox(height: 8.h),
+                SizedBox(height: 7.h),
                 Wrap(
                   spacing: 6.w,
                   runSpacing: 6.h,
@@ -762,11 +737,79 @@ class _InfoPill extends StatelessWidget {
   }
 }
 
-class _ResultPanel extends StatelessWidget {
+class _CalculationWorkbench extends StatelessWidget {
+  final TelemetryCalculationResult result;
+  final Color color;
+  final List<Widget> primaryInputs;
+  final List<Widget> advancedInputs;
+  final bool showAdvanced;
+  final VoidCallback onToggleAdvanced;
+
+  const _CalculationWorkbench({
+    required this.result,
+    required this.color,
+    required this.primaryInputs,
+    required this.advancedInputs,
+    required this.showAdvanced,
+    required this.onToggleAdvanced,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final outputPane = _WorkbenchPane(
+      title: '输出',
+      subtitle: '主结果优先，附带复核参数',
+      icon: Icons.analytics_outlined,
+      color: color,
+      child: _CompactResultPanel(result: result, color: color),
+    );
+    final inputPane = _WorkbenchPane(
+      title: '输入',
+      subtitle: '调参后实时刷新输出',
+      icon: Icons.tune_rounded,
+      color: color,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          for (var i = 0; i < primaryInputs.length; i++) ...[
+            primaryInputs[i],
+            if (i < primaryInputs.length - 1) SizedBox(height: 10.h),
+          ],
+          if (advancedInputs.isNotEmpty) ...[
+            SizedBox(height: 8.h),
+            _AdvancedToggle(expanded: showAdvanced, onTap: onToggleAdvanced),
+            if (showAdvanced) ...[
+              SizedBox(height: 10.h),
+              for (var i = 0; i < advancedInputs.length; i++) ...[
+                advancedInputs[i],
+                if (i < advancedInputs.length - 1) SizedBox(height: 10.h),
+              ],
+            ],
+          ],
+        ],
+      ),
+    );
+
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        return Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Expanded(flex: 11, child: inputPane),
+            SizedBox(width: 10.w),
+            Expanded(flex: 10, child: outputPane),
+          ],
+        );
+      },
+    );
+  }
+}
+
+class _CompactResultPanel extends StatelessWidget {
   final TelemetryCalculationResult result;
   final Color color;
 
-  const _ResultPanel({required this.result, required this.color});
+  const _CompactResultPanel({required this.result, required this.color});
 
   @override
   Widget build(BuildContext context) {
@@ -779,101 +822,172 @@ class _ResultPanel extends StatelessWidget {
         message: result.errors.join('\n'),
       );
     }
-
     final primary = _primaryOutput(result.outputs);
     final secondary = _secondaryOutput(result.outputs, primary);
-
+    final rest = result.outputs
+        .where((output) => output.id != primary.id)
+        .take(4)
+        .toList(growable: false);
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        _SectionTitle(
-          title: '计算结果',
-          subtitle: '关键结果优先，其余参数用于复核',
-          icon: Icons.analytics_outlined,
-          color: color,
-        ),
-        SizedBox(height: 12.h),
-        _PrimaryResultCard(
-          output: primary,
-          secondary: secondary,
-          color: _outputStatusColor(context, primary, color),
-        ),
-        SizedBox(height: 10.h),
-        DecoratedBox(
+        Container(
+          width: double.infinity,
+          padding: EdgeInsets.all(10.w),
           decoration: BoxDecoration(
-            border: Border.all(color: theme.semanticColors.border),
+            color: color.withValues(alpha: 0.14),
             borderRadius: BorderRadius.circular(8),
+            border: Border.all(color: color.withValues(alpha: 0.32)),
           ),
           child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              for (var i = 0; i < result.outputs.length; i++)
-                _ResultRow(
-                  output: result.outputs[i],
-                  color: _outputStatusColor(context, result.outputs[i], color),
-                  showDivider: i < result.outputs.length - 1,
+              Text(
+                primary.label,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: TextStyle(
+                  color: theme.colorScheme.onSurfaceVariant,
+                  fontSize: 11.sp,
+                  fontWeight: FontWeight.w800,
                 ),
+              ),
+              SizedBox(height: 5.h),
+              Text(
+                primary.displayValue,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: theme.textTheme.headlineSmall?.copyWith(
+                  color: _outputStatusColor(context, primary, color),
+                  fontWeight: FontWeight.w900,
+                  fontFamily: 'Roboto',
+                  height: 1,
+                ),
+              ),
+              SizedBox(height: 2.h),
+              Text(
+                primary.unitLabel,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: TextStyle(
+                  color: theme.colorScheme.onSurfaceVariant,
+                  fontSize: 11.sp,
+                  fontWeight: FontWeight.w700,
+                ),
+              ),
+              if (secondary != null) ...[
+                SizedBox(height: 5.h),
+                Text(
+                  '${secondary.label} ${secondary.displayValue} ${secondary.unitLabel}',
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: TextStyle(
+                    color: theme.colorScheme.onSurfaceVariant,
+                    fontSize: 11.sp,
+                    fontWeight: FontWeight.w700,
+                  ),
+                ),
+              ],
             ],
           ),
         ),
-        if (result.warnings.isNotEmpty) ...[
-          SizedBox(height: 10.h),
-          _StatusPanel(
-            icon: Icons.warning_amber_rounded,
-            color: theme.semanticColors.warning,
-            title: '工程提示',
-            message: result.warnings.join('\n'),
-          ),
+        SizedBox(height: 8.h),
+        for (var i = 0; i < rest.length; i++) ...[
+          _CompactResultRow(output: rest[i], color: color),
+          if (i < rest.length - 1) SizedBox(height: 6.h),
         ],
       ],
     );
   }
+}
 
-  TelemetryCalculationOutput _primaryOutput(
-    List<TelemetryCalculationOutput> outputs,
-  ) {
-    const priority = [
-      'margin',
-      'guard_margin',
-      'occupied_bandwidth',
-      'bit_rate',
-      'coded_rate',
-      'range_resolution',
-      'total_time',
-      'effective_rate',
-      'doppler_shift',
-      'result',
-      'ebn0',
-      'cn0',
-    ];
-    for (final id in priority) {
-      final matched = outputs.where((output) => output.id == id);
-      if (matched.isNotEmpty) return matched.first;
-    }
-    return outputs.first;
+class _CompactResultRow extends StatelessWidget {
+  final TelemetryCalculationOutput output;
+  final Color color;
+
+  const _CompactResultRow({required this.output, required this.color});
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    return Container(
+      width: double.infinity,
+      padding: EdgeInsets.symmetric(horizontal: 8.w, vertical: 7.h),
+      decoration: BoxDecoration(
+        color: theme.semanticColors.mutedSurface.withValues(alpha: 0.44),
+        borderRadius: BorderRadius.circular(8),
+        border: Border.all(color: theme.semanticColors.border),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            output.label,
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+            style: TextStyle(
+              color: theme.colorScheme.onSurfaceVariant,
+              fontSize: 10.sp,
+              fontWeight: FontWeight.w700,
+            ),
+          ),
+          SizedBox(height: 2.h),
+          Text(
+            '${output.displayValue} ${output.unitLabel}',
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+            style: TextStyle(
+              fontSize: 13.sp,
+              fontWeight: FontWeight.w900,
+              fontFamily: 'Roboto',
+            ),
+          ),
+        ],
+      ),
+    );
   }
+}
 
-  TelemetryCalculationOutput? _secondaryOutput(
-    List<TelemetryCalculationOutput> outputs,
-    TelemetryCalculationOutput primary,
-  ) {
-    const priority = [
-      'ebn0',
-      'cn0',
-      'symbol_rate',
-      'frame_efficiency',
-      'total_error',
-      'effective_rate',
-      'round_trip_delay',
-      'occupied_bandwidth',
-    ];
-    for (final id in priority) {
-      final matched = outputs.where(
-        (output) => output.id == id && output.id != primary.id,
-      );
-      if (matched.isNotEmpty) return matched.first;
-    }
-    final rest = outputs.where((output) => output.id != primary.id);
-    return rest.isEmpty ? null : rest.first;
+class _WorkbenchPane extends StatelessWidget {
+  final String title;
+  final String subtitle;
+  final IconData icon;
+  final Color color;
+  final Widget child;
+
+  const _WorkbenchPane({
+    required this.title,
+    required this.subtitle,
+    required this.icon,
+    required this.color,
+    required this.child,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    return Container(
+      width: double.infinity,
+      padding: EdgeInsets.all(12.w),
+      decoration: BoxDecoration(
+        color: theme.semanticColors.mutedSurface.withValues(alpha: 0.5),
+        borderRadius: BorderRadius.circular(8),
+        border: Border.all(color: theme.semanticColors.border),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          _SectionTitle(
+            title: title,
+            subtitle: subtitle,
+            icon: icon,
+            color: color,
+          ),
+          SizedBox(height: 12.h),
+          child,
+        ],
+      ),
+    );
   }
 }
 
@@ -929,155 +1043,6 @@ class _SectionTitle extends StatelessWidget {
           ),
         ),
       ],
-    );
-  }
-}
-
-class _PrimaryResultCard extends StatelessWidget {
-  final TelemetryCalculationOutput output;
-  final TelemetryCalculationOutput? secondary;
-  final Color color;
-
-  const _PrimaryResultCard({
-    required this.output,
-    required this.secondary,
-    required this.color,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    final secondaryText = secondary == null
-        ? '实时计算'
-        : '${secondary!.label} ${secondary!.displayValue} ${secondary!.unitLabel}';
-
-    return Container(
-      width: double.infinity,
-      padding: EdgeInsets.symmetric(horizontal: 14.w, vertical: 14.h),
-      decoration: BoxDecoration(
-        color: color.withValues(alpha: 0.1),
-        borderRadius: BorderRadius.circular(8),
-        border: Border.all(color: color.withValues(alpha: 0.24)),
-      ),
-      child: Row(
-        children: [
-          Container(
-            width: 42.w,
-            height: 42.w,
-            decoration: BoxDecoration(
-              color: color.withValues(alpha: 0.14),
-              borderRadius: BorderRadius.circular(8),
-            ),
-            child: Icon(Icons.speed_rounded, color: color, size: 22.sp),
-          ),
-          SizedBox(width: 12.w),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  output.label,
-                  style: TextStyle(
-                    color: Theme.of(context).colorScheme.onSurfaceVariant,
-                    fontSize: 12.sp,
-                    fontWeight: FontWeight.w600,
-                  ),
-                ),
-                SizedBox(height: 3.h),
-                FittedBox(
-                  fit: BoxFit.scaleDown,
-                  alignment: Alignment.centerLeft,
-                  child: Text(
-                    '${output.displayValue} ${output.unitLabel}',
-                    style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-                      color: color,
-                      fontWeight: FontWeight.w900,
-                      height: 1,
-                    ),
-                  ),
-                ),
-                SizedBox(height: 4.h),
-                Text(
-                  secondaryText,
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  style: TextStyle(
-                    color: Theme.of(context).colorScheme.onSurfaceVariant,
-                    fontSize: 11.sp,
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-class _ResultRow extends StatelessWidget {
-  final TelemetryCalculationOutput output;
-  final Color color;
-  final bool showDivider;
-
-  const _ResultRow({
-    required this.output,
-    required this.color,
-    required this.showDivider,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    final secondary = Theme.of(context).colorScheme.onSurfaceVariant;
-    return DecoratedBox(
-      decoration: BoxDecoration(
-        border: showDivider
-            ? Border(
-                bottom: BorderSide(
-                  color: Theme.of(context).semanticColors.border,
-                ),
-              )
-            : null,
-      ),
-      child: Padding(
-        padding: EdgeInsets.symmetric(horizontal: 12.w, vertical: 10.h),
-        child: Row(
-          children: [
-            Container(
-              width: 7.w,
-              height: 7.w,
-              decoration: BoxDecoration(color: color, shape: BoxShape.circle),
-            ),
-            SizedBox(width: 10.w),
-            Expanded(
-              child: Text(
-                output.label,
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
-                style: TextStyle(
-                  color: secondary,
-                  fontSize: 12.sp,
-                  fontWeight: FontWeight.w600,
-                ),
-              ),
-            ),
-            SizedBox(width: 8.w),
-            Flexible(
-              child: Text(
-                '${output.displayValue} ${output.unitLabel}',
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
-                textAlign: TextAlign.right,
-                style: TextStyle(
-                  color: Theme.of(context).colorScheme.onSurface,
-                  fontSize: 13.sp,
-                  fontWeight: FontWeight.w800,
-                  fontFamily: 'Roboto',
-                ),
-              ),
-            ),
-          ],
-        ),
-      ),
     );
   }
 }
@@ -1147,14 +1112,62 @@ Color _outputStatusColor(
   return fallback;
 }
 
-class _NumberInput extends StatelessWidget {
+TelemetryCalculationOutput _primaryOutput(
+  List<TelemetryCalculationOutput> outputs,
+) {
+  const priority = [
+    'margin',
+    'guard_margin',
+    'occupied_bandwidth',
+    'bit_rate',
+    'coded_rate',
+    'range_resolution',
+    'total_time',
+    'effective_rate',
+    'doppler_shift',
+    'result',
+    'ebn0',
+    'cn0',
+  ];
+  for (final id in priority) {
+    final matched = outputs.where((output) => output.id == id);
+    if (matched.isNotEmpty) return matched.first;
+  }
+  return outputs.first;
+}
+
+TelemetryCalculationOutput? _secondaryOutput(
+  List<TelemetryCalculationOutput> outputs,
+  TelemetryCalculationOutput primary,
+) {
+  const priority = [
+    'ebn0',
+    'cn0',
+    'symbol_rate',
+    'frame_efficiency',
+    'total_error',
+    'effective_rate',
+    'round_trip_delay',
+    'occupied_bandwidth',
+  ];
+  for (final id in priority) {
+    final matched = outputs.where(
+      (output) => output.id == id && output.id != primary.id,
+    );
+    if (matched.isNotEmpty) return matched.first;
+  }
+  final rest = outputs.where((output) => output.id != primary.id);
+  return rest.isEmpty ? null : rest.first;
+}
+
+class _CompactNumberInput extends StatelessWidget {
   final TelemetryInputDefinition input;
   final TelemetryInputValue value;
   final TextEditingController controller;
   final void Function(String id, String text) onChanged;
   final void Function(String id, String unitId) onUnitChanged;
 
-  const _NumberInput({
+  const _CompactNumberInput({
     required this.input,
     required this.value,
     required this.controller,
@@ -1165,18 +1178,154 @@ class _NumberInput extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final semantic = theme.semanticColors;
-    final isInvalid =
+    final invalid =
         controller.text.trim().isEmpty ||
         double.tryParse(controller.text.trim()) == null;
+    return _CompactInputShell(
+      label: input.label,
+      helper: input.helper,
+      invalid: invalid,
+      child: LayoutBuilder(
+        builder: (context, constraints) {
+          final valueField = TextField(
+            controller: controller,
+            keyboardType: const TextInputType.numberWithOptions(
+              decimal: true,
+              signed: true,
+            ),
+            onChanged: (text) => onChanged(input.id, text),
+            style: theme.textTheme.titleLarge?.copyWith(
+              fontWeight: FontWeight.w900,
+              fontFamily: 'Roboto',
+              height: 1,
+            ),
+            decoration: const InputDecoration(
+              isDense: true,
+              border: InputBorder.none,
+              contentPadding: EdgeInsets.zero,
+            ),
+          );
+          final unitButton = _UnitMenuButton(
+            value: value.unitId,
+            units: input.units,
+            onChanged: (unitId) => onUnitChanged(input.id, unitId),
+            compact: true,
+          );
+          if (constraints.maxWidth < 128.w) {
+            return Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                valueField,
+                SizedBox(height: 6.h),
+                Align(alignment: Alignment.centerRight, child: unitButton),
+              ],
+            );
+          }
+          return Row(
+            children: [
+              Expanded(child: valueField),
+              SizedBox(width: 6.w),
+              unitButton,
+            ],
+          );
+        },
+      ),
+    );
+  }
+}
 
+class _CompactSelectInput extends StatelessWidget {
+  final TelemetryInputDefinition input;
+  final String selectedId;
+  final void Function(String id, String optionId) onChanged;
+
+  const _CompactSelectInput({
+    required this.input,
+    required this.selectedId,
+    required this.onChanged,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final selected = input.options.firstWhere(
+      (option) => option.id == selectedId,
+      orElse: () => input.options.first,
+    );
+    return _CompactInputShell(
+      label: input.label,
+      helper: input.helper,
+      child: _OptionMenuButton(
+        selected: selected,
+        options: input.options,
+        onChanged: (optionId) => onChanged(input.id, optionId),
+      ),
+    );
+  }
+}
+
+class _CompactExpressionInput extends StatelessWidget {
+  final TelemetryInputDefinition input;
+  final TextEditingController controller;
+  final void Function(String id, String text) onChanged;
+
+  const _CompactExpressionInput({
+    required this.input,
+    required this.controller,
+    required this.onChanged,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    return _CompactInputShell(
+      label: input.label,
+      helper: input.helper,
+      child: TextField(
+        controller: controller,
+        maxLines: 2,
+        minLines: 1,
+        keyboardType: TextInputType.text,
+        onChanged: (text) => onChanged(input.id, text),
+        style: theme.textTheme.bodyMedium?.copyWith(
+          fontFamily: 'Roboto',
+          height: 1.25,
+          fontWeight: FontWeight.w700,
+        ),
+        decoration: const InputDecoration(
+          isDense: true,
+          border: InputBorder.none,
+          contentPadding: EdgeInsets.zero,
+        ),
+      ),
+    );
+  }
+}
+
+class _CompactInputShell extends StatelessWidget {
+  final String label;
+  final String helper;
+  final bool invalid;
+  final Widget child;
+
+  const _CompactInputShell({
+    required this.label,
+    required this.helper,
+    required this.child,
+    this.invalid = false,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
     return Container(
-      padding: EdgeInsets.fromLTRB(12.w, 10.h, 10.w, 10.h),
+      padding: EdgeInsets.fromLTRB(10.w, 8.h, 10.w, 9.h),
       decoration: BoxDecoration(
-        color: semantic.mutedSurface.withValues(alpha: 0.72),
+        color: theme.semanticColors.mutedSurface.withValues(alpha: 0.62),
         borderRadius: BorderRadius.circular(8),
         border: Border.all(
-          color: isInvalid ? theme.colorScheme.error : semantic.border,
+          color: invalid
+              ? theme.colorScheme.error
+              : theme.semanticColors.border,
         ),
       ),
       child: Column(
@@ -1186,57 +1335,28 @@ class _NumberInput extends StatelessWidget {
             children: [
               Expanded(
                 child: Text(
-                  input.label,
+                  label,
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                   style: theme.textTheme.labelMedium?.copyWith(
                     color: theme.colorScheme.onSurfaceVariant,
-                    fontWeight: FontWeight.w700,
+                    fontWeight: FontWeight.w800,
                   ),
                 ),
               ),
-              if (input.helper.isNotEmpty)
+              if (helper.isNotEmpty)
                 Tooltip(
-                  message: input.helper,
+                  message: helper,
                   child: Icon(
                     Icons.info_outline_rounded,
-                    size: 15.sp,
+                    size: 14.sp,
                     color: theme.colorScheme.onSurfaceVariant,
                   ),
                 ),
             ],
           ),
-          SizedBox(height: 6.h),
-          Row(
-            children: [
-              Expanded(
-                child: TextField(
-                  controller: controller,
-                  keyboardType: const TextInputType.numberWithOptions(
-                    decimal: true,
-                    signed: true,
-                  ),
-                  onChanged: (text) => onChanged(input.id, text),
-                  style: theme.textTheme.titleMedium?.copyWith(
-                    fontWeight: FontWeight.w800,
-                    fontFamily: 'Roboto',
-                    height: 1.1,
-                  ),
-                  decoration: const InputDecoration(
-                    isDense: true,
-                    border: InputBorder.none,
-                    contentPadding: EdgeInsets.zero,
-                  ),
-                ),
-              ),
-              SizedBox(width: 8.w),
-              _UnitMenuButton(
-                value: value.unitId,
-                units: input.units,
-                onChanged: (unitId) => onUnitChanged(input.id, unitId),
-              ),
-            ],
-          ),
+          SizedBox(height: 5.h),
+          child,
         ],
       ),
     );
@@ -1247,11 +1367,13 @@ class _UnitMenuButton extends StatelessWidget {
   final String value;
   final List<String> units;
   final ValueChanged<String> onChanged;
+  final bool compact;
 
   const _UnitMenuButton({
     required this.value,
     required this.units,
     required this.onChanged,
+    this.compact = false,
   });
 
   @override
@@ -1269,8 +1391,11 @@ class _UnitMenuButton extends StatelessWidget {
           ),
       ],
       child: Container(
-        constraints: BoxConstraints(minWidth: 70.w),
-        padding: EdgeInsets.symmetric(horizontal: 10.w, vertical: 7.h),
+        constraints: BoxConstraints(minWidth: compact ? 48.w : 70.w),
+        padding: EdgeInsets.symmetric(
+          horizontal: compact ? 5.w : 10.w,
+          vertical: compact ? 6.h : 7.h,
+        ),
         decoration: BoxDecoration(
           color: theme.cardColor,
           borderRadius: BorderRadius.circular(8),
@@ -1288,8 +1413,8 @@ class _UnitMenuButton extends StatelessWidget {
                 style: TextStyle(fontSize: 13.sp, fontWeight: FontWeight.w800),
               ),
             ),
-            SizedBox(width: 4.w),
-            Icon(Icons.expand_more_rounded, size: 16.sp),
+            SizedBox(width: compact ? 2.w : 4.w),
+            Icon(Icons.expand_more_rounded, size: compact ? 14.sp : 16.sp),
           ],
         ),
       ),
@@ -1297,143 +1422,52 @@ class _UnitMenuButton extends StatelessWidget {
   }
 }
 
-class _SelectInput extends StatelessWidget {
-  final TelemetryInputDefinition input;
-  final String selectedId;
-  final void Function(String id, String optionId) onChanged;
+class _OptionMenuButton extends StatelessWidget {
+  final TelemetryOption selected;
+  final List<TelemetryOption> options;
+  final ValueChanged<String> onChanged;
 
-  const _SelectInput({
-    required this.input,
-    required this.selectedId,
+  const _OptionMenuButton({
+    required this.selected,
+    required this.options,
     required this.onChanged,
   });
 
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    return Container(
-      padding: EdgeInsets.fromLTRB(12.w, 10.h, 10.w, 12.h),
-      decoration: BoxDecoration(
-        color: theme.semanticColors.mutedSurface.withValues(alpha: 0.72),
-        borderRadius: BorderRadius.circular(8),
-        border: Border.all(color: theme.semanticColors.border),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          _InputLabel(input: input),
-          SizedBox(height: 10.h),
-          AppFilterChipBar<String>(
-            value: selectedId,
-            onChanged: (value) => onChanged(input.id, value),
-            items: [
-              for (final option in input.options)
-                AppFilterChipItem(value: option.id, label: option.label),
-            ],
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-class _ExpressionInput extends StatelessWidget {
-  final TelemetryInputDefinition input;
-  final TextEditingController controller;
-  final void Function(String id, String text) onChanged;
-
-  const _ExpressionInput({
-    required this.input,
-    required this.controller,
-    required this.onChanged,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    return Container(
-      padding: EdgeInsets.fromLTRB(12.w, 10.h, 10.w, 10.h),
-      decoration: BoxDecoration(
-        color: theme.semanticColors.mutedSurface.withValues(alpha: 0.72),
-        borderRadius: BorderRadius.circular(8),
-        border: Border.all(color: theme.semanticColors.border),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          _InputLabel(input: input),
-          SizedBox(height: 8.h),
-          TextField(
-            controller: controller,
-            maxLines: 3,
-            minLines: 2,
-            keyboardType: TextInputType.text,
-            onChanged: (text) => onChanged(input.id, text),
-            style: theme.textTheme.bodyMedium?.copyWith(
-              fontFamily: 'Roboto',
-              height: 1.35,
-              fontWeight: FontWeight.w600,
-            ),
-            decoration: InputDecoration(
-              hintText: input.helper,
-              isDense: true,
-              filled: true,
-              fillColor: theme.colorScheme.surface.withValues(alpha: 0.72),
-              border: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(8),
-                borderSide: BorderSide(color: theme.semanticColors.border),
-              ),
-              enabledBorder: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(8),
-                borderSide: BorderSide(color: theme.semanticColors.border),
-              ),
-              focusedBorder: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(8),
-                borderSide: BorderSide(color: theme.colorScheme.primary),
-              ),
-              contentPadding: EdgeInsets.symmetric(
-                horizontal: 10.w,
-                vertical: 9.h,
-              ),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-class _InputLabel extends StatelessWidget {
-  final TelemetryInputDefinition input;
-
-  const _InputLabel({required this.input});
-
-  @override
-  Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    return Row(
-      children: [
-        Expanded(
-          child: Text(
-            input.label,
-            maxLines: 1,
-            overflow: TextOverflow.ellipsis,
-            style: theme.textTheme.labelMedium?.copyWith(
-              color: theme.colorScheme.onSurfaceVariant,
-              fontWeight: FontWeight.w700,
-            ),
-          ),
-        ),
-        if (input.helper.isNotEmpty)
-          Tooltip(
-            message: input.helper,
-            child: Icon(
-              Icons.info_outline_rounded,
-              size: 15.sp,
-              color: theme.colorScheme.onSurfaceVariant,
-            ),
-          ),
+    return PopupMenuButton<String>(
+      tooltip: '选择参数',
+      initialValue: selected.id,
+      onSelected: onChanged,
+      itemBuilder: (context) => [
+        for (final option in options)
+          PopupMenuItem(value: option.id, child: Text(option.label)),
       ],
+      child: Container(
+        width: double.infinity,
+        padding: EdgeInsets.symmetric(horizontal: 9.w, vertical: 7.h),
+        decoration: BoxDecoration(
+          color: theme.cardColor,
+          borderRadius: BorderRadius.circular(8),
+          border: Border.all(color: theme.semanticColors.border),
+        ),
+        child: Row(
+          children: [
+            Icon(Icons.tune_rounded, size: 16.sp),
+            SizedBox(width: 6.w),
+            Expanded(
+              child: Text(
+                selected.label,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: TextStyle(fontSize: 13.sp, fontWeight: FontWeight.w900),
+              ),
+            ),
+            Icon(Icons.expand_more_rounded, size: 16.sp),
+          ],
+        ),
+      ),
     );
   }
 }
@@ -1474,87 +1508,104 @@ class _FormulaPanel extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final formulas = definition.formulas;
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        _SectionTitle(
-          title: '公式与依据',
-          subtitle: '先确认计算关系，再调整参数',
-          icon: Icons.functions_rounded,
-          color: color,
-        ),
-        SizedBox(height: 12.h),
-        for (var i = 0; i < formulas.length; i++)
-          Padding(
-            padding: EdgeInsets.only(
-              bottom: i == formulas.length - 1 ? 0 : 10.h,
-            ),
-            child: Container(
-              width: double.infinity,
-              padding: EdgeInsets.all(12.w),
-              decoration: BoxDecoration(
-                color: theme.semanticColors.mutedSurface.withValues(
-                  alpha: 0.62,
+    return Container(
+      width: double.infinity,
+      padding: EdgeInsets.all(11.w),
+      decoration: BoxDecoration(
+        color: theme.colorScheme.surface.withValues(alpha: 0.42),
+        borderRadius: BorderRadius.circular(8),
+        border: Border.all(color: color.withValues(alpha: 0.22)),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Icon(Icons.functions_rounded, color: color, size: 18.sp),
+              SizedBox(width: 8.w),
+              Expanded(
+                child: Text(
+                  '依据',
+                  style: theme.textTheme.titleSmall?.copyWith(
+                    fontWeight: FontWeight.w800,
+                  ),
                 ),
-                borderRadius: BorderRadius.circular(8),
-                border: Border.all(color: theme.semanticColors.border),
               ),
-              child: Builder(
-                builder: (context) {
-                  final formula = formulas[i];
-                  return Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Row(
-                        children: [
-                          Expanded(
-                            child: Text(
-                              formula.title,
-                              style: const TextStyle(
-                                fontWeight: FontWeight.w800,
-                              ),
-                            ),
-                          ),
-                          IconButton(
-                            tooltip: '复制公式',
-                            onPressed: () {
-                              Clipboard.setData(
-                                ClipboardData(text: formula.expression),
-                              );
-                              Get.snackbar('已复制', formula.title);
-                            },
-                            icon: const Icon(Icons.copy_rounded),
-                            style: IconButton.styleFrom(
-                              minimumSize: Size(34.w, 34.w),
-                              tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                            ),
-                          ),
-                        ],
-                      ),
-                      SizedBox(height: 8.h),
-                      _FormulaExpression(
-                        expression: formula.expression,
-                        color: color,
-                      ),
-                      SizedBox(height: 8.h),
-                      Text(
-                        formula.source,
-                        style: TextStyle(
-                          color: Theme.of(context).colorScheme.onSurfaceVariant,
-                          fontSize: 12.sp,
-                        ),
-                      ),
-                      if (formula.note.isNotEmpty) ...[
-                        SizedBox(height: 6.h),
-                        Text(formula.note),
-                      ],
-                    ],
-                  );
+              Text(
+                '公式与来源',
+                style: TextStyle(
+                  color: theme.colorScheme.onSurfaceVariant,
+                  fontSize: 11.sp,
+                  fontWeight: FontWeight.w700,
+                ),
+              ),
+            ],
+          ),
+          SizedBox(height: 8.h),
+          for (var i = 0; i < formulas.length; i++) ...[
+            _FormulaCompactRow(formula: formulas[i], color: color),
+            if (i < formulas.length - 1) SizedBox(height: 8.h),
+          ],
+        ],
+      ),
+    );
+  }
+}
+
+class _FormulaCompactRow extends StatelessWidget {
+  final FormulaReference formula;
+  final Color color;
+
+  const _FormulaCompactRow({required this.formula, required this.color});
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    return Container(
+      width: double.infinity,
+      padding: EdgeInsets.all(10.w),
+      decoration: BoxDecoration(
+        color: theme.semanticColors.mutedSurface.withValues(alpha: 0.42),
+        borderRadius: BorderRadius.circular(8),
+        border: Border.all(color: theme.semanticColors.border),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Expanded(
+                child: Text(
+                  formula.title,
+                  style: const TextStyle(fontWeight: FontWeight.w800),
+                ),
+              ),
+              IconButton(
+                tooltip: '复制公式',
+                onPressed: () {
+                  Clipboard.setData(ClipboardData(text: formula.expression));
+                  Get.snackbar('已复制', formula.title);
                 },
+                icon: const Icon(Icons.copy_rounded),
+                style: IconButton.styleFrom(
+                  minimumSize: Size(32.w, 32.w),
+                  tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                ),
               ),
+            ],
+          ),
+          SizedBox(height: 6.h),
+          _FormulaExpression(expression: formula.expression, color: color),
+          SizedBox(height: 6.h),
+          Text(
+            formula.source,
+            style: TextStyle(
+              color: theme.colorScheme.onSurfaceVariant,
+              fontSize: 12.sp,
             ),
           ),
-      ],
+        ],
+      ),
     );
   }
 }
@@ -1576,16 +1627,13 @@ class _FormulaExpression extends StatelessWidget {
         borderRadius: BorderRadius.circular(8),
         border: Border.all(color: color.withValues(alpha: 0.18)),
       ),
-      child: SingleChildScrollView(
-        scrollDirection: Axis.horizontal,
-        child: SelectableText.rich(
-          TextSpan(children: _formulaSpans(context, expression, color)),
-          style: TextStyle(
-            fontFamily: 'Roboto',
-            fontSize: 13.sp,
-            height: 1.35,
-            color: theme.colorScheme.onSurface,
-          ),
+      child: SelectableText.rich(
+        TextSpan(children: _formulaSpans(context, expression, color)),
+        style: TextStyle(
+          fontFamily: 'Roboto',
+          fontSize: 13.sp,
+          height: 1.35,
+          color: theme.colorScheme.onSurface,
         ),
       ),
     );
@@ -1655,6 +1703,20 @@ String _categoryLabel(TelemetryCalculatorCategory category) {
     TelemetryCalculatorCategory.ranging => '测距',
     TelemetryCalculatorCategory.frequency => '频率',
     TelemetryCalculatorCategory.custom => '公式',
+  };
+}
+
+String _detailTitle(TelemetryCalculatorDefinition definition) {
+  return switch (definition.id) {
+    'link_budget' => '链路预算',
+    'rate_bandwidth' => '带宽计算',
+    'pcm_frame' => 'PCM 计算',
+    'channel_coding' => '编码开销',
+    'telecommand' => '遥控吞吐',
+    'ranging' => '测距时延',
+    'doppler' => '频率校核',
+    'custom_formula' => '自定义公式',
+    _ => definition.title,
   };
 }
 

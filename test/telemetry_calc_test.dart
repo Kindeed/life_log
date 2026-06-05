@@ -161,23 +161,26 @@ void main() {
           ),
         );
 
-        expect(find.text('计算结果'), findsOneWidget);
-        expect(find.text('输入参数'), findsOneWidget);
+        expect(find.text('输出'), findsOneWidget);
+        expect(find.text('输入'), findsOneWidget);
         expect(find.text('链路余量'), findsWidgets);
 
-        await tester.drag(
-          find
-              .byWidgetPredicate(
-                (widget) =>
-                    widget is Scrollable &&
-                    widget.axisDirection == AxisDirection.down,
-              )
-              .first,
-          const Offset(0, -720),
+        final scrollable = find
+            .byWidgetPredicate(
+              (widget) =>
+                  widget is Scrollable &&
+                  widget.axisDirection == AxisDirection.down,
+            )
+            .first;
+        final unitButton = find.byTooltip('选择单位').first;
+        await tester.scrollUntilVisible(
+          unitButton,
+          120,
+          scrollable: scrollable,
+          maxScrolls: 12,
         );
         await tester.pumpAndSettle();
 
-        final unitButton = find.byTooltip('选择单位').first;
         await tester.tap(unitButton);
         await tester.pumpAndSettle();
         expect(find.text('dBm'), findsWidgets);
@@ -188,7 +191,53 @@ void main() {
       },
     );
 
-    testWidgets('renders formula before results on rate bandwidth page', (
+    testWidgets(
+      'renders linked input output workbench before formula support',
+      (tester) async {
+        tester.view.physicalSize = const Size(390, 844);
+        tester.view.devicePixelRatio = 1;
+        addTearDown(tester.view.resetPhysicalSize);
+        addTearDown(tester.view.resetDevicePixelRatio);
+
+        final definition = TelemetryCalculatorRegistry.byId('rate_bandwidth');
+        await tester.pumpWidget(
+          ScreenUtilInit(
+            designSize: const Size(375, 812),
+            builder: (context, child) => GetMaterialApp(
+              theme: AppTheme.lightWith(null),
+              home: TelemetryCalcDetailView(definition: definition),
+            ),
+          ),
+        );
+        await tester.pumpAndSettle();
+
+        expect(find.text('依据'), findsOneWidget);
+        expect(find.text('输出'), findsOneWidget);
+        expect(find.text('输入'), findsOneWidget);
+        expect(find.textContaining('Rs'), findsWidgets);
+        expect(
+          find.byWidgetPredicate(
+            (widget) =>
+                widget is SingleChildScrollView &&
+                widget.scrollDirection == Axis.horizontal,
+          ),
+          findsNothing,
+        );
+
+        final formulaTop = tester.getTopLeft(find.text('依据')).dy;
+        final resultTop = tester.getTopLeft(find.text('输出')).dy;
+        final inputTop = tester.getTopLeft(find.text('输入')).dy;
+        final resultLeft = tester.getTopLeft(find.text('输出')).dx;
+        final inputLeft = tester.getTopLeft(find.text('输入')).dx;
+
+        expect(inputLeft, lessThan(resultLeft));
+        expect(formulaTop, greaterThan(resultTop));
+        expect(formulaTop, greaterThan(inputTop));
+        expect(tester.takeException(), isNull);
+      },
+    );
+
+    testWidgets('uses short title and linked input output workbench', (
       tester,
     ) async {
       tester.view.physicalSize = const Size(390, 844);
@@ -206,18 +255,12 @@ void main() {
           ),
         ),
       );
+      await tester.pumpAndSettle();
 
-      expect(find.text('公式与依据'), findsOneWidget);
-      expect(find.text('计算结果'), findsOneWidget);
-      expect(find.text('输入参数'), findsOneWidget);
-      expect(find.textContaining('Rs'), findsWidgets);
-
-      final formulaTop = tester.getTopLeft(find.text('公式与依据')).dy;
-      final resultTop = tester.getTopLeft(find.text('计算结果')).dy;
-      final inputTop = tester.getTopLeft(find.text('输入参数')).dy;
-
-      expect(formulaTop, lessThan(resultTop));
-      expect(resultTop, lessThan(inputTop));
+      expect(find.text('带宽计算'), findsWidgets);
+      expect(find.text('输入'), findsWidgets);
+      expect(find.text('输出'), findsWidgets);
+      expect(find.text('码率与带宽'), findsNothing);
       expect(tester.takeException(), isNull);
     });
 
@@ -240,16 +283,19 @@ void main() {
           ),
         );
 
-        expect(find.text('公式与依据'), findsWidgets, reason: definition.id);
-        expect(find.text('计算结果'), findsWidgets, reason: definition.id);
-        expect(find.text('输入参数'), findsWidgets, reason: definition.id);
+        expect(find.text('依据'), findsWidgets, reason: definition.id);
+        expect(find.text('输出'), findsWidgets, reason: definition.id);
+        expect(find.text('输入'), findsWidgets, reason: definition.id);
 
-        final formulaTop = tester.getTopLeft(find.text('公式与依据').first).dy;
-        final resultTop = tester.getTopLeft(find.text('计算结果').first).dy;
-        final inputTop = tester.getTopLeft(find.text('输入参数').first).dy;
+        final formulaTop = tester.getTopLeft(find.text('依据').first).dy;
+        final resultTop = tester.getTopLeft(find.text('输出').first).dy;
+        final inputTop = tester.getTopLeft(find.text('输入').first).dy;
+        final resultLeft = tester.getTopLeft(find.text('输出').first).dx;
+        final inputLeft = tester.getTopLeft(find.text('输入').first).dx;
 
-        expect(formulaTop, lessThan(resultTop), reason: definition.id);
-        expect(resultTop, lessThan(inputTop), reason: definition.id);
+        expect(inputLeft, lessThan(resultLeft), reason: definition.id);
+        expect(formulaTop, greaterThan(resultTop), reason: definition.id);
+        expect(formulaTop, greaterThan(inputTop), reason: definition.id);
         expect(tester.takeException(), isNull, reason: definition.id);
       });
     }
