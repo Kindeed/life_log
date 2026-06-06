@@ -745,6 +745,7 @@ This glossary defines shared symbols for the formula knowledge base. App impleme
 | `N_repeat` | `repeat_count` | command repeat count | unit |
 | `GuardTime` | `guard_time` | inter-frame guard time | s, ms |
 | `UplinkRate` | `uplink_rate` | telecommand link bit rate | bps |
+| `UplinkBitRate` | `uplink_bit_rate` | telecommand link bit rate alias used by TC CLTU/COP timing equations | bps |
 | `CLTU_Bits` | `cltu_bits` | complete Communications Link Transmission Unit length | bit |
 | `BCH_Codewords` | `bch_codewords` | number of TC BCH codewords in a CLTU | unit |
 | `LDPC_Codewords` | `ldpc_codewords` | number of TC LDPC codewords in a CLTU | unit |
@@ -752,6 +753,17 @@ This glossary defines shared symbols for the formula knowledge base. App impleme
 | `n_ldpc` | `ldpc_codeword_bits` | LDPC transmitted codeword length | bit |
 | `TailBits` | `tail_bits` | CLTU tail-sequence length | bit |
 | `Repetitions` | `cltu_repetitions` | number of CLTU transfers requested by the repetitions parameter | unit |
+| `PLOP_TotalDuration` | `plop_total_duration` | total physical-layer operation time around one TC CLTU | s |
+| `T_acquisition` | `tc_acquisition_time` | acquisition or leading physical-layer settling time before CLTU radiation | s |
+| `T_idle_leader` | `tc_idle_leader_time` | idle sequence or guard time before the CLTU body | s |
+| `T_cltu_radiate` | `tc_cltu_radiation_time` | time spent radiating the CLTU body | s |
+| `T_idle_trailer` | `tc_idle_trailer_time` | idle sequence or guard time after the CLTU body | s |
+| `PLOP_Efficiency` | `plop_efficiency` | useful transfer-frame bit fraction over one complete PLOP duration | ratio |
+| `PLOP_OverheadTime` | `plop_overhead_time` | acquisition and idle time outside the CLTU radiation interval | s |
+| `TC_RadiatedBits` | `tc_radiated_bits` | total CLTU bits radiated across repetitions | bit |
+| `TC_RepeatedPLOPDuration` | `tc_repeated_plop_duration` | total physical time for repeated PLOP operations | s |
+| `T_repeat_gap` | `tc_repeat_gap_time` | gap between repeated PLOP operations | s |
+| `TC_CommandRadiationEfficiency` | `tc_command_radiation_efficiency` | useful transfer-frame bit fraction over repeated physical operation duration | ratio |
 | `COP1_FrameSequenceModulus` | `cop1_frame_sequence_modulus` | modulo base for COP-1 8-bit frame sequence arithmetic | unit |
 | `V_S` | `cop1_transmitter_frame_sequence_number` | FOP-1 Transmitter_Frame_Sequence_Number, the next Type-AD `N(S)` to transmit | integer |
 | `V_R` | `cop1_receiver_frame_sequence_number` | FARM-1 Receiver_Frame_Sequence_Number, the next expected Type-AD `N(S)` | integer |
@@ -783,6 +795,24 @@ This glossary defines shared symbols for the formula knowledge base. App impleme
 | `CLCW_ReportingPeriod` | `clcw_reporting_period` | managed CLCW status reporting period | s |
 | `CLCW_ReportRate` | `clcw_report_rate` | CLCW status reports per second | Hz |
 | `Timeout_Type` | `cop1_timeout_type` | FOP-1 timeout action selector, 0 or 1 | enum |
+| `COP1_ACKLatencyBudget` | `cop1_ack_latency_budget` | acknowledgement-loop latency excluding the sending lower-layer delay | s |
+| `COP1_T1_Margin` | `cop1_t1_margin` | configured T1 timer margin above the minimum COP-1 timing budget | s |
+| `COP1_TimeoutRate` | `cop1_timeout_rate` | reciprocal timeout cadence for repeated timer expiry | Hz |
+| `COP1_MaxRecoveryTransmissions` | `cop1_max_recovery_transmissions` | upper-bound count of additional go-back-N recovery transmissions | frame |
+| `COP1_RecoveryDuration` | `cop1_recovery_duration` | serial radiation-time upper bound for recovery transmissions | s |
+| `COP1_SentQueueOccupancy` | `cop1_sent_queue_occupancy` | fraction of the FOP sliding window occupied by the Sent_Queue | ratio |
+| `COP1_WindowRemaining` | `cop1_window_remaining` | remaining Type-AD frame slots in the FOP window | frame |
+| `WaitQueueLength` | `cop1_wait_queue_length` | number of Type-AD FDUs waiting in the FOP Wait_Queue | frame |
+| `COP1_WaitQueueFull` | `cop1_wait_queue_full` | whether the Wait_Queue is full | boolean |
+| `COP1_AckedFrames` | `cop1_acked_frames` | number of oldest Sent_Queue frames acknowledged by a CLCW report | frame |
+| `COP1_NewNNR` | `cop1_new_expected_acknowledgement_frame_sequence_number` | updated `NN(R)` after a valid CLCW acknowledgement | integer |
+| `SentQueueLength_after_ack` | `cop1_sent_queue_length_after_ack` | Sent_Queue length after removing acknowledged frames | frame |
+| `COP1_TimerRestartNeeded` | `cop1_timer_restart_needed` | whether T1 should continue after acknowledgement processing | boolean |
+| `PER_TC` | `tc_frame_error_probability` | telecommand frame error probability used in first-order goodput estimates | ratio |
+| `ExpectedRetransmissionOverhead` | `cop1_expected_retransmission_overhead` | expected additional time due to COP recovery retransmissions | s |
+| `COP1_TypeADGoodput` | `cop1_type_ad_goodput` | useful Type-AD transfer-frame goodput after frame errors and recovery overhead | bps |
+| `timeout_or_retransmit_request` | `cop1_timeout_or_retransmit_request` | event flag for timeout or CLCW retransmit-driven recovery | boolean |
+| `COP1_AbortCondition` | `cop1_abort_condition` | whether FOP recovery must stop and invoke the configured timeout/alert path | boolean |
 
 ## Tracking, Ranging, and Doppler
 

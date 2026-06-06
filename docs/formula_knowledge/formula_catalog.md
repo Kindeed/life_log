@@ -642,6 +642,26 @@ Notation:
 | TC-046 | `COP1_InLockoutArea = not (COP1_InPositiveWindow or COP1_InNegativeWindow)` | FARM window tests | FARM lockout-area condition; lockout frames are discarded and set the Lockout Flag. | CCSDS-232.1 | Procedure |
 | TC-047 | `CLCW_ReportRate = 1 / CLCW_ReportingPeriod` | FARM managed reporting period | CLCW status reporting cadence for COP-1 acknowledgement and flow-control visibility. | CCSDS-232.1 | Seeded |
 | TC-048 | `COP1_BD_MaxTransmissions = 1` | Type-BD expedited service | Type-BD frames do not use the COP-1 timer or Transmission_Count and are transmitted once. | CCSDS-232.1 | Seeded |
+| TC-049 | `PLOP_TotalDuration = T_acquisition + T_idle_leader + T_cltu_radiate + T_idle_trailer` | PLOP phase durations | Total physical-layer operation duration around one CLTU, including acquisition and idle guard portions. | CCSDS-231 | Procedure |
+| TC-050 | `T_cltu_radiate = CLTU_Bits / UplinkRate` | CLTU size and uplink bit rate | CLTU radiation time as the physical-layer component inside a PLOP operation. | CCSDS-231 | Seeded |
+| TC-051 | `PLOP_Efficiency = TransferFrameBits / (UplinkRate * PLOP_TotalDuration)` | useful transfer-frame bits and physical duration | Useful TC transfer-frame efficiency over the full PLOP transmission window. | CCSDS-231, CCSDS-232 | Seeded |
+| TC-052 | `PLOP_OverheadTime = PLOP_TotalDuration - T_cltu_radiate` | PLOP duration and CLTU radiation time | Acquisition, idle, and guard time not spent radiating the CLTU body. | CCSDS-231 | Seeded |
+| TC-053 | `TC_RadiatedBits = Repetitions * CLTU_Bits` | CLTU repetitions | Radiated CLTU bit count for repeated CLTU operation, excluding inter-repetition idle or gap time. | CCSDS-231 | Seeded |
+| TC-054 | `TC_RepeatedPLOPDuration = Repetitions * PLOP_TotalDuration + max(0,Repetitions-1) * T_repeat_gap` | repetitions, PLOP duration, and gap | Physical time for repeated CLTU transmission including gaps between repeated PLOP operations. | CCSDS-231 | Procedure |
+| TC-055 | `TC_CommandRadiationEfficiency = TransferFrameBits / (UplinkRate * TC_RepeatedPLOPDuration)` | useful bits and repeated physical duration | Useful TC transfer-frame efficiency including PLOP overhead and repeated transmissions. | CCSDS-231, CCSDS-232 | Seeded |
+| TC-056 | `COP1_ACKLatencyBudget = T_max_frame_tx + tau_forward + t_farm_lower + t_clcw_sample + T_clcw_tx + tau_return + t_clcw_extract` | acknowledgement path terms | COP-1 acknowledgement latency budget excluding the sending lower-layer delay term. | CCSDS-232.1 | Seeded |
+| TC-057 | `COP1_T1_Margin = T1_Initial - COP1_T1_Min` | configured timer and minimum timer budget | Margin between configured FOP timer and the minimum round-trip/control-loop budget. | CCSDS-232.1 | Seeded |
+| TC-058 | `COP1_TimeoutRate = 1 / T1_Initial` | FOP timer | Maximum timeout cadence if the queue remains unacknowledged and the timer repeatedly expires. | CCSDS-232.1 | Seeded |
+| TC-059 | `COP1_MaxRecoveryTransmissions = SentQueueLength * COP1_AttemptsRemaining` | sent queue length and remaining attempts | Upper-bound count of additional Type-AD frame transmissions before limit exhaustion under go-back-N recovery. | CCSDS-232.1 | Procedure |
+| TC-060 | `COP1_RecoveryDuration = COP1_MaxRecoveryTransmissions * T_max_frame_tx` | recovery transmissions and frame time | Serial radiation-time upper bound for recovery retransmissions. | CCSDS-232.1 | Procedure |
+| TC-061 | `COP1_SentQueueOccupancy = SentQueueLength / K` | sent queue length and FOP window width | Fraction of the FOP sliding window occupied by unacknowledged Type-AD frames. | CCSDS-232.1 | Seeded |
+| TC-062 | `COP1_WindowRemaining = max(0,K - COP1_OutstandingADFrames)` | FOP window and outstanding frames | Number of additional Type-AD frames that may enter the window. | CCSDS-232.1 | Seeded |
+| TC-063 | `COP1_WaitQueueFull = WaitQueueLength >= COP1_WaitQueueCapacityFDUs` | wait queue length and capacity | Whether the FOP Wait_Queue blocks another Type-AD FDU. | CCSDS-232.1 | Seeded |
+| TC-064 | `COP1_AckedFrames = (N_R - NN_R) mod 256` | CLCW next expected and oldest unacknowledged | Number of oldest Sent_Queue frames acknowledged by a valid CLCW `N(R)`. | CCSDS-232.1 | Procedure |
+| TC-065 | `COP1_NewNNR = N_R` | accepted CLCW `N(R)` | New `NN(R)` after processing a valid acknowledgement report. | CCSDS-232.1 | Procedure |
+| TC-066 | `COP1_TimerRestartNeeded = SentQueueLength_after_ack > 0` | post-ack Sent_Queue state | Whether the T1 timer remains needed after acknowledged frames are removed. | CCSDS-232.1 | Procedure |
+| TC-067 | `COP1_TypeADGoodput ~= TransferFrameBits * (1 - PER_TC) / (T_max_frame_tx + ExpectedRetransmissionOverhead)` | frame error probability and retransmission overhead | First-order Type-AD useful goodput when COP recovery overhead is summarized. | CCSDS-232.1, BOOK-SKLAR | Procedure |
+| TC-068 | `COP1_AbortCondition = Transmission_Count >= Transmission_Limit and timeout_or_retransmit_request` | transmission counter and recovery event flag | Condition that triggers the selected Timeout_Type recovery or alert path rather than another retransmission. | CCSDS-232.1 | Procedure |
 
 ## Ranging, Doppler, Tracking, and External Measurement
 

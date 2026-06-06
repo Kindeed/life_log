@@ -42,8 +42,9 @@ Each pass should produce a reviewed delta to `formula_catalog.md` and, where nee
    - Current CCSDS 732.1-B-3 extraction covers USLP identifier widths, non-truncated and truncated primary-header sizes, Frame Length count, VCF Count length/modulus, TFDF/TFDZ capacity, OCF/FECF overhead, OID constants, fixed-TFDZ idle fill, SDLS capacity, and first-order segmentation count.
    - Current CCSDS 732.0-B AOS extraction covers stable primary-header, GVCID, VC frame count, signaling, optional OCF/FECF, data-field, M_PDU packet-zone, VCA_SDU, SDLS capacity, and frame-efficiency formulas from the current B-5 registry plus public older-issue cross-checks.
    - Remaining data-link work is exact AOS B-5 direct PDF extraction, packet extraction examples across TM/AOS/USLP, and machine-readable construction-rule tables.
-   - Current CCSDS 232.1-B-2 extraction covers COP-1 FOP/FARM variables, 8-bit sequence arithmetic, `T1_Initial` delay budget, Transmission_Limit/Count, Sent_Queue, FOP/FARM sliding windows, CLCW reporting period, and Type-BD one-shot behavior.
-   - Remaining COP work is state-table event test extraction, PLOP timing, and systematic retransmission examples.
+   - Current CCSDS 232.1-B-2 extraction covers COP-1 FOP/FARM variables, 8-bit sequence arithmetic, `T1_Initial` delay budget, T1 margin, ACK latency, Transmission_Limit/Count, Sent_Queue and Wait_Queue occupancy, FOP/FARM sliding windows, acknowledgement processing, recovery retransmission budgets, CLCW reporting period, and Type-BD one-shot behavior.
+   - Current CCSDS 231.0-B extraction covers PLOP duration, CLTU radiation time, repeated PLOP duration, and command-radiation efficiency.
+   - Remaining COP work is state-table event test extraction, mission-specific PLOP managed-parameter tables, and systematic retransmission examples.
 
 3. Ranging/tracking pass:
    - CCSDS 414.1-B-3 PN Ranging.
@@ -187,7 +188,8 @@ Recommended implementation order:
    - CLTU overhead
    - sync marker overhead
    - selected code-rate tables
-   - COP-1 FOP/FARM sequence state, T1 timer budget, FOP/FARM window checks, retransmission limit, Sent_Queue, and CLCW reporting cadence
+   - PLOP duration/efficiency, repeated CLTU duration, and command-radiation efficiency
+   - COP-1 FOP/FARM sequence state, T1 timer budget/margin, ACK latency, FOP/FARM window checks, retransmission limit, recovery retransmission duration, Sent_Queue/Wait_Queue/window occupancy, acknowledged-frame processing, Type-AD goodput, and CLCW reporting cadence
    - USLP MCID/GVCID/GMAP ID widths, VCF Count options, truncated frames, TFDF/TFDZ, OID, and SDLS overhead
    - Proximity-1 Version-3 Transfer Frame header/data-field efficiency
    - Proximity-1 PLTU/CRC/ASM efficiency
