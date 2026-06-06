@@ -88,10 +88,24 @@ This glossary defines shared symbols for the formula knowledge base. App impleme
 | `T_ant` | `antenna_noise_temp` | antenna noise temperature | K |
 | `T_rx` | `receiver_noise_temp` | receiver equivalent noise temperature | K |
 | `T_e` | `equivalent_noise_temp` | equivalent noise temperature | K |
+| `T_phys` | `physical_temp` | physical temperature of a passive lossy element | K |
+| `T_feed_phys` | `feed_physical_temp` | physical temperature of the feed/waveguide/diplexer loss element | K |
+| `T_downstream` | `downstream_equivalent_noise_temp` | equivalent noise temperature of receiver stages after a preceding loss | K |
+| `T_misc` | `misc_noise_temp` | miscellaneous additive noise-temperature allowance at the chosen reference plane | K |
+| `T_b(theta,phi)` | `scene_brightness_temp` | directional scene brightness temperature | K |
+| `T_in` | `input_noise_temp` | input noise or brightness temperature before a lossy passive path | K |
+| `T_scene` | `scene_noise_temp` | effective incident scene noise temperature before antenna ohmic loss | K |
+| `T_hot` | `hot_source_temp` | hot-source equivalent noise temperature for calibration | K |
+| `T_cold` | `cold_source_temp` | cold-source equivalent noise temperature for calibration | K |
 | `NF` | `noise_figure` | noise figure | dB |
 | `F` | `noise_factor` | linear noise factor | ratio |
+| `L_linear` | `passive_loss_factor` | passive attenuation/loss factor, greater than or equal to 1 | ratio |
+| `L_feed` | `feed_loss_factor` | feed, waveguide, diplexer, or switch loss before the receiver | ratio |
+| `Y` | `y_factor` | hot/cold output power ratio | ratio |
+| `ENR` | `excess_noise_ratio` | calibrated noise-source excess noise ratio | ratio, dB |
 | `N0` | `noise_density` | noise spectral density | dBW/Hz |
 | `B` / `B_n` | `noise_bandwidth` | receiver noise bandwidth | Hz |
+| `G0`, `G1`, `gamma` | `dsn_gain_curve_parameters` | DSN station gain-versus-elevation parameters | dBi, dBi/deg^2, deg |
 
 ## Link Budget
 

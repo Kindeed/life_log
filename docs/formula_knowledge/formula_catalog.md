@@ -62,6 +62,20 @@ Notation:
 | RF-048 | `PLF = |rho_wave dot rho_ant|^2` | wave and antenna polarization unit vectors | Polarization loss factor in linear power ratio. | BOOK-BALANIS | Seeded |
 | RF-049 | `AF(theta) = sum_{n=0}^{N_elem-1} w_n*exp(j*n*(k0*d_elem*cos(theta)+beta_phase))` | element weights, spacing, phase progression | Uniform-line array-factor structure before normalization. | BOOK-BALANIS | Procedure |
 | RF-050 | `AF_norm = |sin(N_elem*psi/2)/(N_elem*sin(psi/2))|`, `psi=k0*d_elem*cos(theta)+beta_phase` | array size and phase variable | Closed-form normalized array factor for equal-amplitude linear arrays. | BOOK-BALANIS | Seeded |
+| RF-051 | `F = 1 + T_e/T0` | equivalent noise temperature and standard temperature | Converts equivalent noise temperature back to linear noise factor. Complements RF-011. | BOOK-MARAL, BOOK-SKLAR | Seeded |
+| RF-052 | `NF_dB = 10log10(F)` | linear noise factor | Converts noise factor to noise figure in dB. | BOOK-MARAL, BOOK-SKLAR | Seeded |
+| RF-053 | `T_passive = (L_linear - 1)*T_phys` | passive loss factor and physical temperature | Equivalent input noise temperature of a passive lossy element at physical temperature. | BOOK-MARAL, BOOK-SKLAR | Seeded |
+| RF-054 | `T_referred_before_loss = (L_linear - 1)*T_phys + L_linear*T_downstream` | passive loss before a receiver/noise stage | Refers downstream receiver noise through a lossy feed, radome, diplexer, waveguide, or switch placed before the LNA. | BOOK-MARAL, BOOK-SKLAR, DSN-810-005 | Seeded |
+| RF-055 | `T_sys_ant_ref = T_ant + (L_feed - 1)*T_feed_phys + L_feed*T_rx + T_misc` | antenna temperature, feed loss, receiver temperature | System temperature referred to the antenna/feed reference plane when a lossy feed precedes the receiver. | DESCANSO-DSTSE, BOOK-MARAL, DSN-810-005 | Seeded |
+| RF-056 | `T_out_lossy = T_in/L_linear + (1 - 1/L_linear)*T_phys` | input brightness/noise temperature and passive loss | Output noise temperature after a lossy passive path, useful for atmosphere/feed attenuation and emission. | BOOK-MARAL, DSN-810-005 | Seeded |
+| RF-057 | `Y = P_hot/P_cold` | measured hot/cold output powers | Y-factor definition for receiver noise-temperature measurement. | BOOK-SKLAR, BOOK-HAYKIN | Seeded |
+| RF-058 | `T_e_yfactor = (T_hot - Y*T_cold)/(Y - 1)` | hot and cold source temperatures, Y factor | Receiver equivalent noise temperature from a hot/cold Y-factor measurement. | BOOK-SKLAR, BOOK-HAYKIN | Seeded |
+| RF-059 | `Y_dB = 10log10(Y)` | Y factor | dB representation of a power-ratio Y-factor measurement. | BOOK-SKLAR, BOOK-HAYKIN | Seeded |
+| RF-060 | `ENR_linear = (T_hot - T0)/T0` | hot-source temperature and standard temperature | Excess noise ratio for a calibrated noise source. | BOOK-SKLAR, BOOK-HAYKIN | Seeded |
+| RF-061 | `T_hot = T0*(ENR_linear + 1)` | excess noise ratio | Hot-source equivalent temperature from ENR. | BOOK-SKLAR, BOOK-HAYKIN | Seeded |
+| RF-062 | `T_ant = integral_4pi(T_b(theta,phi)*P_n(theta,phi)dOmega) / integral_4pi(P_n(theta,phi)dOmega)` | scene brightness temperature and antenna power pattern | Antenna noise temperature from scene brightness weighted by the normalized antenna pattern. | BOOK-BALANIS, DESCANSO-DSTSE | Procedure |
+| RF-063 | `T_ant_ohmic = eta_rad*T_scene + (1 - eta_rad)*T_phys` | radiation efficiency, scene and physical temperature | First-order antenna temperature with ohmic/radiation-efficiency loss. | BOOK-BALANIS, BOOK-MARAL | Seeded |
+| RF-064 | `G_DSN(theta) = G0 - G1*(theta - gamma)^2 - A_zen/sin(theta)` | DSN gain parameters and zenith attenuation | DSN station antenna gain versus elevation angle, referenced to the feedhorn aperture in modules 101/103/104. | DSN-810-005-101, DSN-810-005-103, DSN-810-005-104 | Procedure |
 
 ## Propagation and Link Budget
 

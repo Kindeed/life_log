@@ -19,7 +19,7 @@ Source: ITU-R P.525-5, `Calculation of free-space attenuation`, approved 2024-11
 
 ## DESCANSO and DSN Antenna/Link Engineering Extracts
 
-Sources: NASA/JPL DESCANSO `Deep Space Telecommunications Systems Engineering`; DSN 810-005 module 105E, `Atmospheric and Environmental Effects`.
+Sources: NASA/JPL DESCANSO `Deep Space Telecommunications Systems Engineering`; DSN 810-005 modules 101I, 103F, 104P, and 105E.
 
 | Extract ID | Standard location | Equation or table | Implementation note |
 | --- | --- | --- | --- |
@@ -36,6 +36,9 @@ Sources: NASA/JPL DESCANSO `Deep Space Telecommunications Systems Engineering`; 
 | DS-ATM-002 | DSN 810-005 105E section 2.1.2, equation 2 | `A(theta)=A_zen/sin(theta)` | Flat-Earth elevation-angle attenuation model; DSN text warns not to double-count atmosphere in effective antenna gain. |
 | DS-ATM-003 | DSN 810-005 105E section 2.1.3, equation 3 | `T_atm(theta)=T_M*(1-1/L(theta))`, `L(theta)=10^(A(theta)/10)` | Converts atmospheric attenuation into noise-temperature contribution. |
 | DS-ATM-004 | DSN 810-005 105E section 2.1.4, equations 4 to 6 | `T_CMB=2.725 K`; `T_CMB_eff=T_CMB/L(theta)`; `T_op=T_AMW+T_atm+T_CMB_eff` with `T_AMW=T1+T2*exp(-a_noise*theta)` | Adds sky-noise closure for receiver G/T and `N0` calculations. |
+| DS-STN-001 | DSN 810-005 101I appendix A.1; 103F appendix A.1; 104P appendix A.1 | `G(theta)=G0-G1*(theta-gamma)^2-Azen/sin(theta)` | Station gain curves are referenced to the feedhorn aperture. Select `G0`, `G1`, `gamma`, and `Azen` from the relevant station/band/configuration table. |
+| DS-STN-002 | DSN 810-005 101I appendix A.2; 103F appendix A.2; 104P appendix A.2 | `Top(theta)=TAMW+Tsky`, `TAMW=T1+T2*exp(-a*theta)`, `Tsky=Tatm(theta)+TCMB/L(theta)` | This restates the DSN system-temperature closure at station-module level and points to modules 101/103/104 for `T1`, `T2`, `a`, and antenna/feed configuration tables. |
+| DS-STN-003 | DSN 810-005 101I tables 2, 4, A-2, A-3; 103F tables 3, 5, A-2, A-3; 104P tables 5-9 and A-1 to A-5 | TAMW, Tsky, Top, Azen, gain-curve, and antenna-microwave noise-temperature parameter tables | Treat as machine-readable station data, not hand-entered constants. The UI should expose station, band, polarization, LNA/feed/dichroic path, weather CD, and elevation rather than a flat list of hidden coefficients. |
 
 ## ITU-R Earth-Station Antenna Patterns and Published Antenna Textbook Checks
 

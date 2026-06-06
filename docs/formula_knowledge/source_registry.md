@@ -35,7 +35,7 @@ This registry records the standards, handbooks, and published books that should 
 | ITU-P840 | ITU-R P.840-9, Attenuation due to clouds and fog | ITU-R | In force, approved 2023-08; first-pass cloud/fog attenuation extracts started. | Cloud/fog liquid water attenuation, integrated cloud liquid water maps, log-normal cloud attenuation approximation. |
 | ITU-S465 | ITU-R S.465-6, Reference radiation pattern of earth station antennas in the fixed-satellite service | ITU-R | In force, approved 2010-01; provides reference patterns for coordination and interference assessment from 2 to 31 GHz. | Earth-station off-axis gain envelope, minimum angle rules, and legacy small-antenna branches. |
 | ITU-S580 | ITU-R S.580-6, Radiation diagrams for earth-station antenna design objectives | ITU-R | In force, approved 2004-01; provides GSO side-lobe design objective for earth-station antennas. | Side-lobe objective, GSO affected-zone checks, transition branch, and equivalent circular aperture diameter. |
-| DSN-810-005 | DSN Telecommunications Link Design Handbook | NASA/JPL DSN | Current public DSN handbook download page lists modules and recent release clearances; modules 105E, 202E, 203E, 210E, 211G, and 214C have first-pass extracts. | Deep-space link, DSN station capability, Doppler tracking, sequential/PN ranging, Delta-DOR, VLBI, command/telemetry/ranging modules. |
+| DSN-810-005 | DSN Telecommunications Link Design Handbook | NASA/JPL DSN | Current public DSN handbook download page lists modules and recent release clearances; modules 101I, 103F, 104P, 105E, 202E, 203E, 210E, 211G, and 214C have first-pass extracts. | Deep-space link, DSN station capability, antenna gain/noise-temperature station models, Doppler tracking, sequential/PN ranging, Delta-DOR, VLBI, command/telemetry/ranging modules. |
 | DESCANSO-DSTSE | Deep Space Telecommunications Systems Engineering | NASA/JPL DESCANSO | Public deep-space communications reference; antenna/link, baseband, Doppler, ranging, VLBI/DOR, and radiometric-error extracts are started in `standard_extracts.md`. | Link equation derivations, antenna gain/effective aperture, system noise temperature, modulation/coding context, tracking/ranging observables, and external-measurement formulas. |
 | NASA-SST-COMM | NASA SmallSat State of the Art, Communications | NASA | Small satellite RF/optical communication overview. | System-level trade examples and calculator scenario framing. |
 | NASA-BSF | NASA/JPL Basics of Space Flight | NASA/JPL | Public educational reference for orbital motion, spacecraft tracking, and light-time concepts. | Cross-check two-body orbit, range/light-time, and operations explanations. |
@@ -113,6 +113,9 @@ This registry records the standards, handbooks, and published books that should 
 | DSN-810-005 | https://deepspace.jpl.nasa.gov/dsndocs/810-005/ |
 | DSN-810-005 downloads | https://deepspace.jpl.nasa.gov/dsndocs/810-005/downloads/ |
 | DSN-810-005 front matter | https://deepspace.jpl.nasa.gov/dsndocs/810-005/fm.pdf |
+| DSN-810-005 101I | https://deepspace.jpl.nasa.gov/dsndocs/810-005/101/101I.pdf |
+| DSN-810-005 103F | https://deepspace.jpl.nasa.gov/dsndocs/810-005/103/103F.pdf |
+| DSN-810-005 104P | https://deepspace.jpl.nasa.gov/dsndocs/810-005/104/104P.pdf |
 | DSN-810-005 105E | https://deepspace.jpl.nasa.gov/dsndocs/810-005/105/105E.pdf |
 | DESCANSO-DSTSE | https://descanso.jpl.nasa.gov/dstse/DSTSE.pdf |
 | JPL DESCANSO monographs | https://descanso.jpl.nasa.gov/monograph/mono.html |
