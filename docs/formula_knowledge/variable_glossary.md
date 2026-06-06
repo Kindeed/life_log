@@ -426,6 +426,16 @@ This glossary defines shared symbols for the formula knowledge base. App impleme
 | `P_carrier_i_linear` | `carrier_power_linear` | assigned RF power for carrier i in linear units | W |
 | `P_transponder_oper_linear` | `transponder_operating_power_linear` | available operating transponder RF output power in linear units | W |
 | `PowerUtilization` | `transponder_power_utilization` | fraction of operating transponder RF power allocated to active carriers | ratio |
+| `LinkAvailability_l` | `serial_link_segment_availability` | availability of serial hop or segment l | ratio |
+| `CompositeAvailability` | `composite_link_availability` | end-to-end availability across required serial hops | ratio |
+| `CompositeOutage` | `composite_link_outage` | end-to-end outage probability across required serial hops | ratio |
+| `(C/N0)_l_linear` | `hop_cn0_linear` | carrier-to-noise-density contribution of hop or section l in linear Hz units | Hz |
+| `(C/N0)_multihop_linear` | `multihop_cn0_linear` | reciprocal-summed carrier-to-noise-density ratio for multiple hops | Hz |
+| `R_isl` | `inter_satellite_range` | inter-satellite link distance | m |
+| `lambda_isl` | `inter_satellite_wavelength` | inter-satellite link wavelength | m |
+| `ISL_FSPL_dB` | `inter_satellite_fspl_db` | inter-satellite free-space path loss | dB |
+| `CarrierPowerAllocationFraction_i` | `carrier_power_allocation_fraction` | fraction of aggregate transponder RF power assigned to carrier i | ratio |
+| `EIRP_sat_carrier_i_dBW` | `satellite_carrier_i_eirp` | per-carrier satellite EIRP for non-equal carrier loading | dBW |
 
 ## Wireless Channel and Fading
 
@@ -449,14 +459,41 @@ This glossary defines shared symbols for the formula knowledge base. App impleme
 | `d0` | `reference_distance` | reference distance for log-distance path loss | m |
 | `n_path` | `path_loss_exponent` | environment-specific path-loss exponent | unitless |
 | `X_sigma` | `shadowing_random_variable` | zero-mean Gaussian shadowing term in dB | dB |
+| `sigma_shadow_dB` | `shadowing_standard_deviation_db` | standard deviation of lognormal shadowing in dB | dB |
+| `ShadowFadeDepth_p_dB` | `shadow_fade_depth_percent_p` | lognormal shadow fade depth exceeded for the selected probability | dB |
+| `ShadowLinkMargin_p` | `shadow_link_margin_percent_p` | link margin after reserving shadow fade depth | dB |
+| `ShadowedPathLoss_p_dB` | `shadowed_path_loss_percent_p` | path-loss percentile including lognormal shadowing | dB |
 | `gamma_bar` | `average_snr` | average SNR before instantaneous fading realization | ratio |
+| `gamma_bar_dB` | `average_snr_db` | average SNR before instantaneous fading realization in dB | dB |
 | `gamma_inst` | `instantaneous_snr` | instantaneous SNR after fading realization | ratio |
 | `gamma_th` | `outage_snr_threshold` | SNR threshold defining outage | ratio |
+| `P_out_target` | `target_outage_probability` | target outage probability for fading-margin design | ratio |
+| `RayleighRequiredGammaBar` | `rayleigh_required_average_snr` | required average SNR for a target Rayleigh outage probability | ratio |
+| `RayleighOutageMargin_dB` | `rayleigh_outage_margin_db` | available average SNR margin against Rayleigh outage target | dB |
 | `P_out` | `outage_probability` | probability that instantaneous SNR is below threshold | ratio |
 | `r` | `fading_envelope` | fading envelope magnitude | ratio |
+| `rho` | `normalized_envelope_threshold` | fading envelope threshold normalized by RMS envelope | ratio |
 | `sigma_h` | `rayleigh_scale` | Rayleigh diffuse-component scale parameter | ratio |
 | `K_Rice` | `rician_k_factor` | specular-to-diffuse power ratio | ratio, dB |
+| `K_Rice_dB` | `rician_k_factor_db` | Rician K factor in dB | dB |
 | `s_LOS` | `los_component_amplitude` | deterministic/specular component amplitude in a Rician channel | ratio |
+| `SignalBandwidth` | `signal_bandwidth` | occupied or analyzed signal bandwidth for selectivity checks | Hz |
+| `FrequencySelectivityRatio` | `frequency_selectivity_ratio` | signal bandwidth divided by coherence bandwidth | ratio |
+| `FrequencyFlatCondition` | `frequency_flat_condition` | qualitative flat-fading validity check | boolean/warning |
+| `FrameDuration` | `frame_duration` | duration of a frame or coded block under channel analysis | s |
+| `TimeSelectivityRatio` | `time_selectivity_ratio` | frame duration divided by coherence time | ratio |
+| `QuasiStaticFrameCondition` | `quasi_static_frame_condition` | qualitative block-fading validity check | boolean/warning |
+| `CoherenceBlockSymbols` | `coherence_block_symbols` | approximate time-frequency coherence block size | symbol, dimensionless |
+| `DopplerSpreadTwoSided` | `two_sided_doppler_spread` | approximate two-sided Doppler spread | Hz |
+| `NormalizedDoppler` | `normalized_doppler` | maximum Doppler shift divided by symbol rate | ratio |
+| `DelaySpreadISIRatio` | `delay_spread_isi_ratio` | RMS delay spread divided by symbol period | ratio |
+| `T_cp` | `cyclic_prefix_duration` | OFDM cyclic prefix or guard interval duration | s |
+| `tau_max` | `maximum_excess_delay` | maximum modeled excess delay | s |
+| `CyclicPrefixMargin` | `cyclic_prefix_margin` | guard interval remaining after maximum delay spread | s |
+| `RayleighMedianPowerGain` | `rayleigh_median_power_gain` | median normalized Rayleigh power gain | ratio |
+| `RayleighMedianPowerFade_dB` | `rayleigh_median_power_fade_db` | median Rayleigh power fade relative to average | dB |
+| `LCR_Rayleigh` | `rayleigh_level_crossing_rate` | Rayleigh level-crossing rate at normalized threshold | Hz |
+| `AFD_Rayleigh` | `rayleigh_average_fade_duration` | average Rayleigh fade duration at normalized threshold | s |
 | `C_inst` | `instantaneous_channel_capacity` | instantaneous flat-fading capacity | bit/s |
 | `C_ergodic` | `ergodic_channel_capacity` | channel capacity averaged over fading states | bit/s |
 

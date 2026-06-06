@@ -60,14 +60,14 @@ Each pass should produce a reviewed delta to `formula_catalog.md` and, where nee
    - Use `standard_extracts.md` P.525 rows to build MHz/km, GHz/km, field-strength, PFD, isotropic received-power, and radar-loss regression cases.
    - Use `standard_extracts.md` DESCANSO/DSN rows to build antenna aperture, pointing/polarization, received-power, carrier/data/ranging margin, atmospheric noise-temperature, receiver reference-plane, and Y-factor calibration regression cases.
    - Use `standard_extracts.md` ITUANT/BOOKANT rows to build off-axis gain, side-lobe objective, beam solid angle, directivity, far-field distance, reflector focal/depth/feed-edge/blockage/spillover outputs, antenna XPD, array-factor, scan-steering, grating-lobe, scan-loss, scan beam-broadening, projected aperture, coherent array EIRP, true-time-delay, phase-quantization, beam-squint, aperture taper, measured-pattern integration, active VSWR, coupling-efficiency, taper-synthesis, and antenna-gain-measurement examples before adding antenna UI controls.
-   - Current first-pass extraction includes P.676 gas attenuation structure, P.840 cloud/fog attenuation, P.618 scintillation and sky-noise formulas, S.465/S.580 earth-station antenna pattern formulas, receiver/passive-loss/Y-factor formulas, receiver/link uncertainty propagation formulas, DSN 101/103/104 station gain/noise-temperature model rows, Balanis/Mailloux reflector/feed geometry, aperture-field, measured-pattern, taper, coupling, coherent array EIRP, true-time-delay steering, and gain-measurement formulas, and CCSDS 401 QPSK/modulation-margin/symbol-rate/subcarrier checks; next work is coefficient/map assets, DSN station coefficient tables, machine-readable modulation/limit tables, measured-pattern import examples, embedded-element/subarray validation cases, active-array validation cases, antenna temperature validation examples, and receiver-chain uncertainty UI scenarios.
+   - Current first-pass extraction includes P.676 gas attenuation structure, P.840 cloud/fog attenuation, P.618 scintillation and sky-noise formulas, S.465/S.580 earth-station antenna pattern formulas, receiver/passive-loss/Y-factor formulas, receiver/link uncertainty propagation formulas, DSN 101/103/104 station gain/noise-temperature model rows, Balanis/Mailloux reflector/feed geometry, aperture-field, measured-pattern, taper, coupling, coherent array EIRP, true-time-delay steering, gain-measurement formulas, CCSDS 401 QPSK/modulation-margin/symbol-rate/subcarrier checks, Goldsmith/Rappaport shadowing/outage/selectivity/fade-dynamics formulas, and Maral/Bousquet multi-hop availability, multi-hop `C/N0`, intersatellite FSPL, and non-equal carrier allocation formulas; next work is coefficient/map assets, DSN station coefficient tables, machine-readable modulation/limit tables, measured-pattern import examples, embedded-element/subarray validation cases, active-array validation cases, antenna temperature validation examples, receiver-chain uncertainty UI scenarios, and validated fading-channel examples.
 
 5. Textbook cross-check pass:
    - Balanis for antenna formulas.
    - Sklar/Proakis/Haykin plus Gardner/Mengali for modulation, coding, BER/PER, synchronization, EVM/MER, soft decisions, pulse shaping, and receiver loops.
    - Goldsmith/Rappaport for wireless channel, fading, delay spread, Doppler, coherence, outage, and shadowing formulas.
    - Maral/Bousquet and SMAD for satellite/system link budget organization.
-   - Use `standard_extracts.md` digital-communications and measurement-confidence rows to build baseband timing, quantization, matched-filter, EVM/MER, LLR demapper, raised-cosine/RRC, synchronization-loop, timing-error detector, OFDM, phase-error, MIMO, AWGN modulation BER/SER, BER/FER confidence, zero-error demonstration, allowed-error pass probability, fading-channel BER/outage, diversity-combining, coding-gain, bounded-distance, R-S interleaver failure, union-bound, convolutional traceback, LLR clipping, Hamming/Singleton bound, minimum-distance, and log-distance path-loss calculator tests before UI work.
+   - Use `standard_extracts.md` digital-communications and measurement-confidence rows to build baseband timing, quantization, matched-filter, EVM/MER, LLR demapper, raised-cosine/RRC, synchronization-loop, timing-error detector, OFDM, phase-error, MIMO, AWGN modulation BER/SER, BER/FER confidence, zero-error demonstration, allowed-error pass probability, fading-channel BER/outage, shadowing/outage margin, selectivity/coherence diagnostics, fade-dynamics, diversity-combining, coding-gain, bounded-distance, R-S interleaver failure, union-bound, convolutional traceback, LLR clipping, Hamming/Singleton bound, minimum-distance, and log-distance path-loss calculator tests before UI work.
 
 6. Compression and Proximity-1 pass:
    - CCSDS 121.0-B, 122.0-B, and 123.0-B.
@@ -135,7 +135,9 @@ Recommended implementation order:
    - margin and bottleneck explanation
    - satellite incident PFD, saturation flux density, IBO, OBO, and transponder gain
    - per-carrier satellite EIRP and output back-off for multi-carrier loading
+   - non-equal carrier power allocation and per-carrier EIRP
    - cascaded uplink/downlink C/N0 and reciprocal impairment summation
+   - multi-hop C/N0, composite serial-hop availability, composite outage, and intersatellite FSPL
    - C/I, C/IM, interference aggregation, and interference margin
    - HPA DC power, dissipated heat, and efficiency derating
    - transponder bandwidth/power utilization with power-limited versus bandwidth-limited bottleneck output
@@ -181,6 +183,7 @@ Recommended implementation order:
    - Gardner, Mueller-Muller, early-late, Costas, and Mth-power synchronization detector outputs
    - Proximity-1 `R_d/R_cs/R_chs` reference-point explanation
    - Proximity-1 coded/channel symbol-rate allowed-set, offset, and stability warnings
+   - shadowing percentile margin, Rayleigh outage margin, frequency/time selectivity diagnostics, coherence-block size, normalized Doppler, delay-spread ISI ratio, cyclic-prefix margin, Rician K conversion, level-crossing rate, and average fade duration
 
 5. CCSDS frame/coding workbench:
    - TM/TC/AOS/USLP frame efficiency
