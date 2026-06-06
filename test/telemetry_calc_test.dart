@@ -264,6 +264,66 @@ void main() {
       expect(tester.takeException(), isNull);
     });
 
+    testWidgets('allows judgement title to wrap in narrow output pane', (
+      tester,
+    ) async {
+      tester.view.physicalSize = const Size(390, 844);
+      tester.view.devicePixelRatio = 1;
+      addTearDown(tester.view.resetPhysicalSize);
+      addTearDown(tester.view.resetDevicePixelRatio);
+
+      final definition = TelemetryCalculatorRegistry.byId('link_budget');
+      await tester.pumpWidget(
+        ScreenUtilInit(
+          designSize: const Size(375, 812),
+          builder: (context, child) => GetMaterialApp(
+            theme: AppTheme.lightWith(null),
+            home: TelemetryCalcDetailView(definition: definition),
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      final judgementTitle = tester.widget<Text>(find.text('链路余量满足要求'));
+      expect(judgementTitle.maxLines, greaterThanOrEqualTo(2));
+      expect(find.text('含工程判断'), findsWidgets);
+      expect(find.text('实时刷新输出'), findsWidgets);
+      expect(find.textContaining('配置可用'), findsWidgets);
+      final inputLabel = tester.widget<Text>(find.text('发射机输出功率'));
+      expect(inputLabel.maxLines, greaterThanOrEqualTo(2));
+      expect(tester.takeException(), isNull);
+    });
+
+    testWidgets('scales long primary result values in the output pane', (
+      tester,
+    ) async {
+      tester.view.physicalSize = const Size(390, 844);
+      tester.view.devicePixelRatio = 1;
+      addTearDown(tester.view.resetPhysicalSize);
+      addTearDown(tester.view.resetDevicePixelRatio);
+
+      final definition = TelemetryCalculatorRegistry.byId('custom_formula');
+      await tester.pumpWidget(
+        ScreenUtilInit(
+          designSize: const Size(375, 812),
+          builder: (context, child) => GetMaterialApp(
+            theme: AppTheme.lightWith(null),
+            home: TelemetryCalcDetailView(definition: definition),
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      final valueFinder = find.text('10.000000');
+      expect(valueFinder, findsWidgets);
+      expect(
+        find.ancestor(of: valueFinder.first, matching: find.byType(FittedBox)),
+        findsOneWidget,
+      );
+      expect(find.text('结果已更新，可继续调参。'), findsWidgets);
+      expect(tester.takeException(), isNull);
+    });
+
     for (final definition in TelemetryCalculatorRegistry.definitions) {
       testWidgets('uses unified workbench layout for ${definition.id}', (
         tester,

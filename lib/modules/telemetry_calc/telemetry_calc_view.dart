@@ -758,7 +758,7 @@ class _CalculationWorkbench extends StatelessWidget {
   Widget build(BuildContext context) {
     final outputPane = _WorkbenchPane(
       title: '输出',
-      subtitle: '主结果优先，含工程判断',
+      subtitle: '含工程判断',
       icon: Icons.analytics_outlined,
       color: color,
       emphasized: true,
@@ -766,7 +766,7 @@ class _CalculationWorkbench extends StatelessWidget {
     );
     final inputPane = _WorkbenchPane(
       title: '输入',
-      subtitle: '调参后实时刷新输出',
+      subtitle: '实时刷新输出',
       icon: Icons.tune_rounded,
       color: color,
       child: Column(
@@ -855,15 +855,21 @@ class _CompactResultPanel extends StatelessWidget {
                 ),
               ),
               SizedBox(height: 5.h),
-              Text(
-                primary.displayValue,
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
-                style: theme.textTheme.headlineSmall?.copyWith(
-                  color: _outputStatusColor(context, primary, color),
-                  fontWeight: FontWeight.w900,
-                  fontFamily: 'Roboto',
-                  height: 1,
+              SizedBox(
+                width: double.infinity,
+                child: FittedBox(
+                  fit: BoxFit.scaleDown,
+                  alignment: Alignment.centerLeft,
+                  child: Text(
+                    primary.displayValue,
+                    maxLines: 1,
+                    style: theme.textTheme.headlineSmall?.copyWith(
+                      color: _outputStatusColor(context, primary, color),
+                      fontWeight: FontWeight.w900,
+                      fontFamily: 'Roboto',
+                      height: 1,
+                    ),
+                  ),
                 ),
               ),
               SizedBox(height: 2.h),
@@ -1161,7 +1167,7 @@ class _OutputInsightPanel extends StatelessWidget {
                 SizedBox(height: 3.h),
                 Text(
                   insight.title,
-                  maxLines: 1,
+                  maxLines: 2,
                   overflow: TextOverflow.ellipsis,
                   style: theme.textTheme.labelLarge?.copyWith(
                     fontWeight: FontWeight.w900,
@@ -1171,7 +1177,7 @@ class _OutputInsightPanel extends StatelessWidget {
                 SizedBox(height: 3.h),
                 Text(
                   insight.message,
-                  maxLines: 2,
+                  maxLines: 3,
                   overflow: TextOverflow.ellipsis,
                   style: TextStyle(
                     color: theme.colorScheme.onSurfaceVariant,
@@ -1216,7 +1222,6 @@ _ResultInsight _resultInsight(
       margin,
       passTitle: '链路余量满足要求',
       failTitle: '链路余量不足',
-      contextLabel: '当前链路余量',
       passColor: theme.semanticColors.success,
       failColor: theme.colorScheme.error,
     );
@@ -1228,7 +1233,6 @@ _ResultInsight _resultInsight(
       guardMargin,
       passTitle: '保护带覆盖误差',
       failTitle: '保护带不足',
-      contextLabel: '当前保护余量',
       passColor: theme.semanticColors.success,
       failColor: theme.colorScheme.error,
     );
@@ -1238,7 +1242,7 @@ _ResultInsight _resultInsight(
     icon: Icons.check_circle_outline_rounded,
     color: theme.semanticColors.success,
     title: '实时计算完成',
-    message: '已根据当前输入更新${primary.label}，可继续调整参数复核。',
+    message: '结果已更新，可继续调参。',
   );
 }
 
@@ -1246,19 +1250,19 @@ _ResultInsight _marginInsight(
   TelemetryCalculationOutput output, {
   required String passTitle,
   required String failTitle,
-  required String contextLabel,
   required Color passColor,
   required Color failColor,
 }) {
   final passed = output.value >= 0;
   final value = '${output.displayValue} ${output.unitLabel}'.trim();
+  final message = passed ? '余量 $value，配置可用。' : '余量 $value，需调整预算。';
   return _ResultInsight(
     icon: passed
         ? Icons.check_circle_outline_rounded
         : Icons.warning_amber_rounded,
     color: passed ? passColor : failColor,
     title: passed ? passTitle : failTitle,
-    message: '$contextLabel为 $value，${passed ? '当前配置保留正余量。' : '需要提高预算或降低误差。'}',
+    message: message,
   );
 }
 
@@ -1496,7 +1500,7 @@ class _CompactInputShell extends StatelessWidget {
               Expanded(
                 child: Text(
                   label,
-                  maxLines: 1,
+                  maxLines: 2,
                   overflow: TextOverflow.ellipsis,
                   style: theme.textTheme.labelMedium?.copyWith(
                     color: theme.colorScheme.onSurfaceVariant,
