@@ -100,6 +100,24 @@ void main() {
       expect(outputs['spectral_efficiency'], closeTo(0.7037, 0.001));
     });
 
+    test('computes Doppler oscillator tolerance as ppm ratio', () {
+      final definition = TelemetryCalculatorRegistry.byId('doppler');
+      final result = TelemetryCalculatorEngine.calculate(
+        definition,
+        TelemetryCalculatorRegistry.defaultValues(definition),
+      );
+
+      expect(result.errors, isEmpty);
+      expect(result.warnings, isEmpty);
+      final outputs = {
+        for (final output in result.outputs) output.id: output.value,
+      };
+      expect(outputs['doppler_shift'], closeTo(55.038, 0.001));
+      expect(outputs['oscillator_error'], closeTo(2.2, 0.001));
+      expect(outputs['total_error'], closeTo(57.238, 0.001));
+      expect(outputs['guard_margin'], closeTo(42.762, 0.001));
+    });
+
     test('validates invalid numeric input before running formulas', () {
       final definition = TelemetryCalculatorRegistry.byId('link_budget');
       final values = TelemetryCalculatorRegistry.defaultValues(definition);
@@ -321,6 +339,32 @@ void main() {
         findsOneWidget,
       );
       expect(find.text('结果已更新，可继续调参。'), findsWidgets);
+      expect(tester.takeException(), isNull);
+    });
+
+    testWidgets('renders Doppler ppm output without oversized guard margin', (
+      tester,
+    ) async {
+      tester.view.physicalSize = const Size(390, 844);
+      tester.view.devicePixelRatio = 1;
+      addTearDown(tester.view.resetPhysicalSize);
+      addTearDown(tester.view.resetDevicePixelRatio);
+
+      final definition = TelemetryCalculatorRegistry.byId('doppler');
+      await tester.pumpWidget(
+        ScreenUtilInit(
+          designSize: const Size(375, 812),
+          builder: (context, child) => GetMaterialApp(
+            theme: AppTheme.lightWith(null),
+            home: TelemetryCalcDetailView(definition: definition),
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      expect(find.text('42.762'), findsWidgets);
+      expect(find.textContaining('2.200e+6'), findsNothing);
+      expect(find.textContaining('保护带覆盖误差'), findsWidgets);
       expect(tester.takeException(), isNull);
     });
 

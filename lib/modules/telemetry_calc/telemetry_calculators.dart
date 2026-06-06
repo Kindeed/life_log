@@ -1234,7 +1234,7 @@ class TelemetryCalculatorRegistry {
     const c = 299792458.0;
     final frequency = context.number('carrier_frequency', 'Hz');
     final velocity = context.number('relative_velocity', 'mps');
-    final tolerance = context.number('oscillator_tolerance', 'ppm');
+    final tolerance = context.number('oscillator_tolerance', 'ratio');
     final protection = context.number('protection_band', 'Hz');
 
     final doppler = frequency * velocity / c;

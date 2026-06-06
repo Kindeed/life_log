@@ -886,8 +886,8 @@ class _CompactResultPanel extends StatelessWidget {
               if (secondary != null) ...[
                 SizedBox(height: 5.h),
                 Text(
-                  '${secondary.label} ${secondary.displayValue} ${secondary.unitLabel}',
-                  maxLines: 1,
+                  _compactOutputSummary(secondary),
+                  maxLines: 2,
                   overflow: TextOverflow.ellipsis,
                   style: TextStyle(
                     color: theme.colorScheme.onSurfaceVariant,
@@ -1229,12 +1229,15 @@ _ResultInsight _resultInsight(
 
   final guardMargin = _findOutput(outputs, 'guard_margin');
   if (guardMargin != null) {
-    return _marginInsight(
-      guardMargin,
-      passTitle: '保护带覆盖误差',
-      failTitle: '保护带不足',
-      passColor: theme.semanticColors.success,
-      failColor: theme.colorScheme.error,
+    final passed = guardMargin.value >= 0;
+    final value = _outputValueLabel(guardMargin, absolute: !passed);
+    return _ResultInsight(
+      icon: passed
+          ? Icons.check_circle_outline_rounded
+          : Icons.warning_amber_rounded,
+      color: passed ? theme.semanticColors.success : theme.colorScheme.error,
+      title: passed ? '保护带覆盖误差' : '保护带不足',
+      message: passed ? '余量 $value，覆盖误差。' : '缺口 $value，需加保护带。',
     );
   }
 
@@ -1246,6 +1249,16 @@ _ResultInsight _resultInsight(
   );
 }
 
+String _compactOutputSummary(TelemetryCalculationOutput output) {
+  final label = switch (output.id) {
+    'total_error' => '总频偏',
+    'oscillator_error' => '频源误差',
+    'guard_margin' => '保护余量',
+    _ => output.label,
+  };
+  return '$label ${_outputValueLabel(output)}';
+}
+
 _ResultInsight _marginInsight(
   TelemetryCalculationOutput output, {
   required String passTitle,
@@ -1254,7 +1267,7 @@ _ResultInsight _marginInsight(
   required Color failColor,
 }) {
   final passed = output.value >= 0;
-  final value = '${output.displayValue} ${output.unitLabel}'.trim();
+  final value = _outputValueLabel(output);
   final message = passed ? '余量 $value，配置可用。' : '余量 $value，需调整预算。';
   return _ResultInsight(
     icon: passed
@@ -1264,6 +1277,22 @@ _ResultInsight _marginInsight(
     title: passed ? passTitle : failTitle,
     message: message,
   );
+}
+
+String _outputValueLabel(
+  TelemetryCalculationOutput output, {
+  bool absolute = false,
+}) {
+  final value = absolute ? output.value.abs() : output.value;
+  final displayValue = _formatOutputValue(value, output.precision);
+  return '$displayValue ${output.unitLabel}'.trim();
+}
+
+String _formatOutputValue(double value, int precision) {
+  if (value.abs() >= 100000 || value.abs() < 0.001 && value != 0) {
+    return value.toStringAsExponential(precision);
+  }
+  return value.toStringAsFixed(precision);
 }
 
 TelemetryCalculationOutput? _findOutput(
