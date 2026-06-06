@@ -455,6 +455,26 @@ Notation:
 | SYS-008 | `RequiredAntennaDiameter = lambda/pi * sqrt(G/eta)` | target gain and efficiency | Inverts parabolic gain for antenna sizing. | BOOK-BALANIS | Seeded |
 | SYS-009 | `RequiredDataRate = DataVolume / AvailableContactTime` | bits and seconds | Downlink rate needed for operations plan. | BOOK-SMAD | Seeded |
 | SYS-010 | `AvailabilityMargin = FadeMargin - FadeDepth(p)` | percentile fade depth | Availability-driven fade closure. | ITU-P618 | Procedure |
+| SYS-011 | `GeneratedBits = sum_i(SourceRate_i * DutyCycle_i * PlanningPeriod)` | payload/source rates and duty cycles | Data generated over an operations planning period by multiple sources. | BOOK-SMAD, NASA-SST-COMM | Seeded |
+| SYS-012 | `UsableContactTime = max(0, ScheduledContactTime - AcquisitionTime - PointingSettleTime - ProtocolSetupTime)` | scheduled window and overhead times | Contact time remaining for useful data transfer after setup overheads. | BOOK-SMAD, NASA-SST-COMM | Seeded |
+| SYS-013 | `PassCapacityBits = NetDownlinkRate * UsableContactTime` | net rate and usable pass duration | Useful payload capacity of one contact opportunity. | BOOK-SMAD, NASA-SST-COMM | Seeded |
+| SYS-014 | `DownlinkCapacityBits = sum_j(NetDownlinkRate_j * UsableContactTime_j * LinkAvailability_j)` | per-contact rate, duration, and availability | Aggregate downlink capacity across scheduled contacts. | BOOK-SMAD, NASA-SST-COMM | Seeded |
+| SYS-015 | `StorageEndBits = StorageStartBits + GeneratedBits - DownlinkedBits` | storage state and data flows | Recorder balance at the end of a planning interval. | BOOK-SMAD | Seeded |
+| SYS-016 | `StoragePeakMarginBits = StorageCapacityBits - max_t(StorageUsedBits(t))` | storage capacity and time history | Worst-case recorder margin over a schedule. | BOOK-SMAD | Procedure |
+| SYS-017 | `ContactEfficiency = UsableContactTime / ScheduledContactTime` | contact duration and overhead | Fraction of a scheduled contact used for payload transfer. | BOOK-SMAD | Seeded |
+| SYS-018 | `PassesRequired = ceil(DataVolume / PassCapacityBits)` | data volume and per-pass capacity | Minimum number of similar contacts needed to downlink a data volume. | BOOK-SMAD | Seeded |
+| SYS-019 | `RequiredNetRate = DataVolume / sum_j(UsableContactTime_j)` | data volume and total usable contact time | Net user rate needed over known contact windows. | BOOK-SMAD | Seeded |
+| SYS-020 | `RequiredLineRate = RequiredNetRate / LayeredEfficiency` | net rate and protocol/coding efficiency | Physical line rate needed after frame, coding, protocol, and security overhead. | CCSDS SLS, BOOK-SMAD | Seeded |
+| SYS-021 | `TargetDownlinkBits = NetDownlinkRate * AvailableContactTime - HeaderBits` | net rate, time, and overhead | Payload bit budget available inside a contact after fixed overhead. | BOOK-SMAD, CCSDS SLS | Seeded |
+| SYS-022 | `RequiredCompressionRatio = UncompressedBits / TargetDownlinkBits` | raw volume and contact bit budget | Compression ratio required to fit a data set into an available downlink opportunity. | BOOK-SMAD, CCSDS-121, CCSDS-122, CCSDS-123 | Seeded |
+| SYS-023 | `QueueDrainTime = QueueBits / NetDownlinkRate` | queued data and net downlink rate | Time to empty an onboard downlink queue at a fixed useful rate. | BOOK-SMAD | Seeded |
+| SYS-024 | `EnergyUsed = sum_i(Power_i * Duration_i)` | power states and durations | Energy consumed by scheduled spacecraft states. | BOOK-SMAD | Seeded |
+| SYS-025 | `BatteryDepthOfDischarge = EnergyUsed / BatteryCapacityEnergy` | consumed energy and battery capacity | First-order depth-of-discharge estimate for a schedule segment. | BOOK-SMAD | Seeded |
+| SYS-026 | `AverageGeneratedRate = GeneratedBits / PlanningPeriod` | generated volume and period | Average data-production rate over a planning interval. | BOOK-SMAD | Seeded |
+| SYS-027 | `RecorderTurnoverTime = StorageCapacityBits / AverageGeneratedRate` | storage capacity and generation rate | Time to fill the recorder if no downlink occurs. | BOOK-SMAD | Seeded |
+| SYS-028 | `ContactUtilization = DataVolume / DownlinkCapacityBits` | demanded volume and scheduled capacity | Fraction of scheduled downlink capacity consumed by a demand set. | BOOK-SMAD | Seeded |
+| SYS-029 | `ScienceReturnFraction = DownlinkedScienceBits / GeneratedScienceBits` | science data generated and returned | System-level science return metric for operations trade studies. | BOOK-SMAD, NASA-SST-COMM | Seeded |
+| SYS-030 | `CommandRoundTripLightTime = 2*Range/c` | range and speed of light | First-order two-way light-time relevant to command-response operations. | DSN-810-005, BOOK-SMAD | Seeded |
 
 ## Optical / Laser Communication Extensions
 
@@ -485,6 +505,27 @@ Notation:
 | ORB-014 | `rho = sqrt(east^2 + north^2 + up^2)` | topocentric vector | Slant range from ENU components. | BOOK-VALLADO | Seeded |
 | ORB-015 | `Doppler_rate = -f_c / c * d(v_r)/dt` | radial acceleration | Doppler rate from range acceleration. | DSN-810-005, BOOK-VALLADO | Seeded |
 | ORB-016 | `Antenna_slew_rate ~= sqrt((daz/dt)^2 + (del/dt)^2)` | az/el angular rates | Ground antenna tracking-rate sizing approximation. | DSN-810-005, BOOK-SMAD | Seeded |
+| ORB-017 | `epsilon = v^2/2 - mu/r = -mu/(2*a)` | speed, radius, gravitational parameter | Specific orbital energy for a two-body conic orbit. | BOOK-VALLADO, BOOK-BATE | Seeded |
+| ORB-018 | `v = sqrt(mu*(2/r - 1/a))` | radius and semi-major axis | Vis-viva speed for elliptic, parabolic, or hyperbolic conic motion. | BOOK-VALLADO, BOOK-BATE | Seeded |
+| ORB-019 | `h_vec = r_vec x v_vec; h = norm(h_vec)` | inertial position and velocity | Specific angular momentum vector and magnitude. | BOOK-VALLADO, BOOK-BATE | Seeded |
+| ORB-020 | `e_vec = (v_vec x h_vec)/mu - r_vec/r` | state vector and angular momentum | Eccentricity vector from Cartesian state. | BOOK-VALLADO, BOOK-BATE | Seeded |
+| ORB-021 | `p = h^2/mu = a*(1-e^2)` | angular momentum, semi-major axis, eccentricity | Semilatus rectum relation for a Keplerian conic. | BOOK-VALLADO, BOOK-BATE | Seeded |
+| ORB-022 | `r_orbit = p/(1 + e*cos(nu))` | semilatus rectum, eccentricity, true anomaly | Radius as a function of true anomaly. | BOOK-VALLADO, BOOK-BATE | Seeded |
+| ORB-023 | `r_p = a*(1-e); r_a = a*(1+e)` | semi-major axis and eccentricity | Perigee/periapsis and apogee/apoapsis radii for an ellipse. | BOOK-VALLADO, BOOK-BATE | Seeded |
+| ORB-024 | `N_phi = a_E / sqrt(1 - e_E^2*sin(phi)^2)` | ellipsoid semi-major axis, eccentricity, latitude | Prime vertical radius of curvature for WGS-84-style geodetic coordinates. | IERS, NAVIPEDIA | Seeded |
+| ORB-025 | `x_site=(N_phi+h_site)*cos(phi)*cos(lon); y_site=(N_phi+h_site)*cos(phi)*sin(lon); z_site=(N_phi*(1-e_E^2)+h_site)*sin(phi)` | geodetic latitude, longitude, height | Convert a ground station from geodetic coordinates to Earth-fixed Cartesian coordinates. | IERS, NAVIPEDIA | Seeded |
+| ORB-026 | `rho_ecef = r_sat_ecef - r_site_ecef` | satellite and station ECEF positions | Earth-fixed topocentric relative-position vector before ENU rotation. | BOOK-VALLADO, NAVIPEDIA | Seeded |
+| ORB-027 | `east=-sin(lon)*dx+cos(lon)*dy; north=-sin(phi)*cos(lon)*dx-sin(phi)*sin(lon)*dy+cos(phi)*dz; up=cos(phi)*cos(lon)*dx+cos(phi)*sin(lon)*dy+sin(phi)*dz` | ECEF relative vector and station geodetic coordinates | Transform a station-centered ECEF relative vector into local ENU components. | NAVIPEDIA, IERS | Seeded |
+| ORB-028 | `el = atan2(up, sqrt(east^2+north^2)); az = atan2(east,north); rho = sqrt(east^2+north^2+up^2)` | local ENU vector | Horizon coordinates used by antenna pointing and access checks. | BOOK-VALLADO, NAVIPEDIA | Seeded |
+| ORB-029 | `r_ecef ~= R3(theta_GMST) * r_eci` | inertial vector and Earth rotation angle | First-order ECI-to-ECEF rotation; high-precision products require IERS precession, nutation, polar motion, and Earth-orientation parameters. | IERS, CELESTRAK | Procedure |
+| ORB-030 | `cos(psi_Emin) = (R_e/r)*cos(E_min)^2 + sin(E_min)*sqrt(1 - (R_e/r)^2*cos(E_min)^2)` | orbit radius and minimum elevation | Spherical-Earth central angle to the access boundary for a minimum elevation mask. | BOOK-SMAD, BOOK-VALLADO | Seeded |
+| ORB-031 | `rho_Emin = sqrt(r^2 - R_e^2*cos(E_min)^2) - R_e*sin(E_min)` | orbit radius and minimum elevation | Slant range at the minimum-elevation access boundary. | BOOK-SMAD, BOOK-VALLADO | Seeded |
+| ORB-032 | `coverage_radius = R_e * psi_Emin` | Earth radius and access half-angle | Ground footprint radius for a circular-orbit spherical-Earth approximation. | BOOK-SMAD | Seeded |
+| ORB-033 | `AccessFlag = (el >= E_min) and (rho <= RangeMax)` | elevation mask and range limit | Binary visibility/access condition for schedule filtering. | BOOK-SMAD, BOOK-VALLADO | Procedure |
+| ORB-034 | `PassDurationApprox = 2*psi_Emin / abs(omega_rel)` | access half-angle and apparent angular rate | First-order pass-duration estimate before full orbit propagation. | BOOK-SMAD | Procedure |
+| ORB-035 | `GroundTrackShiftPerOrbit = omega_E * T` | Earth rotation rate and orbital period | Longitude shift of Earth under the orbit between consecutive revolutions, before nodal regression corrections. | BOOK-VALLADO, BOOK-SMAD | Seeded |
+| ORB-036 | `lat_ss = asin(sin(i)*sin(u))` | inclination and argument of latitude | Subsatellite latitude for a circular orbit in a simple inertial-to-rotating geometry. | BOOK-VALLADO | Seeded |
+| ORB-037 | `lon_ss = atan2(cos(i)*sin(u), cos(u)) - theta_GMST` | inclination, argument of latitude, Earth rotation | Subsatellite longitude for a circular orbit before longitude normalization and perturbation corrections. | BOOK-VALLADO | Procedure |
 
 ## Data Compression and Source Coding
 

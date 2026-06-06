@@ -36,6 +36,10 @@ This registry records the standards, handbooks, and published books that should 
 | DSN-810-005 | DSN Telecommunications Link Design Handbook | NASA/JPL DSN | Current public DSN handbook download page lists modules and recent release clearances; modules 105E, 202E, 203E, 210E, 211G, and 214C have first-pass extracts. | Deep-space link, DSN station capability, Doppler tracking, sequential/PN ranging, Delta-DOR, VLBI, command/telemetry/ranging modules. |
 | DESCANSO-DSTSE | Deep Space Telecommunications Systems Engineering | NASA/JPL DESCANSO | Public deep-space communications reference; antenna/link, baseband, Doppler, ranging, VLBI/DOR, and radiometric-error extracts are started in `standard_extracts.md`. | Link equation derivations, antenna gain/effective aperture, system noise temperature, modulation/coding context, tracking/ranging observables, and external-measurement formulas. |
 | NASA-SST-COMM | NASA SmallSat State of the Art, Communications | NASA | Small satellite RF/optical communication overview. | System-level trade examples and calculator scenario framing. |
+| NASA-BSF | NASA/JPL Basics of Space Flight | NASA/JPL | Public educational reference for orbital motion, spacecraft tracking, and light-time concepts. | Cross-check two-body orbit, range/light-time, and operations explanations. |
+| CELESTRAK | CelesTrak astrodynamics and coordinate-system references | CelesTrak | Public astrodynamics reference material maintained by T.S. Kelso; useful for ECI/ECEF/topocentric coordinate cross-checks. | Coordinate-frame, ground-track, sidereal-time, and access-calculation sanity checks. |
+| NAVIPEDIA-COORD | Navipedia coordinate transformations | ESA Navipedia | Public coordinate-transformation reference with ECEF, ENU, and geodetic relations. | Ground-station ECEF/ENU transform formulas for antenna pointing and contact geometry. |
+| IERS-CONV | IERS Conventions | IERS | Authoritative Earth-orientation and terrestrial/celestial reference-system conventions. | High-precision ECI/ECEF transformation scope and warnings; simple workbench formulas must flag missing EOP corrections. |
 
 ## Published Books
 
@@ -49,8 +53,8 @@ This registry records the standards, handbooks, and published books that should 
 | BOOK-HAYKIN | Haykin and Moher, *Communication Systems*, 5th ed. | Wiley/bibliographic pages list analog and digital communications, signal processing, filtering, and systems coverage. | Baseband/passband signals, noise, modulation, filtering. |
 | BOOK-SAYOOD | Sayood, *Introduction to Data Compression*, 4th ed. | Elsevier/O'Reilly pages list information theory, coding, quantization, subband coding, bit allocation, and image-compression coverage. | Cross-check entropy, average code length, quantization, and compression-ratio formulas without copying standard-specific algorithm tables. |
 | BOOK-SALOMON | Salomon, *Data Compression: The Complete Reference* | Springer and Google Books pages identify broad lossless/lossy compression, Huffman, arithmetic, dictionary, image, wavelet, and quantization coverage. | General compression terminology and sanity checks for textbook formulas. |
-| BOOK-VALLADO | Vallado, *Fundamentals of Astrodynamics and Applications* | Published textbook; add publisher URL during next pass. | Orbit geometry, ground-station look angles, visibility, range/range-rate support. |
-| BOOK-BATE | Bate, Mueller, White, *Fundamentals of Astrodynamics* | Published textbook; add publisher URL during next pass. | Classical orbit mechanics and contact geometry sanity checks. |
+| BOOK-VALLADO | Vallado, *Fundamentals of Astrodynamics and Applications* | Microcosm/AIAA/CelesTrak publisher and support pages identify the astrodynamics reference and source-code material. | Orbit geometry, ground-station look angles, visibility, range/range-rate support. |
+| BOOK-BATE | Bate, Mueller, White, *Fundamentals of Astrodynamics* | Dover/Google Books bibliographic pages identify the published astrodynamics textbook. | Classical orbit mechanics and contact geometry sanity checks. |
 
 ## Next Source Extraction Tasks
 
@@ -58,7 +62,8 @@ This registry records the standards, handbooks, and published books that should 
 2. Extract only implementation-relevant tables: code rates, frame lengths, sync marker sizes, transfer frame fields, MODCOD identifiers, PN chip-rate values, and mode/managed-parameter options.
 3. Cross-check ITU-R P.618 dependencies: P.618 calls into P.837, P.838, P.839, P.840, P.676 depending on fade mechanism.
 4. Continue CCSDS compression and remaining Proximity-1 table fields where public Blue/Green Books define selectable parameters, especially CCSDS 122 exact image-compression tables, CCSDS 123 Blue Book predictor/entropy/header tables, 211.0-B-6 Version-4/USLP deltas, and 211.1-B-4 UHF channel/hailing/polarization tables.
-5. Add ECSS and Chinese/GJB public index references only where public bibliographic details are available. Do not encode restricted standards text.
+5. Continue orbit/contact/system extraction from Vallado/SMAD/Bate and public coordinate references: exact time-scale handling, EOP corrections, J2 nodal regression, repeat-ground-track checks, and contact-window validation examples.
+6. Add ECSS and Chinese/GJB public index references only where public bibliographic details are available. Do not encode restricted standards text.
 
 ## Reference Links
 
@@ -107,6 +112,11 @@ This registry records the standards, handbooks, and published books that should 
 | DESCANSO-DSTSE | https://descanso.jpl.nasa.gov/dstse/DSTSE.pdf |
 | JPL DESCANSO monographs | https://descanso.jpl.nasa.gov/monograph/mono.html |
 | NASA-SST-COMM | https://www.nasa.gov/smallsat-institute/sst-soa/soa-communications/ |
+| NASA-BSF | https://science.nasa.gov/learn/basics-of-space-flight/ |
+| CELESTRAK | https://celestrak.org/columns/ |
+| NAVIPEDIA-ENU | https://gssc.esa.int/navipedia/index.php/Transformations_between_ECEF_and_ENU_coordinates |
+| NAVIPEDIA-GEODETIC | https://gssc.esa.int/navipedia/index.php/Ellipsoidal_and_Cartesian_Coordinates_Conversion |
+| IERS-CONV | https://iers-conventions.obspm.fr/conventions_versions.php |
 | BOOK-MARAL | https://onlinelibrary.wiley.com/doi/book/10.1002/9781119673811 |
 | BOOK-BALANIS | https://www.wiley-vch.de/de/fachgebiete/ingenieurwesen/antenna-theory-978-1-118-64206-1 |
 | BOOK-SKLAR | https://www.pearson.com/en-ca/subject-catalog/p/digital-communications-fundamentals-and-applications/P200000000614/9780134588568 |
@@ -117,3 +127,5 @@ This registry records the standards, handbooks, and published books that should 
 | BOOK-SMAD | https://books.google.com/books/about/Space_Mission_Engineering.html?id=4JM7tAEACAAJ |
 | BOOK-SAYOOD | https://www.oreilly.com/library/view/introduction-to-data/9780124157965/ |
 | BOOK-SALOMON | https://link.springer.com/book/10.1007/978-3-642-86092-8 |
+| BOOK-VALLADO | https://celestrak.org/publications/AIAA/2006-6753/ |
+| BOOK-BATE | https://books.google.com/books/about/Fundamentals_of_Astrodynamics.html?id=UtJK8cetqGkC |

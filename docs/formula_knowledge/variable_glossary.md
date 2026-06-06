@@ -544,6 +544,38 @@ This glossary defines shared symbols for the formula knowledge base. App impleme
 | `StorageCapacity` | `storage_capacity` | onboard storage capacity | bit, byte |
 | `DutyCycle` | `duty_cycle` | active fraction of period | ratio |
 | `AveragePower` | `average_power` | duty-cycle weighted power | W |
+| `GeneratedBits` | `generated_bits` | data produced during a planning interval | bit |
+| `SourceRate_i` | `source_rate` | source or payload data rate for item `i` | bps |
+| `PlanningPeriod` | `planning_period` | schedule or analysis interval | s, h, day |
+| `ScheduledContactTime` | `scheduled_contact_time` | gross contact window duration | s |
+| `AcquisitionTime` | `acquisition_time` | time spent acquiring the link or target | s |
+| `PointingSettleTime` | `pointing_settle_time` | time reserved for antenna or spacecraft pointing settle | s |
+| `ProtocolSetupTime` | `protocol_setup_time` | protocol, ranging, synchronization, or session setup time | s |
+| `UsableContactTime` | `usable_contact_time` | contact duration available for useful payload transfer | s |
+| `PassCapacityBits` | `pass_capacity_bits` | payload bits transferable in one contact | bit |
+| `DownlinkCapacityBits` | `downlink_capacity_bits` | aggregate payload bits transferable across contacts | bit |
+| `LinkAvailability_j` | `contact_link_availability` | probability or fraction of a contact usable after fade/weather constraints | ratio |
+| `StorageStartBits` | `storage_start_bits` | recorder occupancy at start of interval | bit |
+| `StorageEndBits` | `storage_end_bits` | recorder occupancy at end of interval | bit |
+| `StorageUsedBits(t)` | `storage_used_bits_time_history` | time-varying recorder occupancy | bit |
+| `ContactEfficiency` | `contact_efficiency` | usable contact time divided by scheduled contact time | ratio |
+| `PassesRequired` | `passes_required` | count of similar contacts needed | count |
+| `LayeredEfficiency` | `layered_efficiency` | product of frame, coding, protocol, and security efficiencies | ratio |
+| `TargetDownlinkBits` | `target_downlink_bits` | useful payload bit budget available in a contact | bit |
+| `QueueBits` | `queue_bits` | queued onboard data awaiting downlink | bit |
+| `QueueDrainTime` | `queue_drain_time` | time required to empty queued data at a fixed rate | s |
+| `Power_i` | `power_state_value` | power consumed in state `i` | W |
+| `Duration_i` | `power_state_duration` | duration spent in state `i` | s |
+| `EnergyUsed` | `energy_used` | energy consumed by scheduled states | J, Wh |
+| `BatteryCapacityEnergy` | `battery_capacity_energy` | usable battery energy capacity | J, Wh |
+| `BatteryDepthOfDischarge` | `battery_depth_of_discharge` | consumed fraction of battery energy | ratio |
+| `AverageGeneratedRate` | `average_generated_rate` | average generated data rate over the planning period | bps |
+| `RecorderTurnoverTime` | `recorder_turnover_time` | fill time at average data generation rate without downlink | s |
+| `ContactUtilization` | `contact_utilization` | demanded data volume divided by scheduled downlink capacity | ratio |
+| `GeneratedScienceBits` | `generated_science_bits` | science data produced | bit |
+| `DownlinkedScienceBits` | `downlinked_science_bits` | science data returned to ground | bit |
+| `ScienceReturnFraction` | `science_return_fraction` | returned science fraction | ratio |
+| `Range` | `operations_range` | one-way distance for light-time planning | m, km |
 
 ## Orbit, Coverage, and Contact
 
@@ -564,6 +596,45 @@ This glossary defines shared symbols for the formula knowledge base. App impleme
 | `north` | `enu_north` | north component in topocentric frame | m, km |
 | `up` | `enu_up` | up component in topocentric frame | m, km |
 | `range_rate` | `range_rate` | line-of-sight range rate | m/s, km/s |
+| `epsilon` | `specific_orbital_energy` | two-body specific orbital energy | J/kg |
+| `v` | `spacecraft_speed` | spacecraft inertial speed | m/s, km/s |
+| `r_vec` | `inertial_position_vector` | spacecraft inertial position vector | m, km |
+| `v_vec` | `inertial_velocity_vector` | spacecraft inertial velocity vector | m/s, km/s |
+| `h_vec` | `specific_angular_momentum_vector` | specific angular momentum vector | km^2/s, m^2/s |
+| `h_orbit` | `specific_angular_momentum` | magnitude of specific angular momentum | km^2/s, m^2/s |
+| `e` | `eccentricity` | scalar orbit eccentricity | unitless |
+| `e_vec` | `eccentricity_vector` | eccentricity vector | unitless |
+| `p` | `semilatus_rectum` | conic semilatus rectum | m, km |
+| `nu` | `true_anomaly` | true anomaly | rad, deg |
+| `r_orbit` | `orbit_radius_at_true_anomaly` | conic radius at a specified true anomaly | m, km |
+| `r_p` | `periapsis_radius` | periapsis/perigee radius | m, km |
+| `r_a` | `apoapsis_radius` | apoapsis/apogee radius | m, km |
+| `a_E` | `earth_ellipsoid_semi_major_axis` | Earth ellipsoid semi-major axis | m, km |
+| `e_E` | `earth_ellipsoid_eccentricity` | Earth ellipsoid eccentricity | unitless |
+| `phi` | `station_geodetic_latitude` | station geodetic latitude | rad, deg |
+| `lon` | `station_longitude` | station longitude | rad, deg |
+| `h_site` | `station_height` | station ellipsoidal height | m, km |
+| `N_phi` | `prime_vertical_radius` | prime vertical radius of curvature | m, km |
+| `r_site_ecef` | `station_ecef_position` | station Earth-fixed position vector | m, km |
+| `r_sat_ecef` | `satellite_ecef_position` | spacecraft Earth-fixed position vector | m, km |
+| `rho_ecef` | `ecef_relative_vector` | satellite minus station vector in ECEF | m, km |
+| `dx` | `ecef_delta_x` | ECEF relative X component | m, km |
+| `dy` | `ecef_delta_y` | ECEF relative Y component | m, km |
+| `dz` | `ecef_delta_z` | ECEF relative Z component | m, km |
+| `r_eci` | `satellite_eci_position` | spacecraft inertial position vector | m, km |
+| `theta_GMST` | `greenwich_sidereal_angle` | Greenwich sidereal rotation angle | rad, deg |
+| `E_min` | `minimum_elevation_mask` | minimum elevation for access | rad, deg |
+| `psi_Emin` | `minimum_elevation_access_angle` | central angle at the access boundary | rad, deg |
+| `rho_Emin` | `minimum_elevation_slant_range` | slant range at the minimum-elevation access boundary | m, km |
+| `coverage_radius` | `coverage_radius` | spherical-Earth ground footprint radius | m, km |
+| `RangeMax` | `maximum_range_limit` | maximum allowed communications or sensor range | m, km |
+| `omega_rel` | `relative_apparent_angular_rate` | apparent angular rate across an access region | rad/s |
+| `omega_E` | `earth_rotation_rate` | Earth sidereal rotation rate | rad/s |
+| `GroundTrackShiftPerOrbit` | `ground_track_shift_per_orbit` | Earth-rotation longitude shift during one orbit | rad, deg |
+| `i` | `inclination` | orbit inclination | rad, deg |
+| `u` | `argument_of_latitude` | argument of latitude | rad, deg |
+| `lat_ss` | `subsatellite_latitude` | subsatellite latitude | rad, deg |
+| `lon_ss` | `subsatellite_longitude` | subsatellite longitude | rad, deg |
 
 ## Compression and Source Coding
 
