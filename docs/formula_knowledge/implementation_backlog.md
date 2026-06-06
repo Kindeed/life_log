@@ -56,7 +56,7 @@ Each pass should produce a reviewed delta to `formula_catalog.md` and, where nee
    - Extract FSPL variants, rain/gas/cloud/scintillation procedures, earth-station reference antenna patterns, elevation/path geometry and applicability limits.
    - Use `standard_extracts.md` P.525 rows to build MHz/km, GHz/km, field-strength, PFD, isotropic received-power, and radar-loss regression cases.
    - Use `standard_extracts.md` DESCANSO/DSN rows to build antenna aperture, pointing/polarization, received-power, carrier/data/ranging margin, atmospheric noise-temperature, receiver reference-plane, and Y-factor calibration regression cases.
-   - Use `standard_extracts.md` ITUANT/BOOKANT rows to build off-axis gain, side-lobe objective, beam solid angle, directivity, far-field distance, and array-factor examples before adding antenna UI controls.
+   - Use `standard_extracts.md` ITUANT/BOOKANT rows to build off-axis gain, side-lobe objective, beam solid angle, directivity, far-field distance, array-factor, scan-steering, grating-lobe, scan-loss, phase-quantization, and beam-squint examples before adding antenna UI controls.
    - Current first-pass extraction includes P.676 gas attenuation structure, P.840 cloud/fog attenuation, P.618 scintillation and sky-noise formulas, S.465/S.580 earth-station antenna pattern formulas, receiver/passive-loss/Y-factor formulas, DSN 101/103/104 station gain/noise-temperature model rows, and CCSDS 401 QPSK/modulation-margin/symbol-rate/subcarrier checks; next work is coefficient/map assets, DSN station coefficient tables, machine-readable modulation/limit tables, antenna temperature validation examples, and receiver-chain uncertainty models.
 
 5. Textbook cross-check pass:
@@ -114,6 +114,10 @@ Recommended implementation order:
    - pointing and polarization loss
    - aperture efficiency decomposition and surface-error efficiency
    - DSN-style atmospheric noise and operating system temperature
+   - ULA and rectangular planar-array steering phase
+   - grating-lobe visibility and element-spacing checks
+   - broadside array FNBW/HPBW and uniform sidelobe reference
+   - scan-loss, phase-quantization efficiency, RMS phase-error loss, and beam-squint warnings
 
 2. Full link budget workbench:
    - EIRP

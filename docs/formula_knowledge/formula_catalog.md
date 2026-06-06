@@ -76,6 +76,27 @@ Notation:
 | RF-062 | `T_ant = integral_4pi(T_b(theta,phi)*P_n(theta,phi)dOmega) / integral_4pi(P_n(theta,phi)dOmega)` | scene brightness temperature and antenna power pattern | Antenna noise temperature from scene brightness weighted by the normalized antenna pattern. | BOOK-BALANIS, DESCANSO-DSTSE | Procedure |
 | RF-063 | `T_ant_ohmic = eta_rad*T_scene + (1 - eta_rad)*T_phys` | radiation efficiency, scene and physical temperature | First-order antenna temperature with ohmic/radiation-efficiency loss. | BOOK-BALANIS, BOOK-MARAL | Seeded |
 | RF-064 | `G_DSN(theta) = G0 - G1*(theta - gamma)^2 - A_zen/sin(theta)` | DSN gain parameters and zenith attenuation | DSN station antenna gain versus elevation angle, referenced to the feedhorn aperture in modules 101/103/104. | DSN-810-005-101, DSN-810-005-103, DSN-810-005-104 | Procedure |
+| RF-065 | `k0 = 2*pi/lambda` | wavelength | Free-space phase constant for array phasing and aperture fields. | BOOK-BALANIS, BOOK-MAILLOUX | Seeded |
+| RF-066 | `u_dir = sin(theta_broadside)` | angle measured from broadside | Direction-cosine coordinate used for scan and grating-lobe checks in a linear array. | BOOK-BALANIS, BOOK-MAILLOUX | Seeded |
+| RF-067 | `beta_phase = -k0*d_elem*u_scan` | element spacing and commanded scan direction | Progressive phase needed to steer a uniform linear array to `u_scan`. | BOOK-BALANIS, BOOK-MAILLOUX | Seeded |
+| RF-068 | `AF_u = sum_{n=0}^{N_elem-1} w_n*exp(j*n*k0*d_elem*(u_dir-u_scan))` | element weights, spacing, observation direction, scan direction | Broadside-coordinate linear-array factor useful for electronically scanned arrays. | BOOK-BALANIS, BOOK-MAILLOUX | Procedure |
+| RF-069 | `u_grating_m = u_scan + m*lambda/d_elem` | scan direction, element spacing, grating-lobe order | Linear-array grating-lobe direction in direction-cosine space. A lobe is visible when `abs(u_grating_m)<=1`. | BOOK-BALANIS, BOOK-MAILLOUX | Procedure |
+| RF-070 | `NoGratingLobe = all(abs(u_scan + m*lambda/d_elem)>1 for m!=0)` | scan direction and integer lobe orders | Visibility test for linear-array grating lobes. | BOOK-MAILLOUX | Procedure |
+| RF-071 | `d_elem <= lambda/(1 + u_scan_max)` | maximum absolute scan direction cosine | Conservative spacing rule to avoid visible grating lobes over a symmetric scan sector. | BOOK-MAILLOUX, BOOK-BALANIS | Seeded |
+| RF-072 | `theta_FNBW_ULA_broadside ~= 2*lambda/(N_elem*d_elem)` | element count and spacing | Uniform linear array broadside first-null beamwidth approximation. | BOOK-BALANIS | Seeded |
+| RF-073 | `theta_HPBW_ULA_broadside ~= 0.886*lambda/(N_elem*d_elem)` | element count and spacing | Uniform linear array broadside half-power beamwidth approximation for large arrays. | BOOK-BALANIS | Seeded |
+| RF-074 | `SLL_uniform_ULA ~= -13.26 dB` | uniform amplitude excitation | First sidelobe level of a uniformly weighted linear aperture/array, before element pattern and truncation details. | BOOK-BALANIS, BOOK-MAILLOUX | Seeded |
+| RF-075 | `G_array_max ~= G_elem*N_elem*eta_array` | element gain, element count, array efficiency | Approximate maximum array gain for coherent element combining. | BOOK-BALANIS, BOOK-MAILLOUX | Seeded |
+| RF-076 | `G_scan_dBi ~= G_broadside_dBi + 10log10(cos(theta_scan))` | broadside gain and scan angle | Projected-aperture scan-loss approximation for planar arrays; element pattern and mutual coupling need separate terms. | BOOK-MAILLOUX | Procedure |
+| RF-077 | `AF_planar = sum_m sum_n w_mn*exp(j*k0*(m*d_x*u_dir + n*d_y*v_dir))` | planar element weights, spacings, direction cosines | Rectangular planar-array factor before steering phase is applied. | BOOK-BALANIS, BOOK-MAILLOUX | Procedure |
+| RF-078 | `beta_x = -k0*d_x*u_scan; beta_y = -k0*d_y*v_scan` | planar spacings and commanded scan direction cosines | Progressive phase commands for a rectangular planar array. | BOOK-BALANIS, BOOK-MAILLOUX | Seeded |
+| RF-079 | `u_dir = sin(theta)*cos(phi); v_dir = sin(theta)*sin(phi)` | spherical observation angles | Direction-cosine mapping for planar array scan and grating-lobe checks. | BOOK-BALANIS, BOOK-MAILLOUX | Seeded |
+| RF-080 | `u_grating_m = u_scan + m*lambda/d_x; v_grating_n = v_scan + n*lambda/d_y` | scan point, lattice spacings, integer lobe orders | Rectangular-array grating-lobe lattice in direction-cosine space. Visible lobes satisfy `u^2+v^2<=1`. | BOOK-MAILLOUX | Procedure |
+| RF-081 | `d_x <= lambda/(1+u_scan_max); d_y <= lambda/(1+v_scan_max)` | scan-sector direction-cosine bounds | Rectangular-array spacing rule for avoiding visible grating lobes across a scan sector. | BOOK-MAILLOUX | Seeded |
+| RF-082 | `eta_phase_quant ~= (sin(pi/2^B_phase)/(pi/2^B_phase))^2` | phase-shifter bit depth | Approximate coherent gain efficiency from uniform phase quantization. | BOOK-MAILLOUX | Seeded |
+| RF-083 | `sigma_phase_quant = (2*pi/2^B_phase)/sqrt(12)` | phase-shifter bit depth | RMS phase error for a uniform quantization interval. | BOOK-MAILLOUX, BOOK-SKLAR | Seeded |
+| RF-084 | `eta_phase_rms ~= exp(-sigma_phase_rms^2)` | RMS random phase error in radians | Coherent array gain reduction from independent RMS phase errors. | BOOK-MAILLOUX | Seeded |
+| RF-085 | `sin(theta_squint_f) ~= (f0/f)*sin(theta_scan_f0)` | phase-shift beam steering frequency and design scan angle | First-order beam squint of a phase-shifter-steered array away from its design frequency. | BOOK-MAILLOUX | Procedure |
 
 ## Propagation and Link Budget
 

@@ -42,7 +42,7 @@ Sources: NASA/JPL DESCANSO `Deep Space Telecommunications Systems Engineering`; 
 
 ## ITU-R Earth-Station Antenna Patterns and Published Antenna Textbook Checks
 
-Sources: ITU-R S.465-6 `Reference radiation pattern of earth station antennas in the fixed-satellite service`; ITU-R S.580-6 `Radiation diagrams for use as design objectives for antennas of earth stations operating with geostationary satellites`; Balanis `Antenna Theory: Analysis and Design`, 4th edition.
+Sources: ITU-R S.465-6 `Reference radiation pattern of earth station antennas in the fixed-satellite service`; ITU-R S.580-6 `Radiation diagrams for use as design objectives for antennas of earth stations operating with geostationary satellites`; Balanis `Antenna Theory: Analysis and Design`, 4th edition; Mailloux `Phased Array Antenna Handbook`, 3rd edition.
 
 | Extract ID | Standard location | Equation or table | Implementation note |
 | --- | --- | --- | --- |
@@ -54,6 +54,10 @@ Sources: ITU-R S.465-6 `Reference radiation pattern of earth station antennas in
 | BOOKANT-002 | Balanis beam solid angle and approximate directivity material | `Omega_A=integral(P_n dOmega)`, `D_0=4*pi/Omega_A`, and `D_0~=41253/(theta_HP phi_HP)` with beamwidths in degrees | Provides useful outputs for antenna sizing when only measured or specified HPBWs are available. |
 | BOOKANT-003 | Balanis aperture and measurement-region material | Uniform circular-aperture estimates `theta_FNBW~=2.44lambda/D`, `theta_HPBW~=1.02lambda/D`, and far-field distance `R_ff>=2D_max^2/lambda` | Keeps reflector sizing, measurement setup, and inspection warnings in the same antenna workbench. |
 | BOOKANT-004 | Balanis polarization and array chapters | `PLF=|rho_wave dot rho_ant|^2`; ULA `AF=sum(w_n exp(jn psi))`; equal-amplitude closed form `|sin(N_elem psi/2)/(N_elem sin(psi/2))|` | Seeds phased-array and polarization calculators without copying implementation-heavy array synthesis tables. |
+| BOOKANT-005 | Balanis linear-array chapters and Mailloux phased-array scan chapters | Direction-cosine ULA steering uses `beta=-k*d*u_scan`; grating-lobe candidates occur at `u_scan+m lambda/d`; broadside uniform-array FNBW and HPBW scale as `2lambda/(Nd)` and `0.886lambda/(Nd)` | Catalog adds RF-065 to RF-074. UI should separate pattern mathematics, scan command, and grating-lobe warnings. |
+| BOOKANT-006 | Mailloux phased-array spacing and scan coverage material | A scan sector with maximum direction cosine `u_max` needs spacing about `d<=lambda/(1+u_max)` to avoid visible grating lobes; planar arrays apply the same direction-cosine logic on both lattice axes | Catalog adds RF-071 and RF-080 to RF-081. Treat these as design checks, not as proof that mutual coupling or element-pattern nulls are acceptable. |
+| BOOKANT-007 | Balanis planar-array formulation and Mailloux electronically scanned array material | Rectangular planar-array factor sums weighted elements over `m,n` with direction cosines `u=sin(theta)cos(phi)`, `v=sin(theta)sin(phi)`; steering phases are `beta_x=-k*d_x*u_scan`, `beta_y=-k*d_y*v_scan` | Catalog adds RF-077 to RF-079. This is the natural UI group for array size, lattice spacing, steering command, and element weights. |
+| BOOKANT-008 | Mailloux phased-array implementation-loss material | Coherent array gain can be estimated from element gain times element count and array efficiency; projected aperture scan loss, phase-quantization efficiency, RMS phase-error loss, and phase-shifter beam squint need explicit result cards | Catalog adds RF-075 to RF-076 and RF-082 to RF-085. These should become warnings/derived outputs next to link margin, not hidden constants. |
 
 ## Digital Communications Textbook Cross-Checks
 

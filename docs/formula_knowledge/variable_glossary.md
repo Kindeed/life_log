@@ -79,6 +79,34 @@ This glossary defines shared symbols for the formula knowledge base. App impleme
 | `d_elem` | `array_element_spacing` | distance between adjacent elements | m |
 | `beta_phase` | `array_progressive_phase` | progressive excitation phase between array elements | rad |
 | `psi` | `array_phase_variable` | array phase variable combining angle, spacing, and progressive phase | rad |
+| `theta_broadside` | `array_broadside_angle` | scan or observation angle measured from array broadside | rad, deg |
+| `theta_scan` | `array_scan_angle` | commanded scan angle | rad, deg |
+| `u_dir` / `v_dir` | `array_direction_cosines` | direction-cosine coordinates for linear or planar arrays | unitless |
+| `u_scan` / `v_scan` | `array_scan_direction_cosines` | commanded scan point in direction-cosine coordinates | unitless |
+| `u_scan_max` / `v_scan_max` | `array_scan_sector_bounds` | maximum absolute direction-cosine bounds for a scan sector | unitless |
+| `u_grating_m` / `v_grating_n` | `grating_lobe_direction_cosines` | direction-cosine coordinates of grating-lobe order | unitless |
+| `m` / `n` | `array_lattice_indices` | element or grating-lobe integer indices | integer |
+| `d_x` / `d_y` | `planar_array_spacing` | rectangular planar-array lattice spacing | m |
+| `beta_x` / `beta_y` | `planar_array_progressive_phase` | progressive phase commands along the x and y array axes | rad |
+| `w_mn` | `planar_array_element_weight` | complex excitation weight for planar-array element `(m,n)` | complex ratio |
+| `AF_u` | `linear_array_factor_direction_cosine` | linear-array factor written in direction-cosine form | complex ratio |
+| `AF_planar` | `planar_array_factor` | rectangular planar-array factor | complex ratio |
+| `theta_FNBW_ULA_broadside` | `ula_broadside_first_null_beamwidth` | broadside first-null beamwidth for a uniform linear array | rad, deg |
+| `theta_HPBW_ULA_broadside` | `ula_broadside_half_power_beamwidth` | broadside half-power beamwidth for a uniform linear array | rad, deg |
+| `SLL_uniform_ULA` | `uniform_array_first_sidelobe_level` | first sidelobe level for uniform amplitude weighting | dB |
+| `G_elem` | `array_element_gain` | gain of one array element including element pattern at the relevant direction | ratio, dBi |
+| `eta_array` | `array_efficiency` | aggregate array efficiency for feed, combining, mutual-coupling, taper, and implementation losses | ratio |
+| `G_array_max` | `maximum_array_gain` | approximate coherent maximum array gain | ratio, dBi |
+| `G_broadside_dBi` | `array_broadside_gain` | planar-array broadside gain | dBi |
+| `G_scan_dBi` | `array_scanned_gain` | gain at commanded scan angle after scan-loss approximation | dBi |
+| `B_phase` | `phase_shifter_bits` | phase-shifter quantization bit depth | bit |
+| `eta_phase_quant` | `phase_quantization_efficiency` | coherent gain efficiency due to finite phase-shifter resolution | ratio |
+| `sigma_phase_quant` | `phase_quantization_rms` | RMS quantization phase error | rad |
+| `sigma_phase_rms` | `phase_error_rms` | RMS random phase error per element or channel | rad |
+| `eta_phase_rms` | `rms_phase_error_efficiency` | coherent array gain efficiency due to random phase errors | ratio |
+| `f0` | `array_design_frequency` | phase-shifter steering design frequency | Hz |
+| `theta_scan_f0` | `design_frequency_scan_angle` | commanded scan angle at the design frequency | rad, deg |
+| `theta_squint_f` | `beam_squint_angle` | shifted beam angle at another frequency | rad, deg |
 
 ## Noise and Receiver
 
