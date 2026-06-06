@@ -58,8 +58,8 @@ Each pass should produce a reviewed delta to `formula_catalog.md` and, where nee
    - Extract FSPL variants, rain/gas/cloud/scintillation procedures, earth-station reference antenna patterns, elevation/path geometry and applicability limits.
    - Use `standard_extracts.md` P.525 rows to build MHz/km, GHz/km, field-strength, PFD, isotropic received-power, and radar-loss regression cases.
    - Use `standard_extracts.md` DESCANSO/DSN rows to build antenna aperture, pointing/polarization, received-power, carrier/data/ranging margin, atmospheric noise-temperature, receiver reference-plane, and Y-factor calibration regression cases.
-   - Use `standard_extracts.md` ITUANT/BOOKANT rows to build off-axis gain, side-lobe objective, beam solid angle, directivity, far-field distance, array-factor, scan-steering, grating-lobe, scan-loss, phase-quantization, beam-squint, aperture taper, measured-pattern integration, active VSWR, coupling-efficiency, taper-synthesis, and antenna-gain-measurement examples before adding antenna UI controls.
-   - Current first-pass extraction includes P.676 gas attenuation structure, P.840 cloud/fog attenuation, P.618 scintillation and sky-noise formulas, S.465/S.580 earth-station antenna pattern formulas, receiver/passive-loss/Y-factor formulas, receiver/link uncertainty propagation formulas, DSN 101/103/104 station gain/noise-temperature model rows, Balanis/Mailloux aperture-field, measured-pattern, taper, coupling, and gain-measurement formulas, and CCSDS 401 QPSK/modulation-margin/symbol-rate/subcarrier checks; next work is coefficient/map assets, DSN station coefficient tables, machine-readable modulation/limit tables, measured-pattern import examples, active-array validation cases, antenna temperature validation examples, and receiver-chain uncertainty UI scenarios.
+   - Use `standard_extracts.md` ITUANT/BOOKANT rows to build off-axis gain, side-lobe objective, beam solid angle, directivity, far-field distance, reflector focal/depth/feed-edge/blockage/spillover outputs, antenna XPD, array-factor, scan-steering, grating-lobe, scan-loss, scan beam-broadening, projected aperture, coherent array EIRP, true-time-delay, phase-quantization, beam-squint, aperture taper, measured-pattern integration, active VSWR, coupling-efficiency, taper-synthesis, and antenna-gain-measurement examples before adding antenna UI controls.
+   - Current first-pass extraction includes P.676 gas attenuation structure, P.840 cloud/fog attenuation, P.618 scintillation and sky-noise formulas, S.465/S.580 earth-station antenna pattern formulas, receiver/passive-loss/Y-factor formulas, receiver/link uncertainty propagation formulas, DSN 101/103/104 station gain/noise-temperature model rows, Balanis/Mailloux reflector/feed geometry, aperture-field, measured-pattern, taper, coupling, coherent array EIRP, true-time-delay steering, and gain-measurement formulas, and CCSDS 401 QPSK/modulation-margin/symbol-rate/subcarrier checks; next work is coefficient/map assets, DSN station coefficient tables, machine-readable modulation/limit tables, measured-pattern import examples, embedded-element/subarray validation cases, active-array validation cases, antenna temperature validation examples, and receiver-chain uncertainty UI scenarios.
 
 5. Textbook cross-check pass:
    - Balanis for antenna formulas.
@@ -121,6 +121,9 @@ Recommended implementation order:
    - grating-lobe visibility and element-spacing checks
    - broadside array FNBW/HPBW and uniform sidelobe reference
    - scan-loss, phase-quantization efficiency, RMS phase-error loss, and beam-squint warnings
+   - reflector f/D, focal length, rim depth, feed edge angle, blockage ratio, and spillover-noise cards
+   - antenna cross-polar discrimination and leakage-ratio cards
+   - planar-array active aperture, projected scan aperture, scan beam broadening, coherent EIRP, and true-time-delay command cards
 
 2. Full link budget workbench:
    - EIRP

@@ -117,6 +117,26 @@ Notation:
 | RF-103 | `M_ij_dB = P_r_ij_dBW - P_t_i_dBW + L_fs_ij_dB` | antenna-pair measurement terms | Gain-sum observable for antenna pair `i,j` in a two-port far-field gain measurement: ideally `M_ij=G_i+G_j`. | BOOK-BALANIS | Procedure |
 | RF-104 | `G_1_dBi = (M_12_dB + M_13_dB - M_23_dB)/2` | three antenna-pair measurements | Three-antenna gain measurement solution for antenna 1; cyclic permutations give antennas 2 and 3. | BOOK-BALANIS | Procedure |
 | RF-105 | `G_AUT_dBi = G_ref_dBi + P_AUT_dB - P_ref_dB` | reference antenna gain and received-power readings | Gain-transfer measurement when AUT and reference antenna are measured in the same range geometry and polarization. | BOOK-BALANIS | Seeded |
+| RF-106 | `F_reflector = f_over_D*D` | reflector focal ratio and diameter | Focal length of a parabolic reflector from its f/D ratio. | BOOK-BALANIS, DESCANSO-DSTSE | Seeded |
+| RF-107 | `f_over_D = F_reflector/D` | reflector focal length and diameter | Dimensionless reflector focal ratio used for feed-angle and efficiency trade checks. | BOOK-BALANIS, DESCANSO-DSTSE | Seeded |
+| RF-108 | `z_rim = D^2/(16*F_reflector)` | parabolic reflector diameter and focal length | Rim depth of a paraboloid measured from vertex to aperture plane. | BOOK-BALANIS | Seeded |
+| RF-109 | `psi_edge = 2*atan(D/(4*F_reflector))` | reflector diameter and focal length | Feed half-angle from focus to reflector rim for edge-taper and spillover checks. | BOOK-BALANIS, DESCANSO-DSTSE | Seeded |
+| RF-110 | `D_illum = 4*F_reflector*tan(psi_edge/2)` | focal length and selected feed edge angle | Illuminated reflector diameter implied by a feed edge angle. | BOOK-BALANIS | Seeded |
+| RF-111 | `BlockageAreaRatio = (D_block/D)^2` | blockage and main reflector diameters | First-order central blockage area ratio for circular subreflector/feed blockage. | BOOK-BALANIS | Seeded |
+| RF-112 | `eta_blockage_circular ~= (1 - (D_block/D)^2)^2` | circular blockage diameter ratio | Approximate aperture-efficiency loss from centered circular aperture blockage. | BOOK-BALANIS | Procedure |
+| RF-113 | `eta_spillover = integral_0^psi_edge(P_feed(psi)sin(psi)dpsi) / integral_0^pi(P_feed(psi)sin(psi)dpsi)` | feed power pattern and reflector subtended angle | Feed spillover efficiency: fraction of feed radiated power intercepted by the reflector. | BOOK-BALANIS, DESCANSO-DSTSE | Procedure |
+| RF-114 | `T_spillover ~= eta_spillover*T_sky_region + (1-eta_spillover)*T_ground_region` | spillover efficiency and scene temperatures | First-order antenna-noise contribution from feed spillover toward sky and warm ground/structure. | DESCANSO-DSTSE, BOOK-BALANIS | Procedure |
+| RF-115 | `XPD_ant_dB = G_co_dBi - G_cross_dBi` | co-polar and cross-polar pattern gains | Antenna cross-polar discrimination from measured or modeled co/cross-polar gains in the same direction. | BOOK-BALANIS, ITU-S465 | Seeded |
+| RF-116 | `CrossPolLeakageRatio = 10^(-XPD_ant_dB/10)` | antenna cross-polar discrimination | Linear leakage ratio associated with antenna cross-polar discrimination. | BOOK-BALANIS | Seeded |
+| RF-117 | `AR = 10^(AR_dB/20)` | axial ratio in dB | Converts polarization axial ratio from dB to linear ratio. | BOOK-BALANIS | Seeded |
+| RF-118 | `A_projected_scan = A_p*cos(theta_scan)` | physical aperture and scan angle | Projected aperture area when an aperture or planar array scans off broadside. | BOOK-MAILLOUX, BOOK-BALANIS | Seeded |
+| RF-119 | `theta_HPBW_scan ~= theta_HPBW_broadside/cos(theta_scan)` | broadside beamwidth and scan angle | Approximate beam broadening for a scanned planar aperture. | BOOK-MAILLOUX | Procedure |
+| RF-120 | `N_elem_planar = N_x*N_y` | rectangular array element counts | Total element count in a rectangular planar array. | BOOK-MAILLOUX, BOOK-BALANIS | Seeded |
+| RF-121 | `ArrayLength_x = (N_x-1)*d_x; ArrayLength_y = (N_y-1)*d_y` | element counts and lattice spacings | Center-to-center active array length in each principal lattice direction. | BOOK-MAILLOUX | Seeded |
+| RF-122 | `ArrayAperture_geom ~= ArrayLength_x*ArrayLength_y` | rectangular active dimensions | Approximate geometric active aperture of a rectangular planar array. | BOOK-MAILLOUX | Seeded |
+| RF-123 | `EIRP_array_total_dBW = P_total_array_dBW + G_elem_dBi + 10log10(N_active*eta_array)` | total RF power, element gain, active count, efficiency | EIRP estimate for a coherent equal-phase array when total array RF power is the input. | BOOK-MAILLOUX, BOOK-BALANIS | Seeded |
+| RF-124 | `EIRP_array_elem_dBW = P_elem_dBW + G_elem_dBi + 20log10(N_active) + 10log10(eta_array)` | per-element RF power and coherent active count | EIRP estimate for a coherent array when per-element RF power is the input. | BOOK-MAILLOUX | Seeded |
+| RF-125 | `tau_mn = (m*d_x*u_scan + n*d_y*v_scan)/c` | planar lattice coordinates and scan direction cosines | True-time-delay command for wideband planar-array steering without phase-shifter beam squint. | BOOK-MAILLOUX | Seeded |
 
 ## Propagation and Link Budget
 

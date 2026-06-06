@@ -40,7 +40,7 @@ This glossary defines shared symbols for the formula knowledge base. App impleme
 | `eta_ap` | `aperture_efficiency_total` | total aperture efficiency | ratio |
 | `eta_rad` | `radiation_efficiency` | radiation/ohmic efficiency component | ratio |
 | `eta_taper` | `aperture_taper_efficiency` | aperture illumination taper efficiency | ratio |
-| `eta_spillover` | `spillover_efficiency` | feed spillover efficiency | ratio |
+| `eta_spillover` | `spillover_efficiency` | feed power fraction intercepted by the reflector or desired aperture | ratio |
 | `eta_surface` | `surface_error_efficiency` | reflector surface rms error efficiency | ratio |
 | `eta_blockage` | `aperture_blockage_efficiency` | feed/subreflector blockage efficiency | ratio |
 | `eta_strut` | `strut_blockage_efficiency` | support-strut blockage efficiency | ratio |
@@ -48,10 +48,27 @@ This glossary defines shared symbols for the formula knowledge base. App impleme
 | `eta_astigmatism` | `astigmatism_efficiency` | axial feed-displacement astigmatism efficiency | ratio |
 | `K_surf` | `surface_error_geometry_factor` | surface-error correction factor depending on reflector geometry | unitless |
 | `sigma_surface` | `surface_rms_error` | reflector surface rms error | m, mm |
+| `F_reflector` | `reflector_focal_length` | parabolic reflector focal length | m |
+| `f_over_D` | `reflector_focal_ratio` | reflector focal length divided by diameter | ratio |
+| `z_rim` | `reflector_rim_depth` | depth from reflector vertex to aperture rim plane | m |
+| `psi_edge` | `feed_edge_angle` | feed half-angle from focus to reflector rim or illuminated edge | deg, rad |
+| `D_illum` | `illuminated_reflector_diameter` | reflector diameter illuminated by a selected feed edge angle | m |
+| `D_block` | `blockage_diameter` | equivalent circular blockage diameter from feed, subreflector, or support structure | m |
+| `BlockageAreaRatio` | `blockage_area_ratio` | central blockage area divided by main aperture area | ratio |
+| `eta_blockage_circular` | `circular_blockage_efficiency` | approximate efficiency term from centered circular aperture blockage | ratio |
+| `P_feed(psi)` | `feed_power_pattern` | feed radiation power pattern versus angle from feed boresight | relative power |
+| `T_spillover` | `spillover_noise_temperature` | first-order antenna noise temperature from feed spillover | K |
+| `T_sky_region` | `spillover_sky_temperature` | brightness/noise temperature seen by intercepted sky region | K |
+| `T_ground_region` | `spillover_ground_temperature` | brightness/noise temperature seen by spillover toward ground or warm structure | K |
 | `PointingLoss` | `pointing_loss` | gain degradation from off-boresight pointing | dB |
 | `MeanPointingLoss` | `mean_pointing_loss` | expected pointing loss over pointing-error distribution | dB |
 | `eta_pol` | `polarization_efficiency` | delivered power divided by polarization-matched available power | ratio |
 | `AR` | `axial_ratio` | polarization ellipse axial ratio | ratio |
+| `AR_dB` | `axial_ratio_db` | polarization axial ratio in decibels | dB |
+| `G_co_dBi` | `co_polar_gain` | co-polar antenna pattern gain in a selected direction | dBi |
+| `G_cross_dBi` | `cross_polar_gain` | cross-polar antenna pattern gain in the same direction | dBi |
+| `XPD_ant_dB` | `antenna_cross_polar_discrimination` | antenna co-polar minus cross-polar gain discrimination | dB |
+| `CrossPolLeakageRatio` | `cross_polar_leakage_ratio` | linear leakage ratio from antenna cross-polar discrimination | ratio |
 | `D_lambda` | `electrical_aperture_size` | antenna aperture diameter expressed in wavelengths | ratio |
 | `phi_deg` | `off_axis_angle_deg` | off-axis antenna angle for reference pattern checks | deg |
 | `phi_min` | `minimum_reference_pattern_angle` | lower off-axis-angle bound for ITU reference pattern branch | deg |
@@ -99,6 +116,19 @@ This glossary defines shared symbols for the formula knowledge base. App impleme
 | `G_array_max` | `maximum_array_gain` | approximate coherent maximum array gain | ratio, dBi |
 | `G_broadside_dBi` | `array_broadside_gain` | planar-array broadside gain | dBi |
 | `G_scan_dBi` | `array_scanned_gain` | gain at commanded scan angle after scan-loss approximation | dBi |
+| `theta_HPBW_broadside` | `broadside_half_power_beamwidth` | half-power beamwidth before scan broadening | rad, deg |
+| `theta_HPBW_scan` | `scanned_half_power_beamwidth` | scan-broadened half-power beamwidth | rad, deg |
+| `A_projected_scan` | `projected_scan_aperture` | projected aperture area at scan angle | m^2 |
+| `N_x` / `N_y` | `planar_array_element_counts` | element counts along rectangular planar-array axes | count |
+| `N_elem_planar` | `planar_array_element_count` | total planar-array element count | count |
+| `ArrayLength_x` / `ArrayLength_y` | `array_active_lengths` | center-to-center active array lengths along x/y | m |
+| `ArrayAperture_geom` | `array_geometric_aperture` | approximate geometric active aperture for a rectangular planar array | m^2 |
+| `N_active` | `active_array_element_count` | number of active transmit/receive elements participating in coherent combination | count |
+| `P_total_array_dBW` | `total_array_rf_power` | total RF power delivered across active array elements | dBW |
+| `P_elem_dBW` | `per_element_rf_power` | RF power delivered to one active element | dBW |
+| `EIRP_array_total_dBW` | `array_eirp_from_total_power` | array EIRP estimated from total RF power | dBW |
+| `EIRP_array_elem_dBW` | `array_eirp_from_element_power` | array EIRP estimated from per-element RF power | dBW |
+| `tau_mn` | `planar_array_true_time_delay` | true-time-delay command for planar-array element `(m,n)` | s |
 | `B_phase` | `phase_shifter_bits` | phase-shifter quantization bit depth | bit |
 | `eta_phase_quant` | `phase_quantization_efficiency` | coherent gain efficiency due to finite phase-shifter resolution | ratio |
 | `sigma_phase_quant` | `phase_quantization_rms` | RMS quantization phase error | rad |
