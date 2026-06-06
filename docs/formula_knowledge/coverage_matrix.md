@@ -5,9 +5,9 @@ This matrix tracks whether the knowledge base is moving toward the requested com
 | Domain | Scope | Primary sources | Current coverage | Remaining gaps |
 | --- | --- | --- | --- | --- |
 | RF fundamentals | wavelength, dB conversion, EIRP, PFD, PSD, received power | ITU-R P.525, DSN 810-005, Maral/Bousquet | Seeded in RF, LINK, MEAS | Add spectral masks and occupied-bandwidth regulatory checks from CCSDS 401. |
-| Antenna | gain, aperture, G/T, pointing, polarization, mismatch, beamwidth | Balanis, DESCANSO, DSN 810-005 | Seeded in RF and SYS | Add reflector-specific beamwidth constants, array factor, sidelobe estimates, antenna temperature model. |
-| Receiver/noise | noise figure, equivalent temperature, cascaded noise, N0 | Sklar, Maral/Bousquet, DSN 810-005 | Seeded in RF and LINK | Add lossy feed before LNA treatment, sky-noise models, measured Y-factor calibration. |
-| Link budget | FSPL, C/N0, Eb/N0, Es/N0, margin, inverse sizing | ITU-R P.525, DSN 810-005, Maral/Bousquet | Partly implemented; P.525-5 equations extracted | Add uplink/downlink/relay multi-hop budget and transponder saturation/backoff. |
+| Antenna | gain, aperture, G/T, pointing, polarization, mismatch, beamwidth | Balanis, DESCANSO, DSN 810-005 | Aperture efficiency, surface error, pointing-loss statistics, and polarization efficiency extracted from DESCANSO; basic gain formulas seeded | Add reflector-specific beamwidth constants, array factor, sidelobe estimates, antenna temperature/station table models. |
+| Receiver/noise | noise figure, equivalent temperature, cascaded noise, N0 | Sklar, Maral/Bousquet, DSN 810-005 | Noise density and DSN atmospheric/system operating noise formulas extracted; RF noise formulas seeded | Add lossy feed before LNA treatment, measured Y-factor calibration, and DSN 101/103/104 antenna-noise table extraction. |
+| Link budget | FSPL, C/N0, Eb/N0, Es/N0, margin, inverse sizing | ITU-R P.525, DSN 810-005, Maral/Bousquet | Partly implemented; P.525-5 equations and DESCANSO received-power/margin chain extracted | Add uplink/downlink/relay multi-hop budget and transponder saturation/backoff. |
 | Propagation | rain, gas, cloud, scintillation, availability | ITU-R P.618, P.676, P.838, P.839, P.840 | Top-level seeded | Extract P.618 step procedure and dependency inputs; add validity ranges. |
 | Modulation/baseband | symbol rate, rolloff bandwidth, BER/PER, EVM, Shannon | Sklar, Proakis, CCSDS 401 | Partly implemented and seeded | Add CCSDS modulation families, OQPSK/SQPN, filtered PSK, OFDM and DVB-S2 MODCOD details. |
 | Channel coding | RS, convolutional, turbo, LDPC, BCH, interleaving | CCSDS 131, 131.2, 131.3, 231, Sklar | CCSDS 131.0-B-5 and 231.0-B-4 first-pass tables/formulas extracted; generic textbook formulas seeded | Verify CCSDS 131.0-B-6 deltas, then extract 131.2/131.3 high-rate telemetry modes and textbook BER/coding performance curves. |
@@ -22,7 +22,7 @@ This matrix tracks whether the knowledge base is moving toward the requested com
 
 ## Current Numeric Coverage
 
-As of this pass, `formula_catalog.md` contains over 220 formula or formula-family entries across RF, link, baseband, telemetry, telecommand, ranging/tracking, system, optical, orbit/contact, compression, protocol, and measurement domains.
+As of this pass, `formula_catalog.md` contains over 260 formula or formula-family entries across RF, link, baseband, telemetry, telecommand, ranging/tracking, system, optical, orbit/contact, compression, protocol, and measurement domains.
 
 ## Not Yet Complete
 

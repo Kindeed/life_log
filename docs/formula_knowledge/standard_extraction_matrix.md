@@ -35,8 +35,8 @@ This file turns the source registry into concrete extraction work. The intent is
 
 | Source | Extract | Output artifacts | Formula catalog targets | Notes |
 | --- | --- | --- | --- | --- |
-| DSN 810-005 | DSN link, telemetry, command, ranging, frequency/timing modules | DSN scenario checklist, station-parameter fields | LINK, TC, TRK, ORB | Use for deep-space naming and practical budgets. |
-| DESCANSO-DSTSE | antenna gain, effective aperture, system temperature, link derivation | derivation notes and variable definitions | RF-003, RF-004, RF-010, LINK-003 | Public NASA/JPL reference. |
+| DSN 810-005 | DSN link, telemetry, command, ranging, frequency/timing modules | DSN scenario checklist, station-parameter fields | LINK, TC, TRK, ORB | Module 105E atmospheric attenuation/noise-temperature formulas extracted; station antenna modules 101/103/104 remain. |
+| DESCANSO-DSTSE | antenna gain, effective aperture, system temperature, link derivation | derivation notes and variable definitions | RF-003, RF-004, RF-010, RF-021 to RF-030, LINK-003, LINK-027 to LINK-037 | Antenna aperture efficiency, pointing/polarization loss, received-power chain, noise density, and performance-margin formulas extracted. |
 | Balanis | antenna parameters, Friis, radar equation, antenna temperature, arrays | antenna formula batch | RF, TRK-014, TRK-015 | Use published-book concepts; do not copy text. |
 | Sklar / Proakis / Haykin | BER/PER, modulation, coding, synchronization, source coding | digital-comms formula batch | BB, COMP, PROTO | Good for formulas not specific to CCSDS. |
 | Maral/Bousquet | satellite uplink/downlink/overall link, transponder, intersatellite links | satellite link scenarios | LINK, RF, SYS | Useful for scenario UI organization. |

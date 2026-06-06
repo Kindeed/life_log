@@ -17,6 +17,26 @@ Source: ITU-R P.525-5, `Calculation of free-space attenuation`, approved 2024-11
 | P525-007 | Annex 3, equation 7 | `L_br = 103.4 + 20 log10(f_MHz) + 40 log10(d_km) - 10 log10(sigma)` | Radar free-space basic transmission loss for a common-antenna radar. |
 | P525-008 | Annex 4, equations 8-11 | `E = Pt - 20log10(d_km) + 74.8`; `Pr = E - 20log10(f_GHz) - 167.2`; `L_bf = Pt - E + 20log10(f_GHz) + 167.2`; `S = E - 145.8` | dB conversions among isotropic transmitted power, field strength, received power, free-space loss, and PFD. |
 
+## DESCANSO and DSN Antenna/Link Engineering Extracts
+
+Sources: NASA/JPL DESCANSO `Deep Space Telecommunications Systems Engineering`; DSN 810-005 module 105E, `Atmospheric and Environmental Effects`.
+
+| Extract ID | Standard location | Equation or table | Implementation note |
+| --- | --- | --- | --- |
+| DS-LINK-001 | DESCANSO section 1.2.1, equations 1.2-1 to 1.2-2 | Received power is a product of transmit power, circuit losses, antenna gains, pointing losses, space loss, atmosphere attenuation, polarization loss, and receive circuit loss; `L_s=(lambda/(4*pi*r))^2` | Store both linear and dB forms. UI should show a decomposed link budget, not one opaque input list. |
+| DS-LINK-002 | DESCANSO section 1.2.1, equations 1.2-3 to 1.2-4 | `G = 4*pi*A_e/lambda^2`, `A_e=eta_ap*A_p` | Connects physical aperture, efficiency, effective aperture, and gain. |
+| DS-LINK-003 | DESCANSO section 1.2.2, equation 1.2-5 | `N0=k*T_sys` | Noise temperature must be referenced to the same receiver point as received power. |
+| DS-LINK-004 | DESCANSO section 1.2.3, equations 1.2-6 to 1.2-7 | Carrier margin is based on residual carrier power relative to `2*B_LO*N0` | Useful for carrier-loop acquisition/lock scenarios separate from data BER. |
+| DS-LINK-005 | DESCANSO section 1.2.4, equations 1.2-8 to 1.2-10 | `ST/N0_receiver = S_data/(R_b*N0)`, output metric applies system loss, margin is output minus threshold | Defines the telemetry/command performance-margin chain. |
+| DS-LINK-006 | DESCANSO section 1.2.5, equations 1.2-11 to 1.2-14 | Ranging input SNR uses uplink ranging sideband power over `B_R*N0`; ranging margin is output SNR minus required SNR | Keeps radiometric/ranging calculations distinct from telemetry data-link calculations. |
+| DS-ANT-001 | DESCANSO section 8.2, equations 8.2-14 to 8.2-16 | `G=eta_ap*4*pi*A_p/lambda^2`; aperture efficiency is a product of radiation, taper, spillover, surface, blockage, strut, squint, and astigmatism terms; `eta_surface=exp(-(4*pi*K_surf*sigma_surface/lambda)^2)` | Use as an antenna workbench group with expandable efficiency factors. |
+| DS-ANT-002 | DESCANSO section 8.4, equations 8.4-1 to 8.4-3 | Pointing loss is boresight gain minus off-axis pattern gain; mean and variance are expectations over the pointing-error density | Calculator needs both simple deterministic pointing loss and statistical design-control mode. |
+| DS-ANT-003 | DESCANSO section 8.5, equations 8.5-1 to 8.5-2 | `eta_pol=P_delivered/P_available`; `Ellipticity_dB=20log10(AR)` | Complements vector polarization loss in the catalog. |
+| DS-ATM-001 | DSN 810-005 105E section 2.1.1, equation 1 | `T_M=255+25*CD`, with `0<=CD<=0.99` | Weather cumulative distribution drives mean atmospheric radiating temperature. |
+| DS-ATM-002 | DSN 810-005 105E section 2.1.2, equation 2 | `A(theta)=A_zen/sin(theta)` | Flat-Earth elevation-angle attenuation model; DSN text warns not to double-count atmosphere in effective antenna gain. |
+| DS-ATM-003 | DSN 810-005 105E section 2.1.3, equation 3 | `T_atm(theta)=T_M*(1-1/L(theta))`, `L(theta)=10^(A(theta)/10)` | Converts atmospheric attenuation into noise-temperature contribution. |
+| DS-ATM-004 | DSN 810-005 105E section 2.1.4, equations 4 to 6 | `T_CMB=2.725 K`; `T_CMB_eff=T_CMB/L(theta)`; `T_op=T_AMW+T_atm+T_CMB_eff` with `T_AMW=T1+T2*exp(-a_noise*theta)` | Adds sky-noise closure for receiver G/T and `N0` calculations. |
+
 ## CCSDS 414.1-B-3 PN Ranging
 
 Source: CCSDS 414.1-B-3, `Pseudo-Noise (PN) Ranging Systems`, January 2022. The document control notes an October 2024 editorial page-size change.
@@ -61,6 +81,7 @@ Source: CCSDS 131.0-B-5, `TM Synchronization and Channel Coding`, September 2023
 | Source | Previous status | Current status | Remaining work |
 | --- | --- | --- | --- |
 | ITU-P525 | Listed as source; formulas partly seeded | Equations 1-11 extracted into catalog and variables | Add unit-test examples for all practical-unit conversions when calculators are implemented. |
+| DESCANSO/DSN | Listed as source; antenna/link formulas partly seeded | Received-power chain, aperture efficiency, pointing/polarization loss, noise density, link margins, ranging SNR, and DSN atmospheric noise-temperature formulas extracted | Extract DSN 101/103/104 antenna station tables and build deterministic examples for each workbench. |
 | CCSDS-414.1 | Listed as source; PN formulas partly seeded | Chip-rate equations, selector rules, cross-support examples, acquisition scaling, delay limits, and jitter reference rows extracted | Extract full transparent/regenerative mode field matrices and station/on-board performance tables. |
 | CCSDS-131 | Listed as source; generic coding formulas seeded | Public B-5 convolutional, R-S, Turbo, LDPC, ASM, CSM, randomizer, and frame-length extracts added | Verify deltas against Issue 6 when the official B-6 PDF is accessible. |
 | CCSDS-231 | Listed as source; CLTU formulas partly seeded | BCH/LDPC codeword sizing, CLTU start/tail lengths, fill formulas, managed parameters extracted | Extract PLOP timing details and any mission-specific maximum CLTU constraints when implementing. |

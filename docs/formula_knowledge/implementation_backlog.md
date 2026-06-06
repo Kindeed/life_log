@@ -48,6 +48,7 @@ Each pass should produce a reviewed delta to `formula_catalog.md` and, where nee
    - ITU-R P.525, P.618, P.676, P.838, P.839, P.840.
    - Extract FSPL variants, rain/gas/cloud/scintillation procedures, elevation/path geometry and applicability limits.
    - Use `standard_extracts.md` P.525 rows to build MHz/km, GHz/km, field-strength, PFD, isotropic received-power, and radar-loss regression cases.
+   - Use `standard_extracts.md` DESCANSO/DSN rows to build antenna aperture, pointing/polarization, received-power, carrier/data/ranging margin, and atmospheric noise-temperature regression cases.
 
 5. Textbook cross-check pass:
    - Balanis for antenna formulas.
@@ -88,6 +89,8 @@ Recommended implementation order:
    - noise figure/noise temperature
    - cascaded noise
    - pointing and polarization loss
+   - aperture efficiency decomposition and surface-error efficiency
+   - DSN-style atmospheric noise and operating system temperature
 
 2. Full link budget workbench:
    - EIRP

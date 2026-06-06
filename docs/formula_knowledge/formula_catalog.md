@@ -32,6 +32,16 @@ Notation:
 | RF-018 | `L_pol_dB = -20 log10(|e_tx dot e_rx|)` | `e_tx`, `e_rx`: unit polarization vectors | Polarization mismatch loss. | BOOK-BALANIS | Seeded |
 | RF-019 | `P_rx_dBW = EIRP + G_rx - L_path - L_misc` | `L_path`: propagation losses; `L_misc`: implementation losses | Received carrier power at receiver reference plane. | DSN-810-005, BOOK-MARAL | Implemented |
 | RF-020 | `N0_dBW/Hz = 10 log10(k T_sys)` | `k`: Boltzmann constant; `T_sys`: K | Noise spectral density. Equivalent dB form uses `-228.6 + 10log10(T)`. | BOOK-SKLAR, DSN-810-005 | Seeded |
+| RF-021 | `eta_ap = eta_rad * eta_taper * eta_spillover * eta_surface * eta_blockage * eta_strut * eta_squint * eta_astigmatism` | aperture efficiency factors | Aperture efficiency budget for reflector antennas. Terms can be omitted when unavailable but must not be double-counted. | DESCANSO-DSTSE, BOOK-BALANIS | Seeded |
+| RF-022 | `eta_surface = exp(-(4*pi*K_surf*sigma_surface/lambda)^2)` | `sigma_surface`: reflector surface rms error | Ruze-style surface-error efficiency term as given in DESCANSO reflector discussion. `K_surf` depends on reflector geometry such as f/D. | DESCANSO-DSTSE, BOOK-BALANIS | Seeded |
+| RF-023 | `G_ap_dBi = 10log10(eta_ap * 4*pi*A_p/lambda^2)` | aperture area and total aperture efficiency | Aperture antenna gain in dBi; equivalent to `eta_ap*(pi*D/lambda)^2` for a circular aperture. | DESCANSO-DSTSE, BOOK-BALANIS | Seeded |
+| RF-024 | `A_p = pi*D^2/4` | circular reflector diameter | Geometrical aperture area for circular dish antennas; kept as an explicit antenna-design output even though RF-002 already covers area. | DESCANSO-DSTSE, BOOK-BALANIS | Seeded |
+| RF-025 | `PointingLoss_dB(theta,phi) = G_m_dBi - G(theta,phi)_dBi` | antenna gain pattern and boresight gain | Pattern-based pointing loss from off-boresight target location. | DESCANSO-DSTSE | Procedure |
+| RF-026 | `MeanPointingLoss = integral(PointingLoss(theta,phi) * p_e(theta,phi) dtheta dphi)` | pointing-error probability density | Statistical pointing loss for design-control tables. | DESCANSO-DSTSE | Procedure |
+| RF-027 | `VarPointingLoss = integral((PointingLoss-MeanPointingLoss)^2 * p_e(theta,phi) dtheta dphi)` | pointing-loss distribution | Variance of pointing loss for tolerance/statistical link budgets. | DESCANSO-DSTSE | Procedure |
+| RF-028 | `eta_pol = P_delivered / P_available` | delivered and polarization-matched available power | Polarization efficiency definition. | DESCANSO-DSTSE, BOOK-BALANIS | Seeded |
+| RF-029 | `L_pol_dB = -10log10(eta_pol)` | polarization efficiency | Polarization mismatch loss from efficiency; complements RF-018 vector form. | DESCANSO-DSTSE, BOOK-BALANIS | Seeded |
+| RF-030 | `Ellipticity_dB = 20log10(AR)` | `AR`: polarization axial ratio | Ellipticity from polarization axial ratio. | DESCANSO-DSTSE, BOOK-BALANIS | Seeded |
 
 ## Propagation and Link Budget
 
@@ -63,6 +73,24 @@ Notation:
 | LINK-024 | `E = Pt - 20 log10(d_km) + 74.8` | `E`: dB(uV/m); `Pt`: dBW isotropic power | Field strength from isotropically transmitted power. | ITU-P525 | Seeded |
 | LINK-025 | `Pr = E - 20 log10(f_GHz) - 167.2` | `Pr`: dBW received by isotropic matched antenna | Available isotropic receive power from field strength. | ITU-P525 | Seeded |
 | LINK-026 | `S_dBW_m2 = E - 145.8` | `S`: dBW/m^2; `E`: dB(uV/m) | Power flux density from electric field strength. | ITU-P525 | Seeded |
+| LINK-027 | `P_R_dBW = P_T_dBW - L_T_dB + G_T_dBi - L_TP_dB - L_s_dB - L_A_dB - L_P_dB - L_RP_dB + G_R_dBi - L_R_dB` | transmit power, antenna gains, circuit/pointing/space/atmosphere/polarization losses | Full received-power accounting form for ground-space links. | DESCANSO-DSTSE, DSN-810-005 | Seeded |
+| LINK-028 | `L_s_ratio = (lambda/(4*pi*r))^2` | wavelength and range | Linear space-loss ratio between two antennas. | DESCANSO-DSTSE, ITU-P525 | Seeded |
+| LINK-029 | `L_s_dB = 20log10(4*pi*r/lambda)` | range and wavelength | Positive dB space loss corresponding to LINK-028. | DESCANSO-DSTSE, ITU-P525 | Seeded |
+| LINK-030 | `N0_W_Hz = k*T_sys` | system equivalent noise temperature | One-sided thermal noise spectral density. | DESCANSO-DSTSE, DSN-810-005 | Seeded |
+| LINK-031 | `P_to_N0_dBHz = P_R_dBW - N0_dBW_Hz` | received power and noise spectral density | Received total power-to-noise-density ratio. | DESCANSO-DSTSE, DSN-810-005 | Seeded |
+| LINK-032 | `ST_N0_receiver_dB = S_data_dBW - N0_dBW_Hz - 10log10(R_b)` | data-sideband power, bit rate, noise density | Telemetry/command energy-per-bit to noise-density ratio at receiver input. | DESCANSO-DSTSE | Seeded |
+| LINK-033 | `ST_N0_output_dB = ST_N0_receiver_dB - L_system_dB` | receiver/demodulation implementation loss | Output `ST/N0` after system losses. | DESCANSO-DSTSE | Seeded |
+| LINK-034 | `PerformanceMargin_dB = ST_N0_output_dB - Threshold_ST_N0_dB` | output and threshold bit-energy metric | Telemetry or command performance margin. | DESCANSO-DSTSE, DSN-810-005 | Seeded |
+| LINK-035 | `CarrierMargin_dB = P_c_dBW - N0_dBW_Hz - 10log10(2*B_LO)` | residual carrier power and loop bandwidth | Carrier margin relative to phase-lock threshold. | DESCANSO-DSTSE | Seeded |
+| LINK-036 | `RangingInputSNR = P_R_ul / (B_R * N0_ul)` | uplink ranging sideband power, transponder ranging bandwidth, uplink noise density | Ranging channel input SNR at the spacecraft receiver. | DESCANSO-DSTSE | Seeded |
+| LINK-037 | `RangingMargin_dB = OutputSNR_dB - RequiredSNR_dB` | returned ranging SNR and required SNR | Ranging performance margin. | DESCANSO-DSTSE | Seeded |
+| LINK-038 | `T_M = 255 + 25*CD` | weather cumulative distribution `CD` | DSN 105E atmosphere mean effective radiating temperature model. | DSN-810-005-105E | Seeded |
+| LINK-039 | `A_atm(theta) = A_zen / sin(theta)` | zenith attenuation and elevation angle | Flat-Earth elevation scaling for atmospheric attenuation. | DSN-810-005-105E | Procedure |
+| LINK-040 | `L_atm = 10^(A_atm(theta)/10)` | atmospheric attenuation in dB | Converts atmospheric attenuation to linear loss factor. | DSN-810-005-105E | Seeded |
+| LINK-041 | `T_atm(theta) = T_M * (1 - 1/L_atm)` | atmosphere mean radiating temperature and loss factor | Atmospheric noise-temperature contribution. | DSN-810-005-105E | Seeded |
+| LINK-042 | `T_CMB_eff(theta) = T_CMB / L_atm` | cosmic microwave background and atmosphere loss | Effective cosmic background noise contribution after atmospheric attenuation. | DSN-810-005-105E | Seeded |
+| LINK-043 | `T_AMW(theta) = T1 + T2*exp(-a_noise*theta)` | antenna module coefficients | DSN antenna-microwave noise-temperature component used by station modules. | DSN-810-005-105E | Procedure |
+| LINK-044 | `T_op(theta) = T_AMW(theta) + T_atm(theta) + T_CMB_eff(theta)` | antenna-microwave, atmosphere, cosmic terms | System operating noise temperature with atmosphere and attenuated cosmic background. | DSN-810-005-105E | Seeded |
 
 ## Modulation, Baseband, and Digital Communication
 

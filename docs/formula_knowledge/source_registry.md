@@ -29,8 +29,8 @@ This registry records the standards, handbooks, and published books that should 
 | ITU-P676 | ITU-R P.676, Attenuation by atmospheric gases | ITU-R | Gas attenuation model. | Oxygen/water vapor attenuation and path integration. |
 | ITU-P838 | ITU-R P.838, Specific attenuation model for rain | ITU-R | Rain specific attenuation model. | `gamma_R = k R^alpha` and polarization-dependent coefficients. |
 | ITU-P839 | ITU-R P.839, Rain height model | ITU-R | Needed by P.618 rain path geometry. | Rain height and slant-path length support. |
-| DSN-810-005 | DSN Telecommunications Link Design Handbook | NASA/JPL DSN | Current front matter page shows DSN No. 810-005, issue date 2026-05-22. | Deep-space link, DSN station capability, command/telemetry/ranging modules. |
-| DESCANSO-DSTSE | Deep Space Telecommunications Systems Engineering | NASA/JPL DESCANSO | Public deep-space communications reference. | Link equation derivations, antenna gain/effective aperture, system noise temperature, modulation/coding context. |
+| DSN-810-005 | DSN Telecommunications Link Design Handbook | NASA/JPL DSN | Current public DSN handbook download page lists modules and recent release clearances; module 105E atmospheric/noise extracts are started. | Deep-space link, DSN station capability, command/telemetry/ranging modules. |
+| DESCANSO-DSTSE | Deep Space Telecommunications Systems Engineering | NASA/JPL DESCANSO | Public deep-space communications reference; antenna/link extracts are started in `standard_extracts.md`. | Link equation derivations, antenna gain/effective aperture, system noise temperature, modulation/coding context. |
 | NASA-SST-COMM | NASA SmallSat State of the Art, Communications | NASA | Small satellite RF/optical communication overview. | System-level trade examples and calculator scenario framing. |
 
 ## Published Books
@@ -78,7 +78,9 @@ This registry records the standards, handbooks, and published books that should 
 | ITU-P838 | https://www.itu.int/rec/R-REC-P.838/en |
 | ITU-P839 | https://www.itu.int/rec/R-REC-P.839/en |
 | DSN-810-005 | https://deepspace.jpl.nasa.gov/dsndocs/810-005/ |
+| DSN-810-005 downloads | https://deepspace.jpl.nasa.gov/dsndocs/810-005/downloads/ |
 | DSN-810-005 front matter | https://deepspace.jpl.nasa.gov/dsndocs/810-005/fm.pdf |
+| DSN-810-005 105E | https://deepspace.jpl.nasa.gov/dsndocs/810-005/105/105E.pdf |
 | DESCANSO-DSTSE | https://descanso.jpl.nasa.gov/dstse/DSTSE.pdf |
 | JPL DESCANSO monographs | https://descanso.jpl.nasa.gov/monograph/mono.html |
 | NASA-SST-COMM | https://www.nasa.gov/smallsat-institute/sst-soa/soa-communications/ |

@@ -21,9 +21,12 @@ This glossary defines shared symbols for the formula knowledge base. App impleme
 | `D` | `antenna_diameter` | circular aperture diameter | m |
 | `eta` | `aperture_efficiency` | aperture efficiency | ratio, percent |
 | `A` | `physical_aperture` | physical aperture area | m^2 |
+| `A_p` | `geometrical_aperture` | geometrical aperture area used in aperture-gain formulas | m^2 |
 | `A_e` | `effective_aperture` | effective receiving aperture | m^2 |
 | `G` | `antenna_gain_linear` | antenna gain linear | ratio |
+| `G_m` | `boresight_gain` | nominal peak or boresight antenna gain | dBi |
 | `G_dBi` | `antenna_gain` | antenna gain relative to isotropic | dBi |
+| `G(theta,phi)` | `antenna_pattern_gain` | antenna gain pattern at off-boresight cone/clock angle | dBi |
 | `G/T` | `g_over_t` | gain-to-noise-temperature ratio | dB/K |
 | `P_tx` | `tx_power` | transmitter RF output power | W, dBW, dBm |
 | `L_tx` | `tx_loss` | transmitter-side feed/network loss | dB |
@@ -33,6 +36,22 @@ This glossary defines shared symbols for the formula knowledge base. App impleme
 | `Gamma` | `reflection_coefficient` | reflection coefficient magnitude | ratio |
 | `theta_3dB` | `beamwidth_3db` | half-power beamwidth | deg, rad |
 | `theta_error` | `pointing_error` | pointing offset from boresight | deg, rad |
+| `theta` / `phi` | `pattern_cone_clock_angle` | antenna pattern cone and clock angles | deg, rad |
+| `eta_ap` | `aperture_efficiency_total` | total aperture efficiency | ratio |
+| `eta_rad` | `radiation_efficiency` | radiation/ohmic efficiency component | ratio |
+| `eta_taper` | `aperture_taper_efficiency` | aperture illumination taper efficiency | ratio |
+| `eta_spillover` | `spillover_efficiency` | feed spillover efficiency | ratio |
+| `eta_surface` | `surface_error_efficiency` | reflector surface rms error efficiency | ratio |
+| `eta_blockage` | `aperture_blockage_efficiency` | feed/subreflector blockage efficiency | ratio |
+| `eta_strut` | `strut_blockage_efficiency` | support-strut blockage efficiency | ratio |
+| `eta_squint` | `squint_efficiency` | lateral feed-displacement squint efficiency | ratio |
+| `eta_astigmatism` | `astigmatism_efficiency` | axial feed-displacement astigmatism efficiency | ratio |
+| `K_surf` | `surface_error_geometry_factor` | surface-error correction factor depending on reflector geometry | unitless |
+| `sigma_surface` | `surface_rms_error` | reflector surface rms error | m, mm |
+| `PointingLoss` | `pointing_loss` | gain degradation from off-boresight pointing | dB |
+| `MeanPointingLoss` | `mean_pointing_loss` | expected pointing loss over pointing-error distribution | dB |
+| `eta_pol` | `polarization_efficiency` | delivered power divided by polarization-matched available power | ratio |
+| `AR` | `axial_ratio` | polarization ellipse axial ratio | ratio |
 
 ## Noise and Receiver
 
@@ -59,6 +78,10 @@ This glossary defines shared symbols for the formula knowledge base. App impleme
 | `A_gas` | `gas_attenuation` | atmospheric gas attenuation | dB |
 | `A_cloud` | `cloud_attenuation` | cloud/fog attenuation | dB |
 | `A_scint` | `scintillation_loss` | scintillation fade allowance | dB |
+| `A_zen` | `zenith_atmospheric_attenuation` | atmospheric attenuation at zenith | dB |
+| `A_atm` | `atmospheric_attenuation` | atmosphere attenuation at an elevation angle | dB |
+| `AM` | `air_mass_factor` | flat-Earth air mass scaling factor | unitless |
+| `L_atm` | `atmospheric_loss_factor` | linear atmospheric loss factor | ratio |
 | `e` | `field_strength_v_m` | RMS electric field strength | V/m |
 | `E` | `field_strength_dbuv_m` | electric field strength in logarithmic units | dB(uV/m) |
 | `s` / `S` | `power_flux_density` | power flux density | W/m^2, dBW/m^2 |
@@ -71,6 +94,31 @@ This glossary defines shared symbols for the formula knowledge base. App impleme
 | `R_b` | `bit_rate` | bit rate | bps |
 | `R_s` | `symbol_rate` | symbol rate | symbols/s |
 | `Margin` | `link_margin` | available minus required performance | dB |
+| `P_R` | `received_power` | received signal power at the chosen receiver reference point | W, dBW |
+| `P_T` | `transmitted_power_at_antenna_terminals` | total transmitted power at antenna terminals | W, dBW |
+| `L_T` | `transmit_circuit_loss` | transmitting circuit/feed loss | dB, ratio |
+| `L_TP` | `tx_pointing_loss` | transmitting antenna pointing loss | dB, ratio |
+| `L_s` | `space_loss` | free-space spreading loss | dB, ratio |
+| `L_A` | `atmospheric_attenuation` | atmospheric attenuation term | dB, ratio |
+| `L_P` | `polarization_loss` | polarization mismatch loss term | dB, ratio |
+| `L_RP` | `rx_pointing_loss` | receiving antenna pointing loss | dB, ratio |
+| `L_R` | `receive_circuit_loss` | receiving circuit/feed loss | dB, ratio |
+| `S_data` | `data_sideband_power` | portion of received power in data modulation sidebands | W, dBW |
+| `P_c` | `residual_carrier_power` | portion of received power in residual carrier | W, dBW |
+| `B_LO` | `loop_noise_bandwidth` | one-sided carrier loop threshold noise bandwidth | Hz |
+| `B_R` | `ranging_noise_bandwidth` | one-sided transponder ranging-channel noise bandwidth | Hz |
+| `L_system` | `system_implementation_loss` | receiver/demodulation/system loss applied to `ST/N0` | dB |
+| `Threshold_ST_N0` | `threshold_energy_per_bit_noise_density` | required energy-per-bit to noise-density threshold | dB |
+| `RequiredSNR` | `required_ranging_snr` | required ranging signal-to-noise ratio | dB |
+| `OutputSNR` | `output_ranging_snr` | ranging SNR after radio/system loss | dB |
+| `CD` | `weather_cumulative_distribution` | cumulative distribution of weather effect | ratio |
+| `T_M` | `atmosphere_mean_radiating_temp` | mean effective radiating temperature of atmosphere | K |
+| `T_atm` | `atmospheric_noise_temp` | atmospheric noise-temperature contribution | K |
+| `T_CMB` | `cosmic_background_temp` | cosmic microwave background temperature before attenuation | K |
+| `T_CMB_eff` | `effective_cosmic_background_temp` | attenuated cosmic background contribution | K |
+| `T_AMW` | `antenna_microwave_noise_temp` | antenna and microwave hardware noise-temperature component | K |
+| `T_op` | `operating_system_noise_temp` | system operating noise temperature including sky terms | K |
+| `T1`, `T2`, `a_noise` | `antenna_noise_model_coefficients` | coefficients for DSN antenna-microwave noise model | K, K, 1/deg |
 
 ## Modulation and Coding
 
