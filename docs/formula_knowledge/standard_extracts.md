@@ -185,7 +185,7 @@ Sources: CCSDS publication registry for `211.1-B-4`, December 2013; ISO 21460:20
 
 ## ITU-R Rain and Earth-Space Propagation Extracts
 
-Sources: ITU-R P.838-3 `Specific attenuation model for rain for use in prediction methods`; ITU-R P.839-4 `Rain height model for prediction methods`; ITU-R P.618-14 `Propagation data and prediction methods required for the design of Earth-space telecommunication systems`.
+Sources: ITU-R P.838-3 `Specific attenuation model for rain for use in prediction methods`; ITU-R P.839-4 `Rain height model for prediction methods`; ITU-R P.837-8 `Characteristics of precipitation for propagation modelling`; ITU-R P.453-14 `The radio refractive index: its formula and refractivity data`; ITU-R P.618-14 `Propagation data and prediction methods required for the design of Earth-space telecommunication systems`.
 
 | Extract ID | Standard location | Equation or table | Implementation note |
 | --- | --- | --- | --- |
@@ -204,6 +204,12 @@ Sources: ITU-R P.838-3 `Specific attenuation model for rain for use in predictio
 | ITUCLOUD-002 | P.840-9 section 3, equations 11 to 16 | `A_C=K_L L/sin(theta)` instantaneous/statistical forms and log-normal approximation using `Q^-1(p/P_L)` | Digital cloud-liquid-water maps remain data assets; formulas now identify the calculator inputs and outputs. |
 | ITUSCINT-001 | P.618-14 section 2.4.1, equations 42 to 49 | `sigma_ref`, effective path length, effective antenna diameter, antenna averaging factor, time-percentage factor, and `A_S=a(p)*sigma` | Covers tropospheric scintillation at elevation angles >= 5 deg and `0.01% < p <= 50%`. Low-elevation deep/shallow fading remains to extract. |
 | ITUSKY-001 | P.618-14 section 3, equations 69 and 70 | `T_sky=T_mr(1-10^(-A/10))+2.7*10^(-A/10)` and `T_mr=37.34+0.81*T_surface` | Adds channel/noise-temperature outputs that can be shown next to attenuation. |
+| ITUAVAIL-001 | P.618-14 long-term statistics and availability design context, cross-checked with satellite-link textbooks | Availability/outage conversions: `LinkAvailability=1-p_out_percent/100`, annual outage time, required fade margin from fade-depth distributions, and residual margin | Catalog adds LINK-138 to LINK-144. The simple conversions are implementation-ready; exact fade-depth distributions still come from P.618 procedures, measured data, or location-dependent climatology. |
+| ITUDIV-001 | P.618-14 site-diversity and diversity-improvement procedure context | Independent-site outage approximation, site-diversity availability, diversity improvement factor, and diversity gain at fixed probability | Catalog adds LINK-145 to LINK-148. Use the independent formula only as a clearly labelled approximation; correlated rain-cell diversity requires the P.618 procedure and site geometry/climatology data. |
+| ITUGW-001 | P.618-14 availability/fade-state context and satellite-link adaptive-resource textbooks | Probability-weighted gateway rate and capacity loss from fade/weather adaptation states | Catalog adds LINK-149 and LINK-150. These rows turn propagation state probabilities into useful system outputs, but state probabilities must come from P.618, measurements, or a validated operational model. |
+| ITURAIN-009 | P.837-8 precipitation-climatology recommendation used by P.618/P.838 workflows | `R_p=P837_RainRate(lat, lon, p_exceed)` | Catalog adds LINK-151. This is a procedure/data lookup entry: the calculator needs P.837 map/software assets rather than a hand-coded scalar formula. |
+| ITUREFR-001 | P.453-14 radio refractive-index and refractivity formulas | `N_radio=(n_radio-1)*1e6`, `N_radio ~= 77.6*P_s/T_K+3.73e5*e_wv/T_K^2`, and `n_radio=1+N_radio*1e-6` | Catalog adds LINK-152 to LINK-154. These values support atmosphere/refraction input cards; P.453 map-backed refractivity data remains a data-asset task. |
+| ITUXPD-001 | P.618-14 cross-polarization/depolarization procedure context, cross-checked with satellite-link textbooks | Cross-polar discrimination margin, first-order opposite-polarization leakage, and carrier-to-cross-polar interference ratio | Catalog adds LINK-155 to LINK-157. The margin/leakage formulas are useful result cards; exact rain depolarization prediction remains a P.618 procedure/table task. |
 
 ## DESCANSO Tracking, Ranging, and External Measurement Extracts
 

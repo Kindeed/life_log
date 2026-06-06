@@ -34,9 +34,11 @@ This registry records the standards, handbooks, and published books that should 
 | ITU-P525 | ITU-R P.525-5, Calculation of free-space attenuation | ITU-R | Current Recommendation dated 11/2024; equations 1-11 extracted into `standard_extracts.md`. | FSPL, field strength, PFD, isotropic received power, and radar free-space loss formulas. |
 | ITU-P618 | ITU-R P.618-14, Earth-space propagation prediction | ITU-R | In force, approved 2023-08-23; rain, total attenuation, scintillation, and sky-noise extracts started in `standard_extracts.md`. | Earth-space attenuation, rain fade, scintillation, availability, sky noise temperature. |
 | ITU-P676 | ITU-R P.676-13, Attenuation by atmospheric gases and related effects | ITU-R | In force, approved 2022-08-24; official page updated 2024-06-21; first-pass gas attenuation extracts started. | Oxygen/water vapor attenuation, path integration, line-by-line and approximate slant-path gas attenuation. |
+| ITU-P837 | ITU-R P.837-8, Characteristics of precipitation for propagation modelling | ITU-R | In force, approved 2025-09; official recommendation page lists P.837-8 as the current main version. | Rain-rate climatology and rain-rate statistics used as P.618/P.838 inputs. |
 | ITU-P838 | ITU-R P.838-3, Specific attenuation model for rain | ITU-R | Rain specific attenuation model; P.838-3 remains listed on ITU official pages. | `gamma_R = k R^alpha` and polarization-dependent coefficients. |
 | ITU-P839 | ITU-R P.839-4, Rain height model | ITU-R | Needed by P.618 rain path geometry; P.839-4 remains listed on ITU official pages. | Rain height and slant-path length support. |
 | ITU-P840 | ITU-R P.840-9, Attenuation due to clouds and fog | ITU-R | In force, approved 2023-08; first-pass cloud/fog attenuation extracts started. | Cloud/fog liquid water attenuation, integrated cloud liquid water maps, log-normal cloud attenuation approximation. |
+| ITU-P453 | ITU-R P.453-14, The radio refractive index: its formula and refractivity data | ITU-R | In force, approved 2019-08; official recommendation page lists P.453-14 as the current main version. | Radio refractivity, refractive index, surface refractivity, and map-backed atmospheric propagation inputs. |
 | ITU-P1814 | ITU-R P.1814-1, Prediction methods required for the design of terrestrial free-space optical links | ITU-R | In force, approved 2025-09; first-pass FSO link-margin, geometric attenuation, visibility, scintillation, and ambient-light extracts started. | Terrestrial free-space optical link margin, beam-spreading loss, clear-air/fog/rain attenuation, visibility conversion, scintillation allowance, and solar-background checks. |
 | ITU-S465 | ITU-R S.465-6, Reference radiation pattern of earth station antennas in the fixed-satellite service | ITU-R | In force, approved 2010-01; provides reference patterns for coordination and interference assessment from 2 to 31 GHz. | Earth-station off-axis gain envelope, minimum angle rules, and legacy small-antenna branches. |
 | ITU-S580 | ITU-R S.580-6, Radiation diagrams for earth-station antenna design objectives | ITU-R | In force, approved 2004-01; provides GSO side-lobe design objective for earth-station antennas. | Side-lobe objective, GSO affected-zone checks, transition branch, and equivalent circular aperture diameter. |
@@ -122,12 +124,15 @@ This registry records the standards, handbooks, and published books that should 
 | ITU-P618-14 PDF | https://www.itu.int/dms_pubrec/itu-r/rec/p/R-REC-P.618-14-202308-I!!PDF-E.pdf |
 | ITU-P676 | https://www.itu.int/rec/R-REC-P.676/en |
 | ITU-P676-13 PDF | https://www.itu.int/dms_pubrec/itu-r/rec/p/R-REC-P.676-13-202208-I!!PDF-E.pdf |
+| ITU-P837 | https://www.itu.int/rec/R-REC-P.837/en |
 | ITU-P838 | https://www.itu.int/rec/R-REC-P.838/en |
 | ITU-P838-3 PDF | https://www.itu.int/dms_pubrec/itu-r/rec/p/r-rec-p.838-3-200503-i!!pdf-e.pdf |
 | ITU-P839 | https://www.itu.int/rec/R-REC-P.839/en |
 | ITU-P839-4 PDF | https://www.itu.int/dms_pubrec/itu-r/rec/p/r-rec-p.839-4-201309-i!!pdf-e.pdf |
 | ITU-P840 | https://www.itu.int/rec/R-REC-P.840/en |
 | ITU-P840-9 PDF | https://www.itu.int/dms_pubrec/itu-r/rec/p/R-REC-P.840-9-202308-I!!PDF-E.pdf |
+| ITU-P453 | https://www.itu.int/rec/R-REC-P.453/en |
+| ITU-P453-14 PDF | https://www.itu.int/dms_pubrec/itu-r/rec/p/R-REC-P.453-14-201908-I!!PDF-E.pdf |
 | ITU-P1814 | https://www.itu.int/rec/R-REC-P.1814/en |
 | ITU-P1814-1 PDF | https://www.itu.int/dms_pubrec/itu-r/rec/p/R-REC-P.1814-1-202509-I!!PDF-E.pdf |
 | ITU-S465-6 PDF | https://www.itu.int/dms_pubrec/itu-r/rec/s/R-REC-S.465-6-201001-I!!PDF-E.pdf |

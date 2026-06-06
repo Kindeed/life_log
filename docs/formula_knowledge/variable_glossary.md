@@ -220,6 +220,26 @@ This glossary defines shared symbols for the formula knowledge base. App impleme
 | `phi_lat` | `station_latitude` | earth station latitude | deg |
 | `beta` | `rain_probability_extrapolation_beta` | P.618 probability extrapolation branch value | unitless |
 | `p_exceed` | `exceedance_probability_percent` | percentage of average year that attenuation is exceeded | percent |
+| `p_out_percent` | `outage_probability_percent` | percentage of an average year that the link is unavailable | percent |
+| `LinkAvailability` | `link_availability_fraction` | propagation availability expressed as a fraction | ratio |
+| `LinkAvailability_percent` | `link_availability_percent` | propagation availability expressed as a percentage | percent |
+| `AnnualOutageTime` | `annual_outage_time` | expected unavailable time within the analysis year | s, min, h |
+| `T_year` | `analysis_year_duration` | duration used for annual outage conversion | s, h |
+| `RequiredFadeMargin_p` | `required_fade_margin_percent_p` | fade depth or margin needed at the target exceedance probability | dB |
+| `FadeDepth(p)` | `fade_depth_distribution` | attenuation exceeded for probability p from a propagation model or empirical distribution | dB |
+| `p_target_percent` | `target_exceedance_probability_percent` | target exceedance probability used for availability design | percent |
+| `p_out_margin` | `outage_probability_for_margin` | outage percentage implied by the selected fade margin | percent |
+| `FadeMargin_dB` | `available_fade_margin_db` | available link fade margin | dB |
+| `ResidualFadeMargin_p` | `residual_fade_margin_percent_p` | margin remaining after reserving target-percentile fade depth | dB |
+| `P_out_div_ind` | `independent_diversity_outage_probability` | simultaneous outage probability for independent diversity sites | ratio |
+| `p_out_j_percent` | `site_j_outage_probability_percent` | outage probability for diversity site j | percent |
+| `Availability_div_ind` | `independent_diversity_availability` | availability of an independent-site diversity group | ratio |
+| `DiversityImprovement` | `diversity_improvement_factor` | single-site outage probability divided by diverse-site outage probability | ratio |
+| `p_single_percent` | `single_site_outage_probability_percent` | outage probability for one site at a specified fade threshold | percent |
+| `p_diverse_percent` | `diverse_site_outage_probability_percent` | outage probability after diversity at the same threshold | percent |
+| `DiversityGain_dB` | `diversity_gain_db` | attenuation reduction at fixed outage probability due to diversity | dB |
+| `A_single_site(p)` | `single_site_attenuation_percent_p` | attenuation exceeded for probability p at one site | dB |
+| `A_diverse(p)` | `diverse_site_attenuation_percent_p` | attenuation exceeded for probability p after diversity combining/selection | dB |
 | `R_eff` | `effective_earth_radius` | effective Earth radius used by P.618 rain geometry, 8500 km | km |
 | `gamma_o` | `oxygen_specific_attenuation` | oxygen/dry-air specific attenuation | dB/km |
 | `gamma_w` | `water_vapour_specific_attenuation` | water-vapour specific attenuation | dB/km |
@@ -235,6 +255,8 @@ This glossary defines shared symbols for the formula knowledge base. App impleme
 | `T_K` | `air_temperature_k` | air temperature | K |
 | `T_surface` | `surface_temperature_k` | surface temperature | K |
 | `theta_300` | `temperature_ratio_300_over_t` | P.676 temperature ratio, `300/T_K` | ratio |
+| `N_radio` | `radio_refractivity` | radio refractivity in N-units | N-units |
+| `n_radio` | `radio_refractive_index` | radio refractive index | unitless |
 | `S_i` | `spectral_line_strength` | oxygen or water-vapour line strength | varies |
 | `F_i` | `spectral_line_shape_factor` | oxygen or water-vapour line-shape factor | 1/GHz |
 | `f_i` | `spectral_line_frequency` | line centre frequency | GHz |
@@ -352,6 +374,17 @@ This glossary defines shared symbols for the formula knowledge base. App impleme
 | `C_dBW` | `carrier_power` | carrier power at the selected receiver or transponder reference point | dBW |
 | `C_IM_dB` | `carrier_intermod_ratio` | carrier-to-intermodulation ratio | dB |
 | `IM_dBW` | `intermodulation_power` | intermodulation distortion power at the selected reference point | dBW |
+| `XPDMargin_dB` | `cross_polar_discrimination_margin` | available minus required cross-polar discrimination | dB |
+| `XPD_available_dB` | `available_cross_polar_discrimination` | available cross-polar discrimination for the link state | dB |
+| `XPD_required_dB` | `required_cross_polar_discrimination` | required cross-polar discrimination threshold | dB |
+| `I_xpol_W` | `cross_polar_interference_power_w` | cross-polar leakage or interference power | W |
+| `I_copol_W` | `co_polar_interference_power_w` | co-polar source power before cross-polar discrimination | W |
+| `C_XPI_dB` | `carrier_to_cross_polar_interference_ratio` | carrier-to-cross-polar interference ratio | dB |
+| `GatewayExpectedRate` | `gateway_expected_rate` | probability-weighted expected gateway/link throughput across weather or fade states | bit/s |
+| `Prob_state_s` | `gateway_state_probability` | probability of propagation or adaptation state s | ratio |
+| `NetRate_s` | `gateway_state_net_rate` | net usable rate in state s | bit/s |
+| `GatewayOutageCapacityLoss` | `gateway_outage_capacity_loss` | clear-sky rate minus probability-weighted expected rate | bit/s |
+| `ClearSkyRate` | `clear_sky_rate` | net link rate in clear-sky/no-fade state | bit/s |
 | `eta_hpa_oper` | `hpa_operating_efficiency` | HPA efficiency at the selected output back-off | ratio |
 | `eta_hpa_sat` | `hpa_saturated_efficiency` | HPA efficiency at saturated output | ratio |
 | `P_rf_out` | `hpa_rf_output_power` | RF output power from the HPA | W |

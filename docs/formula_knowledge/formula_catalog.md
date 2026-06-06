@@ -259,6 +259,26 @@ Notation:
 | LINK-135 | `P_diss_hpa = P_dc_hpa - P_rf_out` | DC input and RF output power | Heat dissipated by the HPA for thermal and power subsystem sizing. | BOOK-MARAL, BOOK-SMAD | Seeded |
 | LINK-136 | `TransponderUtilization = sum_i(B_carrier_i)/B_transponder` | occupied carrier bandwidths and transponder bandwidth | Fraction of transponder bandwidth occupied by assigned carriers. | BOOK-MARAL | Seeded |
 | LINK-137 | `PowerUtilization = sum_i(P_carrier_i_linear)/P_transponder_oper_linear` | assigned carrier powers and available operating RF output power | Fraction of operating transponder RF power allocated to active carriers. | BOOK-MARAL | Seeded |
+| LINK-138 | `LinkAvailability = 1 - p_out_percent/100` | outage percentage of an average year | Converts propagation outage percentage to availability fraction. | ITU-P618, BOOK-MARAL | Seeded |
+| LINK-139 | `LinkAvailability_percent = 100 - p_out_percent` | outage percentage | Availability in percent of an average year. | ITU-P618, BOOK-MARAL | Seeded |
+| LINK-140 | `AnnualOutageTime = T_year*p_out_percent/100` | year duration and outage percentage | Expected annual link outage time associated with a propagation exceedance probability. | ITU-P618, BOOK-MARAL | Seeded |
+| LINK-141 | `p_out_percent = 100*AnnualOutageTime/T_year` | outage time and analysis year | Converts a target outage duration into outage percentage for propagation design. | ITU-P618, BOOK-MARAL | Seeded |
+| LINK-142 | `RequiredFadeMargin_p = FadeDepth(p_target_percent)` | target exceedance probability | Fade margin needed to meet a target availability once the P.618/ITU procedure produces fade depth. | ITU-P618 | Procedure |
+| LINK-143 | `p_out_margin = inverse_p(FadeDepth(p) = FadeMargin_dB)` | fade-margin threshold | Outage percentage implied by a fixed fade margin and a monotonic attenuation distribution. | ITU-P618, BOOK-MARAL | Procedure |
+| LINK-144 | `ResidualFadeMargin_p = FadeMargin_dB - FadeDepth(p_target_percent)` | margin and target-percentile fade depth | Availability-driven margin after reserving the fade depth for a target exceedance probability. | ITU-P618, BOOK-MARAL | Seeded |
+| LINK-145 | `P_out_div_ind = product_j(p_out_j_percent/100)` | independent site outage percentages | Independent-site approximation for simultaneous outage probability across diversity gateways. | ITU-P618, BOOK-MARAL | Procedure |
+| LINK-146 | `Availability_div_ind = 1 - P_out_div_ind` | simultaneous diversity outage probability | Availability of a site-diversity group under the independent-site approximation. | ITU-P618, BOOK-MARAL | Procedure |
+| LINK-147 | `DiversityImprovement = p_single_percent/p_diverse_percent` | same attenuation threshold | Improvement factor comparing single-site and site-diverse outage percentages at the same fade threshold. | ITU-P618 | Procedure |
+| LINK-148 | `DiversityGain_dB = A_single_site(p) - A_diverse(p)` | same target outage percentage | Diversity gain in dB at a fixed outage probability. | ITU-P618 | Procedure |
+| LINK-149 | `GatewayExpectedRate = sum_s Prob_state_s*NetRate_s` | weather/link states and state rates | Expected adaptive gateway throughput across propagation states. | BOOK-MARAL, ITU-P618 | Seeded |
+| LINK-150 | `GatewayOutageCapacityLoss = ClearSkyRate - GatewayExpectedRate` | clear-sky and expected rates | Average throughput loss caused by weather/fade state adaptation. | BOOK-MARAL, ITU-P618 | Seeded |
+| LINK-151 | `R_p = P837_RainRate(lat, lon, p_exceed)` | location and exceedance percentage | P.837 rain-rate climatology lookup/procedure used before P.838/P.618 rain attenuation. | ITU-P837, ITU-P618 | Procedure |
+| LINK-152 | `N_radio = (n_radio - 1)*1e6` | radio refractive index | Radio refractivity in N-units. | ITU-P453 | Seeded |
+| LINK-153 | `N_radio ~= 77.6*P_s/T_K + 3.73e5*e_wv/T_K^2` | pressure, water-vapour partial pressure, temperature | Common radio refractivity approximation used for propagation atmosphere characterization. | ITU-P453 | Procedure |
+| LINK-154 | `n_radio = 1 + N_radio*1e-6` | radio refractivity | Converts refractivity back to refractive index. | ITU-P453 | Seeded |
+| LINK-155 | `XPDMargin_dB = XPD_available_dB - XPD_required_dB` | available and required cross-polar discrimination | Cross-polarization margin for dual-polarized links or interference checks. | ITU-P618, BOOK-MARAL | Seeded |
+| LINK-156 | `I_xpol_W = I_copol_W*10^(-XPD_available_dB/10)` | co-polar interference and XPD | First-order cross-polar leakage power from a co-frequency opposite-polarization carrier. | ITU-P618, BOOK-MARAL | Procedure |
+| LINK-157 | `C_XPI_dB = C_dBW - 10log10(I_xpol_W)` | wanted carrier and cross-polar interference power | Carrier-to-cross-polar interference ratio after depolarization or polarization leakage. | ITU-P618, BOOK-MARAL | Procedure |
 
 ## Modulation, Baseband, and Digital Communication
 

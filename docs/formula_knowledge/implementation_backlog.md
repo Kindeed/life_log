@@ -145,6 +145,12 @@ Recommended implementation order:
    - P.839 rain height and P.618 slant-path rain geometry
    - P.618 scintillation and sky-noise temperature
    - P.618 total attenuation combiner for rain, gas, cloud, and scintillation
+   - availability, outage percentage, annual outage time, required fade margin, and residual fade margin
+   - site-diversity availability, diversity improvement, and diversity gain cards
+   - adaptive gateway expected-rate and weather/fade capacity-loss cards
+   - P.837 rain-rate lookup input card before P.838/P.618 attenuation
+   - P.453 radio refractivity and refractive-index cards
+   - cross-polar discrimination margin, leakage power, and carrier-to-cross-polar interference ratio
 
 4. Baseband and channel workbench:
    - symbol rate
