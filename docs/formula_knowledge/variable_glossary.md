@@ -158,12 +158,49 @@ This glossary defines shared symbols for the formula knowledge base. App impleme
 | --- | --- | --- | --- |
 | `M` | `modulation_order` | modulation constellation size | unit |
 | `m` | `bits_per_symbol` | bits per symbol, `log2(M)` | bit/symbol |
+| `T_s` | `symbol_period` | symbol period | s |
+| `T_b` | `bit_period` | bit period | s |
 | `R_c` | `coding_rate` | channel coding rate | ratio |
 | `alpha` | `rolloff` | raised-cosine rolloff factor | ratio |
+| `B_n` | `noise_bandwidth` | receiver noise bandwidth used for baseband SNR conversions | Hz |
+| `B_RC_baseband` | `raised_cosine_baseband_bandwidth` | one-sided baseband raised-cosine bandwidth | Hz |
+| `B_RC_passband` | `raised_cosine_passband_bandwidth` | occupied passband bandwidth estimate | Hz |
+| `B_Nyquist_min` | `nyquist_min_bandwidth` | ideal zero-rolloff one-sided baseband bandwidth | Hz |
+| `E_b` | `energy_per_bit` | energy per information bit | J, dBJ |
+| `E_s` | `energy_per_symbol` | energy per modulation symbol | J, dBJ |
+| `S_data` | `data_sideband_power` | power in the data modulation sidebands | W, dBW |
+| `eta_capacity` | `capacity_spectral_efficiency` | Shannon-limit spectral efficiency | bit/s/Hz |
 | `BER` | `bit_error_rate` | bit error probability | ratio |
 | `SER` | `symbol_error_rate` | symbol error probability | ratio |
 | `PER` | `packet_error_rate` | packet or frame error probability | ratio |
 | `EVM` | `evm` | error vector magnitude | ratio, percent |
+| `Q(x)` | `gaussian_q_function` | Gaussian tail probability function | unitless |
+| `erfc(x)` | `complementary_error_function` | complementary error function | unitless |
+| `Delta_q` | `quantizer_step` | uniform quantizer step size | input-unit |
+| `V_FS` | `full_scale_range` | ADC or quantizer full-scale input range | V or source-unit |
+| `N_bits` | `adc_bits` | ADC or quantizer bit depth | bit |
+| `sigma_q` | `quantization_noise_rms` | RMS quantization noise | input-unit |
+| `ENOB` | `effective_number_of_bits` | effective ADC resolution inferred from SNR | bit |
+| `samples_per_symbol` | `samples_per_symbol` | digital oversampling ratio per symbol | sample/symbol |
+| `PAPR` | `peak_to_average_power_ratio` | peak-to-average signal power ratio | ratio, dB |
+| `r(t)` | `received_waveform` | received waveform entering matched filter/correlator | signal-unit |
+| `s_k(t)` | `candidate_signal_waveform` | kth candidate transmitted signal waveform | signal-unit |
+| `MatchedFilterOutput_k` | `matched_filter_decision_statistic` | correlation statistic for kth candidate signal | signal-unit |
+| `Delta_f_subcarrier` | `ofdm_subcarrier_spacing` | OFDM subcarrier spacing | Hz |
+| `T_u` | `ofdm_useful_symbol_duration` | OFDM useful symbol duration | s |
+| `T_cp` | `ofdm_cyclic_prefix_duration` | cyclic prefix duration | s |
+| `T_ofdm` | `ofdm_symbol_duration` | OFDM symbol duration including cyclic prefix | s |
+| `CP_Overhead` | `cyclic_prefix_overhead` | cyclic prefix overhead fraction | ratio |
+| `N_data_subcarriers` | `ofdm_data_subcarriers` | number of OFDM data-bearing subcarriers | unit |
+| `bits_per_subcarrier` | `ofdm_bits_per_subcarrier` | modulation bits mapped per data subcarrier | bit/subcarrier |
+| `sigma_t` | `timing_jitter_rms` | RMS timing jitter when used for phase-error calculations | s |
+| `sigma_phase` | `phase_error_rms` | RMS phase error | rad |
+| `Delta_f` | `frequency_offset` | carrier or oscillator frequency offset | Hz |
+| `T_obs` | `observation_time` | observation/integration interval for phase rotation | s |
+| `H` | `mimo_channel_matrix` | MIMO channel matrix | unitless |
+| `N_t` | `mimo_tx_antennas` | number of transmit antennas | unit |
+| `N_r` | `mimo_rx_antennas` | number of receive antennas | unit |
+| `rho` | `mimo_snr_linear` | MIMO receive SNR in linear form | ratio |
 | `depth` | `interleaver_depth` | interleaver depth | unit |
 | `block_bits` | `codeblock_bits` | code block length | bit |
 | `InfoBits` | `information_bits` | uncoded information length entering a channel encoder | bit |

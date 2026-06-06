@@ -37,6 +37,20 @@ Sources: NASA/JPL DESCANSO `Deep Space Telecommunications Systems Engineering`; 
 | DS-ATM-003 | DSN 810-005 105E section 2.1.3, equation 3 | `T_atm(theta)=T_M*(1-1/L(theta))`, `L(theta)=10^(A(theta)/10)` | Converts atmospheric attenuation into noise-temperature contribution. |
 | DS-ATM-004 | DSN 810-005 105E section 2.1.4, equations 4 to 6 | `T_CMB=2.725 K`; `T_CMB_eff=T_CMB/L(theta)`; `T_op=T_AMW+T_atm+T_CMB_eff` with `T_AMW=T1+T2*exp(-a_noise*theta)` | Adds sky-noise closure for receiver G/T and `N0` calculations. |
 
+## Digital Communications Textbook Cross-Checks
+
+Sources: Sklar/Harris `Digital Communications: Fundamentals and Applications`, 3rd edition; Proakis/Salehi `Digital Communications`, 5th edition; Haykin/Moher `Communication Systems`, 5th edition; NASA/JPL DESCANSO chapter 5 for deep-space telemetry modulation examples.
+
+| Extract ID | Standard location | Equation or table | Implementation note |
+| --- | --- | --- | --- |
+| DIGCOM-001 | Sklar/Harris topics on signals, spectra, baseband transmission, link budgets; Proakis/Haykin digital communications basics | `T_s=1/R_s`, `T_b=1/R_b`, `E_b=S_data/R_b`, `E_s=S_data/R_s` | Basic baseband timing and energy terms. Must share reference point with link-budget power. |
+| DIGCOM-002 | Sklar/Harris link budget and bandwidth-efficiency topics | `C=B log2(1+SNR)`, `SNR_required=2^eta_s-1` | Shannon capacity is a bound, not a guaranteed link closure. |
+| DIGCOM-003 | Sklar/Harris and Proakis pulse-shaping/baseband topics | `B_Nyquist_min=R_s/2`, `B_RC_baseband=(1+alpha)R_s/2`, `B_RC_passband~=(1+alpha)R_s` | Keep baseband one-sided and passband occupied bandwidth as separate fields. |
+| DIGCOM-004 | Sklar/Harris formatting/quantization topics | `Delta_q=V_FS/2^N`, `sigma_q^2=Delta_q^2/12`, `ENOB=(SNR_q_dB-1.76)/6.02` | Quantization assumptions require full-scale sine/high-resolution caveats in UI. |
+| DIGCOM-005 | DESCANSO section 5.3.1 and Proakis optimum receiver material | Matched filter/correlation detector decision statistic; coherent antipodal error `P_e=Q(sqrt(2Eb/N0))=0.5 erfc(sqrt(Eb/N0))` | DESCANSO states DSN uses matched/correlation detection and models AWGN for deep-space telemetry. |
+| DIGCOM-006 | DESCANSO section 5.2.2 and Sklar modulation topics | QPSK/SQPSK use two orthogonal BPSK components; QPSK/SQPSK have BPSK-like power efficiency and roughly half the bandwidth at same data rate and power | These are explanatory mode notes, not independent formulas beyond symbol-rate and bandwidth equations. |
+| DIGCOM-007 | Sklar/Harris OFDM/MIMO/synchronization topics | OFDM `Delta_f=1/T_u`, `T_ofdm=T_u+T_cp`, `CP_Overhead=T_cp/T_ofdm`, MIMO `C=log2(det(I+rho/Nt HH^H))` | Mark OFDM/MIMO formulas as scenario seeds until detailed pilot, framing, channel-state, and implementation-loss models are extracted. |
+
 ## ITU-R Rain and Earth-Space Propagation Extracts
 
 Sources: ITU-R P.838-3 `Specific attenuation model for rain for use in prediction methods`; ITU-R P.839-4 `Rain height model for prediction methods`; ITU-R P.618-14 `Propagation data and prediction methods required for the design of Earth-space telecommunication systems`.
@@ -97,6 +111,7 @@ Source: CCSDS 131.0-B-5, `TM Synchronization and Channel Coding`, September 2023
 | --- | --- | --- | --- |
 | ITU-P525 | Listed as source; formulas partly seeded | Equations 1-11 extracted into catalog and variables | Add unit-test examples for all practical-unit conversions when calculators are implemented. |
 | DESCANSO/DSN | Listed as source; antenna/link formulas partly seeded | Received-power chain, aperture efficiency, pointing/polarization loss, noise density, link margins, ranging SNR, and DSN atmospheric noise-temperature formulas extracted | Extract DSN 101/103/104 antenna station tables and build deterministic examples for each workbench. |
+| Digital comm books | Listed as source; BER/PER/modulation formulas partly seeded | Baseband timing, energy metrics, Shannon/Nyquist, pulse shaping, quantization, matched-filter detection, OFDM, phase jitter, and MIMO formulas added | Extract exact CCSDS modulation families and add test vectors for BER, quantization, OFDM, and phase-noise calculators. |
 | ITU-P618/P838/P839 | Listed as source; rain and total attenuation top-level formulas seeded | P.838 rain specific attenuation, P.839 rain height, and P.618 slant-path rain attenuation plus total attenuation formulas extracted | Extract P.676 gas, P.840 cloud, P.618 scintillation/depolarization, and coefficient map/table assets. |
 | CCSDS-414.1 | Listed as source; PN formulas partly seeded | Chip-rate equations, selector rules, cross-support examples, acquisition scaling, delay limits, and jitter reference rows extracted | Extract full transparent/regenerative mode field matrices and station/on-board performance tables. |
 | CCSDS-131 | Listed as source; generic coding formulas seeded | Public B-5 convolutional, R-S, Turbo, LDPC, ASM, CSM, randomizer, and frame-length extracts added | Verify deltas against Issue 6 when the official B-6 PDF is accessible. |

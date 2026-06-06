@@ -40,9 +40,9 @@ This registry records the standards, handbooks, and published books that should 
 | BOOK-MARAL | Maral, Bousquet, Sun, *Satellite Communications Systems*, 6th ed. | Wiley page lists link-performance chapter coverage. | Satellite uplink/downlink/overall link performance, transponder and intersatellite link formulas. |
 | BOOK-SMAD | Wertz et al., *Space Mission Engineering: The New SMAD* | Google Books description lists communications and engineering reference coverage. | Mission-level communications budget, contact time, coverage, design trade calculators. |
 | BOOK-BALANIS | Balanis, *Antenna Theory: Analysis and Design*, 4th ed. | Wiley page lists antenna parameters, effective areas, Friis, radar equation, antenna temperature. | Antenna gain, effective aperture, beamwidth, polarization, reflector/dish sizing, array fundamentals. |
-| BOOK-SKLAR | Sklar and Harris, *Digital Communications*, 3rd ed. | Pearson page lists modulation, coding, synchronization, OFDM, MIMO, link budgets. | Eb/N0, BER/PER, modulation, baseband, channel coding, synchronization formulas. |
-| BOOK-PROAKIS | Proakis and Salehi, *Digital Communications* | Published textbook; add publisher URL during next pass. | BER curves, matched filtering, AWGN, coding, synchronization. |
-| BOOK-HAYKIN | Haykin, *Communication Systems* | Published textbook; add publisher URL during next pass. | Baseband/passband signals, noise, modulation, filtering. |
+| BOOK-SKLAR | Sklar and Harris, *Digital Communications*, 3rd ed. | Pearson/InformIT pages list modulation, coding, synchronization, OFDM, MIMO, link budgets, and baseband transmission coverage. | Eb/N0, BER/PER, modulation, baseband, channel coding, synchronization, OFDM, MIMO formulas. |
+| BOOK-PROAKIS | Proakis and Salehi, *Digital Communications*, 5th ed. | Bibliographic/publisher evidence lists digital modulation schemes, AWGN optimum receivers, carrier/symbol synchronization, information theory, and coding topics. | BER curves, matched filtering, AWGN, coding, synchronization. |
+| BOOK-HAYKIN | Haykin and Moher, *Communication Systems*, 5th ed. | Wiley/bibliographic pages list analog and digital communications, signal processing, filtering, and systems coverage. | Baseband/passband signals, noise, modulation, filtering. |
 | BOOK-VALLADO | Vallado, *Fundamentals of Astrodynamics and Applications* | Published textbook; add publisher URL during next pass. | Orbit geometry, ground-station look angles, visibility, range/range-rate support. |
 | BOOK-BATE | Bate, Mueller, White, *Fundamentals of Astrodynamics* | Published textbook; add publisher URL during next pass. | Classical orbit mechanics and contact geometry sanity checks. |
 
@@ -90,4 +90,8 @@ This registry records the standards, handbooks, and published books that should 
 | BOOK-MARAL | https://onlinelibrary.wiley.com/doi/book/10.1002/9781119673811 |
 | BOOK-BALANIS | https://www.wiley-vch.de/de/fachgebiete/ingenieurwesen/antenna-theory-978-1-118-64206-1 |
 | BOOK-SKLAR | https://www.pearson.com/en-ca/subject-catalog/p/digital-communications-fundamentals-and-applications/P200000000614/9780134588568 |
+| BOOK-SKLAR InformIT | https://www.informit.com/store/digital-communications-fundamentals-and-applications-9780134588568 |
+| BOOK-SKLAR O'Reilly TOC | https://www.oreilly.com/library/view/digital-communications-fundamentals/9780134588636/bk01-toc.xhtml |
+| BOOK-PROAKIS bibliographic | https://www.campusbooks.com/books/9780072957167-digital-communications |
+| BOOK-HAYKIN bibliographic | https://ndlsearch.ndl.go.jp/books/R100000002-I000010817499 |
 | BOOK-SMAD | https://books.google.com/books/about/Space_Mission_Engineering.html?id=4JM7tAEACAAJ |

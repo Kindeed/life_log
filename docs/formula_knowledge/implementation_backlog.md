@@ -54,6 +54,7 @@ Each pass should produce a reviewed delta to `formula_catalog.md` and, where nee
    - Balanis for antenna formulas.
    - Sklar/Proakis/Haykin for modulation, coding, BER/PER, synchronization.
    - Maral/Bousquet and SMAD for satellite/system link budget organization.
+   - Use `standard_extracts.md` digital-communications rows to build baseband timing, quantization, matched-filter, OFDM, phase-error, and MIMO calculator tests before UI work.
 
 6. Compression and Proximity-1 pass:
    - CCSDS 121.0-B, 122.0-B, and 123.0-B.
@@ -114,6 +115,10 @@ Recommended implementation order:
    - BER/PER approximations
    - coding overhead
    - interleaver latency
+   - quantization and ENOB
+   - matched-filter decision metrics
+   - OFDM subcarrier, cyclic-prefix, and PAPR outputs
+   - phase jitter/frequency-offset sanity checks
 
 5. CCSDS frame/coding workbench:
    - TM/TC/AOS/USLP frame efficiency

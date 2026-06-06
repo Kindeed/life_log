@@ -9,7 +9,7 @@ This matrix tracks whether the knowledge base is moving toward the requested com
 | Receiver/noise | noise figure, equivalent temperature, cascaded noise, N0 | Sklar, Maral/Bousquet, DSN 810-005 | Noise density and DSN atmospheric/system operating noise formulas extracted; RF noise formulas seeded | Add lossy feed before LNA treatment, measured Y-factor calibration, and DSN 101/103/104 antenna-noise table extraction. |
 | Link budget | FSPL, C/N0, Eb/N0, Es/N0, margin, inverse sizing | ITU-R P.525, DSN 810-005, Maral/Bousquet | Partly implemented; P.525-5 equations and DESCANSO received-power/margin chain extracted | Add uplink/downlink/relay multi-hop budget and transponder saturation/backoff. |
 | Propagation | rain, gas, cloud, scintillation, availability | ITU-R P.618, P.676, P.838, P.839, P.840 | P.838 rain specific attenuation, P.839 rain height, P.618 slant-path rain attenuation and total attenuation formulas extracted; DSN atmosphere/noise formulas extracted | Extract P.676 gas, P.840 cloud, P.618 scintillation/depolarization procedures, coefficient tables/maps, and validity ranges. |
-| Modulation/baseband | symbol rate, rolloff bandwidth, BER/PER, EVM, Shannon | Sklar, Proakis, CCSDS 401 | Partly implemented and seeded | Add CCSDS modulation families, OQPSK/SQPN, filtered PSK, OFDM and DVB-S2 MODCOD details. |
+| Modulation/baseband | symbol rate, rolloff bandwidth, BER/PER, EVM, Shannon, quantization, matched filtering, OFDM, MIMO, synchronization impairments | Sklar, Proakis, Haykin, CCSDS 401, DESCANSO | Baseband timing/energy, Shannon/Nyquist, raised-cosine, quantization, matched-filter detection, OFDM, phase-jitter, frequency-offset, and MIMO seed formulas added | Add CCSDS modulation families, OQPSK/SQPN, filtered PSK, DVB-S2 MODCOD details, and verified BER/OFDM test vectors. |
 | Channel coding | RS, convolutional, turbo, LDPC, BCH, interleaving | CCSDS 131, 131.2, 131.3, 231, Sklar | CCSDS 131.0-B-5 and 231.0-B-4 first-pass tables/formulas extracted; generic textbook formulas seeded | Verify CCSDS 131.0-B-6 deltas, then extract 131.2/131.3 high-rate telemetry modes and textbook BER/coding performance curves. |
 | Telemetry frames | PCM, space packet, TM/AOS/USLP frame overhead, VC throughput | IRIG practice, CCSDS 132, 133, 732, 732.1 | PCM partly implemented; TM frame field/data capacity extracts started | Extract AOS/USLP exact field lengths, packet extraction examples, insert zones, security interaction. |
 | Telecommand | TC frames, CLTU, BCH/LDPC, repeat, COP/ARQ goodput | CCSDS 231, 232, COP-1 | TC frame capacity and CLTU BCH/LDPC sizing extracts started | Extract COP/FARM timing model and PLOP timing details. |
@@ -22,7 +22,7 @@ This matrix tracks whether the knowledge base is moving toward the requested com
 
 ## Current Numeric Coverage
 
-As of this pass, `formula_catalog.md` contains over 280 formula or formula-family entries across RF, link, baseband, telemetry, telecommand, ranging/tracking, system, optical, orbit/contact, compression, protocol, and measurement domains.
+As of this pass, `formula_catalog.md` contains over 310 formula or formula-family entries across RF, link, baseband, telemetry, telecommand, ranging/tracking, system, optical, orbit/contact, compression, protocol, and measurement domains.
 
 ## Not Yet Complete
 

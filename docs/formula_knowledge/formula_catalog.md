@@ -147,6 +147,38 @@ Notation:
 | BB-028 | `LDPC_EffectiveRate = k_ldpc / n_ldpc` | selected LDPC table row | Effective LDPC rate from the exact CCSDS table values. Nominal labels such as 7/8 should not be used to derive `n_ldpc` by algebra alone. | CCSDS-131 | Procedure |
 | BB-029 | `LDPC_StreamCodeblockBits = m_ldpc * n_ldpc` | `m_ldpc`: codewords per LDPC codeblock | Codeblock length for LDPC coding of a stream of Sync-Marked Transfer Frames. | CCSDS-131 | Seeded |
 | BB-030 | `LDPC_StreamInfoBits = m_ldpc * k_ldpc` | slice length and codeblock size | Information bits consumed by one stream-LDPC codeblock. | CCSDS-131 | Seeded |
+| BB-031 | `T_s = 1 / R_s` | symbol rate | Symbol period. | BOOK-SKLAR, BOOK-PROAKIS, DESCANSO-DSTSE | Seeded |
+| BB-032 | `T_b = 1 / R_b` | bit rate | Bit period. | BOOK-SKLAR, BOOK-PROAKIS | Seeded |
+| BB-033 | `E_b = S_data / R_b` | data-sideband power and bit rate | Received or transmitted energy per information bit, depending on the selected reference point. | BOOK-SKLAR, DESCANSO-DSTSE | Seeded |
+| BB-034 | `E_s = S_data / R_s` | data-sideband power and symbol rate | Energy per modulation symbol. | BOOK-SKLAR, BOOK-PROAKIS | Seeded |
+| BB-035 | `E_s/N0_dB = E_b/N0_dB + 10log10(m * R_c)` | bits per symbol and coding rate | Converts information-bit energy metric to coded modulation symbol metric. | BOOK-SKLAR, BOOK-PROAKIS | Seeded |
+| BB-036 | `E_b/N0_dB = C/N0_dBHz - 10log10(R_b)` | carrier-to-noise density and bit rate | Same relationship used by link-budget calculators, kept here as a baseband performance metric. | BOOK-SKLAR, DESCANSO-DSTSE | Seeded |
+| BB-037 | `C/N_dB = C/N0_dBHz - 10log10(B_n)` | receiver noise bandwidth | Carrier-to-noise ratio in a finite noise bandwidth. | BOOK-SKLAR, BOOK-HAYKIN | Seeded |
+| BB-038 | `SNR_linear = (E_b/N0) * (R_b / B_n)` | bit-energy metric and noise bandwidth | Relates bit-energy metric to measured SNR in bandwidth. | BOOK-SKLAR, BOOK-HAYKIN | Seeded |
+| BB-039 | `C = B * log2(1 + SNR_linear)` | bandwidth and SNR | Shannon-Hartley capacity upper bound. | BOOK-SKLAR, BOOK-HAYKIN | Seeded |
+| BB-040 | `eta_capacity = log2(1 + SNR_linear)` | SNR | Ideal spectral efficiency upper bound in bit/s/Hz. | BOOK-SKLAR, BOOK-HAYKIN | Seeded |
+| BB-041 | `SNR_required = 2^eta_s - 1` | target spectral efficiency | Shannon-limit SNR needed for a target spectral efficiency. | BOOK-SKLAR, BOOK-HAYKIN | Seeded |
+| BB-042 | `B_Nyquist_min = R_s / 2` | ideal zero-rolloff baseband signaling | Minimum one-sided baseband bandwidth for ideal Nyquist pulses. | BOOK-SKLAR, BOOK-PROAKIS | Seeded |
+| BB-043 | `B_RC_baseband = (1 + alpha) * R_s / 2` | raised-cosine rolloff | One-sided baseband raised-cosine bandwidth. | BOOK-SKLAR, BOOK-PROAKIS | Seeded |
+| BB-044 | `B_RC_passband ~= (1 + alpha) * R_s` | passband raised-cosine signal | Approximate occupied passband bandwidth for raised-cosine shaped digital modulation. | BOOK-SKLAR, CCSDS-401 | Seeded |
+| BB-045 | `samples_per_symbol = f_s / R_s` | sampling and symbol rates | Digital receiver/transmitter oversampling ratio. | BOOK-SKLAR, BOOK-HAYKIN | Seeded |
+| BB-046 | `Delta_q = V_FS / 2^N_bits` | full-scale quantizer range and ADC bits | Uniform quantizer step size. | BOOK-SKLAR, BOOK-HAYKIN | Seeded |
+| BB-047 | `sigma_q^2 = Delta_q^2 / 12` | quantizer step size | Uniform quantization-noise variance under high-resolution assumptions. | BOOK-SKLAR, BOOK-HAYKIN | Seeded |
+| BB-048 | `ENOB = (SNR_q_dB - 1.76) / 6.02` | quantization SNR | Effective number of bits from measured or target SNR. | BOOK-SKLAR, BOOK-HAYKIN | Seeded |
+| BB-049 | `PAPR_dB = 10log10(P_peak / P_avg)` | peak and average signal power | Peak-to-average power ratio, important for OFDM and saturated transmit chains. | BOOK-SKLAR | Seeded |
+| BB-050 | `MatchedFilterOutput_k = integral(r(t) * s_k(t) dt)` | received waveform and candidate signal | Correlation or matched-filter decision statistic for symbol detection. | BOOK-PROAKIS, DESCANSO-DSTSE | Procedure |
+| BB-051 | `P_e_binary = Q(sqrt(2*E_b/N0)) = 0.5*erfc(sqrt(E_b/N0))` | coherent antipodal binary signaling | Coherent BPSK/antipodal bit error probability in AWGN. | BOOK-PROAKIS, DESCANSO-DSTSE | Seeded |
+| BB-052 | `Q(x) = 0.5*erfc(x/sqrt(2))` | Gaussian Q-function | Relation between Gaussian Q-function and complementary error function. | BOOK-SKLAR, BOOK-PROAKIS | Seeded |
+| BB-053 | `P_b_DPSK = 0.5*exp(-E_b/N0)` | differential binary PSK | Noncoherent/differential binary PSK bit error probability in AWGN. | BOOK-SKLAR, BOOK-PROAKIS | Seeded |
+| BB-054 | `P_b_MFSK_noncoh ~= 0.5*exp(-E_b/(2*N0))` | binary orthogonal FSK approximation | First-cut noncoherent orthogonal binary FSK error approximation; exact M-ary expressions are table/procedure candidates. | BOOK-SKLAR, BOOK-PROAKIS | Procedure |
+| BB-055 | `Delta_f_subcarrier = 1 / T_u` | useful OFDM symbol duration | Orthogonal OFDM subcarrier spacing. | BOOK-SKLAR | Seeded |
+| BB-056 | `T_ofdm = T_u + T_cp` | useful symbol and cyclic prefix | Total OFDM symbol duration including cyclic prefix. | BOOK-SKLAR | Seeded |
+| BB-057 | `CP_Overhead = T_cp / (T_u + T_cp)` | cyclic prefix duration | OFDM cyclic-prefix overhead fraction. | BOOK-SKLAR | Seeded |
+| BB-058 | `OFDM_NetRate = N_data_subcarriers * bits_per_subcarrier * code_rate / T_ofdm` | OFDM subcarriers and coding | Net coded payload rate before pilots, framing, and higher-layer overhead. | BOOK-SKLAR | Seeded |
+| BB-059 | `PhaseError_rms = 2*pi*f_c*sigma_t` | carrier frequency and timing jitter | RMS phase error induced by timing jitter. | BOOK-SKLAR, BOOK-HAYKIN | Seeded |
+| BB-060 | `SNR_phase_limit ~= 1 / sigma_phase^2` | small phase jitter in radians | Approximate SNR limit from RMS phase noise/jitter. | BOOK-SKLAR, BOOK-HAYKIN | Procedure |
+| BB-061 | `FreqOffsetPhase = 2*pi*Delta_f*T_obs` | frequency offset and observation time | Phase rotation accumulated from carrier frequency offset. | BOOK-SKLAR, DESCANSO-DSTSE | Seeded |
+| BB-062 | `MIMO_C = log2(det(I_Nr + rho/Nt * H*H^H))` | channel matrix, SNR, antennas | Flat-fading MIMO capacity model with equal power allocation. | BOOK-SKLAR, BOOK-PROAKIS | Procedure |
 
 ## Telemetry, PCM, Space Packet, and Transfer Frames
 
