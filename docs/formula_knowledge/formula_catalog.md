@@ -104,6 +104,14 @@ Notation:
 | TM-012 | `SyncOverhead = ASM_bits / (ASM_bits + frame_bits)` | attached sync marker bits | Attached sync marker overhead. | CCSDS-131 | Procedure |
 | TM-013 | `RandomizerOverhead = 0` | no added bits | CCSDS randomization changes bit pattern, not stream length. | CCSDS-131 | Seeded |
 | TM-014 | `StorageFillTime = StorageCapacityBits / GeneratedDataRate` | storage bits, data rate | On-board data storage fill time. | BOOK-SMAD | Seeded |
+| TM-015 | `TM_DataFieldOctets = TM_FrameOctets - 6 - SecondaryHeaderOctets - OCFOctets - FECFOctets` | TM transfer frame field lengths | TM data field length without SDLS. Secondary header, OCF, and FECF terms are zero when absent. | CCSDS-132 | Seeded |
+| TM-016 | `TM_SecondaryHeaderOctets = 1 + SecondaryHeaderDataOctets` | secondary header ID plus data field | TM secondary header length. The header is optional and up to 64 octets. | CCSDS-132 | Seeded |
+| TM-017 | `TM_SecondaryHeaderLengthField = TM_SecondaryHeaderOctets - 1` | 6-bit length field | Value encoded in the TM secondary header length subfield. | CCSDS-132 | Seeded |
+| TM-018 | `TM_OCFOverhead = 4 / TM_FrameOctets` | OCF present | Operational Control Field overhead for TM frames. | CCSDS-132 | Seeded |
+| TM-019 | `TM_FECFOverhead = 2 / TM_FrameOctets` | FECF present | Frame Error Control Field overhead for TM frames. | CCSDS-132 | Seeded |
+| TM-020 | `TM_SDLS_DataFieldOctets = TM_FrameOctets - 6 - SecondaryHeaderOctets - SecurityHeaderOctets - SecurityTrailerOctets - OCFOctets - FECFOctets` | SDLS security fields | TM data-field capacity when SDLS is used. | CCSDS-132, CCSDS-355 | Seeded |
+| TM-021 | `TM_FrameEfficiency = TM_DataFieldOctets / TM_FrameOctets` | useful data capacity | TM frame data-field efficiency before packet/idle effects. | CCSDS-132 | Seeded |
+| TM-022 | `FrameCountNext = (FrameCount + 1) mod 256` | master or virtual channel frame count | TM master-channel and virtual-channel frame counters are 8-bit modulo counters. | CCSDS-132 | Seeded |
 
 ## Telecommand and Uplink Commanding
 
@@ -119,6 +127,21 @@ Notation:
 | TC-008 | `LDPC_rate = k / n` | LDPC block parameters | Short TC LDPC code rate. Exact selected code parameters from standard. | CCSDS-231 | Procedure |
 | TC-009 | `AuthenticationOverhead = AuthTagBits / (FrameBits + AuthTagBits)` | security tag length | Data-link or application security overhead. | CCSDS-355, mission security design | Seeded |
 | TC-010 | `RequiredUplinkRate = CommandBits / RequiredDeliveryTime / efficiency` | delivery target | Inverts command throughput for uplink planning. | CCSDS-232, BOOK-SMAD | Seeded |
+| TC-011 | `TC_FrameOctets = FrameLengthCount + 1` | 10-bit TC frame length count | TC primary header length count conversion. | CCSDS-232 | Seeded |
+| TC-012 | `TC_DataFieldOctets = TC_FrameOctets - 5 - FECFOctets` | TC primary header and optional FECF | TC transfer-frame data-field capacity without SDLS. | CCSDS-232 | Seeded |
+| TC-013 | `TC_MaxDataFieldOctets = 1019 - FECFOctets` | `FECFOctets`: 0 or 2 | TC data field maximum: 1019 octets without FECF, 1017 octets with FECF. | CCSDS-232 | Seeded |
+| TC-014 | `SegmentUserDataOctets = TC_DataFieldOctets - 1` | segment header present | User data capacity when the 1-octet TC Segment Header is used. | CCSDS-232 | Seeded |
+| TC-015 | `TC_SDLS_DataFieldOctets = TC_FrameOctets - 5 - SegmentHeaderOctets - SecurityHeaderOctets - SecurityTrailerOctets - FECFOctets` | Type-D frame with SDLS | TC data-field capacity when SDLS is used. Type-C frames do not carry SDLS fields. | CCSDS-232, CCSDS-355 | Seeded |
+| TC-016 | `FECF = [(X^16 M(X)) + (X^(n-16) L(X))] mod G(X)` | `G(X)=X^16+X^12+X^5+1`; `L(X)=sum(X^i,i=0..15)` | 16-bit FECF CRC used by TM and TC transfer frames when FECF is present. | CCSDS-132, CCSDS-232 | Procedure |
+| TC-017 | `BCH_Codewords = ceil(TransferFrameBits / 56)` | 56 information bits per BCH codeword | Number of TC BCH codewords required for transfer frames plus fill. | CCSDS-231 | Seeded |
+| TC-018 | `BCH_FillBits = (56 - (TransferFrameBits mod 56)) mod 56` | fill pattern is alternating 0/1 | BCH fill needed to complete an integral number of 56-bit information groups. | CCSDS-231 | Seeded |
+| TC-019 | `BCH_CLTU_Bits = 16 + 64 * BCH_Codewords + 64` | start sequence, BCH codewords, tail sequence | Total CLTU size when BCH coding is used. | CCSDS-231 | Seeded |
+| TC-020 | `BCH_TransmittedRate = 56 / 64` | information bits per transmitted BCH codeword | Effective transmitted BCH codeword payload fraction including the appended filler bit. | CCSDS-231 | Seeded |
+| TC-021 | `LDPC_Codewords = ceil(TransferFrameBits / k_ldpc)` | `k_ldpc`: 64 or 256 | Number of LDPC codewords required for transfer frames plus fill. | CCSDS-231 | Seeded |
+| TC-022 | `LDPC_FillBits = (k_ldpc - (TransferFrameBits mod k_ldpc)) mod k_ldpc` | fill before encoding | LDPC fill needed to complete an integral number of information blocks. | CCSDS-231 | Seeded |
+| TC-023 | `LDPC_CLTU_Bits = 64 + n_ldpc * LDPC_Codewords + TailBits` | start sequence, LDPC codewords, optional tail | Total CLTU size when LDPC coding is used. `TailBits` is 0 or 128 for LDPC(128,64), and 0 for LDPC(512,256). | CCSDS-231 | Seeded |
+| TC-024 | `RepeatedCLTUBits = Repetitions * CLTU_Bits` | repetitions parameter | Radiated CLTU bit count for repeated transfer. | CCSDS-231 | Seeded |
+| TC-025 | `CLTU_Duration = CLTU_Bits / ChannelSymbolRate` | channel symbol/bit rate after coding | First-order CLTU transmission duration. | CCSDS-231 | Seeded |
 
 ## Ranging, Doppler, Tracking, and External Measurement
 

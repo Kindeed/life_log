@@ -11,9 +11,9 @@ This registry records the standards, handbooks, and published books that should 
 | CCSDS-131 | CCSDS 131.0-B, TM Synchronization and Channel Coding | CCSDS SLS-C&S | Active TM coding standard; CCSDS lists Issue 6 in April 2026. | TM sync markers, randomization, convolutional/turbo/LDPC/Reed-Solomon families, coded stream overhead. |
 | CCSDS-131.2 | CCSDS 131.2-B, Flexible Advanced Coding and Modulation Scheme for High Rate Telemetry Applications | CCSDS SLS-C&S | High-rate telemetry coding and modulation. | ACM/SCCC-oriented high-rate telemetry calculators. |
 | CCSDS-131.3 | CCSDS 131.3-B, CCSDS Space Link Protocols over ETSI DVB-S2 Standard | CCSDS SLS-C&S | High data rate telemetry, DVB-S2 MODCOD applicability, USLP support. | MODCOD table extraction, spectral efficiency, frame overhead. |
-| CCSDS-231 | CCSDS 231.0-B-4, TC Synchronization and Channel Coding | CCSDS SLS-C&S | Active TC synchronization/channel coding standard, July 2021. | CLTU, BCH/LDPC coding, repeated transmission, uplink coding overhead. |
-| CCSDS-232 | CCSDS 232.0-B-4, TC Space Data Link Protocol | CCSDS SLS-SLP | TC asynchronous transfer frame protocol. | TC frame overhead, command throughput, COP-related sizing. |
-| CCSDS-132 | CCSDS 132.0-B, TM Space Data Link Protocol | CCSDS SLS-SLP | TM transfer frame protocol. | TM frame/packet overhead and virtual-channel throughput. |
+| CCSDS-231 | CCSDS 231.0-B-4, TC Synchronization and Channel Coding | CCSDS SLS-C&S | Active TC synchronization/channel coding standard, July 2021; BCH/LDPC and CLTU extracts started in `standard_extracts.md`. | CLTU, BCH/LDPC coding, repeated transmission, uplink coding overhead. |
+| CCSDS-232 | CCSDS 232.0-B-4, TC Space Data Link Protocol | CCSDS SLS-SLP | TC asynchronous transfer frame protocol; current version includes Corrigendum 1 dated October 2023. | TC frame overhead, command throughput, COP-related sizing. |
+| CCSDS-132 | CCSDS 132.0-B-3, TM Space Data Link Protocol | CCSDS SLS-SLP | TM transfer frame protocol, October 2021; TM frame field extracts started in `standard_extracts.md`. | TM frame/packet overhead and virtual-channel throughput. |
 | CCSDS-732 | CCSDS 732.0-B-5, AOS Space Data Link Protocol | CCSDS SLS-SLP | AOS data link, October 2025. | AOS frame overhead, insert zone, virtual channels, packet service throughput. |
 | CCSDS-732.1 | CCSDS 732.1-B-3, Unified Space Data Link Protocol | CCSDS SLS-SLP | USLP, June 2024. | Unified frame overhead and service-mode sizing. |
 | CCSDS-414.1 | CCSDS 414.1-B-3, Pseudo-Noise Ranging Systems | CCSDS SLS-RFM | PN ranging, transparent/regenerative systems, January 2022; chip-rate and acquisition extracts started in `standard_extracts.md`. | PN ranging chip-rate, ambiguity, modulation and processing architecture. |
@@ -48,8 +48,8 @@ This registry records the standards, handbooks, and published books that should 
 
 ## Next Source Extraction Tasks
 
-1. Download and inspect the active CCSDS PDFs for 131.0-B-6, 231.0-B-4, 414.1-B-3, 132.0-B, 232.0-B, 732.0-B, and 732.1-B.
-2. Extract only implementation-relevant tables: code rates, frame lengths, sync marker sizes, transfer frame fields, MODCOD identifiers, PN chip-rate values.
+1. Continue active CCSDS PDF extraction for 131.0-B-6, 732.0-B, 732.1-B, COP-1, compression, and Proximity-1; first-pass extracts already exist for 231.0-B-4, 414.1-B-3, 132.0-B-3, and 232.0-B-4.
+2. Extract only implementation-relevant tables: code rates, frame lengths, sync marker sizes, transfer frame fields, MODCOD identifiers, PN chip-rate values, and mode/managed-parameter options.
 3. Cross-check ITU-R P.618 dependencies: P.618 calls into P.837, P.838, P.839, P.840, P.676 depending on fade mechanism.
 4. Extract CCSDS compression and Proximity-1 sizing fields where public Blue/Green Books define selectable parameters.
 5. Add ECSS and Chinese/GJB public index references only where public bibliographic details are available. Do not encode restricted standards text.
@@ -62,6 +62,9 @@ This registry records the standards, handbooks, and published books that should 
 | CCSDS active publications | https://ccsds.org/publications/allpubs/ |
 | CCSDS search | https://ccsds.org/searchpubs/ |
 | CCSDS-231 | https://ccsds.org/publications/allpubs/entry/3203/ |
+| CCSDS-231 PDF | https://public.ccsds.org/Pubs/231x0b4e1.pdf |
+| CCSDS-132 PDF | https://public.ccsds.org/Pubs/132x0b3.pdf |
+| CCSDS-232 PDF | https://public.ccsds.org/Pubs/232x0b4e1c1.pdf |
 | CCSDS-414.1 | https://ccsds.org/publications/allpubs/entry/3249/ |
 | CCSDS-414.1 PDF | https://public.ccsds.org/Pubs/414x1b3e1.pdf |
 | CCSDS-121/122/123 search | https://ccsds.org/searchpubs/ |

@@ -26,6 +26,7 @@ Each pass should produce a reviewed delta to `formula_catalog.md` and, where nee
    - CCSDS 131.2-B and 131.3-B.
    - CCSDS 231.0-B-4.
    - Extract code families, code rates, sync marker sizes, randomizer behavior, CLTU/codeblock overhead, and MODCOD references.
+   - Use `standard_extracts.md` CCSDS 231 rows to build BCH/LDPC CLTU sizing tests before adding telecommand UI controls.
 
 2. CCSDS data-link pass:
    - TM Space Data Link Protocol.
@@ -33,6 +34,7 @@ Each pass should produce a reviewed delta to `formula_catalog.md` and, where nee
    - AOS Space Data Link Protocol.
    - USLP.
    - Extract frame field sizes, optional field switches, packet/transfer-frame efficiency formulas, virtual-channel throughput formulas.
+   - Use `standard_extracts.md` CCSDS 132/232 rows to create TM/TC field-capacity schemas and SDLS overhead test cases.
 
 3. Ranging/tracking pass:
    - CCSDS 414.1-B-3 PN Ranging.

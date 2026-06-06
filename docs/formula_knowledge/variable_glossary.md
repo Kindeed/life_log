@@ -97,7 +97,17 @@ This glossary defines shared symbols for the formula knowledge base. App impleme
 | `minor_frames_per_major` | `minor_per_major` | minor frames in major frame | unit |
 | `sync_bits` | `sync_bits` | synchronization marker length | bit |
 | `TransferFrameBits` | `transfer_frame_bits` | complete transfer frame length | bit |
+| `TM_FrameOctets` | `tm_frame_octets` | complete TM transfer frame length | octet |
+| `TC_FrameOctets` | `tc_frame_octets` | complete TC transfer frame length | octet |
+| `FrameLengthCount` | `frame_length_count` | TC frame length count field equal to total octets minus one | octet-count |
 | `DataFieldBits` | `data_field_bits` | payload data field length | bit |
+| `SecondaryHeaderOctets` | `secondary_header_octets` | TM secondary header length when present | octet |
+| `OCFOctets` | `ocf_octets` | Operational Control Field length, usually 4 octets when present | octet |
+| `FECFOctets` | `fecf_octets` | Frame Error Control Field length, 2 octets when present | octet |
+| `SecurityHeaderOctets` | `security_header_octets` | SDLS security header length | octet |
+| `SecurityTrailerOctets` | `security_trailer_octets` | SDLS security trailer length | octet |
+| `SegmentHeaderOctets` | `segment_header_octets` | TC segment header length, 1 octet when present | octet |
+| `FrameCount` | `frame_count` | master, virtual, or TC frame sequence count | unit |
 | `VC_share` | `virtual_channel_share` | assigned virtual-channel fraction | ratio |
 
 ## Telecommand
@@ -111,6 +121,13 @@ This glossary defines shared symbols for the formula knowledge base. App impleme
 | `N_repeat` | `repeat_count` | command repeat count | unit |
 | `GuardTime` | `guard_time` | inter-frame guard time | s, ms |
 | `UplinkRate` | `uplink_rate` | telecommand link bit rate | bps |
+| `CLTU_Bits` | `cltu_bits` | complete Communications Link Transmission Unit length | bit |
+| `BCH_Codewords` | `bch_codewords` | number of TC BCH codewords in a CLTU | unit |
+| `LDPC_Codewords` | `ldpc_codewords` | number of TC LDPC codewords in a CLTU | unit |
+| `k_ldpc` | `ldpc_information_bits` | LDPC information bits per codeword | bit |
+| `n_ldpc` | `ldpc_codeword_bits` | LDPC transmitted codeword length | bit |
+| `TailBits` | `tail_bits` | CLTU tail-sequence length | bit |
+| `Repetitions` | `cltu_repetitions` | number of CLTU transfers requested by the repetitions parameter | unit |
 
 ## Tracking, Ranging, and Doppler
 

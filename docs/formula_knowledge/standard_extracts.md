@@ -42,3 +42,54 @@ Source: CCSDS 414.1-B-3, `Pseudo-Noise (PN) Ranging Systems`, January 2022. The 
 | --- | --- | --- | --- |
 | ITU-P525 | Listed as source; formulas partly seeded | Equations 1-11 extracted into catalog and variables | Add unit-test examples for all practical-unit conversions when calculators are implemented. |
 | CCSDS-414.1 | Listed as source; PN formulas partly seeded | Chip-rate equations, selector rules, cross-support examples, acquisition scaling, delay limits, and jitter reference rows extracted | Extract full transparent/regenerative mode field matrices and station/on-board performance tables. |
+| CCSDS-231 | Listed as source; CLTU formulas partly seeded | BCH/LDPC codeword sizing, CLTU start/tail lengths, fill formulas, managed parameters extracted | Extract PLOP timing details and any mission-specific maximum CLTU constraints when implementing. |
+| CCSDS-132 | Listed as source; generic TM frame formulas seeded | TM primary/secondary header fields, data-field capacity, OCF/FECF overhead, SDLS capacity extracted | Add machine-readable field schema and examples for packet/OID extraction. |
+| CCSDS-232 | Listed as source; generic TC frame formulas seeded | TC frame length count, data-field capacity, segment header, control command sizes, FECF, SDLS capacity extracted | Add COP/FARM timing and sequence-control behavior in a later pass. |
+
+## CCSDS 231.0-B-4 TC Synchronization and Channel Coding
+
+Source: CCSDS 231.0-B-4, `TC Synchronization and Channel Coding`, July 2021.
+
+| Extract ID | Standard location | Equation or table | Implementation note |
+| --- | --- | --- | --- |
+| TCCH-001 | Section 3.2, figure 3-1 | BCH codeword has 56 information bits, 7 complemented parity bits, and 1 appended filler bit; transmitted length is 64 bits | Use `BCH_Codewords = ceil(TransferFrameBits/56)` for sizing. |
+| TCCH-002 | Section 3.3 | BCH generator polynomial `g(x) = x^7 + x^6 + x^2 + 1` | Store as implementation metadata; parity generation is procedural. |
+| TCCH-003 | Section 3.4 | `BCH_FillBits = (56 - (TransferFrameBits mod 56)) mod 56` | Fill pattern starts with zero and alternates ones and zeros. |
+| TCCH-004 | Section 4.2 | LDPC options: `(n=128,k=64)` and `(n=512,k=256)`, both with code rate `1/2` | Use selectable `n_ldpc` and `k_ldpc` values; matrices remain table/procedure data. |
+| TCCH-005 | Section 4.4 | `LDPC_FillBits = (k_ldpc - (TransferFrameBits mod k_ldpc)) mod k_ldpc` | LDPC fill is added before encoding and then encoded/randomized. |
+| TCCH-006 | Section 5.2.1, figure 5-1 | BCH CLTU structure: 16-bit Start Sequence, 64-bit BCH codewords, 64-bit Tail Sequence | `BCH_CLTU_Bits = 16 + 64*BCH_Codewords + 64`. |
+| TCCH-007 | Section 5.2.1, figure 5-2 | LDPC CLTU structure: 64-bit Start Sequence, 128- or 512-bit LDPC codewords, optional 128-bit tail for LDPC(128,64) | `LDPC_CLTU_Bits = 64 + n_ldpc*LDPC_Codewords + TailBits`. |
+| TCCH-008 | Section 5.2.2 | Start sequence lengths: 16 bits for BCH; 64 bits for LDPC | Start bit patterns are standard constants; calculators normally only need lengths. |
+| TCCH-009 | Section 5.2.4 | Tail sequence lengths: 64 bits for BCH; optional 128 bits for LDPC(128,64); no tail for LDPC(512,256) | Tail handling is a managed option for short LDPC. |
+| TCCH-010 | Section 8.2 | Managed parameters include code type, maximum CLTU length, repetitions maximum, PLOP, BCH randomizer, BCH decoding mode, LDPC code length, LDPC tail usage | Convert to calculator validation/options before app implementation. |
+
+## CCSDS 132.0-B-3 TM Space Data Link Protocol
+
+Source: CCSDS 132.0-B-3, `TM Space Data Link Protocol`, October 2021.
+
+| Extract ID | Standard location | Equation or table | Implementation note |
+| --- | --- | --- | --- |
+| TMDL-001 | Section 4.1.1, figure 4-1 | TM frame fields: 6-octet primary header; optional secondary header up to 64 octets; variable data field; optional 4-octet OCF; optional 2-octet FECF | Frame length is constant within a mission phase for the relevant channel. |
+| TMDL-002 | Section 4.1.2, figure 4-2 | Primary header fields: 2-bit TFVN, 10-bit SCID, 3-bit VCID, 1-bit OCF flag, 8-bit MC frame count, 8-bit VC frame count, 16-bit data field status | Use as a field-width table, not a standalone formula. |
+| TMDL-003 | Section 4.1.2.7 | Data field status subfields: secondary-header flag 1 bit, sync flag 1 bit, packet-order flag 1 bit, segment length ID 2 bits, first header pointer 11 bits | Important for packet extraction and idle/OID cases. |
+| TMDL-004 | Section 4.1.2.7.6 | First Header Pointer special values: `11111111111` no packet starts; `11111111110` only idle data | Encode as option constants for parser/calculator explanations. |
+| TMDL-005 | Section 4.1.3 | Secondary header length: identification octet plus 1-63 octets of data; length field stores total secondary header octets minus one | `TM_SecondaryHeaderLengthField = TM_SecondaryHeaderOctets - 1`. |
+| TMDL-006 | Section 4.1.4 | `TM_DataFieldOctets = TM_FrameOctets - 6 - SecondaryHeaderOctets - OCFOctets - FECFOctets` | Data field contains packets, one VCA_SDU, or idle data. |
+| TMDL-007 | Section 4.1.6 | FECF is optional, 16 bits, computed with `G(X)=X^16+X^12+X^5+1` and all-ones preset polynomial | Same FECF formula family as TC. |
+| TMDL-008 | Section 6.3 | TM with SDLS inserts security header before data and security trailer after data, reducing the data-field length | `TM_SDLS_DataFieldOctets = TM_FrameOctets - 6 - SecondaryHeaderOctets - SecurityHeaderOctets - SecurityTrailerOctets - OCFOctets - FECFOctets`. |
+
+## CCSDS 232.0-B-4 TC Space Data Link Protocol
+
+Source: CCSDS 232.0-B-4, `TC Space Data Link Protocol`, October 2021, with Corrigendum 1 dated October 2023.
+
+| Extract ID | Standard location | Equation or table | Implementation note |
+| --- | --- | --- | --- |
+| TCDL-001 | Section 4.1.1, figure 4-1 | TC frame fields: 5-octet primary header; variable data field up to 1019 or 1017 octets; optional 2-octet FECF | TC frame is variable length, unlike TM fixed-length frames. |
+| TCDL-002 | Section 4.1.2, figure 4-2 | TC primary header fields: 2-bit TFVN, 1-bit bypass flag, 1-bit control command flag, 2-bit spare, 10-bit SCID, 6-bit VCID, 10-bit frame length count, 8-bit frame sequence number | Field widths drive parser and UI explanations. |
+| TCDL-003 | Section 4.1.2.7 | `TC_FrameOctets = FrameLengthCount + 1` | Frame length count is one fewer than total octets in the transfer frame; maximum is 1024 octets. |
+| TCDL-004 | Section 4.1.3.1 | `TC_DataFieldOctets = TC_FrameOctets - 5 - FECFOctets`; maximum data field is 1019 octets without FECF, 1017 with FECF | Base TC data capacity formula. |
+| TCDL-005 | Section 4.1.3.2.2 | Segment Header is 1 octet: 2-bit sequence flags plus 6-bit MAP ID | `SegmentUserDataOctets = TC_DataFieldOctets - 1` when present. |
+| TCDL-006 | Section 4.1.3.3 | Control command sizes: Unlock is 1 octet; Set V(R) is 3 octets | Useful for Type-BC command sizing. |
+| TCDL-007 | Section 4.1.4 | FECF is optional, 16 bits, computed with `G(X)=X^16+X^12+X^5+1` and all-ones preset polynomial | Same CRC formula family as TM. |
+| TCDL-008 | Section 6.3 | TC with SDLS uses security header/trailer only on Type-D frames; Type-C frames do not carry SDLS fields | Security overhead must depend on frame type. |
+| TCDL-009 | Section 6.3.5 | `TC_SDLS_DataFieldOctets = TC_FrameOctets - 5 - SegmentHeaderOctets - SecurityHeaderOctets - SecurityTrailerOctets - FECFOctets`; maximum form replaces `TC_FrameOctets` with `1024` | The maximum data-field length with SDLS depends on segment and security field presence. |
