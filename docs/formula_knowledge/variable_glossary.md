@@ -719,6 +719,58 @@ This glossary defines shared symbols for the formula knowledge base. App impleme
 | `ProxSCIDCount` | `proximity_spacecraft_id_count` | number of spacecraft identifiers representable by a 10-bit SCID field | unit |
 | `ProxPortCount` | `proximity_port_count` | number of Port ID values representable by a 3-bit field | unit |
 | `ProxPCIDCount` | `proximity_physical_channel_id_count` | number of Physical Channel ID values representable by a 1-bit field | unit |
+| `SpacePacketPrimaryHeaderBits` | `space_packet_primary_header_bits` | CCSDS Space Packet primary header length | bit |
+| `SpacePacketPrimaryHeaderOctets` | `space_packet_primary_header_octets` | CCSDS Space Packet primary header length | octet |
+| `PacketDataLength` | `space_packet_data_length_field` | 16-bit field storing one fewer than the Space Packet Data Field octet count | octet-count-minus-one |
+| `SpacePacketDataFieldOctets` | `space_packet_data_field_octets` | Space Packet Data Field length | octet |
+| `SpacePacketOctets` | `space_packet_octets` | complete Space Packet length | octet |
+| `SpacePacketMinOctets` | `space_packet_min_octets` | minimum complete Space Packet length | octet |
+| `SpacePacketMaxDataFieldOctets` | `space_packet_max_data_field_octets` | maximum Space Packet Data Field length | octet |
+| `SpacePacketMaxOctets` | `space_packet_max_octets` | maximum complete Space Packet length | octet |
+| `PacketSecondaryHeaderOctets` | `packet_secondary_header_octets` | optional Space Packet secondary header length | octet |
+| `SpacePacketUserDataOctets` | `space_packet_user_data_octets` | user data carried in a Space Packet after secondary-header overhead | octet |
+| `SpacePacketEfficiency` | `space_packet_efficiency` | user-data fraction of a Space Packet | ratio |
+| `APIDCount` | `space_packet_apid_count` | number of representable APID values | unit |
+| `IdleAPID` | `space_packet_idle_apid` | all-ones APID reserved for idle packets | integer |
+| `PacketSequenceModulus` | `space_packet_sequence_modulus` | wrap modulus for the Packet Sequence Count | unit |
+| `PacketSequenceCount` | `space_packet_sequence_count` | 14-bit packet sequence count for an APID | integer |
+| `PacketSegmentsNeeded` | `space_packet_segments_needed` | number of packets needed for a user data unit | packet |
+| `MaxUserDataPerPacketOctets` | `max_user_data_per_space_packet_octets` | selected maximum user-data capacity per Space Packet | octet |
+| `USLP_MCIDBits` | `uslp_master_channel_id_bits` | USLP MCID field width | bit |
+| `USLP_GVCIDBits` | `uslp_global_virtual_channel_id_bits` | USLP GVCID field width | bit |
+| `USLP_GMAPIDBits` | `uslp_global_map_id_bits` | USLP GMAP ID field width | bit |
+| `USLP_SCIDCount` | `uslp_spacecraft_id_count` | number of SCID values representable in USLP | unit |
+| `USLP_VCIDCount` | `uslp_virtual_channel_id_count` | number of VCID values representable in USLP | unit |
+| `USLP_UserVCIDCount` | `uslp_user_virtual_channel_id_count` | usable non-OID VCID value count | unit |
+| `USLP_MAPIDCount` | `uslp_map_id_count` | number of MAP ID values representable in USLP | unit |
+| `USLP_FrameLengthCount` | `uslp_frame_length_count` | 16-bit field storing one fewer than the USLP Transfer Frame octet count | octet-count-minus-one |
+| `USLP_FrameOctets` | `uslp_frame_octets` | complete USLP Transfer Frame length | octet |
+| `USLP_MaxFrameOctets` | `uslp_max_frame_octets` | maximum USLP Transfer Frame length implied by the Frame Length field | octet |
+| `USLP_PrimaryHeaderBaseBits` | `uslp_primary_header_base_bits` | non-truncated primary-header fixed field length before VCF Count | bit |
+| `USLP_VCFCountOctets` | `uslp_vcf_count_octets` | selected Virtual Channel Frame Count field length | octet |
+| `USLP_VCFCountBits` | `uslp_vcf_count_bits` | selected Virtual Channel Frame Count field length | bit |
+| `USLP_PrimaryHeaderOctets` | `uslp_primary_header_octets` | non-truncated USLP Transfer Frame Primary Header length | octet |
+| `USLP_VCFCountModulus` | `uslp_vcf_count_modulus` | wrap modulus for the selected VCF Count width | unit |
+| `USLP_VCFCount` | `uslp_vcf_count` | Virtual Channel Frame Count value | integer |
+| `USLP_TruncatedPrimaryHeaderBits` | `uslp_truncated_primary_header_bits` | truncated USLP primary-header length | bit |
+| `USLP_TruncatedPrimaryHeaderOctets` | `uslp_truncated_primary_header_octets` | truncated USLP primary-header length | octet |
+| `USLP_OCFOctets` | `uslp_ocf_octets` | USLP Operational Control Field length when present | octet |
+| `USLP_FECFOctets` | `uslp_fecf_octets` | USLP Frame Error Control Field length when present | octet |
+| `InsertZoneOctets` | `transfer_frame_insert_zone_octets` | Transfer Frame Insert Zone length | octet |
+| `USLP_TFDFOctets` | `uslp_tfdf_octets` | USLP Transfer Frame Data Field length | octet |
+| `USLP_SDLS_TFDFOctets` | `uslp_sdls_tfdf_octets` | USLP Transfer Frame Data Field length after SDLS overhead | octet |
+| `FHP_LVOP_Present` | `uslp_fhp_lvop_present` | whether the optional First Header/Last Valid Octet Pointer is present | boolean |
+| `USLP_TFDFHeaderOctets` | `uslp_tfdf_header_octets` | USLP Transfer Frame Data Field Header length | octet |
+| `USLP_TFDZOctets` | `uslp_tfdz_octets` | USLP Transfer Frame Data Zone length | octet |
+| `USLP_FrameEfficiency` | `uslp_frame_efficiency` | TFDZ fraction of the complete USLP Transfer Frame | ratio |
+| `USLP_PointerAllOnes` | `uslp_pointer_all_ones_value` | all-ones 16-bit FHP/LVOP special value | integer |
+| `USLP_OID_VCID` | `uslp_oid_vcid` | Only Idle Data Transfer Frame VCID value | integer |
+| `USLP_OID_MAPID` | `uslp_oid_mapid` | Only Idle Data Transfer Frame MAP ID value | integer |
+| `ValidDataOctets` | `valid_data_octets` | valid data octets within a fixed-length data zone | octet |
+| `USLP_FixedTFDZIdleOctets` | `uslp_fixed_tfdz_idle_octets` | idle octets inserted to complete a fixed-length TFDZ | octet |
+| `SDUOctets` | `service_data_unit_octets` | service data unit length | octet |
+| `USLP_MaxTFDZOctetsForSAP` | `uslp_max_tfdz_octets_for_sap` | selected maximum TFDZ capacity for a SAP/VC/MAP service | octet |
+| `USLP_SegmentsNeeded` | `uslp_segments_needed` | number of USLP frames needed for segmented SDU transport | frame |
 | `PlaintextBits` | `plaintext_bits` | security payload bits before security overhead | bit |
 | `IVBits` | `initialization_vector_bits` | security initialization vector length | bit |
 | `AuthTagBits` | `auth_tag_bits` | authentication tag length | bit |

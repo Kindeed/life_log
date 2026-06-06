@@ -270,7 +270,9 @@ Sources: Vallado, `Fundamentals of Astrodynamics and Applications`; Bate, Muelle
 | CCSDS-131 | Listed as source; generic coding formulas seeded | Public B-5 convolutional, R-S, Turbo, LDPC, ASM, CSM, randomizer, and frame-length extracts added | Verify deltas against Issue 6 when the official B-6 PDF is accessible. |
 | CCSDS-231 | Listed as source; CLTU formulas partly seeded | BCH/LDPC codeword sizing, CLTU start/tail lengths, fill formulas, managed parameters extracted | Extract PLOP timing details and any mission-specific maximum CLTU constraints when implementing. |
 | CCSDS-132 | Listed as source; generic TM frame formulas seeded | TM primary/secondary header fields, data-field capacity, OCF/FECF overhead, SDLS capacity extracted | Add machine-readable field schema and examples for packet/OID extraction. |
+| CCSDS-133 | Referenced by seeded packet overhead formulas; no extracted rows | Space Packet primary-header field widths, packet length count, APID/idle packet, sequence modulus, secondary-header/user-data capacity, and packet efficiency extracted | Add packet extraction examples across TM/AOS/USLP frames and optional secondary-header schemas. |
 | CCSDS-232 | Listed as source; generic TC frame formulas seeded | TC frame length count, data-field capacity, segment header, control command sizes, FECF, SDLS capacity extracted | Add COP/FARM timing and sequence-control behavior in a later pass. |
+| CCSDS-732.1 | Listed as source; generic USLP overhead formulas seeded | USLP identifier widths, primary-header length, Frame Length count, VCF Count options, truncated header, TFDF/TFDZ capacity, OCF/FECF, OID constants, and SDLS TFDF capacity extracted | Add AOS cross-check, exact packet extraction examples, SDLS managed-parameter options, and machine-readable TFDZ construction-rule table. |
 
 ## CCSDS 231.0-B-4 TC Synchronization and Channel Coding
 
@@ -303,6 +305,37 @@ Source: CCSDS 132.0-B-3, `TM Space Data Link Protocol`, October 2021.
 | TMDL-006 | Section 4.1.4 | `TM_DataFieldOctets = TM_FrameOctets - 6 - SecondaryHeaderOctets - OCFOctets - FECFOctets` | Data field contains packets, one VCA_SDU, or idle data. |
 | TMDL-007 | Section 4.1.6 | FECF is optional, 16 bits, computed with `G(X)=X^16+X^12+X^5+1` and all-ones preset polynomial | Same FECF formula family as TC. |
 | TMDL-008 | Section 6.3 | TM with SDLS inserts security header before data and security trailer after data, reducing the data-field length | `TM_SDLS_DataFieldOctets = TM_FrameOctets - 6 - SecondaryHeaderOctets - SecurityHeaderOctets - SecurityTrailerOctets - OCFOctets - FECFOctets`. |
+
+## CCSDS 133.0-B-2 Space Packet Protocol
+
+Source: CCSDS 133.0-B-2, `Space Packet Protocol`, June 2020 with Corrigendum 2. Public PDF extracted from the CCSDS publications site.
+
+| Extract ID | Standard location | Equation or table | Implementation note |
+| --- | --- | --- | --- |
+| SPP-001 | Sections 4.1 and 4.1.2 | Space Packet consists of a mandatory 6-octet Packet Primary Header plus a Packet Data Field of 1 to 65536 octets | Catalog adds TM-043 to TM-049 for packet length and bounds. |
+| SPP-002 | Section 4.1.2 | Packet Primary Header fields total 48 bits: 3-bit version, 1-bit type, 1-bit secondary-header flag, 11-bit APID, 2-bit sequence flags, 14-bit sequence count/name, and 16-bit Packet Data Length | Use as a field-width schema for packet cards and validation. |
+| SPP-003 | Section 4.1.5 | Packet Data Length field stores one fewer than the total octets in the Packet Data Field | `SpacePacketDataFieldOctets = PacketDataLength + 1`. |
+| SPP-004 | Section 4.1.3 | Idle Packet APID is the 11-bit all-ones value, decimal 2047 | Catalog adds the APID cardinality and idle APID constant. |
+| SPP-005 | Section 4.1.4 | Packet Sequence Count is a 14-bit continuous sequence count, independent per APID | Catalog adds the 16384-count wrap modulus and next-count formula. |
+| SPP-006 | Section 4.1.6 | Packet Data Field may contain an optional variable-length Packet Secondary Header and a User Data Field; at least one data-field octet is required | Use `SpacePacketUserDataOctets = SpacePacketDataFieldOctets - PacketSecondaryHeaderOctets` for capacity and efficiency. |
+
+## CCSDS 732.1-B-3 Unified Space Data Link Protocol
+
+Source: CCSDS 732.1-B-3, `Unified Space Data Link Protocol`, June 2024. Public PDF extracted from the CCSDS publications site.
+
+| Extract ID | Standard location | Equation or table | Implementation note |
+| --- | --- | --- | --- |
+| USLP-001 | Sections 3.4.2 and 4.1.2 | Identifier concatenations: `MCID=TFVN+SCID`, `GVCID=MCID+VCID`, `GMAP ID=GVCID+MAP ID` | Catalog adds TM-056 to TM-058 for field-width outputs. |
+| USLP-002 | Section 4.1.2.1 and figure 4-2 | Non-truncated Transfer Frame Primary Header has 13 fields: 4-bit TFVN, 16-bit SCID, 1-bit source/destination, 6-bit VCID, 4-bit MAP ID, 1-bit end-of-header flag, 16-bit Frame Length, two 1-bit control flags, 2 spare bits, 1-bit OCF flag, 3-bit VCF Count Length, and 0-56-bit VCF Count | Base fixed header before VCF Count is 56 bits; catalog adds TM-064 to TM-066. |
+| USLP-003 | Section 4.1.2.2 | TFVN is set to binary `1100`; SCID has 16 bits | Store TFVN as an option constant and use SCID count for validation. |
+| USLP-004 | Sections 4.1.2.4 and 4.1.4.1 | VCID has 6 bits; VCID 63 is reserved for Only Idle Data Transfer Frames; OID MAP ID is 0 | Catalog adds TM-060, TM-082, and TM-083. |
+| USLP-005 | Section 4.1.2.7 | Frame Length field is a 16-bit length count equal to one fewer than the total transfer-frame octets, limiting frames to 65536 octets | Catalog adds TM-062 and TM-063. |
+| USLP-006 | Sections 4.1.2.11 and 4.1.2.12, table 4-2 | VCF Count Length selects 0 to 7 octets; when present, the VCF Count is a sequential binary count modulo maximum count plus one | Catalog adds VCF Count bit, header-length, modulus, and next-count formulas. |
+| USLP-007 | Section 4.1.2.6 and annex D | Truncated Transfer Frame Primary Header contains only the first six contiguous fields, totaling 32 bits | Catalog adds TM-069 and TM-070; truncated frame length comes from the VC managed parameter, not the normal Frame Length field. |
+| USLP-008 | Sections 4.1.4.1, 4.1.5, and 4.1.6 | TFDF is variable length; OCF is optional 4 octets; FECF is optional 2 octets | Catalog adds TM-071 to TM-073 and overhead fractions. |
+| USLP-009 | Section 4.1.4.2 and figure 4-4 | TFDF Header has mandatory 3-bit TFDZ Construction Rule and 5-bit UPID, plus optional 16-bit First Header/Last Valid Octet Pointer | Catalog adds `USLP_TFDFHeaderOctets = 1 or 3` and TFDZ capacity. |
+| USLP-010 | Section 4.1.4.2.4 | FHP/LVOP offset is measured from the first octet in the TFDZ; all-ones pointer is used for standard-defined no-start/no-completion cases | Catalog adds TM-081 and keeps pointer interpretation as parser/procedure data. |
+| USLP-011 | Section 6.3.5 | With SDLS, TFDF length is reduced by Security Header and Security Trailer in addition to primary header, Insert Zone, OCF, and FECF | Catalog adds `USLP_SDLS_TFDFOctets` for secured-link capacity. |
 
 ## CCSDS 232.0-B-4 TC Space Data Link Protocol
 

@@ -298,6 +298,49 @@ Notation:
 | TM-040 | `RandomizedBit_i = DataBit_i xor PRN_i` | pseudo-random sequence | Randomizer operation for codeblock, codeword, or Transfer Frame bits after the ASM. | CCSDS-131 | Procedure |
 | TM-041 | `TM_MaxFrameOctets_StreamLDPC = 2048` | TM/AOS stream-LDPC | Maximum TM or AOS Transfer Frame length when LDPC is applied to a stream of SMTFs. | CCSDS-131 | Seeded |
 | TM-042 | `USLP_MaxFrameOctets_StreamLDPC = 65536` | USLP stream-LDPC | Maximum USLP Transfer Frame length when LDPC is applied to a stream of SMTFs. | CCSDS-131 | Seeded |
+| TM-043 | `SpacePacketPrimaryHeaderBits = 3+1+1+11+2+14+16 = 48` | Space Packet primary header fields | Sum of Packet Version Number, Packet Type, Secondary Header Flag, APID, Sequence Flags, Sequence Count, and Packet Data Length. | CCSDS-133 | Seeded |
+| TM-044 | `SpacePacketPrimaryHeaderOctets = 6` | primary header bits | Mandatory CCSDS Space Packet primary header size. | CCSDS-133 | Seeded |
+| TM-045 | `SpacePacketDataFieldOctets = PacketDataLength + 1` | Packet Data Length field | Packet Data Length stores one fewer than the Packet Data Field octet count. | CCSDS-133 | Seeded |
+| TM-046 | `SpacePacketOctets = SpacePacketPrimaryHeaderOctets + SpacePacketDataFieldOctets` | primary header and data field | Complete Space Packet length. | CCSDS-133 | Seeded |
+| TM-047 | `SpacePacketMinOctets = 7` | minimum data-field length | Minimum Space Packet size: 6-octet primary header plus at least 1 data-field octet. | CCSDS-133 | Seeded |
+| TM-048 | `SpacePacketMaxDataFieldOctets = 2^16 = 65536` | Packet Data Length field width | Maximum Packet Data Field size implied by the 16-bit length field. | CCSDS-133 | Seeded |
+| TM-049 | `SpacePacketMaxOctets = 6 + 65536 = 65542` | maximum data field and header | Maximum complete CCSDS Space Packet size. | CCSDS-133 | Seeded |
+| TM-050 | `SpacePacketUserDataOctets = SpacePacketDataFieldOctets - PacketSecondaryHeaderOctets` | packet data field and optional secondary header | Space Packet user-data capacity when a secondary header is present. | CCSDS-133 | Seeded |
+| TM-051 | `SpacePacketEfficiency = SpacePacketUserDataOctets / SpacePacketOctets` | packet user data and complete packet | User-data fraction of a Space Packet before transfer-frame overhead. | CCSDS-133 | Seeded |
+| TM-052 | `APIDCount = 2^11; IdleAPID = 2^11 - 1 = 2047` | APID field width | Application Process ID cardinality and the all-ones idle-packet APID. | CCSDS-133 | Seeded |
+| TM-053 | `PacketSequenceModulus = 2^14 = 16384` | Packet Sequence Count field width | Wrap modulus for the 14-bit Packet Sequence Count. | CCSDS-133 | Seeded |
+| TM-054 | `PacketSequenceNext = (PacketSequenceCount + 1) mod PacketSequenceModulus` | current packet sequence count | Per-APID packet sequence counter update. | CCSDS-133 | Seeded |
+| TM-055 | `PacketSegmentsNeeded = ceil(UserDataOctets / MaxUserDataPerPacketOctets)` | user data and selected packet capacity | First-order count of packets needed when a user data unit is split into Space Packets. | CCSDS-133 | Seeded |
+| TM-056 | `USLP_MCIDBits = 4 + 16 = 20` | TFVN and SCID | USLP Master Channel Identifier field width. | CCSDS-732.1 | Seeded |
+| TM-057 | `USLP_GVCIDBits = USLP_MCIDBits + 6 = 26` | MCID and VCID | USLP Global Virtual Channel Identifier field width. | CCSDS-732.1 | Seeded |
+| TM-058 | `USLP_GMAPIDBits = USLP_GVCIDBits + 4 = 30` | GVCID and MAP ID | USLP Global MAP Identifier field width. | CCSDS-732.1 | Seeded |
+| TM-059 | `USLP_SCIDCount = 2^16 = 65536` | SCID field width | Number of spacecraft identifiers representable in the USLP primary header. | CCSDS-732.1 | Seeded |
+| TM-060 | `USLP_VCIDCount = 2^6; USLP_UserVCIDCount = 63` | VCID field width | USLP has 64 VCID values; VCID 63 is reserved for Only Idle Data frames. | CCSDS-732.1 | Seeded |
+| TM-061 | `USLP_MAPIDCount = 2^4 = 16` | MAP ID field width | Number of MAP identifiers representable within a USLP virtual channel. | CCSDS-732.1 | Seeded |
+| TM-062 | `USLP_FrameOctets = USLP_FrameLengthCount + 1` | Frame Length field | USLP Frame Length count is one fewer than the total transfer-frame octets. | CCSDS-732.1 | Seeded |
+| TM-063 | `USLP_MaxFrameOctets = 2^16 = 65536` | Frame Length field width | Maximum USLP transfer-frame size before physical/coding constraints. | CCSDS-732.1 | Seeded |
+| TM-064 | `USLP_PrimaryHeaderBaseBits = 4+16+1+6+4+1+16+1+1+2+1+3 = 56` | non-truncated primary header fields before VCF Count | Fixed part of the non-truncated USLP Transfer Frame Primary Header. | CCSDS-732.1 | Seeded |
+| TM-065 | `USLP_VCFCountBits = 8 * USLP_VCFCountOctets` | selected VCF Count length code | VCF Count field length for the table-defined 0-to-7-octet count options. | CCSDS-732.1 | Seeded |
+| TM-066 | `USLP_PrimaryHeaderOctets = 7 + USLP_VCFCountOctets` | fixed header and VCF Count | Non-truncated USLP primary-header length. | CCSDS-732.1 | Seeded |
+| TM-067 | `USLP_VCFCountModulus = 2^(8*USLP_VCFCountOctets)` | VCF Count octets | Wrap modulus when a VCF Count is present. | CCSDS-732.1 | Seeded |
+| TM-068 | `USLP_VCFCountNext = (USLP_VCFCount + 1) mod USLP_VCFCountModulus` | VCF Count | Per-VC sequence-controlled or expedited frame counter update. | CCSDS-732.1 | Seeded |
+| TM-069 | `USLP_TruncatedPrimaryHeaderBits = 4+16+1+6+4+1 = 32` | first six primary-header fields | USLP truncated primary header contains only fields through the End of Frame Primary Header Flag. | CCSDS-732.1 | Seeded |
+| TM-070 | `USLP_TruncatedPrimaryHeaderOctets = 4` | truncated primary header bits | Length of the truncated USLP Transfer Frame Primary Header. | CCSDS-732.1 | Seeded |
+| TM-071 | `USLP_OCFOctets = 4 if OCF_Flag else 0` | OCF presence flag | Optional USLP Operational Control Field length. | CCSDS-732.1 | Seeded |
+| TM-072 | `USLP_FECFOctets = 2 if FECF_Present else 0` | managed FECF presence | Optional USLP Frame Error Control Field length. | CCSDS-732.1 | Seeded |
+| TM-073 | `USLP_TFDFOctets = USLP_FrameOctets - USLP_PrimaryHeaderOctets - InsertZoneOctets - USLP_OCFOctets - USLP_FECFOctets` | frame, primary header, insert zone, OCF, FECF | USLP Transfer Frame Data Field capacity without SDLS security fields. | CCSDS-732.1 | Seeded |
+| TM-074 | `USLP_SDLS_TFDFOctets = USLP_FrameOctets - USLP_PrimaryHeaderOctets - SecurityHeaderOctets - InsertZoneOctets - SecurityTrailerOctets - USLP_OCFOctets - USLP_FECFOctets` | SDLS security fields and optional frame fields | USLP Transfer Frame Data Field capacity when SDLS is used. | CCSDS-732.1, CCSDS-355 | Seeded |
+| TM-075 | `USLP_TFDFHeaderOctets = 1 + (2 if FHP_LVOP_Present else 0)` | TFDZ construction rule, UPID, optional pointer | USLP TFDF Header length: mandatory 3-bit rule plus 5-bit UPID, with optional 16-bit FHP/LVOP. | CCSDS-732.1 | Seeded |
+| TM-076 | `USLP_TFDZOctets = USLP_TFDFOctets - USLP_TFDFHeaderOctets` | TFDF and TFDF Header | Data-zone capacity for user data, packets, SDUs, protocol commands, or idle data. | CCSDS-732.1 | Seeded |
+| TM-077 | `USLP_FrameEfficiency = USLP_TFDZOctets / USLP_FrameOctets` | TFDZ and complete frame | USLP data-zone fraction after primary header, optional fields, and TFDF Header. | CCSDS-732.1 | Seeded |
+| TM-078 | `USLP_TFDFHeaderOverhead = USLP_TFDFHeaderOctets / USLP_FrameOctets` | TFDF Header and frame | TFDF Header overhead fraction. | CCSDS-732.1 | Seeded |
+| TM-079 | `USLP_OCFOverhead = 4 / USLP_FrameOctets` | OCF present | OCF overhead fraction when present. | CCSDS-732.1 | Seeded |
+| TM-080 | `USLP_FECFOverhead = 2 / USLP_FrameOctets` | FECF present | FECF overhead fraction when present. | CCSDS-732.1 | Seeded |
+| TM-081 | `USLP_PointerAllOnes = 2^16 - 1 = 65535` | First Header / Last Valid Octet Pointer width | All-ones FHP/LVOP value used for the standard's special pointer cases. | CCSDS-732.1 | Seeded |
+| TM-082 | `USLP_OID_VCID = 2^6 - 1 = 63` | VCID field width | Reserved VCID for Only Idle Data Transfer Frames. | CCSDS-732.1 | Seeded |
+| TM-083 | `USLP_OID_MAPID = 0` | MAP ID field | MAP ID required for OID Transfer Frames. | CCSDS-732.1 | Seeded |
+| TM-084 | `USLP_FixedTFDZIdleOctets = USLP_TFDZOctets - ValidDataOctets` | fixed TFDZ and valid data | Idle octets needed to complete a partially filled fixed-length TFDZ. | CCSDS-732.1 | Seeded |
+| TM-085 | `USLP_SegmentsNeeded = ceil(SDUOctets / USLP_MaxTFDZOctetsForSAP)` | SDU size and selected SAP TFDZ capacity | First-order number of USLP frames required to transport a segmented SDU. | CCSDS-732.1 | Seeded |
 
 ## Telecommand and Uplink Commanding
 

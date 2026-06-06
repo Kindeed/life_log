@@ -31,11 +31,15 @@ Each pass should produce a reviewed delta to `formula_catalog.md` and, where nee
 
 2. CCSDS data-link pass:
    - TM Space Data Link Protocol.
+   - Space Packet Protocol.
    - TC Space Data Link Protocol.
    - AOS Space Data Link Protocol.
    - USLP.
    - Extract frame field sizes, optional field switches, packet/transfer-frame efficiency formulas, virtual-channel throughput formulas.
-   - Use `standard_extracts.md` CCSDS 132/232 rows to create TM/TC field-capacity schemas and SDLS overhead test cases.
+   - Use `standard_extracts.md` CCSDS 132/133/232/732.1 rows to create TM/Space Packet/TC/USLP field-capacity schemas, packet-efficiency outputs, VCF Count/OID validation, and SDLS overhead test cases.
+   - Current CCSDS 133.0-B-2 extraction covers Space Packet primary-header width, data-field length count, min/max packet length, APID/idle packet constants, sequence-count modulus, secondary-header/user-data capacity, and packet efficiency.
+   - Current CCSDS 732.1-B-3 extraction covers USLP identifier widths, non-truncated and truncated primary-header sizes, Frame Length count, VCF Count length/modulus, TFDF/TFDZ capacity, OCF/FECF overhead, OID constants, fixed-TFDZ idle fill, SDLS capacity, and first-order segmentation count.
+   - Remaining data-link work is exact AOS B-5 retrieval/extraction, packet extraction examples across TM/AOS/USLP, machine-readable construction-rule tables, and COP/FARM timing.
 
 3. Ranging/tracking pass:
    - CCSDS 414.1-B-3 PN Ranging.
@@ -146,9 +150,11 @@ Recommended implementation order:
 
 5. CCSDS frame/coding workbench:
    - TM/TC/AOS/USLP frame efficiency
+   - Space Packet primary-header, APID, sequence-count, packet length, and packet efficiency
    - CLTU overhead
    - sync marker overhead
    - selected code-rate tables
+   - USLP MCID/GVCID/GMAP ID widths, VCF Count options, truncated frames, TFDF/TFDZ, OID, and SDLS overhead
    - Proximity-1 Version-3 Transfer Frame header/data-field efficiency
    - Proximity-1 PLTU/CRC/ASM efficiency
    - Proximity-1 idle/acquisition/tail overhead
