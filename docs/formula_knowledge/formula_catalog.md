@@ -947,6 +947,26 @@ Notation:
 | MEAS-031 | `u_BER_hat = sqrt(BER_hat*(1-BER_hat)/TestBits)` | binomial BER estimate | Large-sample standard uncertainty of the observed BER proportion. | NIST-SEMATECH, BOOK-SKLAR | Seeded |
 | MEAS-032 | `BER_upper_zero = 1 - alpha_tail^(1/TestBits); BER_upper_95 ~= 3/TestBits` | zero observed errors and one-sided tail probability | Exact zero-error binomial upper bound and common 95% rule-of-three approximation for BER tests. | NIST-SEMATECH, BOOK-SKLAR | Seeded |
 | MEAS-033 | `TestBits_95_zero ~= 3/BER_target` | target BER with zero observed errors | Approximate tested-bit count required to demonstrate a BER target with 95% confidence under the zero-error rule-of-three. | NIST-SEMATECH, BOOK-SKLAR | Seeded |
+| MEAS-034 | `BER_CP_L = BetaInv(alpha_ci/2; ErrorBits, TestBits-ErrorBits+1)` | `ErrorBits>0`; otherwise lower bound is 0 | Clopper-Pearson lower confidence bound for a measured BER proportion. | NIST-SEMATECH, BOOK-SKLAR | Procedure |
+| MEAS-035 | `BER_CP_U = BetaInv(1-alpha_ci/2; ErrorBits+1, TestBits-ErrorBits)` | `ErrorBits<TestBits`; otherwise upper bound is 1 | Clopper-Pearson upper confidence bound for a measured BER proportion. | NIST-SEMATECH, BOOK-SKLAR | Procedure |
+| MEAS-036 | `WilsonCenter = (BER_hat + z_alpha2^2/(2 TestBits))/(1 + z_alpha2^2/TestBits)` | Wilson score interval terms | Wilson interval center for BER or any binary pass/fail proportion. | NIST-SEMATECH | Seeded |
+| MEAS-037 | `WilsonHalfWidth = z_alpha2*sqrt(BER_hat*(1-BER_hat)/TestBits + z_alpha2^2/(4 TestBits^2))/(1 + z_alpha2^2/TestBits)` | Wilson score interval terms | Wilson interval half-width; `WilsonCenter +/- WilsonHalfWidth` gives bounded confidence limits. | NIST-SEMATECH | Seeded |
+| MEAS-038 | `TestBits_zero_exact = ceil(ln(alpha_tail)/ln(1-BER_target))` | zero-error test, one-sided confidence | Exact bit count needed to make a zero-error BER test upper bound no larger than the target. | NIST-SEMATECH, BOOK-SKLAR | Seeded |
+| MEAS-039 | `BER_TestDuration = TestBits / R_b` | tested bits and bit rate | Time required to accumulate a BER test sample at a selected bit rate. | BOOK-SKLAR, General RF engineering | Seeded |
+| MEAS-040 | `ExpectedErrorBits = BER_assumed * TestBits` | assumed BER and tested bits | Expected number of bit errors during a test interval. | NIST-SEMATECH, BOOK-SKLAR | Seeded |
+| MEAS-041 | `SigmaErrorBits = sqrt(TestBits*BER_assumed*(1-BER_assumed))` | binomial error count | Standard deviation of counted bit errors for a given assumed BER. | NIST-SEMATECH, BOOK-SKLAR | Seeded |
+| MEAS-042 | `P_zero_errors = (1-BER_assumed)^TestBits` | assumed BER and tested bits | Probability of observing no bit errors if the true BER equals the assumed value. | NIST-SEMATECH, BOOK-SKLAR | Seeded |
+| MEAS-043 | `P_errors_le_E = sum_{k=0}^{E_accept} C(TestBits,k) BER_assumed^k (1-BER_assumed)^(TestBits-k)` | allowed error count | Probability that a BER test passes an allowed-error threshold under an assumed true BER. | NIST-SEMATECH, BOOK-SKLAR | Procedure |
+| MEAS-044 | `BER_TestPass = BER_CP_U <= BER_required` | exact upper confidence bound and requirement | Acceptance rule for a BER demonstration using the upper confidence bound rather than the point estimate. | NIST-SEMATECH | Procedure |
+| MEAS-045 | `FER_hat = ErrorFrames / TestFrames` | observed bad frames and tested frames | Point estimate of frame error rate from counted frame failures. | NIST-SEMATECH, BOOK-SKLAR | Seeded |
+| MEAS-046 | `FER_upper_zero = 1 - alpha_tail^(1/TestFrames); FER_upper_95 ~= 3/TestFrames` | zero observed frame errors | Zero-failure upper confidence bound for frame error rate. | NIST-SEMATECH, BOOK-SKLAR | Seeded |
+| MEAS-047 | `TestFrames_zero_exact = ceil(ln(alpha_tail)/ln(1-FER_target))` | target FER and zero frame errors | Exact frame count needed for a zero-failure FER demonstration. | NIST-SEMATECH, BOOK-SKLAR | Seeded |
+| MEAS-048 | `FER_TestDuration = TestFrames * FrameBits / R_b` | tested frames, frame size, bit rate | Time required to accumulate a frame-error-rate test sample. | BOOK-SKLAR, CCSDS SLS | Seeded |
+| MEAS-049 | `BER_upper_from_FER = 1 - (1-FER_upper)^(1/FrameBits)` | independent bit errors within a frame | Converts a frame-error upper bound to an equivalent per-bit upper bound under the independence assumption. | BOOK-SKLAR, NIST-SEMATECH | Seeded |
+| MEAS-050 | `EbN0_BPSK_from_BER = 0.5*(Qinv(BER_hat))^2` | coherent BPSK/QPSK AWGN estimate | Estimates the uncoded AWGN `Eb/N0` implied by an observed BER point estimate. | BOOK-SKLAR, BOOK-PROAKIS | Seeded |
+| MEAS-051 | `EbN0_BPSK_from_BER_dB = 10log10(EbN0_BPSK_from_BER)` | linear `Eb/N0` estimate | dB form of the measured-BER implied `Eb/N0`. | BOOK-SKLAR, BOOK-PROAKIS | Seeded |
+| MEAS-052 | `ImplementationLoss_dB = EbN0_measured_req_dB - EbN0_theory_req_dB` | measured and theoretical required `Eb/N0` | Difference between measured demodulator/coding performance and the theoretical reference at the same BER/FER target. | BOOK-SKLAR, BOOK-PROAKIS, CCSDS SLS | Seeded |
+| MEAS-053 | `MeasuredCodingGain_dB = EbN0_uncoded_req_dB - EbN0_coded_measured_req_dB` | uncoded and coded measured requirements | Coding gain derived from measured or table-backed required `Eb/N0` at the same target error probability. | BOOK-SKLAR, BOOK-PROAKIS, CCSDS SLS | Seeded |
 
 ## Current App Coverage Summary
 

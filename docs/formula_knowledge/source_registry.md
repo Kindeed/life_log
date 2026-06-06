@@ -47,7 +47,7 @@ This registry records the standards, handbooks, and published books that should 
 | IERS-CONV | IERS Conventions | IERS | Authoritative Earth-orientation and terrestrial/celestial reference-system conventions. | High-precision ECI/ECEF transformation scope and warnings; simple workbench formulas must flag missing EOP corrections. |
 | JCGM-100 | JCGM 100:2008, Guide to the Expression of Uncertainty in Measurement | JCGM/BIPM | Public GUM reference for combined standard uncertainty, covariance handling, sensitivity coefficients, and expanded uncertainty. | Measurement uncertainty propagation for RF lab, receiver, link-budget, antenna, ranging, and BER-adjacent result cards. |
 | NIST-TN1297 | Guidelines for Evaluating and Expressing the Uncertainty of NIST Measurement Results | NIST | Public NIST technical note aligned with the GUM, including combined standard uncertainty, law of propagation, and coverage-factor explanations. | Practical uncertainty formulas, Type-A repeatability rows, dB uncertainty conversions, and reporting notes. |
-| NIST-SEMATECH | NIST/SEMATECH e-Handbook of Statistical Methods | NIST/SEMATECH | Public statistics handbook with binomial confidence-interval guidance and exact small-sample cautions. | BER point estimate, binomial standard uncertainty, and zero-error upper-bound checks. |
+| NIST-SEMATECH | NIST/SEMATECH e-Handbook of Statistical Methods and Dataplot proportion confidence-limit notes | NIST/SEMATECH | Public statistics guidance with binomial confidence intervals, Wilson interval, exact small-sample cautions, and proportion confidence-limit methods. | BER/FER point estimates, exact and Wilson confidence intervals, zero-error upper-bound checks, and acceptance-test sizing. |
 
 ## Published Books
 
@@ -148,6 +148,7 @@ This registry records the standards, handbooks, and published books that should 
 | NIST-TN1297 law of propagation | https://www.nist.gov/pml/nist-technical-note-1297/nist-tn-1297-appendix-law-propagation-uncertainty |
 | NIST-TN1297 coverage factor | https://physics.nist.gov/cuu/Uncertainty/coverage.html |
 | NIST-SEMATECH binomial confidence intervals | https://www.itl.nist.gov/div898/handbook/prc/section2/prc241.htm |
+| NIST Dataplot proportion confidence limits | https://www.itl.nist.gov/div898/software/dataplot/refman1/auxillar/propconf.htm |
 | BOOK-MARAL | https://onlinelibrary.wiley.com/doi/book/10.1002/9781119673811 |
 | BOOK-BALANIS | https://www.wiley-vch.de/de/fachgebiete/ingenieurwesen/antenna-theory-978-1-118-64206-1 |
 | BOOK-MAILLOUX | https://us.artechhouse.com/Phased-Array-Antenna-Handbook-Third-Edition-P1938.aspx |

@@ -1130,6 +1130,40 @@ This glossary defines shared symbols for the formula knowledge base. App impleme
 | `alpha_tail` | `confidence_tail_probability` | one-sided tail probability, e.g. 0.05 for 95% upper confidence | ratio |
 | `BER_target` | `target_bit_error_rate` | BER requirement used for test-duration sizing | ratio |
 | `TestBits_95_zero` | `zero_error_test_bits_95` | approximate tested bits required for 95% zero-error demonstration | bit |
+| `BER_CP_L` | `ber_clopper_pearson_lower` | exact binomial lower confidence bound for BER | ratio |
+| `BER_CP_U` | `ber_clopper_pearson_upper` | exact binomial upper confidence bound for BER | ratio |
+| `BetaInv` | `inverse_beta_cdf` | inverse cumulative distribution function of the beta distribution | ratio |
+| `alpha_ci` | `two_sided_tail_probability` | total tail probability for a two-sided confidence interval | ratio |
+| `z_alpha2` | `normal_quantile_two_sided` | standard normal quantile for a two-sided interval | unitless |
+| `WilsonCenter` | `wilson_interval_center` | Wilson score interval center for a binary proportion | ratio |
+| `WilsonHalfWidth` | `wilson_interval_half_width` | Wilson score interval half-width | ratio |
+| `TestBits_zero_exact` | `zero_error_test_bits_exact` | exact tested-bit count for a zero-error BER confidence target | bit |
+| `BER_TestDuration` | `ber_test_duration` | time required to observe the selected number of test bits | s |
+| `BER_assumed` | `assumed_bit_error_rate` | assumed true BER used for test planning or pass-probability calculations | ratio |
+| `ExpectedErrorBits` | `expected_error_bits` | expected bit errors during a test interval | bit |
+| `SigmaErrorBits` | `error_count_standard_deviation` | standard deviation of the binomial bit-error count | bit |
+| `P_zero_errors` | `zero_error_probability` | probability of observing no bit errors under an assumed true BER | ratio |
+| `E_accept` | `accepted_error_count` | maximum bit errors allowed by a test criterion | bit |
+| `P_errors_le_E` | `accepted_error_probability` | probability of observing an accepted error count or fewer | ratio |
+| `BER_required` | `required_bit_error_rate` | BER requirement used for pass/fail comparison | ratio |
+| `BER_TestPass` | `ber_confidence_pass` | pass flag based on confidence upper bound versus requirement | boolean |
+| `ErrorFrames` | `error_frames` | counted failed frames during a FER test interval | frame |
+| `TestFrames` | `tested_frames` | total frames observed during a FER test interval | frame |
+| `FER_hat` | `fer_point_estimate` | observed frame error rate point estimate | ratio |
+| `FER_upper_zero` | `zero_error_fer_upper_bound` | one-sided upper FER bound when no frame errors are observed | ratio |
+| `FER_target` | `target_frame_error_rate` | frame error rate requirement used for test sizing | ratio |
+| `TestFrames_zero_exact` | `zero_error_test_frames_exact` | exact tested-frame count for a zero-failure FER confidence target | frame |
+| `FER_TestDuration` | `fer_test_duration` | time required to observe the selected number of test frames | s |
+| `FrameBits` | `frame_bits` | frame length used for FER/BER conversion or test duration | bit |
+| `FER_upper` | `frame_error_upper_bound` | upper confidence bound on frame error rate | ratio |
+| `BER_upper_from_FER` | `ber_upper_from_fer` | equivalent BER upper bound inferred from a FER upper bound | ratio |
+| `EbN0_BPSK_from_BER` | `ebn0_from_measured_ber_linear` | linear uncoded AWGN `Eb/N0` implied by a measured BER | ratio |
+| `EbN0_BPSK_from_BER_dB` | `ebn0_from_measured_ber_db` | dB uncoded AWGN `Eb/N0` implied by a measured BER | dB |
+| `EbN0_measured_req_dB` | `measured_required_ebn0_db` | measured required `Eb/N0` at a target BER or FER | dB |
+| `EbN0_theory_req_dB` | `theoretical_required_ebn0_db` | theoretical required `Eb/N0` at the same target error probability | dB |
+| `ImplementationLoss_dB` | `implementation_loss_db` | measured performance shortfall relative to theory | dB |
+| `EbN0_coded_measured_req_dB` | `measured_coded_required_ebn0_db` | measured coded-link required `Eb/N0` at target error probability | dB |
+| `MeasuredCodingGain_dB` | `measured_coding_gain_db` | coding gain derived from measured coded and uncoded requirements | dB |
 | `HeaderBits` | `header_bits` | protocol header length | bit |
 | `TrailerBits` | `trailer_bits` | protocol trailer length | bit |
 | `PLTU_Bits` | `proximity_pltu_bits` | complete Proximity-1 Link Transmission Unit size | bit |
