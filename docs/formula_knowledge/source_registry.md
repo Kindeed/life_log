@@ -16,7 +16,7 @@ This registry records the standards, handbooks, and published books that should 
 | CCSDS-232.1 | CCSDS 232.1-B-2, Communications Operation Procedure-1 | CCSDS SLS-SLP | Active Blue Book, September 2010 with Technical Corrigendum 1 dated April 2019; public PDF extracted for FOP/FARM, sliding-window, timeout, retransmission, and CLCW managed-parameter formulas. | Telecommand closed-loop ARQ sizing, COP-1 timer budget, frame sequence modulus, FOP/FARM window checks, retransmission limits, and CLCW reporting cadence. |
 | CCSDS-132 | CCSDS 132.0-B-3, TM Space Data Link Protocol | CCSDS SLS-SLP | TM transfer frame protocol, October 2021; TM frame field extracts started in `standard_extracts.md`. | TM frame/packet overhead and virtual-channel throughput. |
 | CCSDS-133 | CCSDS 133.0-B-2, Space Packet Protocol | CCSDS SLS-SLP | Active Blue Book, June 2020 with Corrigendum 2; public PDF extracted for primary-header, APID, sequence-count, and packet-length formulas. | Space Packet overhead, user-data capacity, APID/idle packet constants, packet sequence wrap, and packet efficiency. |
-| CCSDS-732 | CCSDS 732.0-B-5, AOS Space Data Link Protocol | CCSDS SLS-SLP | AOS data link, October 2025; the current public PDF direct URL was not retrievable in this pass, so exact AOS field extraction remains pending. | AOS frame overhead, insert zone, virtual channels, packet service throughput. |
+| CCSDS-732 | CCSDS 732.0-B-5, AOS Space Data Link Protocol | CCSDS SLS-SLP | AOS data link, October 2025; the CCSDS active-publication entry is confirmed, while direct PDF retrieval remains unstable. Stable AOS frame-capacity formulas are cross-checked against public older issue/ISO preview material until B-5 text is directly extractable. | AOS frame overhead, insert zone, virtual channels, packet service throughput. |
 | CCSDS-732.1 | CCSDS 732.1-B-3, Unified Space Data Link Protocol | CCSDS SLS-SLP | USLP, June 2024; public PDF extracted for identifier widths, primary-header fields, frame length, VCF Count options, TFDF/TFDZ capacity, OCF/FECF, OID, and SDLS capacity. | Unified frame overhead, service-mode sizing, packet/SDU segmentation, and frame-efficiency calculators. |
 | CCSDS-414.1 | CCSDS 414.1-B-3, Pseudo-Noise Ranging Systems | CCSDS SLS-RFM | PN ranging, transparent/regenerative systems, January 2022; chip-rate and acquisition extracts started in `standard_extracts.md`. | PN ranging chip-rate, ambiguity, modulation and processing architecture. |
 | CCSDS-415 | CCSDS 415.0-G, Data Transmission and PN Ranging for 2 GHz CDMA Link via Data Relay Satellite | CCSDS SLS-RFM | Spread-spectrum and CDMA support material. | Spread-spectrum ranging and link-budget extensions. |
@@ -91,6 +91,8 @@ This registry records the standards, handbooks, and published books that should 
 | CCSDS-133 PDF | https://public.ccsds.org/Pubs/133x0b2e2.pdf |
 | CCSDS-232 PDF | https://public.ccsds.org/Pubs/232x0b4e1c1.pdf |
 | CCSDS-232.1 PDF | https://public.ccsds.org/Pubs/232x1b2e2c1.pdf |
+| CCSDS-732 | https://ccsds.org/publications/allpubs/entry/4547/ |
+| ISO-22666 / CCSDS-732 public preview | https://standards.iteh.ai/catalog/standards/iso/ace093e8-645b-402b-ae6f-8485b656a82a/iso-22666-2016 |
 | CCSDS-732.1 PDF | https://public.ccsds.org/Pubs/732x1b3e1.pdf |
 | CCSDS-414.1 | https://ccsds.org/publications/allpubs/entry/3249/ |
 | CCSDS-414.1 PDF | https://public.ccsds.org/Pubs/414x1b3e1.pdf |

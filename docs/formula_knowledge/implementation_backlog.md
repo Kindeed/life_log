@@ -40,7 +40,8 @@ Each pass should produce a reviewed delta to `formula_catalog.md` and, where nee
    - Use `standard_extracts.md` CCSDS 132/133/232/732.1 rows to create TM/Space Packet/TC/USLP field-capacity schemas, packet-efficiency outputs, VCF Count/OID validation, and SDLS overhead test cases.
    - Current CCSDS 133.0-B-2 extraction covers Space Packet primary-header width, data-field length count, min/max packet length, APID/idle packet constants, sequence-count modulus, secondary-header/user-data capacity, and packet efficiency.
    - Current CCSDS 732.1-B-3 extraction covers USLP identifier widths, non-truncated and truncated primary-header sizes, Frame Length count, VCF Count length/modulus, TFDF/TFDZ capacity, OCF/FECF overhead, OID constants, fixed-TFDZ idle fill, SDLS capacity, and first-order segmentation count.
-   - Remaining data-link work is exact AOS B-5 retrieval/extraction, packet extraction examples across TM/AOS/USLP, and machine-readable construction-rule tables.
+   - Current CCSDS 732.0-B AOS extraction covers stable primary-header, GVCID, VC frame count, signaling, optional OCF/FECF, data-field, M_PDU packet-zone, VCA_SDU, SDLS capacity, and frame-efficiency formulas from the current B-5 registry plus public older-issue cross-checks.
+   - Remaining data-link work is exact AOS B-5 direct PDF extraction, packet extraction examples across TM/AOS/USLP, and machine-readable construction-rule tables.
    - Current CCSDS 232.1-B-2 extraction covers COP-1 FOP/FARM variables, 8-bit sequence arithmetic, `T1_Initial` delay budget, Transmission_Limit/Count, Sent_Queue, FOP/FARM sliding windows, CLCW reporting period, and Type-BD one-shot behavior.
    - Remaining COP work is state-table event test extraction, PLOP timing, and systematic retransmission examples.
 

@@ -336,9 +336,10 @@ Sources: Maral, Bousquet, and Sun, `Satellite Communications Systems`, 6th editi
 | CCSDS-231 | Listed as source; CLTU formulas partly seeded | BCH/LDPC codeword sizing, CLTU start/tail lengths, fill formulas, managed parameters extracted | Extract PLOP timing details and any mission-specific maximum CLTU constraints when implementing. |
 | CCSDS-132 | Listed as source; generic TM frame formulas seeded | TM primary/secondary header fields, data-field capacity, OCF/FECF overhead, SDLS capacity extracted | Add machine-readable field schema and examples for packet/OID extraction. |
 | CCSDS-133 | Referenced by seeded packet overhead formulas; no extracted rows | Space Packet primary-header field widths, packet length count, APID/idle packet, sequence modulus, secondary-header/user-data capacity, and packet efficiency extracted | Add packet extraction examples across TM/AOS/USLP frames and optional secondary-header schemas. |
+| CCSDS-732 | Listed as source; exact current PDF direct extraction pending | Stable AOS primary-header, GVCID, VC frame count, signaling, OCF/FECF, data-field capacity, M_PDU packet-zone, VCA_SDU, SDLS capacity, and frame-efficiency formulas seeded from current registry plus public older-issue cross-checks | Directly extract B-5 when the PDF is accessible, then add parser examples and managed-parameter tables. |
 | CCSDS-232 | Listed as source; generic TC frame formulas seeded | TC frame length count, data-field capacity, segment header, control command sizes, FECF, SDLS capacity extracted | Add cross-standard TC/COP examples when implementing. |
 | CCSDS-232.1 | Listed as future COP/FARM source; only generic ARQ formulas existed | COP-1 FOP/FARM variables, go-back-N retransmission, 8-bit sequence modulus, `T1_Initial` delay budget, Transmission_Limit/Count, FOP/FARM windows, CLCW reporting period, and BD one-shot behavior extracted | Convert FOP/FARM state-table events into machine-readable procedure tests before app implementation. |
-| CCSDS-732.1 | Listed as source; generic USLP overhead formulas seeded | USLP identifier widths, primary-header length, Frame Length count, VCF Count options, truncated header, TFDF/TFDZ capacity, OCF/FECF, OID constants, and SDLS TFDF capacity extracted | Add AOS cross-check, exact packet extraction examples, SDLS managed-parameter options, and machine-readable TFDZ construction-rule table. |
+| CCSDS-732.1 | Listed as source; generic USLP overhead formulas seeded | USLP identifier widths, primary-header length, Frame Length count, VCF Count options, truncated header, TFDF/TFDZ capacity, OCF/FECF, OID constants, and SDLS TFDF capacity extracted | Add exact packet extraction examples, SDLS managed-parameter options, and machine-readable TFDZ construction-rule table. |
 | Maral/Bousquet satellite transponder links | Listed as scenario source; transponder formulas not yet extracted | PFD/SFD/IBO/OBO, transponder input/gain, per-carrier EIRP, cascaded `C/N0`, interference/intermodulation, HPA DC/thermal power, and bandwidth/power utilization formulas added | Add saturation curves, measured HPA/intermodulation models, non-equal carrier allocation, intersatellite relay examples, and validation examples. |
 
 ## CCSDS 231.0-B-4 TC Synchronization and Channel Coding
@@ -406,6 +407,18 @@ Source: CCSDS 133.0-B-2, `Space Packet Protocol`, June 2020 with Corrigendum 2. 
 | SPP-004 | Section 4.1.3 | Idle Packet APID is the 11-bit all-ones value, decimal 2047 | Catalog adds the APID cardinality and idle APID constant. |
 | SPP-005 | Section 4.1.4 | Packet Sequence Count is a 14-bit continuous sequence count, independent per APID | Catalog adds the 16384-count wrap modulus and next-count formula. |
 | SPP-006 | Section 4.1.6 | Packet Data Field may contain an optional variable-length Packet Secondary Header and a User Data Field; at least one data-field octet is required | Use `SpacePacketUserDataOctets = SpacePacketDataFieldOctets - PacketSecondaryHeaderOctets` for capacity and efficiency. |
+
+## CCSDS 732.0-B-5 AOS Space Data Link Protocol
+
+Sources: CCSDS active-publication entry for CCSDS 732.0-B-5, `AOS Space Data Link Protocol`, October 2025; public ISO 22666 / CCSDS 732.0-B-3 preview for stable AOS frame-field cross-checks.
+
+| Extract ID | Standard location | Equation or table | Implementation note |
+| --- | --- | --- | --- |
+| AOSDL-001 | AOS transfer-frame primary-header structure | AOS primary header is 6 octets; its GVCID is composed from 2-bit TFVN, 8-bit SCID, and 6-bit VCID; signaling occupies the last octet | Catalog adds TM-086 to TM-088 and TM-091. Treat the current B-5 PDF as still requiring direct extraction before parser-level implementation. |
+| AOSDL-002 | AOS virtual-channel counting fields | Virtual Channel Frame Count is 24 bits and updates modulo `2^24`; the optional VC Frame Count Cycle extends sequence interpretation | Catalog adds TM-089 and TM-090. The cycle field should be exposed as managed state, not a free arithmetic input. |
+| AOSDL-003 | AOS optional fields and data-field capacity | AOS Transfer Frame Data Field capacity subtracts primary header, Insert Zone, optional OCF, and optional FECF from the full frame | Catalog adds TM-092 to TM-094 and TM-099. OCF and FECF are flag/managed-parameter choices. |
+| AOSDL-004 | AOS packet and VCA services | M_PDU service uses a 2-octet header with First Header Pointer before the packet zone; VCA service can expose the full data field as a VCA_SDU | Catalog adds TM-095 to TM-097 and TM-100. Packet extraction examples remain a later procedure/table task. |
+| AOSDL-005 | AOS with SDLS security fields | SDLS security header and trailer reduce the available AOS data-field capacity in addition to optional Insert Zone, OCF, and FECF | Catalog adds TM-098. Exact SDLS option tables stay under CCSDS 355/355.1 extraction. |
 
 ## CCSDS 732.1-B-3 Unified Space Data Link Protocol
 

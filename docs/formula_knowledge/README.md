@@ -22,7 +22,7 @@ The current app has 8 calculators and a small number of formula references:
 - Doppler and guard margin
 - custom local expression
 
-That is useful as a first workbench, but it is not a complete engineering formula base. It does not yet cover antenna sizing, effective aperture, beamwidth, pointing loss, polarization loss, receiver noise cascade, atmospheric/rain attenuation, detailed CCSDS coding families, TM/TC/AOS/USLP frame overhead, PN ranging variants, Delta-DOR, radar-style external tracking, optical link budget, or system-level mission data budget.
+That is useful as a first workbench, but it is not a complete engineering formula base. Current expansion has started antenna, receiver, propagation, CCSDS coding, TM/TC/AOS/USLP frame overhead, PN ranging, Delta-DOR, radar-style external tracking, optical link, and system-level mission budget coverage; it still needs exact table assets, validation cases, and production calculator integration.
 
 ## Knowledge Base Files
 

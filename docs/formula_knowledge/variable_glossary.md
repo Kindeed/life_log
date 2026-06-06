@@ -1066,6 +1066,23 @@ This glossary defines shared symbols for the formula knowledge base. App impleme
 | `SDUOctets` | `service_data_unit_octets` | service data unit length | octet |
 | `USLP_MaxTFDZOctetsForSAP` | `uslp_max_tfdz_octets_for_sap` | selected maximum TFDZ capacity for a SAP/VC/MAP service | octet |
 | `USLP_SegmentsNeeded` | `uslp_segments_needed` | number of USLP frames needed for segmented SDU transport | frame |
+| `AOS_FrameOctets` | `aos_frame_octets` | total AOS Transfer Frame length | octet |
+| `AOS_PrimaryHeaderOctets` | `aos_primary_header_octets` | AOS Transfer Frame Primary Header length | octet |
+| `AOS_GVCIDBits` | `aos_gvcid_bits` | AOS Global Virtual Channel Identifier field width | bit |
+| `AOS_VCIDCount` | `aos_vcid_count` | number of AOS virtual channel identifiers | count |
+| `AOS_VCFrameCountModulus` | `aos_vc_frame_count_modulus` | wrap modulus for the AOS Virtual Channel Frame Count | count |
+| `AOS_VCFrameCount` | `aos_vc_frame_count` | current AOS Virtual Channel Frame Count | count |
+| `AOS_SignalingBits` | `aos_signaling_bits` | AOS signaling field width in the primary header | bit |
+| `AOS_InsertZoneOctets` | `aos_insert_zone_octets` | AOS Transfer Frame Insert Zone length | octet |
+| `AOS_OCFOctets` | `aos_ocf_octets` | AOS Operational Control Field length when present | octet |
+| `AOS_FECFOctets` | `aos_fecf_octets` | AOS Frame Error Control Field length when present | octet |
+| `AOS_DataFieldOctets` | `aos_data_field_octets` | AOS Transfer Frame Data Field capacity | octet |
+| `AOS_M_PDU_HeaderOctets` | `aos_mpdu_header_octets` | AOS M_PDU header length containing the First Header Pointer | octet |
+| `AOS_M_PDU_PacketZoneOctets` | `aos_mpdu_packet_zone_octets` | AOS packet-zone capacity in M_PDU service | octet |
+| `AOS_VCA_SDU_Octets` | `aos_vca_sdu_octets` | AOS Virtual Channel Access service data unit size | octet |
+| `AOS_SDLS_DataFieldOctets` | `aos_sdls_data_field_octets` | AOS data-field capacity after SDLS security fields | octet |
+| `AOS_FrameEfficiency` | `aos_frame_efficiency` | AOS data-field fraction of the full frame | ratio |
+| `AOS_PacketServiceEfficiency` | `aos_packet_service_efficiency` | AOS M_PDU packet-zone fraction of the full frame | ratio |
 | `PlaintextBits` | `plaintext_bits` | security payload bits before security overhead | bit |
 | `IVBits` | `initialization_vector_bits` | security initialization vector length | bit |
 | `AuthTagBits` | `auth_tag_bits` | authentication tag length | bit |

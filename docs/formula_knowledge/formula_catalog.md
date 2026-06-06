@@ -454,6 +454,21 @@ Notation:
 | TM-083 | `USLP_OID_MAPID = 0` | MAP ID field | MAP ID required for OID Transfer Frames. | CCSDS-732.1 | Seeded |
 | TM-084 | `USLP_FixedTFDZIdleOctets = USLP_TFDZOctets - ValidDataOctets` | fixed TFDZ and valid data | Idle octets needed to complete a partially filled fixed-length TFDZ. | CCSDS-732.1 | Seeded |
 | TM-085 | `USLP_SegmentsNeeded = ceil(SDUOctets / USLP_MaxTFDZOctetsForSAP)` | SDU size and selected SAP TFDZ capacity | First-order number of USLP frames required to transport a segmented SDU. | CCSDS-732.1 | Seeded |
+| TM-086 | `AOS_PrimaryHeaderOctets = 6` | fixed AOS primary header | Mandatory AOS Transfer Frame Primary Header length. | CCSDS-732 | Seeded |
+| TM-087 | `AOS_GVCIDBits = 2 + 8 + 6 = 16` | TFVN, SCID, VCID | AOS Global Virtual Channel Identifier field width. | CCSDS-732 | Seeded |
+| TM-088 | `AOS_VCIDCount = 2^6 = 64` | VCID field width | Number of AOS virtual channel identifiers representable in one spacecraft channel. | CCSDS-732 | Seeded |
+| TM-089 | `AOS_VCFrameCountModulus = 2^24` | VC frame count field width | Wrap modulus for the AOS 24-bit Virtual Channel Frame Count. | CCSDS-732 | Seeded |
+| TM-090 | `AOS_VCFrameCountNext = (AOS_VCFrameCount + 1) mod AOS_VCFrameCountModulus` | current virtual-channel frame count | Per-VC frame counter update for sequence-controlled AOS frames. | CCSDS-732 | Seeded |
+| TM-091 | `AOS_SignalingBits = 1 + 1 + 2 + 4 = 8` | replay flag, VC frame count cycle flag, spare bits, VC frame count cycle | AOS signaling field width at the end of the primary header. | CCSDS-732 | Seeded |
+| TM-092 | `AOS_OCFOctets = 4 if OCF_Flag else 0` | OCF presence flag | Optional AOS Operational Control Field length. | CCSDS-732 | Seeded |
+| TM-093 | `AOS_FECFOctets = 2 if FECF_Present else 0` | managed FECF presence | Optional AOS Frame Error Control Field length. | CCSDS-732 | Seeded |
+| TM-094 | `AOS_DataFieldOctets = AOS_FrameOctets - AOS_PrimaryHeaderOctets - AOS_InsertZoneOctets - AOS_OCFOctets - AOS_FECFOctets` | frame length and optional AOS fields | AOS Transfer Frame Data Field capacity before service-specific headers. | CCSDS-732 | Seeded |
+| TM-095 | `AOS_M_PDU_HeaderOctets = 2` | M_PDU service | AOS Multiplexing Protocol Data Unit header length containing the First Header Pointer. | CCSDS-732 | Seeded |
+| TM-096 | `AOS_M_PDU_PacketZoneOctets = AOS_DataFieldOctets - AOS_M_PDU_HeaderOctets` | AOS data field and M_PDU header | Packet-zone capacity for AOS packet service after the 2-octet M_PDU header. | CCSDS-732 | Seeded |
+| TM-097 | `AOS_VCA_SDU_Octets = AOS_DataFieldOctets` | AOS data field | Virtual Channel Access service data unit capacity when the complete data field is delivered as a VCA_SDU. | CCSDS-732 | Seeded |
+| TM-098 | `AOS_SDLS_DataFieldOctets = AOS_FrameOctets - AOS_PrimaryHeaderOctets - AOS_InsertZoneOctets - SecurityHeaderOctets - SecurityTrailerOctets - AOS_OCFOctets - AOS_FECFOctets` | SDLS security fields and optional AOS fields | AOS data-field capacity when SDLS security fields are present. | CCSDS-732, CCSDS-355 | Seeded |
+| TM-099 | `AOS_FrameEfficiency = AOS_DataFieldOctets / AOS_FrameOctets` | AOS data field and total frame | AOS data-field fraction after primary header, Insert Zone, OCF, and FECF. | CCSDS-732 | Seeded |
+| TM-100 | `AOS_PacketServiceEfficiency = AOS_M_PDU_PacketZoneOctets / AOS_FrameOctets` | packet zone and complete frame | AOS packet-service payload-zone fraction before packet-level overhead. | CCSDS-732 | Seeded |
 
 ## Telecommand and Uplink Commanding
 
