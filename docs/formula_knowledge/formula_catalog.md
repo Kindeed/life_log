@@ -464,6 +464,26 @@ Notation:
 | BB-158 | `LLR_clip = min(max(LLR_BPSK, -LLR_max), LLR_max)` | decoder soft-input saturation limit | Clipped LLR used by fixed-point or bounded-metric soft-decision decoders. | BOOK-PROAKIS, BOOK-SKLAR | Procedure |
 | BB-159 | `sum_{i=0}^{t_code} C(n_code,i) <= 2^(n_code-k_code)` | block-code length, dimension, correction radius | Hamming bound for a perfect or feasible bounded-distance block code. | BOOK-SKLAR, BOOK-PROAKIS | Procedure |
 | BB-160 | `d_min_code <= n_code - k_code + 1` | block-code length and dimension | Singleton bound on minimum distance. MDS codes meet this bound; many practical codes do not. | BOOK-SKLAR, BOOK-PROAKIS | Seeded |
+| BB-161 | `f_s = samples_per_symbol * R_s` | oversampling ratio and symbol rate | Sampling rate required for a selected samples-per-symbol receiver or waveform generator. | BOOK-SKLAR, BOOK-MENGALI | Seeded |
+| BB-162 | `T_sample = 1/f_s` | sampling rate | Sample period used by digital receiver timing, NCO, and loop update calculations. | BOOK-SKLAR, BOOK-HAYKIN | Seeded |
+| BB-163 | `SamplesPerFrame = ceil(FrameDuration * f_s)` | frame duration and sampling rate | Number of receiver samples spanning a physical-layer frame or acquisition window. | BOOK-SKLAR, BOOK-MENGALI | Seeded |
+| BB-164 | `CFO_norm_sym = Delta_f / R_s` | carrier frequency offset and symbol rate | Carrier frequency offset normalized to symbols per second; useful for acquisition range and residual-error warnings. | BOOK-MENGALI, BOOK-GARDNER | Seeded |
+| BB-165 | `CFO_phase_per_symbol = 2*pi*Delta_f*T_s` | frequency offset and symbol period | Carrier phase rotation accumulated over one symbol. | BOOK-MENGALI, BOOK-PROAKIS | Seeded |
+| BB-166 | `CFO_phase_per_sample = 2*pi*Delta_f/f_s` | frequency offset and sampling rate | Carrier phase rotation accumulated per digital sample. | BOOK-MENGALI, BOOK-GARDNER | Seeded |
+| BB-167 | `TimingError_UI = tau_timing / T_s` | timing offset and symbol period | Timing offset expressed in unit intervals, which is easier to compare across symbol rates. | BOOK-MENGALI, BOOK-GARDNER | Seeded |
+| BB-168 | `TimingJitter_UI_rms = sigma_t / T_s` | RMS timing jitter and symbol period | RMS timing jitter expressed in unit intervals. | BOOK-MENGALI, BOOK-GARDNER | Seeded |
+| BB-169 | `sigma_sample_time = T_sample/sqrt(12)` | sample period | RMS timing uncertainty from uniform sample-epoch quantization. | BOOK-SKLAR, BOOK-MENGALI | Seeded |
+| BB-170 | `NCO_phase_inc = 2*pi*f_nco/f_s` | NCO frequency and sampling rate | Per-sample phase increment for a digital numerically controlled oscillator. | BOOK-GARDNER, BOOK-HAYKIN | Seeded |
+| BB-171 | `f_nco = NCO_phase_inc*f_s/(2*pi)` | NCO phase increment and sampling rate | Converts digital oscillator phase increment back to frequency. | BOOK-GARDNER, BOOK-HAYKIN | Seeded |
+| BB-172 | `T_update = N_update/f_s` | samples per loop update and sampling rate | Loop update interval for symbol-timing, carrier, or AGC loops that run every N samples. | BOOK-GARDNER, BOOK-MENGALI | Seeded |
+| BB-173 | `BT_update = B_loop_Hz*T_update` | loop bandwidth and update interval | Synchronization loop bandwidth normalized to the loop update cadence. | BOOK-GARDNER | Seeded |
+| BB-174 | `LoopCoefficients = LoopCoefficientDesign(B_loop_Hz, zeta, K_d, K_0, T_update)` | loop bandwidth, damping, detector and NCO gains | Placeholder for reviewed discrete-time second-order loop coefficient design; exact coefficients depend on loop architecture and normalization. | BOOK-GARDNER, BOOK-MENGALI | Procedure |
+| BB-175 | `theta_inst = atan2(Q_k, I_k)` | in-phase and quadrature symbol samples | Instantaneous carrier phase estimate from complex baseband samples. | BOOK-MENGALI, BOOK-PROAKIS | Seeded |
+| BB-176 | `PhaseErrorWrapped = wrapToPi(theta_meas - theta_ref)` | measured and reference phase | Phase error wrapped to the principal interval for carrier-loop and constellation diagnostics. | BOOK-GARDNER, BOOK-MENGALI | Procedure |
+| BB-177 | `SyncCorr[m] = sum_{i=0}^{N_sync-1} r_{m+i}*conj(s_sync_i)` | received samples and known sync sequence | Sliding complex correlation against a known synchronization marker or preamble. | BOOK-PROAKIS, BOOK-SKLAR | Procedure |
+| BB-178 | `SyncMetric[m] = abs(SyncCorr[m])^2/(sum_i abs(r_{m+i})^2 * sum_i abs(s_sync_i)^2)` | correlation and segment energies | Normalized sync correlation metric in the range 0 to 1 for acquisition displays. | BOOK-PROAKIS, BOOK-SKLAR | Procedure |
+| BB-179 | `SyncPeakMargin = SyncMetric_peak - SyncThreshold` | peak metric and threshold | Detection margin between the best synchronization metric and the selected acquisition threshold. | BOOK-SKLAR, BOOK-MENGALI | Seeded |
+| BB-180 | `SyncFalseAlarmThreshold = inverse_cdf_sync_metric(1-P_FA, N_sync, model)` | false-alarm target and sync length | Threshold selection from the chosen noise-only sync-metric distribution model. | BOOK-PROAKIS, BOOK-SKLAR | Procedure |
 
 ## Telemetry, PCM, Space Packet, and Transfer Frames
 

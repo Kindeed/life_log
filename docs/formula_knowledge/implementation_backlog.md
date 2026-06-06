@@ -173,6 +173,9 @@ Recommended implementation order:
    - Nyquist zero-ISI, raised-cosine, and root-raised-cosine response cards
    - OFDM subcarrier, cyclic-prefix, and PAPR outputs
    - phase jitter/frequency-offset sanity checks
+   - sampling rate, sample period, samples-per-frame, normalized carrier-frequency offset, and phase rotation per symbol/sample
+   - timing offset/jitter in UI, sample-epoch quantization jitter, NCO phase increment, loop update cadence, and loop coefficient design placeholders
+   - preamble/sync-marker correlation, normalized sync metric, sync peak margin, and false-alarm threshold procedure
    - second-order loop bandwidth, damping, settling, overshoot, and normalized loop bandwidth
    - Gardner, Mueller-Muller, early-late, Costas, and Mth-power synchronization detector outputs
    - Proximity-1 `R_d/R_cs/R_chs` reference-point explanation

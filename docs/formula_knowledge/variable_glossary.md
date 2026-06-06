@@ -537,7 +537,11 @@ This glossary defines shared symbols for the formula knowledge base. App impleme
 | `N_bits` | `adc_bits` | ADC or quantizer bit depth | bit |
 | `sigma_q` | `quantization_noise_rms` | RMS quantization noise | input-unit |
 | `ENOB` | `effective_number_of_bits` | effective ADC resolution inferred from SNR | bit |
+| `f_s` | `sampling_rate` | digital sampling frequency | Hz |
 | `samples_per_symbol` | `samples_per_symbol` | digital oversampling ratio per symbol | sample/symbol |
+| `T_sample` | `sample_period` | digital sample period | s |
+| `FrameDuration` | `physical_layer_frame_duration` | duration of a selected frame or acquisition window | s |
+| `SamplesPerFrame` | `samples_per_frame` | number of receiver samples in a frame or acquisition window | sample |
 | `PAPR` | `peak_to_average_power_ratio` | peak-to-average signal power ratio | ratio, dB |
 | `r(t)` | `received_waveform` | received waveform entering matched filter/correlator | signal-unit |
 | `s_k(t)` | `candidate_signal_waveform` | kth candidate transmitted signal waveform | signal-unit |
@@ -553,6 +557,24 @@ This glossary defines shared symbols for the formula knowledge base. App impleme
 | `sigma_phase` | `phase_error_rms` | RMS phase error | rad |
 | `Delta_f` | `frequency_offset` | carrier or oscillator frequency offset | Hz |
 | `T_obs` | `observation_time` | observation/integration interval for phase rotation | s |
+| `CFO_norm_sym` | `carrier_frequency_offset_symbols` | carrier frequency offset normalized by symbol rate | cycles/symbol |
+| `CFO_phase_per_symbol` | `carrier_offset_phase_per_symbol` | carrier phase rotation caused by CFO over one symbol | rad/symbol |
+| `CFO_phase_per_sample` | `carrier_offset_phase_per_sample` | carrier phase rotation caused by CFO over one sample | rad/sample |
+| `tau_timing` | `timing_offset` | symbol timing offset relative to the ideal decision instant | s |
+| `TimingError_UI` | `timing_error_unit_interval` | timing offset expressed in unit intervals | UI |
+| `TimingJitter_UI_rms` | `timing_jitter_unit_interval_rms` | RMS timing jitter expressed in unit intervals | UI |
+| `sigma_sample_time` | `sample_epoch_quantization_rms` | RMS timing uncertainty from sample-period quantization | s |
+| `f_nco` | `nco_frequency` | numerically controlled oscillator frequency | Hz |
+| `NCO_phase_inc` | `nco_phase_increment` | per-sample digital oscillator phase increment | rad/sample |
+| `N_update` | `loop_update_sample_count` | number of samples between loop filter updates | sample |
+| `T_update` | `loop_update_interval` | loop update interval | s |
+| `BT_update` | `loop_bandwidth_update_normalized` | loop noise bandwidth normalized to update interval | cycles/update |
+| `K_d` | `loop_detector_gain` | phase or timing detector gain used by loop design | detector-unit/rad, varies |
+| `K_0` | `loop_nco_gain` | NCO or controlled oscillator gain used by loop design | rad/s/control, varies |
+| `LoopCoefficients` | `loop_coefficients` | discrete-time loop filter coefficients for a selected architecture | coefficient set |
+| `theta_inst` | `instantaneous_carrier_phase` | instantaneous carrier phase estimate from I/Q samples | rad |
+| `theta_meas` / `theta_ref` | `measured_reference_phase` | measured and reference phase used for phase-error diagnostics | rad |
+| `PhaseErrorWrapped` | `wrapped_phase_error` | phase error wrapped to the principal interval | rad |
 | `B_loop_Hz` | `sync_loop_noise_bandwidth` | synchronization loop noise bandwidth | Hz |
 | `BT_loop` | `normalized_loop_bandwidth` | loop bandwidth normalized by symbol period | cycles/symbol |
 | `omega_n` | `loop_natural_frequency` | second-order loop natural radian frequency | rad/s |
@@ -568,6 +590,16 @@ This glossary defines shared symbols for the formula knowledge base. App impleme
 | `e_Costas_BPSK` | `costas_bpsk_phase_error` | BPSK Costas-loop phase detector output | detector-unit |
 | `I_k` / `Q_k` | `costas_iq_outputs` | in-phase and quadrature matched-filter outputs | signal-unit |
 | `theta_hat_MPSK` | `mpsk_carrier_phase_estimate` | carrier phase estimate from Mth-power PSK method | rad, deg |
+| `s_sync_i` | `sync_sequence_sample` | known synchronization marker or preamble sample | complex signal-unit |
+| `N_sync` | `sync_sequence_length` | number of samples or symbols in the synchronization sequence | count |
+| `SyncCorr[m]` | `sync_correlation` | sliding complex correlation output at offset m | complex metric |
+| `SyncMetric[m]` | `sync_metric` | normalized synchronization correlation metric at offset m | ratio |
+| `SyncMetric_peak` | `sync_metric_peak` | largest synchronization metric in the acquisition search window | ratio |
+| `SyncThreshold` | `sync_detection_threshold` | selected synchronization detection threshold | ratio |
+| `SyncPeakMargin` | `sync_peak_margin` | margin between the peak sync metric and detection threshold | ratio |
+| `P_FA` | `sync_false_alarm_probability` | target probability of false alarm for acquisition threshold design | ratio |
+| `model` | `sync_false_alarm_model` | selected noise-only distribution model for sync threshold design | model id |
+| `SyncFalseAlarmThreshold` | `sync_false_alarm_threshold` | sync threshold derived from a selected false-alarm model | ratio |
 | `H` | `mimo_channel_matrix` | MIMO channel matrix | unitless |
 | `N_t` | `mimo_tx_antennas` | number of transmit antennas | unit |
 | `N_r` | `mimo_rx_antennas` | number of receive antennas | unit |
