@@ -379,6 +379,37 @@ This glossary defines shared symbols for the formula knowledge base. App impleme
 | `eta_capacity` | `capacity_spectral_efficiency` | Shannon-limit spectral efficiency | bit/s/Hz |
 | `BER` | `bit_error_rate` | bit error probability | ratio |
 | `SER` | `symbol_error_rate` | symbol error probability | ratio |
+| `P_b` | `bit_error_probability` | generic bit error probability for a selected modulation/channel model | ratio |
+| `P_s` | `symbol_error_probability` | generic symbol error probability for a selected modulation/channel model | ratio |
+| `P_s_coh_MPSK` | `coherent_mpsk_symbol_error_probability` | coherent M-PSK symbol error probability in AWGN | ratio |
+| `P_b_gray_MPSK` | `gray_mpsk_bit_error_probability` | approximate bit error probability for Gray-coded M-PSK | ratio |
+| `P_s_square_MQAM` | `square_mqam_symbol_error_probability` | approximate symbol error probability for square coherent M-QAM in AWGN | ratio |
+| `P_b_square_MQAM` | `square_mqam_bit_error_probability` | approximate bit error probability for Gray-coded square M-QAM | ratio |
+| `P_b_BFSK_coh` | `coherent_bfsk_bit_error_probability` | coherent orthogonal BFSK bit error probability | ratio |
+| `P_b_BFSK_noncoh` | `noncoherent_bfsk_bit_error_probability` | noncoherent orthogonal BFSK bit error probability | ratio |
+| `P_s_MFSK_noncoh` | `noncoherent_mfsk_symbol_error_probability` | noncoherent orthogonal M-FSK symbol error probability | ratio |
+| `P_s_MFSK` | `mfsk_symbol_error_probability` | selected M-FSK symbol error probability used for bit-error conversion | ratio |
+| `P_b_orthogonal_MFSK` | `orthogonal_mfsk_bit_error_probability` | average bit error probability approximation for orthogonal M-FSK | ratio |
+| `P_b_OOK_coh` | `coherent_ook_bit_error_probability` | coherent on-off keying bit error probability | ratio |
+| `P_b_OOK_noncoh` | `noncoherent_ook_bit_error_probability` | noncoherent on-off keying bit error approximation | ratio |
+| `P_b_DQPSK_approx` | `dqpsk_bit_error_probability_approx` | approximate differential QPSK bit error probability | ratio |
+| `P_b_BPSK_Rician` | `rician_bpsk_bit_error_probability` | coherent BPSK bit error probability averaged over Rician fading | ratio |
+| `E_gamma[...]` | `expectation_over_snr_distribution` | expectation over the instantaneous SNR probability distribution | operator |
+| `P_b_BPSK_MRC_L` | `mrc_bpsk_bit_error_probability` | coherent BPSK bit error probability after maximal-ratio combining | ratio |
+| `L_div` | `diversity_branch_count` | number of independent diversity branches | count |
+| `gamma_l` | `diversity_branch_snr` | instantaneous SNR in diversity branch `l` | ratio |
+| `gamma_MRC` | `mrc_output_snr` | output SNR after maximal-ratio combining | ratio |
+| `gamma_SC` | `selection_combining_output_snr` | output SNR after selecting the strongest diversity branch | ratio |
+| `P_out_MRC_rayleigh` | `rayleigh_mrc_outage_probability` | outage probability after equal-average Rayleigh maximal-ratio combining | ratio |
+| `P_out_SC_rayleigh` | `rayleigh_selection_outage_probability` | outage probability after equal-average Rayleigh selection combining | ratio |
+| `G_coding_dB` | `coding_gain` | coded-versus-uncoded required Eb/N0 improvement at a fixed error target | dB |
+| `EbN0_uncoded_req_dB` | `required_uncoded_ebn0` | required uncoded bit-energy metric at a selected BER or FER target | dB |
+| `EbN0_coded_req_dB` | `required_coded_ebn0` | required coded bit-energy metric at the same target error probability | dB |
+| `R_code` | `block_code_rate` | generic block-code rate | ratio |
+| `k_code` | `block_code_information_bits` | information symbols or bits in a block codeword | bit, symbol |
+| `n_code` | `block_codeword_length` | total symbols or bits in a block codeword | bit, symbol |
+| `d_min_code` | `minimum_hamming_distance` | minimum Hamming distance of a block code | bit, symbol |
+| `CanCorrectErrors` | `bounded_distance_error_correction_capability` | maximum number of random symbol errors correctable by bounded-distance decoding | count |
 | `PER` | `packet_error_rate` | packet or frame error probability | ratio |
 | `EVM` | `evm` | error vector magnitude | ratio, percent |
 | `ErrorVector_i` | `constellation_error_vector` | measured symbol minus ideal reference symbol | complex signal-unit |

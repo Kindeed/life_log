@@ -364,6 +364,26 @@ Notation:
 | BB-118 | `DVB_NetBitRate = R_sym * DVB_PHYEfficiency_bpsym` | symbol rate and physical-layer efficiency | Net data-field bit rate for a selected DVB-S2 MODCOD and pilot setting. | CCSDS-131.3, ETSI-DVBS2 | Seeded |
 | BB-119 | `DVB_PLHeaderFraction = 90 / DVB_PLFrameSymbols` | PLHEADER and frame symbols | Fraction of PLFRAME symbols occupied by the DVB-S2 physical-layer header. | CCSDS-131.3, ETSI-DVBS2 | Seeded |
 | BB-120 | `DVB_PilotOverhead = 36*DVB_PilotBlocks / DVB_PLFrameSymbols` | pilot blocks and frame symbols | Fraction of PLFRAME symbols occupied by pilot blocks. | CCSDS-131.3, ETSI-DVBS2 | Seeded |
+| BB-121 | `P_s_coh_MPSK ~= 2*Q(sqrt(2*E_s/N0)*sin(pi/M))` | coherent M-PSK order and symbol energy | Union-bound/high-SNR symbol error approximation for coherent M-PSK in AWGN. | BOOK-SKLAR, BOOK-PROAKIS | Seeded |
+| BB-122 | `P_b_gray_MPSK ~= P_s_coh_MPSK / log2(M)` | Gray-coded M-PSK | Approximate bit error probability from symbol error probability when nearest-neighbor errors dominate. | BOOK-SKLAR, BOOK-PROAKIS | Procedure |
+| BB-123 | `P_s_square_MQAM ~= 1 - (1 - 2*(1-1/sqrt(M))*Q(sqrt(3*E_s/((M-1)*N0))))^2` | square M-QAM constellation | Approximate symbol error probability for square coherent M-QAM in AWGN. | BOOK-SKLAR, BOOK-PROAKIS | Seeded |
+| BB-124 | `P_b_square_MQAM ~= P_s_square_MQAM / log2(M)` | Gray-coded square M-QAM | Approximate bit error probability for square QAM when nearest-neighbor Gray errors dominate. | BOOK-SKLAR, BOOK-PROAKIS | Procedure |
+| BB-125 | `P_b_BFSK_coh = Q(sqrt(E_b/N0))` | coherent binary orthogonal FSK | Coherent orthogonal BFSK bit error probability in AWGN. | BOOK-SKLAR, BOOK-PROAKIS | Seeded |
+| BB-126 | `P_b_BFSK_noncoh = 0.5*exp(-E_b/(2*N0))` | noncoherent binary orthogonal FSK | Noncoherent orthogonal BFSK bit error probability in AWGN. | BOOK-SKLAR, BOOK-PROAKIS | Seeded |
+| BB-127 | `P_s_MFSK_noncoh = sum_{k=1}^{M-1}((-1)^(k+1)*C(M-1,k)/(k+1)*exp(-k*E_s/((k+1)*N0)))` | noncoherent orthogonal M-FSK | Exact series form for noncoherent orthogonal M-FSK symbol error probability in AWGN. | BOOK-SKLAR, BOOK-PROAKIS | Procedure |
+| BB-128 | `P_b_orthogonal_MFSK ~= (2^(m-1)/(2^m-1))*P_s_MFSK` | orthogonal M-FSK with equiprobable symbols | Converts orthogonal M-FSK symbol error probability to an average bit error approximation. | BOOK-SKLAR, BOOK-PROAKIS | Procedure |
+| BB-129 | `P_b_OOK_coh = Q(sqrt(E_b/(2*N0)))` | coherent on-off keying | Coherent OOK/ASK bit error probability under equal priors and optimum threshold assumptions. | BOOK-SKLAR, BOOK-PROAKIS | Seeded |
+| BB-130 | `P_b_OOK_noncoh ~= 0.5*exp(-E_b/(2*N0))` | noncoherent OOK envelope detection | Common first-cut noncoherent OOK bit error approximation in AWGN. | BOOK-SKLAR | Procedure |
+| BB-131 | `P_b_DQPSK_approx ~= Q(sqrt(2*E_b/N0)*sin(pi/4))` | differential QPSK | Approximate DQPSK bit error relationship using adjacent differential phase decisions. | BOOK-SKLAR, BOOK-PROAKIS | Procedure |
+| BB-132 | `P_b_BPSK_Rician ~= E_gamma[Q(sqrt(2*gamma_inst))]` | Rician instantaneous SNR distribution | Average coherent BPSK BER over a Rician fading channel as an expectation over the fading SNR distribution. | BOOK-GOLDSMITH, BOOK-PROAKIS | Procedure |
+| BB-133 | `P_b_BPSK_MRC_L = E[Q(sqrt(2*sum_{l=1}^{L_div} gamma_l))]` | independent diversity branch SNRs | Coherent BPSK BER with maximal-ratio combining expressed through combined instantaneous SNR. | BOOK-GOLDSMITH, BOOK-PROAKIS | Procedure |
+| BB-134 | `gamma_MRC = sum_{l=1}^{L_div} gamma_l` | diversity branch SNRs | Output SNR of ideal maximal-ratio combining for independent branches. | BOOK-GOLDSMITH | Seeded |
+| BB-135 | `gamma_SC = max_l(gamma_l)` | diversity branch SNRs | Output SNR of selection combining. | BOOK-GOLDSMITH | Seeded |
+| BB-136 | `P_out_MRC_rayleigh = 1 - exp(-gamma_th/gamma_bar)*sum_{k=0}^{L_div-1}(gamma_th/gamma_bar)^k/k!` | equal-average Rayleigh MRC branches | Outage probability for L-branch maximal-ratio combining in iid Rayleigh fading. | BOOK-GOLDSMITH | Procedure |
+| BB-137 | `P_out_SC_rayleigh = (1 - exp(-gamma_th/gamma_bar))^L_div` | equal-average Rayleigh selection combining branches | Outage probability for selection combining in iid Rayleigh fading. | BOOK-GOLDSMITH | Seeded |
+| BB-138 | `G_coding_dB = EbN0_uncoded_req_dB - EbN0_coded_req_dB` | same target error probability | Coding gain at a specified BER/FER target. | BOOK-SKLAR, BOOK-PROAKIS | Seeded |
+| BB-139 | `R_code = k_code / n_code` | block code dimensions | Generic block-code rate for an `(n,k)` code. | BOOK-SKLAR, BOOK-PROAKIS | Seeded |
+| BB-140 | `CanCorrectErrors = floor((d_min_code - 1)/2)` | code minimum Hamming distance | Error-correction capability of a block code under bounded-distance decoding. | BOOK-SKLAR, BOOK-PROAKIS | Seeded |
 
 ## Telemetry, PCM, Space Packet, and Transfer Frames
 
