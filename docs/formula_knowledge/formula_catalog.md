@@ -346,6 +346,24 @@ Notation:
 | BB-100 | `e_EL[k]=abs(y(t_k+Delta_EL))^2 - abs(y(t_k-Delta_EL))^2` | early and late samples around a timing hypothesis | Early-late timing-error detector energy difference. | BOOK-MENGALI, BOOK-GARDNER | Procedure |
 | BB-101 | `e_Costas_BPSK = I_k*Q_k` | in-phase and quadrature matched-filter outputs | BPSK Costas-loop phase detector near lock. | BOOK-GARDNER, BOOK-MENGALI | Procedure |
 | BB-102 | `theta_hat_MPSK = angle(sum_k r_k^M)/M` | M-PSK received symbols | Mth-power carrier-phase estimate that removes M-PSK data modulation under ideal assumptions. | BOOK-MENGALI, BOOK-PROAKIS | Procedure |
+| BB-103 | `DFL_Max = K_bch - 80` | DVB-S2 BCH information length | Maximum DVB-S2 baseband data-field length after the 80-bit BBHEADER. | CCSDS-131.3, ETSI-DVBS2 | Seeded |
+| BB-104 | `BBPaddingBits = max(0, K_bch - 80 - DFL)` | selected data-field length and BCH information length | Padding bits required to fill one DVB-S2 BBFRAME before BCH encoding. | CCSDS-131.3, ETSI-DVBS2 | Seeded |
+| BB-105 | `BBFrameBits = 80 + DFL + BBPaddingBits` | BBHEADER, data-field length, padding | DVB-S2 BBFRAME length delivered to the BCH encoder; normally equals `K_bch`. | CCSDS-131.3, ETSI-DVBS2 | Seeded |
+| BB-106 | `BCHParityBits = N_bch - K_bch` | BCH codeword and information lengths | BCH outer-code parity bits in a DVB-S2 FECFRAME. | CCSDS-131.3, ETSI-DVBS2 | Seeded |
+| BB-107 | `LDPCParityBits = N_ldpc - N_bch` | LDPC frame and BCH codeword lengths | LDPC inner-code parity bits appended after BCH encoding. | CCSDS-131.3, ETSI-DVBS2 | Seeded |
+| BB-108 | `DVB_FECFrameEfficiency = K_bch / N_ldpc` | BCH information length and LDPC frame length | FECFRAME coding efficiency for a selected DVB-S2 MODCOD row. | CCSDS-131.3, ETSI-DVBS2 | Seeded |
+| BB-109 | `DVB_FECFrameOverhead = (N_ldpc - K_bch) / K_bch` | BCH information length and LDPC frame length | FEC overhead relative to BBFRAME information capacity. | CCSDS-131.3, ETSI-DVBS2 | Seeded |
+| BB-110 | `DVB_ModulatedSymbols = N_ldpc / m` | LDPC frame length and bits per modulation symbol | Number of modulation symbols carrying one DVB-S2 FECFRAME. | CCSDS-131.3, ETSI-DVBS2 | Seeded |
+| BB-111 | `DVB_PLSLOTS = N_ldpc / (90*m)` | LDPC frame length and modulation order | DVB-S2 physical-layer slot count, with 90 modulation symbols per slot. | CCSDS-131.3, ETSI-DVBS2 | Seeded |
+| BB-112 | `DVB_PilotBlocks = PilotEnabled ? floor((DVB_PLSLOTS - 1)/16) : 0` | physical-layer slots and pilot mode | Number of 36-symbol pilot blocks inserted after each 16-slot group, excluding the end boundary. | CCSDS-131.3, ETSI-DVBS2 | Procedure |
+| BB-113 | `DVB_PLFrameSymbols = 90 + 90*DVB_PLSLOTS + 36*DVB_PilotBlocks` | PLHEADER, payload slots, pilot blocks | Total modulation symbols in one DVB-S2 PLFRAME. | CCSDS-131.3, ETSI-DVBS2 | Seeded |
+| BB-114 | `DVB_FrameDuration = DVB_PLFrameSymbols / R_sym` | PLFRAME symbols and symbol rate | Duration of one DVB-S2 physical-layer frame. | CCSDS-131.3, ETSI-DVBS2 | Seeded |
+| BB-115 | `DVB_PHYEfficiency_bpsym = DFL / DVB_PLFrameSymbols` | data-field bits and PLFRAME symbols | Net user-data efficiency in bits per transmitted modulation symbol for the selected PLFRAME. | CCSDS-131.3, ETSI-DVBS2 | Seeded |
+| BB-116 | `DVB_OccupiedBandwidth ~= (1 + alpha) * R_sym` | rolloff and symbol rate | First-order occupied bandwidth for DVB-S2 shaped transmission. | CCSDS-131.3, ETSI-DVBS2, BOOK-SKLAR | Seeded |
+| BB-117 | `DVB_SpectralEfficiency_bpsHz ~= DVB_PHYEfficiency_bpsym / (1 + alpha)` | physical-layer efficiency and rolloff | Net data spectral efficiency after PLFRAME overhead, pilots, and rolloff. | CCSDS-131.3, ETSI-DVBS2 | Seeded |
+| BB-118 | `DVB_NetBitRate = R_sym * DVB_PHYEfficiency_bpsym` | symbol rate and physical-layer efficiency | Net data-field bit rate for a selected DVB-S2 MODCOD and pilot setting. | CCSDS-131.3, ETSI-DVBS2 | Seeded |
+| BB-119 | `DVB_PLHeaderFraction = 90 / DVB_PLFrameSymbols` | PLHEADER and frame symbols | Fraction of PLFRAME symbols occupied by the DVB-S2 physical-layer header. | CCSDS-131.3, ETSI-DVBS2 | Seeded |
+| BB-120 | `DVB_PilotOverhead = 36*DVB_PilotBlocks / DVB_PLFrameSymbols` | pilot blocks and frame symbols | Fraction of PLFRAME symbols occupied by pilot blocks. | CCSDS-131.3, ETSI-DVBS2 | Seeded |
 
 ## Telemetry, PCM, Space Packet, and Transfer Frames
 

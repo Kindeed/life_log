@@ -121,6 +121,17 @@ Source: CCSDS 401.0-B-32, `Radio Frequency and Modulation Systems, Part 1: Earth
 | CCSDS401-006 | Sections 2.4.18, 2.4.20B, and 2.4.21A | High-rate modulation rows include SRRC-QPSK/OQPSK/8PSK/APSK, 4D 8PSK TCM, GMSK, and filtered OQPSK; footnotes define SRRC alpha options and `BTS`, where `B` is one-sided 3-dB filter bandwidth | Use `B_3dB=BTS*R_cs` and table-driven modulation-family options; do not infer spectral-mask compliance without the SFCG mask data. |
 | CCSDS401-007 | Section 2.4.18 and related high-rate rows | Signaling efficiency is the ratio of source data rate to channel symbol rate; in-band group-delay variation up to 10 percent of signal duration and AM/PM slope under 5 deg/dB are cited as acceptable engineering constraints in relevant high-rate rows | Add as advanced quality margins rather than primary link-budget outputs. |
 
+## CCSDS 131.3-B-2 and ETSI DVB-S2 High-Rate Telemetry Framing
+
+Sources: CCSDS 131.3-B-2, `CCSDS Space Link Protocols over ETSI DVB-S2 Standard`, April 2022; ETSI EN 302 307-1, `DVB-S2`, V1.4.1.
+
+| Extract ID | Standard location | Equation or table | Implementation note |
+| --- | --- | --- | --- |
+| DVBS2-001 | DVB-S2 baseband framing and BCH/LDPC FECFRAME structure | BBFRAME uses an 80-bit BBHEADER, a data field of length `DFL`, padding as needed to reach `K_bch`, then BCH and LDPC parity to produce `N_ldpc` | Catalog adds BB-103 to BB-109. `K_bch`, `N_bch`, and `N_ldpc` must come from the selected MODCOD table row, not from a free-form user entry. |
+| DVBS2-002 | DVB-S2 physical-layer framing | The LDPC FECFRAME is mapped into modulation symbols and 90-symbol physical-layer slots; PLHEADER contributes 90 symbols | Catalog adds BB-110, BB-111, BB-113, BB-114, and BB-119. Normal and short FECFRAME slot counts are derived from `N_ldpc/(90*m)`. |
+| DVBS2-003 | DVB-S2 pilot insertion option | When pilots are enabled, 36-symbol pilot blocks are inserted periodically after groups of 16 slots, excluding the terminal boundary | Catalog adds BB-112 and BB-120. Exact pilot placement should be rendered as a frame diagram in UI; the formula gives overhead for throughput calculations. |
+| DVBS2-004 | CCSDS 131.3-B-2 use of DVB-S2 for CCSDS space links | CCSDS recommends DVB-S2 options for high-data-rate telemetry and maps space link protocol data through DVB-S2 framing | Catalog adds BB-115 to BB-118 for net rate, occupied bandwidth, and spectral efficiency; MODCOD performance thresholds remain table-backed data. |
+
 ## CCSDS 211.2-B-3 Proximity-1 Coding and Synchronization
 
 Source: CCSDS 211.2-B-3, `Proximity-1 Space Link Protocol--Coding and Synchronization Sublayer`, October 2019.

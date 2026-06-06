@@ -482,6 +482,30 @@ This glossary defines shared symbols for the formula knowledge base. App impleme
 | `k_turbo` | `turbo_information_block_bits` | Turbo information block length | bit |
 | `r_ldpc` | `ldpc_code_rate` | CCSDS LDPC code rate | ratio |
 | `m_ldpc` | `ldpc_codewords_per_codeblock` | number of LDPC codewords aggregated in one stream-LDPC codeblock | unit |
+| `DFL` | `dvb_data_field_length` | DVB-S2 baseband data-field length before padding | bit |
+| `DFL_Max` | `dvb_max_data_field_length` | maximum DVB-S2 data-field length for selected MODCOD/FECFRAME row | bit |
+| `K_bch` | `dvb_bch_information_bits` | BCH information length and BBFRAME target length for selected DVB-S2 MODCOD row | bit |
+| `N_bch` | `dvb_bch_codeword_bits` | BCH codeword length before LDPC encoding | bit |
+| `N_ldpc` | `dvb_ldpc_frame_bits` | LDPC FECFRAME length, typically normal or short frame length from DVB-S2 tables | bit |
+| `BBPaddingBits` | `dvb_bbframe_padding_bits` | zero padding bits inserted after the data field before BCH encoding | bit |
+| `BBFrameBits` | `dvb_bbframe_bits` | DVB-S2 baseband frame bits delivered to BCH encoder | bit |
+| `BCHParityBits` | `dvb_bch_parity_bits` | parity bits added by the DVB-S2 BCH outer code | bit |
+| `LDPCParityBits` | `dvb_ldpc_parity_bits` | parity bits added by the DVB-S2 LDPC inner code | bit |
+| `DVB_FECFrameEfficiency` | `dvb_fecframe_efficiency` | BCH information length divided by LDPC frame length | ratio |
+| `DVB_FECFrameOverhead` | `dvb_fecframe_overhead` | FEC overhead relative to BCH information length | ratio |
+| `DVB_ModulatedSymbols` | `dvb_modulated_symbols` | modulation symbols carrying one FECFRAME | symbol |
+| `DVB_PLSLOTS` | `dvb_plslot_count` | DVB-S2 physical-layer slot count, 90 modulation symbols per slot | slot |
+| `PilotEnabled` | `dvb_pilots_enabled` | whether DVB-S2 pilot blocks are inserted | boolean |
+| `DVB_PilotBlocks` | `dvb_pilot_block_count` | count of 36-symbol DVB-S2 pilot blocks in one PLFRAME | block |
+| `DVB_PLFrameSymbols` | `dvb_plframe_symbols` | total modulation symbols in one DVB-S2 PLFRAME including header and pilots | symbol |
+| `R_sym` | `dvb_symbol_rate` | transmitted DVB-S2 modulation symbol rate | symbol/s |
+| `DVB_FrameDuration` | `dvb_plframe_duration` | duration of one DVB-S2 PLFRAME | s |
+| `DVB_PHYEfficiency_bpsym` | `dvb_physical_efficiency_bits_per_symbol` | net data-field bits per transmitted modulation symbol | bit/symbol |
+| `DVB_OccupiedBandwidth` | `dvb_occupied_bandwidth` | first-order occupied RF bandwidth for rolloff-shaped DVB-S2 signal | Hz |
+| `DVB_SpectralEfficiency_bpsHz` | `dvb_spectral_efficiency` | net data spectral efficiency after frame, pilot, and rolloff overhead | bit/s/Hz |
+| `DVB_NetBitRate` | `dvb_net_bit_rate` | net data-field bit rate after physical-layer overhead | bit/s |
+| `DVB_PLHeaderFraction` | `dvb_plheader_fraction` | fraction of PLFRAME symbols occupied by the 90-symbol PLHEADER | ratio |
+| `DVB_PilotOverhead` | `dvb_pilot_overhead` | fraction of PLFRAME symbols occupied by pilot blocks | ratio |
 
 ## Telemetry and Frames
 

@@ -28,6 +28,7 @@ Each pass should produce a reviewed delta to `formula_catalog.md` and, where nee
    - Extract code families, code rates, sync marker sizes, randomizer behavior, CLTU/codeblock overhead, and MODCOD references.
    - Use `standard_extracts.md` CCSDS 231 rows to build BCH/LDPC CLTU sizing tests before adding telecommand UI controls.
    - Use `standard_extracts.md` CCSDS 131 rows to build R-S, Turbo, LDPC, ASM/CSM, and randomizer sizing tests before adding telemetry coding UI controls.
+   - Use `standard_extracts.md` DVB-S2 rows to build BBFRAME/FECFRAME/PLFRAME overhead, pilot-overhead, occupied-bandwidth, spectral-efficiency, frame-duration, and net-rate regression cases before adding high-rate telemetry UI controls.
 
 2. CCSDS data-link pass:
    - TM Space Data Link Protocol.
