@@ -18,9 +18,10 @@ This registry records the standards, handbooks, and published books that should 
 | CCSDS-732.1 | CCSDS 732.1-B-3, Unified Space Data Link Protocol | CCSDS SLS-SLP | USLP, June 2024. | Unified frame overhead and service-mode sizing. |
 | CCSDS-414.1 | CCSDS 414.1-B-3, Pseudo-Noise Ranging Systems | CCSDS SLS-RFM | PN ranging, transparent/regenerative systems, January 2022; chip-rate and acquisition extracts started in `standard_extracts.md`. | PN ranging chip-rate, ambiguity, modulation and processing architecture. |
 | CCSDS-415 | CCSDS 415.0-G, Data Transmission and PN Ranging for 2 GHz CDMA Link via Data Relay Satellite | CCSDS SLS-RFM | Spread-spectrum and CDMA support material. | Spread-spectrum ranging and link-budget extensions. |
-| CCSDS-121 | CCSDS 121.0-B-3, Lossless Data Compression | CCSDS SLS-DC | Source-coding data-compression algorithm and source-packet insertion. | Lossless compression ratio, packetization overhead, data-volume reduction. |
-| CCSDS-122 | CCSDS 122.0-B-2, Image Data Compression | CCSDS SLS-DC | Image compression for payload instrument data and compression-rate control. | Payload image compression sizing and storage/downlink budget reduction. |
-| CCSDS-123 | CCSDS 123.0-B-2, Multispectral and Hyperspectral Image Compression | CCSDS SLS-DC | Low-complexity lossless and near-lossless compression for 3-D image data. | Multispectral/hyperspectral data-rate and volume calculators. |
+| CCSDS-121 | CCSDS 121.0-B-3, Lossless Data Compression | CCSDS SLS-DC | Active Blue Book, August 2020; public PDF extracted for block, predictor, mapper, Rice-option, and CDS first pass. | Lossless compression block sizing, reference-sample overhead, Rice option selection, packetization overhead, data-volume reduction. |
+| CCSDS-122 | CCSDS 122.0-B-2, Image Data Compression | CCSDS SLS-DC | Active Blue Book, September 2017; direct guessed PDF URL returned 404 in this pass, but CCSDS active registry confirms the current issue and reconfirmation through July 2028. | Payload image compression sizing and storage/downlink budget reduction; exact wavelet/segment/rate-control tables remain pending. |
+| CCSDS-120.2 | CCSDS 120.2-G-2, Low-Complexity Lossless and Near-Lossless Multispectral and Hyperspectral Image Compression | CCSDS SLS-DC | Active Green Book, December 2022; public PDF extracted for tutorial formulas underlying CCSDS 123.0-B-2. | Multispectral/hyperspectral image volume, predictor explanation, near-lossless quantizer and error-limit controls. |
+| CCSDS-123 | CCSDS 123.0-B-2, Multispectral and Hyperspectral Image Compression | CCSDS SLS-DC | Active Blue Book, February 2019; CCSDS registry states current version includes corrigenda through February 2021. Corrigendum 3 PDF extracted; full direct Blue Book PDF remains to retrieve. | Multispectral/hyperspectral data-rate and volume calculators, near-lossless fidelity bounds, predictor and entropy-coder table extraction. |
 | CCSDS-211.0 | CCSDS 211.0-B-6, Proximity-1 Space Link Protocol--Data Link Layer | CCSDS SLS-SLP | CCSDS active registry lists Issue 6, July 2020; exact public PDF direct URL returned 404 in this pass. ISO 22663/CCSDS 211.0-B-5 public preview is used for stable Version-3 frame field extracts until B-6 PDF is retrieved. | Relay/orbiter-lander Version-3 frame overhead, data-field capacity, header field widths, and frame-plus-PLTU efficiency calculators; Version-4/USLP deltas remain pending. |
 | CCSDS-211.1 | CCSDS 211.1-B-4, Proximity-1 Physical Layer | CCSDS SLS-RFM | CCSDS active registry lists Issue 4, December 2013; ISO 21460/CCSDS 211.1-B-4 public preview used for rate reference points and physical-layer scope. | Proximity link `R_d/R_cs/R_chs` reference points, coded/channel symbol-rate validation, modulation relationship, and physical-layer offset/stability margins. |
 | CCSDS-211.2 | CCSDS 211.2-B-3, Proximity-1 Coding and Synchronization Sublayer | CCSDS SLS-C&S | Public Issue 3, October 2019 PDF extracted for first-pass PLTU, idle, coding, LDPC/CSM, and randomizer formulas. | Proximity coding/sync overhead, allowed `Rd` validation, coded-rate expansion, LDPC/CSM efficiency, and PLTU efficiency formulas. |
@@ -46,6 +47,8 @@ This registry records the standards, handbooks, and published books that should 
 | BOOK-SKLAR | Sklar and Harris, *Digital Communications*, 3rd ed. | Pearson/InformIT pages list modulation, coding, synchronization, OFDM, MIMO, link budgets, and baseband transmission coverage. | Eb/N0, BER/PER, modulation, baseband, channel coding, synchronization, OFDM, MIMO formulas. |
 | BOOK-PROAKIS | Proakis and Salehi, *Digital Communications*, 5th ed. | Bibliographic/publisher evidence lists digital modulation schemes, AWGN optimum receivers, carrier/symbol synchronization, information theory, and coding topics. | BER curves, matched filtering, AWGN, coding, synchronization. |
 | BOOK-HAYKIN | Haykin and Moher, *Communication Systems*, 5th ed. | Wiley/bibliographic pages list analog and digital communications, signal processing, filtering, and systems coverage. | Baseband/passband signals, noise, modulation, filtering. |
+| BOOK-SAYOOD | Sayood, *Introduction to Data Compression*, 4th ed. | Elsevier/O'Reilly pages list information theory, coding, quantization, subband coding, bit allocation, and image-compression coverage. | Cross-check entropy, average code length, quantization, and compression-ratio formulas without copying standard-specific algorithm tables. |
+| BOOK-SALOMON | Salomon, *Data Compression: The Complete Reference* | Springer and Google Books pages identify broad lossless/lossy compression, Huffman, arithmetic, dictionary, image, wavelet, and quantization coverage. | General compression terminology and sanity checks for textbook formulas. |
 | BOOK-VALLADO | Vallado, *Fundamentals of Astrodynamics and Applications* | Published textbook; add publisher URL during next pass. | Orbit geometry, ground-station look angles, visibility, range/range-rate support. |
 | BOOK-BATE | Bate, Mueller, White, *Fundamentals of Astrodynamics* | Published textbook; add publisher URL during next pass. | Classical orbit mechanics and contact geometry sanity checks. |
 
@@ -54,7 +57,7 @@ This registry records the standards, handbooks, and published books that should 
 1. Continue active CCSDS PDF extraction for 131.0-B-6, 732.0-B, 732.1-B, COP-1, compression, and Proximity-1; first-pass extracts already exist for 401.0-B-32, 211.2-B-3, 131.0-B-5, 231.0-B-4, 414.1-B-3, 132.0-B-3, and 232.0-B-4.
 2. Extract only implementation-relevant tables: code rates, frame lengths, sync marker sizes, transfer frame fields, MODCOD identifiers, PN chip-rate values, and mode/managed-parameter options.
 3. Cross-check ITU-R P.618 dependencies: P.618 calls into P.837, P.838, P.839, P.840, P.676 depending on fade mechanism.
-4. Extract CCSDS compression and remaining Proximity-1 table fields where public Blue/Green Books define selectable parameters, especially 211.0-B-6 Version-4/USLP deltas and 211.1-B-4 UHF channel/hailing/polarization tables.
+4. Continue CCSDS compression and remaining Proximity-1 table fields where public Blue/Green Books define selectable parameters, especially CCSDS 122 exact image-compression tables, CCSDS 123 Blue Book predictor/entropy/header tables, 211.0-B-6 Version-4/USLP deltas, and 211.1-B-4 UHF channel/hailing/polarization tables.
 5. Add ECSS and Chinese/GJB public index references only where public bibliographic details are available. Do not encode restricted standards text.
 
 ## Reference Links
@@ -73,7 +76,11 @@ This registry records the standards, handbooks, and published books that should 
 | CCSDS-232 PDF | https://public.ccsds.org/Pubs/232x0b4e1c1.pdf |
 | CCSDS-414.1 | https://ccsds.org/publications/allpubs/entry/3249/ |
 | CCSDS-414.1 PDF | https://public.ccsds.org/Pubs/414x1b3e1.pdf |
-| CCSDS-121/122/123 search | https://ccsds.org/searchpubs/ |
+| CCSDS-121 PDF | https://public.ccsds.org/Pubs/121x0b3.pdf |
+| CCSDS-120.2 | https://ccsds.org/publications/allpubs/entry/3211/ |
+| CCSDS-120.2 PDF | https://public.ccsds.org/Pubs/120x2g2.pdf |
+| CCSDS-123 Corrigendum 3 PDF | https://ccsds.org/Pubs/123x0b2e1c3_tc2101.pdf |
+| CCSDS-121/122/123 registry search | https://ccsds.org/searchpubs/ |
 | CCSDS Proximity-1 search | https://ccsds.org/searchpubs/ |
 | CCSDS-211.2 PDF | https://public.ccsds.org/Pubs/211x2b3.pdf |
 | ISO-22663 / CCSDS-211.0 public preview | https://standards.iteh.ai/catalog/standards/iso/6dd0e130-18a3-42a4-8d70-3cfd4a695935/iso-22663-2015 |
@@ -108,3 +115,5 @@ This registry records the standards, handbooks, and published books that should 
 | BOOK-PROAKIS bibliographic | https://www.campusbooks.com/books/9780072957167-digital-communications |
 | BOOK-HAYKIN bibliographic | https://ndlsearch.ndl.go.jp/books/R100000002-I000010817499 |
 | BOOK-SMAD | https://books.google.com/books/about/Space_Mission_Engineering.html?id=4JM7tAEACAAJ |
+| BOOK-SAYOOD | https://www.oreilly.com/library/view/introduction-to-data/9780124157965/ |
+| BOOK-SALOMON | https://link.springer.com/book/10.1007/978-3-642-86092-8 |

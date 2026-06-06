@@ -15,14 +15,14 @@ This matrix tracks whether the knowledge base is moving toward the requested com
 | Telecommand | TC frames, CLTU, BCH/LDPC, repeat, COP/ARQ goodput | CCSDS 231, 232, COP-1 | TC frame capacity and CLTU BCH/LDPC sizing extracts started | Extract COP/FARM timing model and PLOP timing details. |
 | Ranging/tracking | PN range, ambiguity, Doppler, guard band, Delta-DOR, radar equation | CCSDS 414.1, 415, DSN 810-005, DESCANSO, Balanis | PN chip-rate/acquisition formulas extracted; DESCANSO and DSN 202/203/210/211/214 first-pass Doppler, carrier-loop SNR, Doppler error, sequential/PN ranging, delay correction, RSS error, VLBI/DOR, and radar/external-measurement formulas added | Extract full transparent/regenerative PN mode matrices, exact two-way/three-way turnaround ratios, covariance/OD weighting models, DOR/VLBI error-budget tables, and solar scintillation/channel-specific models. |
 | Proximity links | orbiter/lander relay physical, coding, data-link efficiency | CCSDS 211.0, 211.1, 211.2, ISO 22663, ISO 21460 | Version-3 frame header/capacity/efficiency, PLTU, idle PN, allowed `Rd`, allowed `R_cs`, physical `R_chs=R_cs`, offset/stability margins, convolutional expansion, LDPC/CSM overhead, randomizer procedure, and net-rate seed formulas added | Retrieve exact CCSDS 211.0-B-6 PDF for Version-4/USLP deltas and extract CCSDS 211.1 UHF channel/hailing/polarization tables. |
-| Data compression | lossless/image/hyperspectral compression and data-volume reduction | CCSDS 121, 122, 123, Sklar | Newly seeded | Extract packetization overhead, predictor/quantizer parameters, rate-control fields. |
+| Data compression | lossless/image/hyperspectral compression and data-volume reduction | CCSDS 121, 122, 123, CCSDS 120.2, Sklar, Sayood, Salomon | CCSDS 121 block/reference/predictor/mapper/Rice-option sizing and CCSDS 120.2/123 multispectral image-volume, scaled-predictor, quantizer, error-limit, and update-cadence formulas extracted | Extract CCSDS 122 exact image-compression tables, CCSDS 123 Blue Book relative-error/header/predictor/entropy-coder tables, CCSDS 121 ID/zero-run tables as machine-readable assets, and textbook example cases. |
 | Orbit/contact geometry | slant range, elevation, pass time, range-rate, antenna tracking rates | SMAD, Vallado, DSN 810-005 | Newly seeded | Add Earth rotation, station coordinates, ECI/ECEF transforms, minimum-elevation contact solver. |
 | System operations | data volume, contact time, storage margin, duty cycle, power average | SMAD | Seeded | Integrate with actual scenario calculators and schedule windows. |
 | Optical links | diffraction, photon energy, pointing loss | DESCANSO optical references, Balanis | Seeded as extension | Add atmospheric optical loss, detector noise, photon-counting BER/PPM formulas. |
 
 ## Current Numeric Coverage
 
-As of this pass, `formula_catalog.md` contains 494 formula or formula-family entries across RF, link, baseband, telemetry, telecommand, ranging/tracking, system, optical, orbit/contact, compression, protocol, and measurement domains.
+As of this pass, `formula_catalog.md` contains 520 formula or formula-family entries across RF, link, baseband, telemetry, telecommand, ranging/tracking, system, optical, orbit/contact, compression, protocol, and measurement domains.
 
 ## Not Yet Complete
 

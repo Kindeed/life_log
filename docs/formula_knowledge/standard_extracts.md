@@ -206,6 +206,36 @@ Source: CCSDS 131.0-B-5, `TM Synchronization and Channel Coding`, September 2023
 | TMCH-012 | Section 11.7 to 11.9 | Turbo transfer-frame octets: `{223,446,892,1115}`; TF-LDPC octets: `892` for rate 7/8, `{128,512,2048}` for rates 1/2, 2/3, 4/5; stream-LDPC max transfer-frame octets: 2048 for TM/AOS and 65536 for USLP | Implement as mode-dependent validation rows before exposing generalized frame-length inputs. |
 | TMCH-013 | Section 12.1 to 12.8 | Managed parameters include randomizer choice, coding method, convolutional rate, R-S `E/I/Q`, Turbo `r/k`, LDPC `r/k`, and stream-LDPC `m=1..8` | These should become scenario configuration fields, mostly hidden in advanced groups. |
 
+## CCSDS 121.0-B-3 Lossless Data Compression
+
+Source: CCSDS 121.0-B-3, `Lossless Data Compression`, August 2020.
+
+| Extract ID | Standard location | Equation or table | Implementation note |
+| --- | --- | --- | --- |
+| COMP121-001 | Sections 3.1.5 to 3.1.6 | Variables required by Rice adaptive coding include block size `J`, sample resolution `n`, and selected code-option ID; `J in {8,16,32,64}`, `n <= 32` | These are managed parameters, not free-form UI fields. |
+| COMP121-002 | Section 2.1 and section 2.2 change notes | If input length is not a multiple of `J`, append padding samples; zero-valued preprocessed padding minimizes compressed data | Catalog adds `InputBlocks` and `PaddingSamples` for payload volume estimation. |
+| COMP121-003 | Sections 4.2.6 and 4.3 | Reference samples are the first sample of a `J`-sample block and are inserted every `r` blocks when predictive preprocessing needs prior samples; `r <= 4096` | Expose reference-sample overhead only when a predictor mode requires it. |
+| COMP121-004 | Sections 4.2.5 and 4.4 | Unit-delay prediction uses the previous sample except at the first sample in a reference interval; `Delta_i=x_i-xhat_i`; `theta_i=min(xhat_i-x_min,x_max-xhat_i)`; mapper produces nonnegative `delta_i` | Use signed/unsigned sample-range helpers before applying the mapper. |
+| COMP121-005 | Sections 3.2 and 3.3 | FS codeword for value `v` has `v` zeros followed by one `1`; split-sample option FS-codes `floor(delta_i/2^k)` and appends `k` uncoded LSBs per encoded sample | `k=0` is the FS option; CDS ordering sends all FS codewords before all split bits. |
+| COMP121-006 | Section 3.4 | `gamma_j=(delta_(2*j-1)+delta_(2*j))*(delta_(2*j-1)+delta_(2*j)+1)/2 + delta_(2*j)`, `j=1..J/2`; use `delta_1=0` if the first block sample is a reference sample | Second-extension should be a selectable procedure output with estimated encoded length. |
+| COMP121-007 | Section 3.5 | Zero-block option always encodes consecutive all-zero blocks; each `r`-block reference interval is partitioned into segments of 64 blocks except possibly the last | Catalog adds zero-block segment sizing; exact zero-run FS/ROS mapping should become table data. |
+| COMP121-008 | Section 3.6 | No-compression attaches an identification field and otherwise leaves the entire `J`-sample preprocessed block unchanged | Catalog adds `NoCompressionCDSBits=IDBits+J*n`. |
+| COMP121-009 | Sections 3.7 and 5.2.1 | Code selection minimizes encoded bits including ID bits; zero-block has priority; ties prefer no-compression, then second-extension, then smallest `k` | Implement as a deterministic tie-break procedure; table 5-1 provides ID bit sequences. |
+
+## CCSDS 120.2-G-2 / CCSDS 123.0-B-2 Multispectral and Hyperspectral Compression
+
+Sources: CCSDS 120.2-G-2, `Low-Complexity Lossless and Near-Lossless Multispectral and Hyperspectral Image Compression`, December 2022; CCSDS 123.0-B-2 technical corrigendum 3, February 2021. CCSDS lists 123.0-B-2 Issue 2, February 2019, with updates through corrigendum 3.
+
+| Extract ID | Standard location | Equation or table | Implementation note |
+| --- | --- | --- | --- |
+| COMP123G-001 | Sections 2.1 and 3.3.3 | The standard supports BSQ, BIP, and BIL scan orders for three-dimensional instrument data | Store scan order as a mode field; raw image sizing uses `N_x*N_y*N_z*D` independent of order. |
+| COMP123G-002 | Section 3.2.3, equation 13 | `s_hat_z(t)=floor(s_tilde_z(t)/2)`; predicted sample is `D` bits and scaled predicted sample is `(D+1)` bits | Useful for explaining predictor precision and for later exact predictor implementation. |
+| COMP123G-003 | Section 3.2.3 | Scaled prediction error is effectively `2*s_z(t)-s_tilde_z(t)` | Keep as predictor metadata until the full closed-loop predictor is implemented. |
+| COMP123G-004 | Section 3.2.4.1 | Near-lossless residual quantizer has step size `2*m_z(t)+1`, guaranteeing reconstruction error no larger than `m_z(t)` | This becomes a primary output in a compression trade workbench. |
+| COMP123G-005 | Section 3.2.4.1 | Lossless compression sets `m_z(t)=0`; absolute-error-only mode sets `m_z(t)=a_z` | Relative-error formulas in the extracted PDF text were not sufficiently legible; keep them pending until verified from the Blue Book or a cleaner source. |
+| COMP123G-006 | Section 3.2.4.1 | Periodic error-limit updates encode new error limits every `2^u` frames | Rate-control UI should show update cadence and header/bitstream impact when exact header fields are extracted. |
+| COMP123G-007 | Corrigendum 3, tables B-20 and B-25 updates | Corrigendum 3 changes hybrid entropy-coder table entries, including a flush-word row and one input-codeword range | Treat as table/procedure data, not standalone scalar formulas. |
+
 ## Extraction Status Delta
 
 | Source | Previous status | Current status | Remaining work |
@@ -217,6 +247,8 @@ Source: CCSDS 131.0-B-5, `TM Synchronization and Channel Coding`, September 2023
 | CCSDS-211.2 | Listed as Proximity-1 coding/sync source; only generic net-rate formula seeded | PLTU size/efficiency, idle PN sizing, allowed `Rd` validation, convolutional expansion, LDPC `(2048,1024)` plus 64-bit CSM overhead, and randomizer procedure extracted | Exact examples and test vectors remain to add. |
 | CCSDS-211.0/ISO-22663 | Listed as Proximity-1 data-link source; only generic net-rate formula seeded | Version-3 Transfer Frame fixed header, maximum frame/data-field capacity, header field-width sum, sequence-number/addressing cardinalities, and frame-plus-PLTU efficiency formulas extracted | Verify B-6 USLP/Version-4 deltas against exact current PDF before implementing Version-4 UI. |
 | CCSDS-211.1/ISO-21460 | Listed as Proximity-1 physical-layer source; no scalar formulas seeded | `R_d/R_cs/R_chs` reference points, `R_chs=R_cs`, discrete coded-symbol-rate validation, channel-symbol-rate offset margin, and short-term stability margin extracted | Extract UHF channel/hailing/polarization tables from exact standard text or public table assets. |
+| CCSDS-121 | Listed as compression source; only generic compression ratios seeded | Block sizing, padding, reference-sample overhead, unit-delay prediction, prediction-error mapper, FS/split/second-extension/zero-block/no-compression sizing, and code-option selection extracted | Convert ID table 5-1 and zero-run ROS table into machine-readable table assets before app implementation. |
+| CCSDS-120.2/123 | Listed as compression source; only generic compression ratios seeded | Three-dimensional image sizing, scaled predictor relation, near-lossless quantizer step, lossless/absolute-error modes, and periodic error-limit update cadence extracted from the CCSDS 123 Green Book and corrigendum | Retrieve the full 123.0-B-2 Blue Book PDF and verify relative-error formula, header fields, predictor tables, and hybrid entropy coder tables. |
 | ITU-P618/P676/P838/P839/P840 | Listed as source; rain and total attenuation top-level formulas seeded | P.838 rain specific attenuation, P.839 rain height, P.618 slant-path rain attenuation/total attenuation/scintillation/sky-noise, P.676 gaseous attenuation, and P.840 cloud/fog attenuation formulas extracted | Continue low-elevation multipath, depolarization, coefficient map/table assets, and implementation-ready coefficient packaging. |
 | CCSDS-414.1 | Listed as source; PN formulas partly seeded | Chip-rate equations, selector rules, cross-support examples, acquisition scaling, delay limits, and jitter reference rows extracted | Extract full transparent/regenerative mode field matrices and station/on-board performance tables. |
 | CCSDS-131 | Listed as source; generic coding formulas seeded | Public B-5 convolutional, R-S, Turbo, LDPC, ASM, CSM, randomizer, and frame-length extracts added | Verify deltas against Issue 6 when the official B-6 PDF is accessible. |

@@ -578,6 +578,41 @@ This glossary defines shared symbols for the formula knowledge base. App impleme
 | `H` | `entropy` | source entropy | bit/symbol |
 | `L_avg` | `average_code_length` | expected code length | bit/symbol |
 | `q` | `quantization_step` | near-lossless quantization step | source-unit |
+| `InputSamples` | `compression_input_samples` | number of source samples entering the compressor | sample |
+| `J` | `compression_block_size_samples` | CCSDS 121 samples per entropy-coder block; valid standard values are 8, 16, 32, or 64 | sample/block |
+| `InputBlocks` | `compression_input_blocks` | number of `J`-sample blocks after padding | block |
+| `PaddingSamples` | `compression_padding_samples` | samples appended to complete the final block | sample |
+| `r` | `reference_sample_interval_blocks` | CCSDS 121 reference sample interval in blocks | block |
+| `ReferenceSampleCount` | `reference_sample_count` | number of uncoded reference samples inserted in the coded stream | sample |
+| `ReferenceSampleBits` | `reference_sample_bits` | bits occupied by uncoded reference samples | bit |
+| `n` | `sample_resolution_bits` | CCSDS 121 sample resolution | bit/sample |
+| `x_i` | `compression_sample_value` | input sample value at index `i` | source-unit |
+| `xhat_i` | `compression_predicted_sample` | predicted sample value used by CCSDS 121 preprocessing | source-unit |
+| `Delta_i` | `compression_prediction_error` | signed prediction error before mapping | source-unit |
+| `delta_i` | `compression_mapped_prediction_error` | nonnegative mapped prediction error entering entropy coding | integer |
+| `theta_i` | `compression_mapper_threshold` | prediction-error mapper threshold | source-unit |
+| `x_min` | `sample_minimum_value` | minimum representable sample value | source-unit |
+| `x_max` | `sample_maximum_value` | maximum representable sample value | source-unit |
+| `k` | `split_sample_parameter` | number of LSBs transmitted uncoded in a CCSDS 121 split-sample option | bit |
+| `SplitMSB_i` | `split_sample_msb_value` | integer value encoded by FS codeword in a split-sample option | integer |
+| `SplitLSB_i` | `split_sample_lsb_value` | low-order `k` bits sent uncoded in a split-sample option | integer |
+| `EncodedSamplesInBlock` | `encoded_samples_in_block` | samples encoded in the block, `J` or `J-1` when a reference sample is present | sample |
+| `gamma_j` | `second_extension_symbol` | CCSDS 121 second-extension symbol for sample pair `j` | integer |
+| `BlocksInReferenceInterval` | `blocks_in_reference_interval` | block count in a reference interval or final partial interval | block |
+| `IDBits` | `compression_option_id_bits` | option-identification key length for a coded data set | bit |
+| `EncodedBits_option` | `compression_candidate_encoded_bits` | candidate encoded length for one code option | bit |
+| `N_x` | `image_cross_track_samples` | image samples in the cross-track/sample dimension | sample |
+| `N_y` | `image_frames_or_lines` | image frames or lines in the along-track dimension | frame, line |
+| `N_z` | `image_spectral_bands` | spectral bands in a multispectral/hyperspectral cube | band |
+| `D` | `image_sample_bit_depth` | image sample dynamic range in bits | bit/sample |
+| `s_z(t)` | `spectral_sample_value` | sample value for spectral band `z` at index `t` | DN |
+| `s_hat_z(t)` | `spectral_predicted_sample` | predicted sample in CCSDS 123 notation | DN |
+| `s_tilde_z(t)` | `spectral_scaled_predicted_sample` | integer scaled predicted sample with one extra bit of resolution | DN |
+| `m_z(t)` | `near_lossless_max_error` | per-sample maximum reconstruction error for CCSDS 123 near-lossless mode | DN |
+| `a_z` | `absolute_error_limit` | band-specific absolute error limit | DN |
+| `u` | `error_limit_update_exponent` | exponent controlling periodic error-limit updates | unit |
+| `CompressedImageBits` | `compressed_image_bits` | compressed image size | bit |
+| `AcquisitionDuration` | `image_acquisition_duration` | duration over which the image cube is acquired | s |
 
 ## Protocol and Measurement
 

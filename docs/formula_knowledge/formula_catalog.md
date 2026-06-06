@@ -504,6 +504,32 @@ Notation:
 | COMP-012 | `PacketizedCompressedBits = CompressedDataBits + PacketOverheadBits` | source packet overhead | Compressed stream inserted into source packets. | CCSDS-121, CCSDS-122, CCSDS-123 | Procedure |
 | COMP-013 | `StorageGain = 1 - CompressedBits / UncompressedBits` | storage reduction | Fractional storage saving. | CCSDS-121, BOOK-SMAD | Seeded |
 | COMP-014 | `DownlinkTimeSaved = DataVolume/Rate - CompressedBits/Rate` | volume and downlink rate | Contact-time saving from compression. | BOOK-SMAD, CCSDS-121 | Seeded |
+| COMP-015 | `InputBlocks = ceil(InputSamples / J)` | input sample count and CCSDS 121 block size | Number of `J`-sample input blocks; padding is used when the input sequence is not an integer number of blocks. | CCSDS-121 | Seeded |
+| COMP-016 | `PaddingSamples = (J - (InputSamples mod J)) mod J` | input sample count and block size | Samples appended to align a CCSDS 121 input sequence to full blocks; zero-valued preprocessed padding minimizes coded output. | CCSDS-121 | Seeded |
+| COMP-017 | `ReferenceSampleCount = ceil(InputBlocks / r)` | input blocks and reference interval | Count of uncoded reference samples when predictive preprocessing requires one reference at the first block of each `r`-block interval. | CCSDS-121 | Seeded |
+| COMP-018 | `ReferenceSampleBits = ReferenceSampleCount * n` | reference samples and sample resolution | Output bit budget for uncoded CCSDS 121 reference samples placed in the corresponding CDS. | CCSDS-121 | Seeded |
+| COMP-019 | `xhat_i = x_i if reference sample else x_(i-1)` | unit-delay predictor state | CCSDS 121 unit-delay predictor; the first sample in a reference interval predicts itself. | CCSDS-121 | Procedure |
+| COMP-020 | `Delta_i = x_i - xhat_i` | sample and predicted sample | Prediction error entering the CCSDS 121 prediction-error mapper. | CCSDS-121 | Seeded |
+| COMP-021 | `theta_i = min(xhat_i - x_min, x_max - xhat_i)` | predictor value and sample range | CCSDS 121 mapper threshold for the allowed prediction-error range. | CCSDS-121 | Seeded |
+| COMP-022 | `delta_i = 2*Delta_i if 0 <= Delta_i <= theta_i; -2*Delta_i - 1 if -theta_i <= Delta_i < 0; theta_i + abs(Delta_i) otherwise` | prediction error and mapper threshold | Nonnegative mapped prediction error for CCSDS 121 entropy coding. | CCSDS-121 | Procedure |
+| COMP-023 | `x_min = 0; x_max = 2^n - 1` | unsigned sample resolution | Unsigned CCSDS 121 `n`-bit sample range. | CCSDS-121 | Seeded |
+| COMP-024 | `x_min = -2^(n-1); x_max = 2^(n-1) - 1` | signed sample resolution | Signed CCSDS 121 `n`-bit sample range. | CCSDS-121 | Seeded |
+| COMP-025 | `FSCodewordBits(v) = v + 1` | fundamental-sequence value | Fundamental Sequence codeword length: `v` zeros followed by one `1`. | CCSDS-121 | Seeded |
+| COMP-026 | `SplitMSB_i = floor(delta_i / 2^k); SplitLSB_i = delta_i mod 2^k` | mapped sample and split parameter | CCSDS 121 split-sample decomposition; the MSB value is FS-coded and the `k` LSBs are sent uncoded. | CCSDS-121 | Seeded |
+| COMP-027 | `SplitUncodedBits = k * EncodedSamplesInBlock` | split parameter and coded sample count | Uncoded LSB field length for a split-sample CDS; use `J-1` when a reference sample occupies the first sample. | CCSDS-121 | Seeded |
+| COMP-028 | `gamma_j = (delta_(2*j-1)+delta_(2*j))*(delta_(2*j-1)+delta_(2*j)+1)/2 + delta_(2*j)` | paired mapped samples | CCSDS 121 second-extension transform for each pair of preprocessed samples; use `delta_1=0` when the first block sample is a reference sample. | CCSDS-121 | Seeded |
+| COMP-029 | `ZeroBlockSegments = ceil(BlocksInReferenceInterval / 64)` | blocks in a reference interval | CCSDS 121 zero-block option partitions each reference interval into 64-block segments, except possibly the last segment. | CCSDS-121 | Seeded |
+| COMP-030 | `NoCompressionCDSBits = IDBits + J*n` | ID field, block size, sample resolution | Coded Data Set size when CCSDS 121 no-compression is selected for a whole preprocessed block. | CCSDS-121 | Seeded |
+| COMP-031 | `SelectedCodeOption = argmin_option(EncodedBits_option + IDBits_option)` | candidate option bit lengths | CCSDS 121 single-block code-option selection; zero-block has priority for all-zero runs and tie-breaking prefers no-compression, then second-extension, then smallest `k`. | CCSDS-121 | Procedure |
+| COMP-032 | `ImageSamples3D = N_x * N_y * N_z` | cross-track, frame/line, and spectral-band counts | Sample count for a multispectral or hyperspectral image cube. | CCSDS-123, CCSDS-120.2 | Seeded |
+| COMP-033 | `ImageRawBits3D = N_x * N_y * N_z * D` | image dimensions and bit depth | Raw data volume for a `D`-bit multispectral/hyperspectral image cube. | CCSDS-123, CCSDS-120.2 | Seeded |
+| COMP-034 | `s_hat_z(t) = floor(s_tilde_z(t) / 2)` | scaled predicted sample | CCSDS 123 predicted sample derived from the integer scaled predicted sample; `s_tilde` has one extra bit of resolution. | CCSDS-123, CCSDS-120.2 | Seeded |
+| COMP-035 | `PredictionErrorScaled_z(t) = 2*s_z(t) - s_tilde_z(t)` | current sample and scaled predictor | Scaled prediction error used by the CCSDS 123 predictor explanation. | CCSDS-123, CCSDS-120.2 | Seeded |
+| COMP-036 | `QuantizerStep_z(t) = 2*m_z(t) + 1` | per-sample maximum error value | Uniform near-lossless quantizer step size that guarantees reconstruction error no larger than `m_z(t)`. | CCSDS-123, CCSDS-120.2 | Seeded |
+| COMP-037 | `m_z(t) = a_z` | band-specific absolute error limit | CCSDS 123 absolute-error-limit mode for near-lossless compression. | CCSDS-123, CCSDS-120.2 | Seeded |
+| COMP-038 | `m_z(t) = 0` | lossless mode | Lossless CCSDS 123 setting for every band and sample. | CCSDS-123, CCSDS-120.2 | Seeded |
+| COMP-039 | `ErrorLimitUpdatePeriodFrames = 2^u` | error-limit update exponent | Periodic error-limit update interval for CCSDS 123 near-lossless compression. | CCSDS-123, CCSDS-120.2 | Seeded |
+| COMP-040 | `CompressedImageRate = CompressedImageBits / AcquisitionDuration` | compressed image size and acquisition time | Payload image data rate after compression for storage/downlink sizing. | CCSDS-122, CCSDS-123, BOOK-SMAD | Seeded |
 
 ## Protocol, Security, and Space Link Overhead Extensions
 
