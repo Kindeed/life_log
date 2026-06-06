@@ -758,9 +758,10 @@ class _CalculationWorkbench extends StatelessWidget {
   Widget build(BuildContext context) {
     final outputPane = _WorkbenchPane(
       title: '输出',
-      subtitle: '主结果优先，附带复核参数',
+      subtitle: '主结果优先，含工程判断',
       icon: Icons.analytics_outlined,
       color: color,
+      emphasized: true,
       child: _CompactResultPanel(result: result, color: color),
     );
     final inputPane = _WorkbenchPane(
@@ -828,6 +829,7 @@ class _CompactResultPanel extends StatelessWidget {
         .where((output) => output.id != primary.id)
         .take(4)
         .toList(growable: false);
+    final insight = _resultInsight(context, result.outputs, primary);
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -896,6 +898,8 @@ class _CompactResultPanel extends StatelessWidget {
           _CompactResultRow(output: rest[i], color: color),
           if (i < rest.length - 1) SizedBox(height: 6.h),
         ],
+        if (rest.isNotEmpty) SizedBox(height: 8.h),
+        _OutputInsightPanel(insight: insight),
       ],
     );
   }
@@ -954,6 +958,7 @@ class _WorkbenchPane extends StatelessWidget {
   final IconData icon;
   final Color color;
   final Widget child;
+  final bool emphasized;
 
   const _WorkbenchPane({
     required this.title,
@@ -961,6 +966,7 @@ class _WorkbenchPane extends StatelessWidget {
     required this.icon,
     required this.color,
     required this.child,
+    this.emphasized = false,
   });
 
   @override
@@ -970,9 +976,15 @@ class _WorkbenchPane extends StatelessWidget {
       width: double.infinity,
       padding: EdgeInsets.all(12.w),
       decoration: BoxDecoration(
-        color: theme.semanticColors.mutedSurface.withValues(alpha: 0.5),
+        color: emphasized
+            ? color.withValues(alpha: 0.06)
+            : theme.semanticColors.mutedSurface.withValues(alpha: 0.5),
         borderRadius: BorderRadius.circular(8),
-        border: Border.all(color: theme.semanticColors.border),
+        border: Border.all(
+          color: emphasized
+              ? color.withValues(alpha: 0.24)
+              : theme.semanticColors.border,
+        ),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -1097,6 +1109,86 @@ class _StatusPanel extends StatelessWidget {
   }
 }
 
+class _ResultInsight {
+  final IconData icon;
+  final Color color;
+  final String title;
+  final String message;
+
+  const _ResultInsight({
+    required this.icon,
+    required this.color,
+    required this.title,
+    required this.message,
+  });
+}
+
+class _OutputInsightPanel extends StatelessWidget {
+  final _ResultInsight insight;
+
+  const _OutputInsightPanel({required this.insight});
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    return Container(
+      width: double.infinity,
+      padding: EdgeInsets.all(9.w),
+      decoration: BoxDecoration(
+        color: insight.color.withValues(alpha: 0.08),
+        borderRadius: BorderRadius.circular(8),
+        border: Border.all(color: insight.color.withValues(alpha: 0.24)),
+      ),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Icon(insight.icon, color: insight.color, size: 18.sp),
+          SizedBox(width: 8.w),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  '工程判断',
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: TextStyle(
+                    color: insight.color,
+                    fontSize: 11.sp,
+                    fontWeight: FontWeight.w900,
+                  ),
+                ),
+                SizedBox(height: 3.h),
+                Text(
+                  insight.title,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: theme.textTheme.labelLarge?.copyWith(
+                    fontWeight: FontWeight.w900,
+                    height: 1.15,
+                  ),
+                ),
+                SizedBox(height: 3.h),
+                Text(
+                  insight.message,
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
+                  style: TextStyle(
+                    color: theme.colorScheme.onSurfaceVariant,
+                    fontSize: 11.sp,
+                    height: 1.3,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
 Color _outputStatusColor(
   BuildContext context,
   TelemetryCalculationOutput output,
@@ -1110,6 +1202,74 @@ Color _outputStatusColor(
     return Theme.of(context).semanticColors.success;
   }
   return fallback;
+}
+
+_ResultInsight _resultInsight(
+  BuildContext context,
+  List<TelemetryCalculationOutput> outputs,
+  TelemetryCalculationOutput primary,
+) {
+  final theme = Theme.of(context);
+  final margin = _findOutput(outputs, 'margin');
+  if (margin != null) {
+    return _marginInsight(
+      margin,
+      passTitle: '链路余量满足要求',
+      failTitle: '链路余量不足',
+      contextLabel: '当前链路余量',
+      passColor: theme.semanticColors.success,
+      failColor: theme.colorScheme.error,
+    );
+  }
+
+  final guardMargin = _findOutput(outputs, 'guard_margin');
+  if (guardMargin != null) {
+    return _marginInsight(
+      guardMargin,
+      passTitle: '保护带覆盖误差',
+      failTitle: '保护带不足',
+      contextLabel: '当前保护余量',
+      passColor: theme.semanticColors.success,
+      failColor: theme.colorScheme.error,
+    );
+  }
+
+  return _ResultInsight(
+    icon: Icons.check_circle_outline_rounded,
+    color: theme.semanticColors.success,
+    title: '实时计算完成',
+    message: '已根据当前输入更新${primary.label}，可继续调整参数复核。',
+  );
+}
+
+_ResultInsight _marginInsight(
+  TelemetryCalculationOutput output, {
+  required String passTitle,
+  required String failTitle,
+  required String contextLabel,
+  required Color passColor,
+  required Color failColor,
+}) {
+  final passed = output.value >= 0;
+  final value = '${output.displayValue} ${output.unitLabel}'.trim();
+  return _ResultInsight(
+    icon: passed
+        ? Icons.check_circle_outline_rounded
+        : Icons.warning_amber_rounded,
+    color: passed ? passColor : failColor,
+    title: passed ? passTitle : failTitle,
+    message: '$contextLabel为 $value，${passed ? '当前配置保留正余量。' : '需要提高预算或降低误差。'}',
+  );
+}
+
+TelemetryCalculationOutput? _findOutput(
+  List<TelemetryCalculationOutput> outputs,
+  String id,
+) {
+  for (final output in outputs) {
+    if (output.id == id) return output;
+  }
+  return null;
 }
 
 TelemetryCalculationOutput _primaryOutput(

@@ -286,6 +286,7 @@ void main() {
         expect(find.text('依据'), findsWidgets, reason: definition.id);
         expect(find.text('输出'), findsWidgets, reason: definition.id);
         expect(find.text('输入'), findsWidgets, reason: definition.id);
+        expect(find.text('工程判断'), findsWidgets, reason: definition.id);
 
         final formulaTop = tester.getTopLeft(find.text('依据').first).dy;
         final resultTop = tester.getTopLeft(find.text('输出').first).dy;
