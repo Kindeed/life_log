@@ -130,3 +130,53 @@ This glossary defines shared symbols for the formula knowledge base. App impleme
 | `StorageCapacity` | `storage_capacity` | onboard storage capacity | bit, byte |
 | `DutyCycle` | `duty_cycle` | active fraction of period | ratio |
 | `AveragePower` | `average_power` | duty-cycle weighted power | W |
+
+## Orbit, Coverage, and Contact
+
+| Symbol | Field ID suggestion | Meaning | Unit |
+| --- | --- | --- | --- |
+| `R_e` | `earth_radius` | Earth reference radius | m, km |
+| `mu` | `gravitational_parameter` | central body gravitational parameter | m^3/s^2 |
+| `h` | `altitude` | spacecraft altitude above reference radius | m, km |
+| `a` | `semi_major_axis` | orbit semi-major axis | m, km |
+| `r` | `orbital_radius` | spacecraft radius from central body center | m, km |
+| `n` | `mean_motion` | mean angular motion | rad/s, deg/s |
+| `T` | `orbit_period` | orbit period | s, min |
+| `rho` | `slant_range` | ground-space slant range | m, km |
+| `psi` | `central_angle` | central angle between station and subsatellite point | rad, deg |
+| `E` | `elevation_angle` | station elevation angle | rad, deg |
+| `az` | `azimuth` | station azimuth angle | rad, deg |
+| `east` | `enu_east` | east component in topocentric frame | m, km |
+| `north` | `enu_north` | north component in topocentric frame | m, km |
+| `up` | `enu_up` | up component in topocentric frame | m, km |
+| `range_rate` | `range_rate` | line-of-sight range rate | m/s, km/s |
+
+## Compression and Source Coding
+
+| Symbol | Field ID suggestion | Meaning | Unit |
+| --- | --- | --- | --- |
+| `CR` | `compression_ratio` | uncompressed bits divided by compressed bits | ratio |
+| `UncompressedBits` | `uncompressed_bits` | source data volume before compression | bit |
+| `CompressedBits` | `compressed_bits` | data volume after compression | bit |
+| `HeaderBits` | `compression_header_bits` | compression or packet header overhead | bit |
+| `bpp` | `bits_per_pixel` | bits per image pixel | bit/pixel |
+| `bpsample` | `bits_per_sample` | bits per instrument sample | bit/sample |
+| `H` | `entropy` | source entropy | bit/symbol |
+| `L_avg` | `average_code_length` | expected code length | bit/symbol |
+| `q` | `quantization_step` | near-lossless quantization step | source-unit |
+
+## Protocol and Measurement
+
+| Symbol | Field ID suggestion | Meaning | Unit |
+| --- | --- | --- | --- |
+| `HeaderBits` | `header_bits` | protocol header length | bit |
+| `TrailerBits` | `trailer_bits` | protocol trailer length | bit |
+| `PlaintextBits` | `plaintext_bits` | security payload bits before security overhead | bit |
+| `IVBits` | `initialization_vector_bits` | security initialization vector length | bit |
+| `AuthTagBits` | `auth_tag_bits` | authentication tag length | bit |
+| `PER` | `packet_error_rate` | packet/frame error probability | ratio |
+| `AckDelay` | `ack_delay` | acknowledgement delay | s, ms |
+| `PFD` | `power_flux_density` | power flux density | W/m^2, dBW/m^2 |
+| `PSD` | `power_spectral_density` | power spectral density | W/Hz, dBW/Hz |
+| `V_rms` | `rms_voltage` | RMS voltage | V |
+| `Z` | `impedance` | RF/load impedance when used in `P=V^2/Z` | ohm |

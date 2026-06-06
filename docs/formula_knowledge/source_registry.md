@@ -18,6 +18,12 @@ This registry records the standards, handbooks, and published books that should 
 | CCSDS-732.1 | CCSDS 732.1-B-3, Unified Space Data Link Protocol | CCSDS SLS-SLP | USLP, June 2024. | Unified frame overhead and service-mode sizing. |
 | CCSDS-414.1 | CCSDS 414.1-B-3, Pseudo-Noise Ranging Systems | CCSDS SLS-RFM | PN ranging, transparent/regenerative systems, January 2022. | PN ranging chip-rate, ambiguity, modulation and processing architecture. |
 | CCSDS-415 | CCSDS 415.0-G, Data Transmission and PN Ranging for 2 GHz CDMA Link via Data Relay Satellite | CCSDS SLS-RFM | Spread-spectrum and CDMA support material. | Spread-spectrum ranging and link-budget extensions. |
+| CCSDS-121 | CCSDS 121.0-B-3, Lossless Data Compression | CCSDS SLS-DC | Source-coding data-compression algorithm and source-packet insertion. | Lossless compression ratio, packetization overhead, data-volume reduction. |
+| CCSDS-122 | CCSDS 122.0-B-2, Image Data Compression | CCSDS SLS-DC | Image compression for payload instrument data and compression-rate control. | Payload image compression sizing and storage/downlink budget reduction. |
+| CCSDS-123 | CCSDS 123.0-B-2, Multispectral and Hyperspectral Image Compression | CCSDS SLS-DC | Low-complexity lossless and near-lossless compression for 3-D image data. | Multispectral/hyperspectral data-rate and volume calculators. |
+| CCSDS-211.0 | CCSDS 211.0-B-6, Proximity-1 Space Link Protocol--Data Link Layer | CCSDS SLS-SLP | Proximity-1 data link layer and transfer frames. | Relay/orbiter-lander transfer frame and throughput calculators. |
+| CCSDS-211.1 | CCSDS 211.1-B-4, Proximity-1 Physical Layer | CCSDS SLS-RFM | Proximity-1 physical layer procedures, reconfirmed through June 2024. | Proximity link RF, rate, modulation, and physical-layer parameter extraction. |
+| CCSDS-211.2 | CCSDS 211.2-B-3, Proximity-1 Coding and Synchronization Sublayer | CCSDS SLS-C&S | Proximity-1 coding and synchronization. | Proximity coding/sync overhead and coded rate formulas. |
 | ITU-P525 | ITU-R P.525, Calculation of free-space attenuation | ITU-R | Free-space attenuation; current table of contents shows P.525-5 dated 11/2024. | FSPL and radar free-space loss formulas. |
 | ITU-P618 | ITU-R P.618-14, Earth-space propagation prediction | ITU-R | In force, approved 2023-08-23; free download. | Earth-space attenuation, rain fade, scintillation, availability. |
 | ITU-P676 | ITU-R P.676, Attenuation by atmospheric gases | ITU-R | Gas attenuation model. | Oxygen/water vapor attenuation and path integration. |
@@ -37,13 +43,16 @@ This registry records the standards, handbooks, and published books that should 
 | BOOK-SKLAR | Sklar and Harris, *Digital Communications*, 3rd ed. | Pearson page lists modulation, coding, synchronization, OFDM, MIMO, link budgets. | Eb/N0, BER/PER, modulation, baseband, channel coding, synchronization formulas. |
 | BOOK-PROAKIS | Proakis and Salehi, *Digital Communications* | Published textbook; add publisher URL during next pass. | BER curves, matched filtering, AWGN, coding, synchronization. |
 | BOOK-HAYKIN | Haykin, *Communication Systems* | Published textbook; add publisher URL during next pass. | Baseband/passband signals, noise, modulation, filtering. |
+| BOOK-VALLADO | Vallado, *Fundamentals of Astrodynamics and Applications* | Published textbook; add publisher URL during next pass. | Orbit geometry, ground-station look angles, visibility, range/range-rate support. |
+| BOOK-BATE | Bate, Mueller, White, *Fundamentals of Astrodynamics* | Published textbook; add publisher URL during next pass. | Classical orbit mechanics and contact geometry sanity checks. |
 
 ## Next Source Extraction Tasks
 
 1. Download and inspect the active CCSDS PDFs for 131.0-B-6, 231.0-B-4, 414.1-B-3, 132.0-B, 232.0-B, 732.0-B, and 732.1-B.
 2. Extract only implementation-relevant tables: code rates, frame lengths, sync marker sizes, transfer frame fields, MODCOD identifiers, PN chip-rate values.
 3. Cross-check ITU-R P.618 dependencies: P.618 calls into P.837, P.838, P.839, P.840, P.676 depending on fade mechanism.
-4. Add ECSS and Chinese/GJB public index references only where public bibliographic details are available. Do not encode restricted standards text.
+4. Extract CCSDS compression and Proximity-1 sizing fields where public Blue/Green Books define selectable parameters.
+5. Add ECSS and Chinese/GJB public index references only where public bibliographic details are available. Do not encode restricted standards text.
 
 ## Reference Links
 
@@ -54,6 +63,8 @@ This registry records the standards, handbooks, and published books that should 
 | CCSDS search | https://ccsds.org/searchpubs/ |
 | CCSDS-231 | https://ccsds.org/publications/allpubs/entry/3203/ |
 | CCSDS-414.1 | https://ccsds.org/publications/allpubs/entry/3249/ |
+| CCSDS-121/122/123 search | https://ccsds.org/searchpubs/ |
+| CCSDS Proximity-1 search | https://ccsds.org/searchpubs/ |
 | ITU-P525 | https://www.itu.int/rec/R-REC-P.525/en |
 | ITU-P618 | https://www.itu.int/rec/R-REC-P.618-14-202308-I/en |
 | ITU-P676 | https://www.itu.int/rec/R-REC-P.676/en |

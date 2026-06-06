@@ -49,6 +49,15 @@ Each pass should produce a reviewed delta to `formula_catalog.md` and, where nee
    - Sklar/Proakis/Haykin for modulation, coding, BER/PER, synchronization.
    - Maral/Bousquet and SMAD for satellite/system link budget organization.
 
+6. Compression and Proximity-1 pass:
+   - CCSDS 121.0-B, 122.0-B, and 123.0-B.
+   - CCSDS 211.0-B, 211.1-B, and 211.2-B.
+   - Extract compression packetization overhead, Proximity-1 physical/coding/data-link mode tables, and relay-link net-rate formulas.
+
+7. Orbit/contact and RF measurement pass:
+   - SMAD, Vallado, Bate, DSN 810-005, and ITU-R P.525.
+   - Extract slant range, elevation, pass/contact estimates, range-rate, antenna slew rate, PFD, PSD, and lab power/voltage conversion formulas.
+
 ## Stage 3: App Data Model
 
 Design a formula-library data model separate from current calculator definitions.

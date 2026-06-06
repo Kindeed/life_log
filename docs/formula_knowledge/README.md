@@ -29,6 +29,8 @@ That is useful as a first workbench, but it is not a complete engineering formul
 - `source_registry.md`: authoritative standards, handbooks, and textbooks to use as evidence.
 - `formula_catalog.md`: formula entries with purpose, variables, units, source family, and implementation priority.
 - `variable_glossary.md`: shared symbol and variable definitions.
+- `coverage_matrix.md`: domain coverage map, current status, and remaining gaps.
+- `standard_extraction_matrix.md`: concrete extraction tasks from standards/books to formulas, tables, and procedures.
 - `implementation_backlog.md`: staged plan for converting the knowledge base into app calculators.
 
 ## Source Rules

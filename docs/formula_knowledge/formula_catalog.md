@@ -155,6 +155,80 @@ Notation:
 | OPT-003 | `N_photons = P_r / E_photon` | received optical power | Photon arrival rate. | Optical communication engineering | Seeded |
 | OPT-004 | `L_point_opt ~= 4.343 * (theta_error/sigma_beam)^2` | Gaussian beam approximation | Optical pointing loss under Gaussian-beam assumptions. | DESCANSO optical references | Procedure |
 
+## Orbit, Geometry, Coverage, and Contact
+
+| ID | Formula | Variables | Explanation | Source family | Status |
+| --- | --- | --- | --- | --- | --- |
+| ORB-001 | `r = R_e + h` | `r`: orbital radius; `R_e`: Earth radius; `h`: altitude | Circular-orbit radius from altitude. | BOOK-SMAD, BOOK-VALLADO | Seeded |
+| ORB-002 | `n = sqrt(mu / a^3)` | `n`: mean motion rad/s; `mu`: gravitational parameter; `a`: semi-major axis | Keplerian mean motion. | BOOK-VALLADO, BOOK-BATE | Seeded |
+| ORB-003 | `T = 2 pi sqrt(a^3 / mu)` | `T`: orbital period | Keplerian orbital period. | BOOK-VALLADO, BOOK-BATE | Seeded |
+| ORB-004 | `v_c = sqrt(mu / r)` | `v_c`: circular velocity | Circular-orbit speed. | BOOK-VALLADO, BOOK-BATE | Seeded |
+| ORB-005 | `rho = sqrt(r^2 + R_e^2 - 2 r R_e cos(psi))` | `rho`: slant range; `psi`: geocentric angle | Ground-station to spacecraft slant range for spherical Earth geometry. | BOOK-SMAD, BOOK-VALLADO | Seeded |
+| ORB-006 | `sin(E) = (r cos(psi) - R_e) / rho` | `E`: elevation angle | Elevation angle from central angle and slant range. | BOOK-SMAD, BOOK-VALLADO | Seeded |
+| ORB-007 | `cos(psi_h) = R_e / r` | `psi_h`: horizon central angle | Geometric horizon for zero elevation. Add minimum elevation by modified geometry. | BOOK-SMAD, BOOK-VALLADO | Seeded |
+| ORB-008 | `ground_range = R_e psi` | `psi`: central angle rad | Surface ground range from central angle. | BOOK-SMAD | Seeded |
+| ORB-009 | `visible_fraction ~= psi_h / pi` | circular orbit approximation | Rough single-station visibility fraction for equatorial simplification. | BOOK-SMAD | Seeded |
+| ORB-010 | `contact_time ~= visible_fraction * T` | visibility fraction and period | First-cut pass duration estimate. Replace with propagated AOS/LOS for production. | BOOK-SMAD | Seeded |
+| ORB-011 | `range_rate = dot(rho_vector, v_rel) / |rho_vector|` | relative position and velocity | Line-of-sight range-rate for Doppler/ranging. | BOOK-VALLADO, DSN-810-005 | Seeded |
+| ORB-012 | `az = atan2(east, north)` | topocentric ENU components | Azimuth from topocentric vector. | BOOK-VALLADO | Seeded |
+| ORB-013 | `el = asin(up / rho)` | topocentric up component | Elevation from topocentric vector. | BOOK-VALLADO | Seeded |
+| ORB-014 | `rho = sqrt(east^2 + north^2 + up^2)` | topocentric vector | Slant range from ENU components. | BOOK-VALLADO | Seeded |
+| ORB-015 | `Doppler_rate = -f_c / c * d(v_r)/dt` | radial acceleration | Doppler rate from range acceleration. | DSN-810-005, BOOK-VALLADO | Seeded |
+| ORB-016 | `Antenna_slew_rate ~= sqrt((daz/dt)^2 + (del/dt)^2)` | az/el angular rates | Ground antenna tracking-rate sizing approximation. | DSN-810-005, BOOK-SMAD | Seeded |
+
+## Data Compression and Source Coding
+
+| ID | Formula | Variables | Explanation | Source family | Status |
+| --- | --- | --- | --- | --- | --- |
+| COMP-001 | `CR = UncompressedBits / CompressedBits` | `CR`: compression ratio | Measures achieved compression. | CCSDS-121, CCSDS-122, CCSDS-123 | Seeded |
+| COMP-002 | `CompressedBits = UncompressedBits / CR + HeaderBits` | compressed payload and headers | Data-volume reduction including packet/header overhead. | CCSDS-121, CCSDS-122, CCSDS-123 | Seeded |
+| COMP-003 | `CompressedRate = SourceRate / CR` | rates in bps | First-order compressed bit rate. | CCSDS-121, BOOK-SMAD | Seeded |
+| COMP-004 | `NetCompressedRate = (SourceBits / CR + HeaderBits) / Duration` | source data and duration | Net downlink/storage rate after compression overhead. | CCSDS-121, CCSDS-122 | Seeded |
+| COMP-005 | `bpp = Bits / PixelCount` | image bits and pixels | Bits per pixel for image compression. | CCSDS-122, CCSDS-123 | Seeded |
+| COMP-006 | `bpsample = Bits / SampleCount` | sample count | Bits per sample for instrument compression. | CCSDS-121, CCSDS-123 | Seeded |
+| COMP-007 | `H = -sum(p_i log2(p_i))` | `p_i`: symbol probabilities | Entropy lower bound for lossless coding. | BOOK-SKLAR | Seeded |
+| COMP-008 | `L_avg = sum(p_i l_i)` | codeword lengths | Average code length. | BOOK-SKLAR | Seeded |
+| COMP-009 | `CodingEfficiency = H / L_avg` | entropy and average length | Source-code efficiency. | BOOK-SKLAR | Seeded |
+| COMP-010 | `Residual = Sample - Predictor(SampleHistory)` | predictor output | Predictive coding residual. CCSDS predictor details are procedure/table dependent. | CCSDS-121, CCSDS-123 | Procedure |
+| COMP-011 | `QuantizedResidual = round(Residual / q)` | quantization step `q` | Near-lossless residual quantization skeleton. | CCSDS-123 | Procedure |
+| COMP-012 | `PacketizedCompressedBits = CompressedDataBits + PacketOverheadBits` | source packet overhead | Compressed stream inserted into source packets. | CCSDS-121, CCSDS-122, CCSDS-123 | Procedure |
+| COMP-013 | `StorageGain = 1 - CompressedBits / UncompressedBits` | storage reduction | Fractional storage saving. | CCSDS-121, BOOK-SMAD | Seeded |
+| COMP-014 | `DownlinkTimeSaved = DataVolume/Rate - CompressedBits/Rate` | volume and downlink rate | Contact-time saving from compression. | BOOK-SMAD, CCSDS-121 | Seeded |
+
+## Protocol, Security, and Space Link Overhead Extensions
+
+| ID | Formula | Variables | Explanation | Source family | Status |
+| --- | --- | --- | --- | --- | --- |
+| PROTO-001 | `ProtocolEfficiency = UserDataBits / (UserDataBits + HeaderBits + TrailerBits)` | protocol field bits | Generic protocol-layer efficiency. | CCSDS-132, CCSDS-232, CCSDS-732, CCSDS-732.1 | Seeded |
+| PROTO-002 | `LayeredEfficiency = prod(eta_i)` | per-layer efficiencies | Combined efficiency across packet, frame, coding, and security layers. | CCSDS SLS, BOOK-SMAD | Seeded |
+| PROTO-003 | `NetUserRate = PhysicalRate * LayeredEfficiency` | physical line rate and efficiency | User payload rate after protocol/coding overhead. | CCSDS SLS | Seeded |
+| PROTO-004 | `IdleFraction = IdleBits / TotalFrameBits` | idle/fill data bits | Idle insertion cost in scheduled links. | CCSDS-132, CCSDS-732, CCSDS-732.1 | Seeded |
+| PROTO-005 | `FillOverhead = FillBits / (PayloadBits + FillBits)` | fill bits | Fill overhead when transfer data does not align to frame/codeblock boundaries. | CCSDS-131, CCSDS-231 | Procedure |
+| PROTO-006 | `SecurityEfficiency = PlaintextBits / (PlaintextBits + IVBits + AuthTagBits + PaddingBits)` | security overhead fields | Security overhead for authenticated/encrypted data links. | CCSDS-355, CCSDS-232, CCSDS-732.1 | Seeded |
+| PROTO-007 | `ReplayWindowMemory = WindowSize * SequenceNumberBytes` | replay protection fields | Ground/space memory sizing for anti-replay tracking. | CCSDS-355 | Seeded |
+| PROTO-008 | `ARQGoodput = PayloadBits * (1-PER) / TransactionTime` | packet/frame error rate | First-order goodput with retransmissions omitted. | CCSDS COP, BOOK-SKLAR | Seeded |
+| PROTO-009 | `ExpectedTransmissions = 1 / (1 - PER)` | frame error probability | Expected attempts for independent retransmission trials. | BOOK-SKLAR, CCSDS COP | Seeded |
+| PROTO-010 | `ARQGoodput ~= PayloadBits / (FrameTime * ExpectedTransmissions + AckDelay)` | ARQ timing | Stop-and-wait style goodput estimate. | CCSDS COP, BOOK-SKLAR | Seeded |
+| PROTO-011 | `ProxNetRate = ProxPhysicalRate * ProxCodingEfficiency * ProxFrameEfficiency` | Proximity-1 factors | Relay/lander proximity link net rate. | CCSDS-211.0, CCSDS-211.1, CCSDS-211.2 | Seeded |
+| PROTO-012 | `MultiplexedRate_i = NetRate * Allocation_i` | allocation fraction | Virtual-channel or service allocation rate. | CCSDS-132, CCSDS-732, CCSDS-732.1 | Seeded |
+
+## Measurement, Unit, and RF Lab Conversions
+
+| ID | Formula | Variables | Explanation | Source family | Status |
+| --- | --- | --- | --- | --- | --- |
+| MEAS-001 | `P_dBW = 10 log10(P_W)` | `P_W`: power in watts | Watt to dBW. | General RF engineering | Seeded |
+| MEAS-002 | `P_dBm = 10 log10(P_mW)` | `P_mW`: power in milliwatts | Milliwatt to dBm. | General RF engineering | Seeded |
+| MEAS-003 | `P_dBm = P_dBW + 30` | dB powers | dBW/dBm conversion. | General RF engineering | Seeded |
+| MEAS-004 | `P_W = 10^(P_dBW/10)` | dBW | dBW to watts. | General RF engineering | Seeded |
+| MEAS-005 | `ratio_dB = 10 log10(P2/P1)` | power ratio | Power ratio in dB. | General RF engineering | Seeded |
+| MEAS-006 | `voltage_dB = 20 log10(V2/V1)` | equal impedances assumed | Voltage ratio in dB. | General RF engineering | Seeded |
+| MEAS-007 | `P = V_rms^2 / Z` | `V_rms`: RMS voltage; `Z`: RF/load impedance | RF power from RMS voltage. | General RF engineering | Seeded |
+| MEAS-008 | `V_rms = sqrt(P Z)` | power and RF/load impedance | RMS voltage from RF power. | General RF engineering | Seeded |
+| MEAS-009 | `PFD = EIRP / (4 pi R^2)` | power flux density W/m^2 | Power flux density at range. | ITU-P525, BOOK-MARAL | Seeded |
+| MEAS-010 | `PFD_dBW_m2 = EIRP_dBW - 10log10(4 pi R^2)` | dB form | PFD in dBW/m^2. | ITU-P525, BOOK-MARAL | Seeded |
+| MEAS-011 | `PSD_dBW_Hz = P_dBW - 10log10(B)` | bandwidth `B` | Power spectral density. | General RF engineering | Seeded |
+| MEAS-012 | `CN0_from_CNR = C/N + 10log10(B_n)` | measured C/N and bandwidth | Converts measured carrier-to-noise ratio to C/N0. | BOOK-SKLAR, DSN-810-005 | Seeded |
+
 ## Current App Coverage Summary
 
 Implemented formulas are concentrated in:
@@ -174,3 +248,4 @@ High-value missing groups:
 4. CCSDS coding modes and MODCOD tables.
 5. External measurement: Delta-DOR, radar-style range equation, angular error.
 6. System-level mission data/contact/storage closure.
+7. Compression, Proximity-1 relay links, contact geometry, and RF measurement conversions.
