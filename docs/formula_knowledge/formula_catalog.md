@@ -42,6 +42,26 @@ Notation:
 | RF-028 | `eta_pol = P_delivered / P_available` | delivered and polarization-matched available power | Polarization efficiency definition. | DESCANSO-DSTSE, BOOK-BALANIS | Seeded |
 | RF-029 | `L_pol_dB = -10log10(eta_pol)` | polarization efficiency | Polarization mismatch loss from efficiency; complements RF-018 vector form. | DESCANSO-DSTSE, BOOK-BALANIS | Seeded |
 | RF-030 | `Ellipticity_dB = 20log10(AR)` | `AR`: polarization axial ratio | Ellipticity from polarization axial ratio. | DESCANSO-DSTSE, BOOK-BALANIS | Seeded |
+| RF-031 | `D_lambda = D/lambda` | antenna diameter and wavelength | Electrical aperture size used by ITU reference-pattern validity and beamwidth checks. | ITU-S465, ITU-S580, BOOK-BALANIS | Seeded |
+| RF-032 | `phi_min = max(1 deg, 100/D_lambda deg)` for `D_lambda>=50` | electrical aperture size | Minimum off-axis angle for the main ITU-R S.465 reference pattern branch. | ITU-S465 | Procedure |
+| RF-033 | `G_ref(phi) = 32 - 25log10(phi_deg)` for `phi_min<=phi<48 deg`; `G_ref=-10 dBi` for `48<=phi<=180 deg` | off-axis angle in degrees | ITU-R S.465 fixed-satellite earth-station reference radiation pattern for coordination/interference assessment. | ITU-S465 | Procedure |
+| RF-034 | `phi_min_small = max(2 deg, 114*D_lambda^-1.09 deg)` for `D_lambda<50` | electrical aperture size | ITU-R S.465 minimum off-axis angle branch for smaller earth-station antennas. | ITU-S465 | Procedure |
+| RF-035 | `G_ref_legacy(phi) = 52 - 10log10(D_lambda) - 25log10(phi_deg)`; far sidelobe `=10 - 10log10(D_lambda)` | legacy network condition | ITU-R S.465 note branch for certain pre-1993 coordinated earth-station networks. | ITU-S465 | Procedure |
+| RF-036 | `G_sidelobe_objective(phi) = 29 - 25log10(phi_deg)` | off-axis angle toward the GSO region | ITU-R S.580 design objective for GSO earth-station side-lobe peaks. | ITU-S580 | Procedure |
+| RF-037 | `G_s580_transition = -3.5 dBi` for `20 deg < phi <= 26.3 deg` | off-axis angle | ITU-R S.580 transition note when the design objective and S.465 reference pattern are discontinuous. | ITU-S580 | Procedure |
+| RF-038 | `D_e = sqrt(4*A_aperture/pi)` | asymmetric aperture area | Circular-equivalent diameter for asymmetric apertures used by S.580 side-lobe checks. | ITU-S580, BOOK-BALANIS | Seeded |
+| RF-039 | `U(theta,phi) = r^2*S_rad(theta,phi)` | radiation power density | Radiation intensity from far-field power density. | BOOK-BALANIS | Seeded |
+| RF-040 | `D_0 = 4*pi*U_max/P_rad` | maximum radiation intensity and radiated power | Antenna directivity definition. | BOOK-BALANIS | Seeded |
+| RF-041 | `G = eta_rad*D_0` | radiation efficiency and directivity | Realized antenna gain as efficiency times directivity. | BOOK-BALANIS | Seeded |
+| RF-042 | `Omega_A = integral_0^(2pi) integral_0^pi P_n(theta,phi)*sin(theta)dtheta dphi` | normalized power pattern | Antenna beam solid angle. | BOOK-BALANIS | Procedure |
+| RF-043 | `D_0 = 4*pi/Omega_A` | beam solid angle | Directivity from beam solid angle. | BOOK-BALANIS | Seeded |
+| RF-044 | `D_0 ~= 41253/(theta_HP_deg*phi_HP_deg)` | half-power beamwidths in degrees | Common pencil-beam directivity estimate from orthogonal HPBWs. | BOOK-BALANIS | Seeded |
+| RF-045 | `theta_FNBW_uniform_circular ~= 2.44*lambda/D` | circular aperture diameter | First-null beamwidth approximation for a uniformly illuminated circular aperture. | BOOK-BALANIS | Seeded |
+| RF-046 | `theta_HPBW_uniform_circular ~= 1.02*lambda/D` | circular aperture diameter | Half-power beamwidth approximation for a uniformly illuminated circular aperture. | BOOK-BALANIS | Seeded |
+| RF-047 | `R_ff >= 2*D_max^2/lambda` | largest antenna dimension | Fraunhofer far-field distance criterion for antenna pattern/link measurements. | BOOK-BALANIS | Seeded |
+| RF-048 | `PLF = |rho_wave dot rho_ant|^2` | wave and antenna polarization unit vectors | Polarization loss factor in linear power ratio. | BOOK-BALANIS | Seeded |
+| RF-049 | `AF(theta) = sum_{n=0}^{N_elem-1} w_n*exp(j*n*(k0*d_elem*cos(theta)+beta_phase))` | element weights, spacing, phase progression | Uniform-line array-factor structure before normalization. | BOOK-BALANIS | Procedure |
+| RF-050 | `AF_norm = |sin(N_elem*psi/2)/(N_elem*sin(psi/2))|`, `psi=k0*d_elem*cos(theta)+beta_phase` | array size and phase variable | Closed-form normalized array factor for equal-amplitude linear arrays. | BOOK-BALANIS | Seeded |
 
 ## Propagation and Link Budget
 

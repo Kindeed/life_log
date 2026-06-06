@@ -30,6 +30,8 @@ This registry records the standards, handbooks, and published books that should 
 | ITU-P838 | ITU-R P.838-3, Specific attenuation model for rain | ITU-R | Rain specific attenuation model; P.838-3 remains listed on ITU official pages. | `gamma_R = k R^alpha` and polarization-dependent coefficients. |
 | ITU-P839 | ITU-R P.839-4, Rain height model | ITU-R | Needed by P.618 rain path geometry; P.839-4 remains listed on ITU official pages. | Rain height and slant-path length support. |
 | ITU-P840 | ITU-R P.840-9, Attenuation due to clouds and fog | ITU-R | In force, approved 2023-08; first-pass cloud/fog attenuation extracts started. | Cloud/fog liquid water attenuation, integrated cloud liquid water maps, log-normal cloud attenuation approximation. |
+| ITU-S465 | ITU-R S.465-6, Reference radiation pattern of earth station antennas in the fixed-satellite service | ITU-R | In force, approved 2010-01; provides reference patterns for coordination and interference assessment from 2 to 31 GHz. | Earth-station off-axis gain envelope, minimum angle rules, and legacy small-antenna branches. |
+| ITU-S580 | ITU-R S.580-6, Radiation diagrams for earth-station antenna design objectives | ITU-R | In force, approved 2004-01; provides GSO side-lobe design objective for earth-station antennas. | Side-lobe objective, GSO affected-zone checks, transition branch, and equivalent circular aperture diameter. |
 | DSN-810-005 | DSN Telecommunications Link Design Handbook | NASA/JPL DSN | Current public DSN handbook download page lists modules and recent release clearances; modules 105E, 202E, 203E, 210E, 211G, and 214C have first-pass extracts. | Deep-space link, DSN station capability, Doppler tracking, sequential/PN ranging, Delta-DOR, VLBI, command/telemetry/ranging modules. |
 | DESCANSO-DSTSE | Deep Space Telecommunications Systems Engineering | NASA/JPL DESCANSO | Public deep-space communications reference; antenna/link, baseband, Doppler, ranging, VLBI/DOR, and radiometric-error extracts are started in `standard_extracts.md`. | Link equation derivations, antenna gain/effective aperture, system noise temperature, modulation/coding context, tracking/ranging observables, and external-measurement formulas. |
 | NASA-SST-COMM | NASA SmallSat State of the Art, Communications | NASA | Small satellite RF/optical communication overview. | System-level trade examples and calculator scenario framing. |
@@ -40,7 +42,7 @@ This registry records the standards, handbooks, and published books that should 
 | --- | --- | --- | --- |
 | BOOK-MARAL | Maral, Bousquet, Sun, *Satellite Communications Systems*, 6th ed. | Wiley page lists link-performance chapter coverage. | Satellite uplink/downlink/overall link performance, transponder and intersatellite link formulas. |
 | BOOK-SMAD | Wertz et al., *Space Mission Engineering: The New SMAD* | Google Books description lists communications and engineering reference coverage. | Mission-level communications budget, contact time, coverage, design trade calculators. |
-| BOOK-BALANIS | Balanis, *Antenna Theory: Analysis and Design*, 4th ed. | Wiley page lists antenna parameters, effective areas, Friis, radar equation, antenna temperature. | Antenna gain, effective aperture, beamwidth, polarization, reflector/dish sizing, array fundamentals. |
+| BOOK-BALANIS | Balanis, *Antenna Theory: Analysis and Design*, 4th ed. | Wiley page and companion site identify the 4th edition and antenna-theory chapter/resource structure. | Antenna gain, effective aperture, beamwidth, polarization, reflector/dish sizing, directivity, beam solid angle, far-field distance, and array fundamentals. |
 | BOOK-SKLAR | Sklar and Harris, *Digital Communications*, 3rd ed. | Pearson/InformIT pages list modulation, coding, synchronization, OFDM, MIMO, link budgets, and baseband transmission coverage. | Eb/N0, BER/PER, modulation, baseband, channel coding, synchronization, OFDM, MIMO formulas. |
 | BOOK-PROAKIS | Proakis and Salehi, *Digital Communications*, 5th ed. | Bibliographic/publisher evidence lists digital modulation schemes, AWGN optimum receivers, carrier/symbol synchronization, information theory, and coding topics. | BER curves, matched filtering, AWGN, coding, synchronization. |
 | BOOK-HAYKIN | Haykin and Moher, *Communication Systems*, 5th ed. | Wiley/bibliographic pages list analog and digital communications, signal processing, filtering, and systems coverage. | Baseband/passband signals, noise, modulation, filtering. |
@@ -84,6 +86,9 @@ This registry records the standards, handbooks, and published books that should 
 | ITU-P839-4 PDF | https://www.itu.int/dms_pubrec/itu-r/rec/p/r-rec-p.839-4-201309-i!!pdf-e.pdf |
 | ITU-P840 | https://www.itu.int/rec/R-REC-P.840/en |
 | ITU-P840-9 PDF | https://www.itu.int/dms_pubrec/itu-r/rec/p/R-REC-P.840-9-202308-I!!PDF-E.pdf |
+| ITU-S465-6 PDF | https://www.itu.int/dms_pubrec/itu-r/rec/s/R-REC-S.465-6-201001-I!!PDF-E.pdf |
+| ITU-S580 | https://www.itu.int/rec/R-REC-S.580-6-200401-I |
+| ITU-S580-6 PDF | https://www.itu.int/dms_pubrec/itu-r/rec/s/R-REC-S.580-6-200401-I!!PDF-E.pdf |
 | DSN-810-005 | https://deepspace.jpl.nasa.gov/dsndocs/810-005/ |
 | DSN-810-005 downloads | https://deepspace.jpl.nasa.gov/dsndocs/810-005/downloads/ |
 | DSN-810-005 front matter | https://deepspace.jpl.nasa.gov/dsndocs/810-005/fm.pdf |

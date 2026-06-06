@@ -44,13 +44,14 @@ Each pass should produce a reviewed delta to `formula_catalog.md` and, where nee
    - Current extraction includes CCSDS PN chip-rate/acquisition/delay limits plus DESCANSO and DSN 202/203/210/211/214 Doppler, carrier-loop SNR, Doppler error, Doppler counting, sequential ranging, PN/regenerative ranging, ranging variance, corrected round-trip delay, residuals, RSS uncertainty, VLBI/DOR, and radar-style external measurement formulas.
    - Use `standard_extracts.md` PN, DSTRK, DSN202, DSN203, DSN210, DSN211, and DSN214 rows to build chip-rate selector validation, annex B regression cases, Doppler-count examples, carrier-loop margin examples, range-correction examples, sequential/PN acquisition examples, and Delta-DOR geometry cases before app UI work.
 
-4. RF/propagation pass:
+4. RF/antenna/propagation pass:
    - CCSDS 401.0-B RF/modulation.
-   - ITU-R P.525, P.618, P.676, P.838, P.839, P.840.
-   - Extract FSPL variants, rain/gas/cloud/scintillation procedures, elevation/path geometry and applicability limits.
+   - ITU-R P.525, P.618, P.676, P.838, P.839, P.840, S.465, and S.580.
+   - Extract FSPL variants, rain/gas/cloud/scintillation procedures, earth-station reference antenna patterns, elevation/path geometry and applicability limits.
    - Use `standard_extracts.md` P.525 rows to build MHz/km, GHz/km, field-strength, PFD, isotropic received-power, and radar-loss regression cases.
    - Use `standard_extracts.md` DESCANSO/DSN rows to build antenna aperture, pointing/polarization, received-power, carrier/data/ranging margin, and atmospheric noise-temperature regression cases.
-   - Current ITU first-pass extraction includes P.676 gas attenuation structure, P.840 cloud/fog attenuation, and P.618 scintillation and sky-noise formulas; next work is coefficient/map assets and validation examples.
+   - Use `standard_extracts.md` ITUANT/BOOKANT rows to build off-axis gain, side-lobe objective, beam solid angle, directivity, far-field distance, and array-factor examples before adding antenna UI controls.
+   - Current ITU first-pass extraction includes P.676 gas attenuation structure, P.840 cloud/fog attenuation, P.618 scintillation and sky-noise formulas, plus S.465/S.580 earth-station antenna pattern formulas; next work is coefficient/map assets, antenna temperature submodels, and validation examples.
 
 5. Textbook cross-check pass:
    - Balanis for antenna formulas.
@@ -89,6 +90,9 @@ Recommended implementation order:
    - parabolic gain
    - effective aperture
    - G/T
+   - directivity and beam solid angle
+   - ITU off-axis reference-pattern and side-lobe objective checks
+   - far-field distance and array-factor sanity checks
    - noise figure/noise temperature
    - cascaded noise
    - pointing and polarization loss

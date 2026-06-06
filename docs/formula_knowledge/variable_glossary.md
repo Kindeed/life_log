@@ -52,6 +52,33 @@ This glossary defines shared symbols for the formula knowledge base. App impleme
 | `MeanPointingLoss` | `mean_pointing_loss` | expected pointing loss over pointing-error distribution | dB |
 | `eta_pol` | `polarization_efficiency` | delivered power divided by polarization-matched available power | ratio |
 | `AR` | `axial_ratio` | polarization ellipse axial ratio | ratio |
+| `D_lambda` | `electrical_aperture_size` | antenna aperture diameter expressed in wavelengths | ratio |
+| `phi_deg` | `off_axis_angle_deg` | off-axis antenna angle for reference pattern checks | deg |
+| `phi_min` | `minimum_reference_pattern_angle` | lower off-axis-angle bound for ITU reference pattern branch | deg |
+| `G_ref` | `reference_pattern_gain` | ITU reference radiation-pattern gain envelope | dBi |
+| `G_sidelobe_objective` | `sidelobe_design_objective_gain` | ITU side-lobe design objective gain envelope | dBi |
+| `D_e` | `equivalent_circular_diameter` | circular-equivalent diameter for asymmetric apertures | m |
+| `A_aperture` | `asymmetric_aperture_area` | physical aperture area for non-circular antennas | m^2 |
+| `U(theta,phi)` | `radiation_intensity` | radiated power per unit solid angle in a direction | W/sr |
+| `U_max` | `maximum_radiation_intensity` | peak radiation intensity | W/sr |
+| `P_rad` | `radiated_power` | total power radiated by antenna | W |
+| `D_0` | `directivity` | maximum directivity relative to isotropic radiator | ratio, dBi |
+| `Omega_A` | `beam_solid_angle` | antenna beam solid angle | sr |
+| `P_n(theta,phi)` | `normalized_power_pattern` | normalized antenna power pattern | ratio |
+| `theta_HP_deg` / `phi_HP_deg` | `orthogonal_half_power_beamwidths` | half-power beamwidths in two principal planes | deg |
+| `theta_FNBW` | `first_null_beamwidth` | angular distance between first pattern nulls | deg, rad |
+| `D_max` | `maximum_antenna_dimension` | largest physical dimension of an antenna or test article | m |
+| `R_ff` | `far_field_distance` | minimum far-field measurement or link distance | m |
+| `PLF` | `polarization_loss_factor` | polarization match as a linear power factor | ratio |
+| `rho_wave` / `rho_ant` | `polarization_unit_vectors` | incident wave and antenna polarization unit vectors | unitless |
+| `AF(theta)` | `array_factor` | array factor as a function of observation angle | complex ratio |
+| `AF_norm` | `normalized_array_factor` | normalized array-factor magnitude | ratio |
+| `w_n` | `array_element_weight` | complex excitation weight of element n | complex ratio |
+| `N_elem` | `array_element_count` | number of antenna elements in an array | count |
+| `k0` | `free_space_phase_constant` | phase constant `2*pi/lambda` | rad/m |
+| `d_elem` | `array_element_spacing` | distance between adjacent elements | m |
+| `beta_phase` | `array_progressive_phase` | progressive excitation phase between array elements | rad |
+| `psi` | `array_phase_variable` | array phase variable combining angle, spacing, and progressive phase | rad |
 
 ## Noise and Receiver
 

@@ -37,6 +37,21 @@ Sources: NASA/JPL DESCANSO `Deep Space Telecommunications Systems Engineering`; 
 | DS-ATM-003 | DSN 810-005 105E section 2.1.3, equation 3 | `T_atm(theta)=T_M*(1-1/L(theta))`, `L(theta)=10^(A(theta)/10)` | Converts atmospheric attenuation into noise-temperature contribution. |
 | DS-ATM-004 | DSN 810-005 105E section 2.1.4, equations 4 to 6 | `T_CMB=2.725 K`; `T_CMB_eff=T_CMB/L(theta)`; `T_op=T_AMW+T_atm+T_CMB_eff` with `T_AMW=T1+T2*exp(-a_noise*theta)` | Adds sky-noise closure for receiver G/T and `N0` calculations. |
 
+## ITU-R Earth-Station Antenna Patterns and Published Antenna Textbook Checks
+
+Sources: ITU-R S.465-6 `Reference radiation pattern of earth station antennas in the fixed-satellite service`; ITU-R S.580-6 `Radiation diagrams for use as design objectives for antennas of earth stations operating with geostationary satellites`; Balanis `Antenna Theory: Analysis and Design`, 4th edition.
+
+| Extract ID | Standard location | Equation or table | Implementation note |
+| --- | --- | --- | --- |
+| ITUANT-001 | S.465-6 recommends 2 | `G=32-25log10(phi)` for `phi_min<=phi<48 deg`; `G=-10 dBi` for `48<=phi<=180 deg`; `phi_min=max(1 deg,100 lambda/D)` for `D/lambda>=50` | Use for fixed-satellite-service earth-station coordination/interference assessment when no measured antenna pattern is available. |
+| ITUANT-002 | S.465-6 recommends 2 and notes 4-5 | Smaller-aperture and legacy branches use `phi_min=max(2 deg,114(D/lambda)^-1.09)` for `D/lambda<50`, plus the pre-1993 `52-10log10(D/lambda)-25log10(phi)` branch where applicable | Treat legacy branches as explicit scenario flags; do not silently apply them to new designs. |
+| ITUANT-003 | S.580-6 recommends 1 and note 5 | GSO side-lobe design objective `G=29-25log10(phi)` and transition branch `G=-3.5 dBi` for `20 deg<phi<=26.3 deg` | This is a design objective for side-lobe peaks near the GSO zone, not a measured gain pattern. |
+| ITUANT-004 | S.580-6 note 2 | Equivalent circular aperture diameter `D_e=sqrt(4A/pi)` for asymmetric aperture checks | Use with axis-orientation notes when validating asymmetric earth-station antenna layouts. |
+| BOOKANT-001 | Balanis antenna-parameter chapters | `U=r^2 S_rad`, `D_0=4*pi U_max/P_rad`, `G=eta_rad D_0` | These definitions make gain/efficiency/directivity explicit instead of treating dBi as a free input. |
+| BOOKANT-002 | Balanis beam solid angle and approximate directivity material | `Omega_A=integral(P_n dOmega)`, `D_0=4*pi/Omega_A`, and `D_0~=41253/(theta_HP phi_HP)` with beamwidths in degrees | Provides useful outputs for antenna sizing when only measured or specified HPBWs are available. |
+| BOOKANT-003 | Balanis aperture and measurement-region material | Uniform circular-aperture estimates `theta_FNBW~=2.44lambda/D`, `theta_HPBW~=1.02lambda/D`, and far-field distance `R_ff>=2D_max^2/lambda` | Keeps reflector sizing, measurement setup, and inspection warnings in the same antenna workbench. |
+| BOOKANT-004 | Balanis polarization and array chapters | `PLF=|rho_wave dot rho_ant|^2`; ULA `AF=sum(w_n exp(jn psi))`; equal-amplitude closed form `|sin(N_elem psi/2)/(N_elem sin(psi/2))|` | Seeds phased-array and polarization calculators without copying implementation-heavy array synthesis tables. |
+
 ## Digital Communications Textbook Cross-Checks
 
 Sources: Sklar/Harris `Digital Communications: Fundamentals and Applications`, 3rd edition; Proakis/Salehi `Digital Communications`, 5th edition; Haykin/Moher `Communication Systems`, 5th edition; NASA/JPL DESCANSO chapter 5 for deep-space telemetry modulation examples.
@@ -143,7 +158,7 @@ Source: CCSDS 131.0-B-5, `TM Synchronization and Channel Coding`, September 2023
 | Source | Previous status | Current status | Remaining work |
 | --- | --- | --- | --- |
 | ITU-P525 | Listed as source; formulas partly seeded | Equations 1-11 extracted into catalog and variables | Add unit-test examples for all practical-unit conversions when calculators are implemented. |
-| DESCANSO/DSN | Listed as source; antenna/link formulas partly seeded | Received-power chain, aperture efficiency, pointing/polarization loss, noise density, link margins, ranging SNR, and DSN atmospheric noise-temperature formulas extracted | Extract DSN 101/103/104 antenna station tables and build deterministic examples for each workbench. |
+| DESCANSO/DSN/ITU antenna patterns/Balanis | Listed as source; antenna/link formulas partly seeded | Received-power chain, aperture efficiency, pointing/polarization loss, noise density, link margins, ranging SNR, DSN atmospheric noise-temperature, ITU earth-station reference patterns, and Balanis antenna definitions/array seeds extracted | Extract DSN 101/103/104 antenna station tables, antenna-temperature submodels, reflector-specific constants, and deterministic examples for each workbench. |
 | Digital comm books | Listed as source; BER/PER/modulation formulas partly seeded | Baseband timing, energy metrics, Shannon/Nyquist, pulse shaping, quantization, matched-filter detection, OFDM, phase jitter, and MIMO formulas added | Extract exact CCSDS modulation families and add test vectors for BER, quantization, OFDM, and phase-noise calculators. |
 | ITU-P618/P676/P838/P839/P840 | Listed as source; rain and total attenuation top-level formulas seeded | P.838 rain specific attenuation, P.839 rain height, P.618 slant-path rain attenuation/total attenuation/scintillation/sky-noise, P.676 gaseous attenuation, and P.840 cloud/fog attenuation formulas extracted | Continue low-elevation multipath, depolarization, coefficient map/table assets, and implementation-ready coefficient packaging. |
 | CCSDS-414.1 | Listed as source; PN formulas partly seeded | Chip-rate equations, selector rules, cross-support examples, acquisition scaling, delay limits, and jitter reference rows extracted | Extract full transparent/regenerative mode field matrices and station/on-board performance tables. |

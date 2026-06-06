@@ -5,7 +5,7 @@ This matrix tracks whether the knowledge base is moving toward the requested com
 | Domain | Scope | Primary sources | Current coverage | Remaining gaps |
 | --- | --- | --- | --- | --- |
 | RF fundamentals | wavelength, dB conversion, EIRP, PFD, PSD, received power | ITU-R P.525, DSN 810-005, Maral/Bousquet | Seeded in RF, LINK, MEAS | Add spectral masks and occupied-bandwidth regulatory checks from CCSDS 401. |
-| Antenna | gain, aperture, G/T, pointing, polarization, mismatch, beamwidth | Balanis, DESCANSO, DSN 810-005 | Aperture efficiency, surface error, pointing-loss statistics, and polarization efficiency extracted from DESCANSO; basic gain formulas seeded | Add reflector-specific beamwidth constants, array factor, sidelobe estimates, antenna temperature/station table models. |
+| Antenna | gain, aperture, G/T, pointing, polarization, mismatch, beamwidth, reference patterns, arrays | Balanis, DESCANSO, DSN 810-005, ITU-R S.465, ITU-R S.580 | Aperture efficiency, surface error, pointing-loss statistics, polarization efficiency, ITU earth-station reference patterns, side-lobe design objective, directivity/beam solid angle, far-field distance, and ULA array-factor seeds extracted | Add antenna-temperature submodels, reflector/feed-specific constants, measured-pattern ingestion, phased-array scan/grating-lobe constraints, and DSN station antenna table models. |
 | Receiver/noise | noise figure, equivalent temperature, cascaded noise, N0 | Sklar, Maral/Bousquet, DSN 810-005 | Noise density and DSN atmospheric/system operating noise formulas extracted; RF noise formulas seeded | Add lossy feed before LNA treatment, measured Y-factor calibration, and DSN 101/103/104 antenna-noise table extraction. |
 | Link budget | FSPL, C/N0, Eb/N0, Es/N0, margin, inverse sizing | ITU-R P.525, DSN 810-005, Maral/Bousquet | Partly implemented; P.525-5 equations and DESCANSO received-power/margin chain extracted | Add uplink/downlink/relay multi-hop budget and transponder saturation/backoff. |
 | Propagation | rain, gas, cloud, scintillation, availability | ITU-R P.618, P.676, P.838, P.839, P.840 | P.838 rain, P.839 rain height, P.618 rain/total attenuation/scintillation/sky-noise, P.676 gas, and P.840 cloud first-pass formulas extracted; DSN atmosphere/noise formulas extracted | Extract P.676/P.840 coefficient data assets and maps, P.618 low-elevation scintillation/multipath/depolarization, P.2145/P.453 map dependencies, and validation examples. |
@@ -22,7 +22,7 @@ This matrix tracks whether the knowledge base is moving toward the requested com
 
 ## Current Numeric Coverage
 
-As of this pass, `formula_catalog.md` contains 432 formula or formula-family entries across RF, link, baseband, telemetry, telecommand, ranging/tracking, system, optical, orbit/contact, compression, protocol, and measurement domains.
+As of this pass, `formula_catalog.md` contains 452 formula or formula-family entries across RF, link, baseband, telemetry, telecommand, ranging/tracking, system, optical, orbit/contact, compression, protocol, and measurement domains.
 
 ## Not Yet Complete
 
