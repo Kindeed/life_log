@@ -51,7 +51,7 @@ Each pass should produce a reviewed delta to `formula_catalog.md` and, where nee
    - Use `standard_extracts.md` P.525 rows to build MHz/km, GHz/km, field-strength, PFD, isotropic received-power, and radar-loss regression cases.
    - Use `standard_extracts.md` DESCANSO/DSN rows to build antenna aperture, pointing/polarization, received-power, carrier/data/ranging margin, and atmospheric noise-temperature regression cases.
    - Use `standard_extracts.md` ITUANT/BOOKANT rows to build off-axis gain, side-lobe objective, beam solid angle, directivity, far-field distance, and array-factor examples before adding antenna UI controls.
-   - Current ITU first-pass extraction includes P.676 gas attenuation structure, P.840 cloud/fog attenuation, P.618 scintillation and sky-noise formulas, plus S.465/S.580 earth-station antenna pattern formulas; next work is coefficient/map assets, antenna temperature submodels, and validation examples.
+   - Current first-pass extraction includes P.676 gas attenuation structure, P.840 cloud/fog attenuation, P.618 scintillation and sky-noise formulas, S.465/S.580 earth-station antenna pattern formulas, and CCSDS 401 QPSK/modulation-margin/symbol-rate/subcarrier checks; next work is coefficient/map assets, machine-readable modulation/limit tables, antenna temperature submodels, and validation examples.
 
 5. Textbook cross-check pass:
    - Balanis for antenna formulas.
@@ -63,6 +63,8 @@ Each pass should produce a reviewed delta to `formula_catalog.md` and, where nee
    - CCSDS 121.0-B, 122.0-B, and 123.0-B.
    - CCSDS 211.0-B, 211.1-B, and 211.2-B.
    - Extract compression packetization overhead, Proximity-1 physical/coding/data-link mode tables, and relay-link net-rate formulas.
+   - Current CCSDS 211.2-B-3 extraction covers PLTU size/efficiency, idle PN repeats, acquisition/tail bit budgets, allowed `Rd` validation, convolutional rate expansion, LDPC `(2048,1024)` plus 64-bit CSM overhead, and LDPC randomizer procedure.
+   - Remaining Proximity work is direct 211.0 data-link field extraction and 211.1 physical-layer mode/rate extraction; the direct `211x0b6.pdf` and `211x1b4.pdf` guesses returned 404 during this pass, so use the CCSDS publication/search pages rather than assumed PDF names.
 
 7. Orbit/contact and RF measurement pass:
    - SMAD, Vallado, Bate, DSN 810-005, and ITU-R P.525.
@@ -123,6 +125,11 @@ Recommended implementation order:
    - BER/PER approximations
    - coding overhead
    - interleaver latency
+   - CCSDS QPSK I/Q phase mapping
+   - modulator phase/amplitude imbalance margins
+   - subcarrier frequency-to-coded-symbol-rate integer checks
+   - coded-symbol-rate offset and stability margins
+   - GMSK/filter `BTS` to bandwidth conversion
    - quantization and ENOB
    - matched-filter decision metrics
    - OFDM subcarrier, cyclic-prefix, and PAPR outputs
@@ -133,6 +140,9 @@ Recommended implementation order:
    - CLTU overhead
    - sync marker overhead
    - selected code-rate tables
+   - Proximity-1 PLTU/CRC/ASM efficiency
+   - Proximity-1 idle/acquisition/tail overhead
+   - Proximity-1 convolutional and LDPC/CSM physical-stream efficiency
 
 6. Tracking/ranging workbench:
    - PN ranging resolution/ambiguity

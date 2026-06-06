@@ -288,6 +288,28 @@ This glossary defines shared symbols for the formula knowledge base. App impleme
 | `depth` | `interleaver_depth` | interleaver depth | unit |
 | `block_bits` | `codeblock_bits` | code block length | bit |
 | `InfoBits` | `information_bits` | uncoded information length entering a channel encoder | bit |
+| `b_i` | `serial_input_bit` | bit at index `i` in the serial coded-symbol input stream | bit |
+| `QPSKPhase_deg` | `qpsk_phase_state_deg` | RF carrier phase state for a CCSDS QPSK I/Q bit pair | deg |
+| `R_cs` | `coded_symbol_rate` | coded symbol rate delivered to modulation or physical layer | symbol/s |
+| `R_chs` | `channel_symbol_rate` | channel symbol rate at the channel-symbol reference point | symbol/s |
+| `R_source` | `source_data_rate` | source data rate before coding/modulation overhead | bit/s |
+| `f_sc` | `subcarrier_frequency` | telemetry or telecommand subcarrier frequency | Hz |
+| `SubcarrierRatio` | `subcarrier_to_symbol_ratio` | subcarrier frequency divided by coded symbol rate | ratio |
+| `PhaseImbalance_deg` | `phase_imbalance_deg` | measured phase imbalance between modulator branches or constellation points | deg |
+| `PhaseLimit_deg` | `phase_imbalance_limit_deg` | applicable CCSDS phase-imbalance limit for the selected modulation family | deg |
+| `AmplitudeImbalance_dB` | `amplitude_imbalance_db` | measured amplitude imbalance between modulator branches or constellation points | dB |
+| `AmpLimit_dB` | `amplitude_imbalance_limit_db` | applicable CCSDS amplitude-imbalance limit for the selected modulation family | dB |
+| `R_cs_meas` | `measured_coded_symbol_rate` | measured coded symbol rate | symbol/s |
+| `R_cs_nom` | `nominal_coded_symbol_rate` | nominal configured coded symbol rate | symbol/s |
+| `Delta_R_cs` | `coded_symbol_rate_variation` | absolute coded-symbol-rate variation over a stability interval | symbol/s |
+| `OffsetLimit_ppm` | `symbol_rate_offset_limit_ppm` | allowed coded-symbol-rate offset | ppm |
+| `StabilityLimit` | `symbol_rate_stability_limit` | allowed fractional symbol-rate instability | ratio |
+| `BTS` | `bandwidth_time_product` | GMSK or filtered-OQPSK one-sided 3-dB bandwidth-time product | ratio |
+| `B_3dB` | `one_sided_3db_filter_bandwidth` | one-sided 3-dB bandwidth of the shaping filter | Hz |
+| `tau_g_variation` | `group_delay_variation` | in-band group-delay variation | s |
+| `AMPM_Slope_deg_per_dB` | `ampm_slope_deg_per_db` | amplifier AM/PM conversion slope | deg/dB |
+| `Delta_f_sc` | `subcarrier_frequency_offset` | measured subcarrier frequency offset | Hz |
+| `OffsetFractionLimit` | `subcarrier_offset_fraction_limit` | allowed subcarrier frequency offset as a fraction of `f_sc` | ratio |
 | `r_conv` | `convolutional_code_rate` | CCSDS convolutional code rate | ratio |
 | `K_conv` | `constraint_length` | convolutional code constraint length; CCSDS text uses `K` | bit |
 | `J` | `rs_symbol_bits` | Reed-Solomon symbol length | bit/symbol |
@@ -558,6 +580,23 @@ This glossary defines shared symbols for the formula knowledge base. App impleme
 | --- | --- | --- | --- |
 | `HeaderBits` | `header_bits` | protocol header length | bit |
 | `TrailerBits` | `trailer_bits` | protocol trailer length | bit |
+| `PLTU_Bits` | `proximity_pltu_bits` | complete Proximity-1 Link Transmission Unit size | bit |
+| `PLTU_OverheadBits` | `proximity_pltu_overhead_bits` | Proximity-1 ASM plus CRC-32 overhead per PLTU | bit |
+| `ASM_Bits` | `proximity_attached_sync_marker_bits` | Proximity-1 PLTU Attached Synchronization Marker length, 24 bits | bit |
+| `CRC32_Bits` | `proximity_crc32_bits` | Proximity-1 PLTU CRC length, 32 bits | bit |
+| `ProxIdleBits` | `proximity_idle_bits` | total idle/acquisition/tail bits inserted around PLTUs | bit |
+| `ProxIdleRepeats` | `proximity_idle_pn_repeats` | repetitions of the 32-bit Proximity-1 idle PN sequence | unit |
+| `Acquisition_Idle_Duration` | `proximity_acquisition_idle_duration` | managed acquisition idle duration before Proximity-1 data | s |
+| `Tail_Idle_Duration` | `proximity_tail_idle_duration` | managed tail idle duration after Proximity-1 data | s |
+| `Rd` | `proximity_data_rate` | Proximity-1 input data rate selected before coding | bit/s |
+| `Rd_allowed_i` | `proximity_allowed_data_rate` | one value in the Proximity-1 allowed data-rate table | bit/s |
+| `InputBits` | `proximity_coding_input_bits` | PLTU plus idle bitstream length entering the selected Proximity-1 code | bit |
+| `ProxLDPCBlocks` | `proximity_ldpc_blocks` | number of Proximity-1 1024-bit LDPC message blocks | unit |
+| `ProxLDPCCodewordBits` | `proximity_ldpc_codeword_bits` | Proximity-1 LDPC codeword length, 2048 bits | bit |
+| `ProxLDPCCodeRate` | `proximity_ldpc_code_rate` | Proximity-1 LDPC code rate, 1/2 | ratio |
+| `CSM_Bits` | `proximity_codeword_sync_marker_bits` | Proximity-1 LDPC Codeword Sync Marker length, 64 bits | bit |
+| `PN_Prox_Idle` | `proximity_idle_pn_sequence` | Proximity-1 idle PN sequence value `352EF853` | hex constant |
+| `PN_i` | `proximity_randomizer_bit` | pseudo-randomizer bit at index `i`, periodic with length 255 for Proximity-1 LDPC | bit |
 | `PlaintextBits` | `plaintext_bits` | security payload bits before security overhead | bit |
 | `IVBits` | `initialization_vector_bits` | security initialization vector length | bit |
 | `AuthTagBits` | `auth_tag_bits` | authentication tag length | bit |

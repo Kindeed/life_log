@@ -232,6 +232,20 @@ Notation:
 | BB-060 | `SNR_phase_limit ~= 1 / sigma_phase^2` | small phase jitter in radians | Approximate SNR limit from RMS phase noise/jitter. | BOOK-SKLAR, BOOK-HAYKIN | Procedure |
 | BB-061 | `FreqOffsetPhase = 2*pi*Delta_f*T_obs` | frequency offset and observation time | Phase rotation accumulated from carrier frequency offset. | BOOK-SKLAR, DESCANSO-DSTSE | Seeded |
 | BB-062 | `MIMO_C = log2(det(I_Nr + rho/Nt * H*H^H))` | channel matrix, SNR, antennas | Flat-fading MIMO capacity model with equal power allocation. | BOOK-SKLAR, BOOK-PROAKIS | Procedure |
+| BB-063 | `QPSK_I_bit_i = b_(2i); QPSK_Q_bit_i = b_(2i+1)` | serial bit stream and symbol index | CCSDS QPSK input splitting: even bits feed the I channel and odd bits feed the Q channel. | CCSDS-401 | Seeded |
+| BB-064 | `QPSKPhase_deg(I,Q) = {45,135,225,315} for IQ={00,10,11,01}` | I/Q bit pair | CCSDS QPSK phase-state convention with Gray-adjacent 90-degree phase errors. | CCSDS-401 | Seeded |
+| BB-065 | `PhaseImbalanceMargin_deg = PhaseLimit_deg - abs(PhaseImbalance_deg)` | modulator phase imbalance and selected limit | Compliance margin for RF or subcarrier modulator phase imbalance. Typical CCSDS 401 limits are 5 deg, 3 deg, or 2 deg depending on modulation family and section. | CCSDS-401 | Seeded |
+| BB-066 | `AmplitudeImbalanceMargin_dB = AmpLimit_dB - abs(AmplitudeImbalance_dB)` | modulator amplitude imbalance and selected limit | Compliance margin for RF or subcarrier modulator amplitude imbalance. CCSDS 401 gives 0.5 dB for many suppressed-carrier modulators and 0.2 dB for spacecraft subcarrier modulators. | CCSDS-401 | Seeded |
+| BB-067 | `SubcarrierRatio = f_sc / R_cs` | subcarrier frequency and coded symbol rate | Telemetry subcarrier frequency-to-coded-symbol-rate ratio for PCM/PSK/PM residual-carrier checks. | CCSDS-401 | Seeded |
+| BB-068 | `SubcarrierRatioError = abs(SubcarrierRatio - round(SubcarrierRatio))` | subcarrier ratio | Deviation from the integer subcarrier-ratio condition recommended by CCSDS 401. | CCSDS-401 | Seeded |
+| BB-069 | `CodedSymbolRateOffset_ppm = 1e6*(R_cs_meas - R_cs_nom)/R_cs_nom` | measured and nominal coded symbol rates | Converts coded-symbol-rate offset to ppm for suppressed-carrier telemetry stability checks. | CCSDS-401 | Seeded |
+| BB-070 | `SymbolRateOffsetMargin_ppm = OffsetLimit_ppm - abs(CodedSymbolRateOffset_ppm)` | ppm offset and CCSDS limit | Margin to the CCSDS 401 maximum coded-symbol-rate offset limit; the common suppressed-carrier telemetry limit is 100 ppm. | CCSDS-401 | Seeded |
+| BB-071 | `SymbolRateStabilityMargin = StabilityLimit - abs(Delta_R_cs/R_cs)` | fractional coded symbol rate variation | Short-term or long-term coded-symbol-rate stability margin. CCSDS 401 lists `1e-6` and `1e-5` reference limits for suppressed-carrier telemetry. | CCSDS-401 | Seeded |
+| BB-072 | `B_3dB = BTS * R_cs` | GMSK bandwidth-time product and coded symbol rate | Converts a GMSK or filtered-OQPSK `BTS` value to one-sided 3-dB filter bandwidth because `T_s=1/R_cs`. | CCSDS-401 | Seeded |
+| BB-073 | `SignalingEfficiency = R_source / R_chs` | source bit rate and channel symbol rate | CCSDS 401 high-rate telemetry signaling efficiency, useful for comparing bandwidth-efficient modulation options. | CCSDS-401 | Seeded |
+| BB-074 | `GroupDelayVariationFraction = tau_g_variation / T_s` | in-band group-delay variation and signal duration | Expresses channel group-delay variation as a fraction of symbol duration; CCSDS 401 high-rate EES text uses 10 percent as an acceptable reference value. | CCSDS-401 | Seeded |
+| BB-075 | `AMPMMargin_deg_per_dB = AMPM_Limit_deg_per_dB - AMPM_Slope_deg_per_dB` | amplifier AM/PM conversion slope | Margin to the CCSDS 401 high-rate modulation AM/PM slope limit, commonly 5 deg/dB unless receiver equalization is applied. | CCSDS-401 | Seeded |
+| BB-076 | `SubcarrierFrequencyOffsetMargin_Hz = OffsetFractionLimit*f_sc - abs(Delta_f_sc)` | subcarrier frequency and measured offset | Margin to telecommand or telemetry subcarrier frequency-offset limits such as `2e-4*f_sc` or 200 ppm. | CCSDS-401 | Seeded |
 
 ## Telemetry, PCM, Space Packet, and Transfer Frames
 
@@ -502,6 +516,20 @@ Notation:
 | PROTO-010 | `ARQGoodput ~= PayloadBits / (FrameTime * ExpectedTransmissions + AckDelay)` | ARQ timing | Stop-and-wait style goodput estimate. | CCSDS COP, BOOK-SKLAR | Seeded |
 | PROTO-011 | `ProxNetRate = ProxPhysicalRate * ProxCodingEfficiency * ProxFrameEfficiency` | Proximity-1 factors | Relay/lander proximity link net rate. | CCSDS-211.0, CCSDS-211.1, CCSDS-211.2 | Seeded |
 | PROTO-012 | `MultiplexedRate_i = NetRate * Allocation_i` | allocation fraction | Virtual-channel or service allocation rate. | CCSDS-132, CCSDS-732, CCSDS-732.1 | Seeded |
+| PROTO-013 | `PLTU_Bits = 24 + TransferFrameBits + 32` | Proximity ASM, Transfer Frame, CRC-32 | Proximity-1 Link Transmission Unit size. The 24-bit ASM pattern is `FAF320`; the trailer is a 32-bit CRC. | CCSDS-211.2 | Seeded |
+| PROTO-014 | `PLTU_OverheadBits = ASM_Bits + CRC32_Bits = 56` | Proximity ASM and CRC-32 fields | Fixed PLTU synchronization and CRC overhead before channel coding. | CCSDS-211.2 | Seeded |
+| PROTO-015 | `PLTU_Efficiency = TransferFrameBits / PLTU_Bits` | transfer-frame and PLTU sizes | Transfer-frame fraction of a Proximity-1 PLTU. | CCSDS-211.2 | Seeded |
+| PROTO-016 | `ProxIdleRepeats = ceil(ProxIdleBits / 32)` | idle/acquisition/tail idle bits | Repetitions of the Proximity-1 idle PN sequence `352EF853`, which is 32 bits long. | CCSDS-211.2 | Seeded |
+| PROTO-017 | `ProxAcquisitionBits = ceil(Acquisition_Idle_Duration * Rd)` | acquisition-idle duration and data rate | Acquisition sequence bit budget before the first PLTU. | CCSDS-211.2 | Seeded |
+| PROTO-018 | `ProxTailBits = ceil(Tail_Idle_Duration * Rd)` | tail-idle duration and data rate | Tail sequence bit budget after the last PLTU. | CCSDS-211.2 | Seeded |
+| PROTO-019 | `ProxRdError = min(abs(Rd - Rd_allowed_i))` | selected data rate and allowed-rate table | Validation distance to the Proximity-1 discrete `Rd` set: 1000 through 2048000 bit/s by powers of two. LDPC true rates require the data-link annex table. | CCSDS-211.2 | Seeded |
+| PROTO-020 | `R_cs_uncoded = Rd` | Proximity-1 uncoded option | Coded-symbol stream rate for the no-coding option. | CCSDS-211.2 | Seeded |
+| PROTO-021 | `R_cs_conv = 2*Rd; ProxConvSymbols = 2*InputBits` | Proximity-1 rate-1/2 convolutional code | Coded-symbol rate and symbol expansion for the non-punctured constraint-length-7 convolutional code. | CCSDS-211.2 | Seeded |
+| PROTO-022 | `ProxLDPCBlocks = ceil(InputBits / 1024)` | PLTU plus idle bitstream | Number of fixed-length Proximity-1 LDPC message blocks after PLTU construction and idle insertion. | CCSDS-211.2 | Seeded |
+| PROTO-023 | `ProxLDPCCodewordBits = 2048; ProxLDPCCodeRate = 1024/2048` | LDPC message block and codeword size | Proximity-1 LDPC uses the CCSDS rate-1/2 `(n=2048,k=1024)` code. | CCSDS-211.2 | Seeded |
+| PROTO-024 | `ProxLDPCOutputBits = ProxLDPCBlocks * (64 + 2048)` | CSM plus LDPC codeword | Coded stream size when a 64-bit Codeword Sync Marker immediately precedes each LDPC codeword. CSM pattern is `034776C7272895B0`. | CCSDS-211.2 | Seeded |
+| PROTO-025 | `ProxLDPCEfficiency = 1024 / (2048 + 64)` | LDPC message, codeword, and CSM bits | Physical stream efficiency of Proximity-1 LDPC before PLTU/idle/frame-layer overhead. | CCSDS-211.2 | Seeded |
+| PROTO-026 | `RandomizedCodewordBit_i = LDPCCodewordBit_i xor PN_(i mod 255)` | LDPC codeword and pseudo-random sequence | Proximity-1 LDPC codeword randomization; the CSM itself is not randomized and the all-ones generator resets each codeword. | CCSDS-211.2 | Procedure |
 
 ## Measurement, Unit, and RF Lab Conversions
 

@@ -66,6 +66,34 @@ Sources: Sklar/Harris `Digital Communications: Fundamentals and Applications`, 3
 | DIGCOM-006 | DESCANSO section 5.2.2 and Sklar modulation topics | QPSK/SQPSK use two orthogonal BPSK components; QPSK/SQPSK have BPSK-like power efficiency and roughly half the bandwidth at same data rate and power | These are explanatory mode notes, not independent formulas beyond symbol-rate and bandwidth equations. |
 | DIGCOM-007 | Sklar/Harris OFDM/MIMO/synchronization topics | OFDM `Delta_f=1/T_u`, `T_ofdm=T_u+T_cp`, `CP_Overhead=T_cp/T_ofdm`, MIMO `C=log2(det(I+rho/Nt HH^H))` | Mark OFDM/MIMO formulas as scenario seeds until detailed pilot, framing, channel-state, and implementation-loss models are extracted. |
 
+## CCSDS 401.0-B-32 RF and Modulation Systems
+
+Source: CCSDS 401.0-B-32, `Radio Frequency and Modulation Systems, Part 1: Earth Stations and Spacecraft`, October 2021.
+
+| Extract ID | Standard location | Equation or table | Implementation note |
+| --- | --- | --- | --- |
+| CCSDS401-001 | Section 2.4.10 | QPSK serial input is split so even bits `b_(2i)` go to I and odd bits `b_(2i+1)` go to Q; phase states are 45 deg for `00`, 135 deg for `10`, 225 deg for `11`, and 315 deg for `01` | Implement as a mapping/check table, not as a user-editable formula. |
+| CCSDS401-002 | Sections 2.4.12A, 2.4.12B, 2.4.13B, 2.4.17A, 2.4.18, 2.4.20B/21A | Phase/amplitude imbalance limits vary by modulation family: common suppressed-carrier RF modulator rows use 5 deg and 0.5 dB; high-order APSK rows can use 3 deg phase; subcarrier modulators use 2 deg and 0.2 dB | Use `PhaseImbalanceMargin_deg` and `AmplitudeImbalanceMargin_dB` with a source-selected limit row. |
+| CCSDS401-003 | Sections 2.4.14A and 2.4.14B | `SubcarrierRatio=f_sc/R_cs`; recommended ratios are integer values. Category A text selects 4 above 60 kHz unless spectral overlap requires a higher integer; Category B summary lists 5 above 60 kHz | Store category-specific defaults separately from the integer-ratio validator. |
+| CCSDS401-004 | Sections 2.2.5 and 2.4.6 | Subcarrier frequency offset/stability limits include telecommand `2e-4*f_sc`, `1e-5` short-term, `5e-5` long-term and telemetry summary values of 200 ppm, `1e-6`, `2e-5` | Use one generic offset/stability margin formula with the applicable source row selected by link direction and section. |
+| CCSDS401-005 | Section 2.4.19 | Suppressed-carrier telemetry coded-symbol-rate offset shall be within 100 ppm, with short-term stability better than `1e-6` and long-term stability better than `1e-5` | Supports right-side UI result groups for symbol-rate offset and stability margin. |
+| CCSDS401-006 | Sections 2.4.18, 2.4.20B, and 2.4.21A | High-rate modulation rows include SRRC-QPSK/OQPSK/8PSK/APSK, 4D 8PSK TCM, GMSK, and filtered OQPSK; footnotes define SRRC alpha options and `BTS`, where `B` is one-sided 3-dB filter bandwidth | Use `B_3dB=BTS*R_cs` and table-driven modulation-family options; do not infer spectral-mask compliance without the SFCG mask data. |
+| CCSDS401-007 | Section 2.4.18 and related high-rate rows | Signaling efficiency is the ratio of source data rate to channel symbol rate; in-band group-delay variation up to 10 percent of signal duration and AM/PM slope under 5 deg/dB are cited as acceptable engineering constraints in relevant high-rate rows | Add as advanced quality margins rather than primary link-budget outputs. |
+
+## CCSDS 211.2-B-3 Proximity-1 Coding and Synchronization
+
+Source: CCSDS 211.2-B-3, `Proximity-1 Space Link Protocol--Coding and Synchronization Sublayer`, October 2019.
+
+| Extract ID | Standard location | Equation or table | Implementation note |
+| --- | --- | --- | --- |
+| PROXCS-001 | Section 3.2, figure 3-1 | PLTU structure is 24-bit ASM `FAF320`, Transfer Frame, and 32-bit CRC-32: `PLTU_Bits=24+TransferFrameBits+32` | ASM is used for PLTU detection; CRC is calculated over the Transfer Frame, not the ASM. |
+| PROXCS-002 | Section 3.3 | Idle data uses repeated 32-bit PN sequence `352EF853`; acquisition and tail sequences are idle data with managed durations | Use `ceil(Duration*Rd)` and `ceil(bits/32)` for acquisition/tail/idle planning. |
+| PROXCS-003 | Section 3.4.2 | Input data rate `Rd` is selected from 1000, 2000, 4000, 8000, 16000, 32000, 64000, 128000, 256000, 512000, 1024000, and 2048000 bit/s; coding options are no coding, convolutional, or LDPC | The standard notes LDPC true `Rd` values are approximated here and require the data-link annex table for exact values. |
+| PROXCS-004 | Section 3.4.3 | Convolutional coding is rate 1/2, constraint length 7, and non-punctured; all PLTUs and idle data are encoded | `R_cs_conv=2*Rd` and `ProxConvSymbols=2*InputBits`. |
+| PROXCS-005 | Section 3.4.4 | LDPC message blocks are fixed 1024 bits; each is encoded using CCSDS LDPC `(n=2048,k=1024)`, rate 1/2 | `ProxLDPCBlocks=ceil(InputBits/1024)` and `ProxLDPCCodeRate=1024/2048`. |
+| PROXCS-006 | Section 3.4.4 | LDPC Codeword Sync Marker is 64 bits, pattern `034776C7272895B0`, and immediately precedes each LDPC codeword with no intervening bits | `ProxLDPCOutputBits=ProxLDPCBlocks*(64+2048)`. |
+| PROXCS-007 | Section 3.4.5 | LDPC codewords are randomized by XOR with a pseudo-random sequence that starts at the first codeword bit, repeats after 255 bits, and resets to all-ones at each codeword; the CSM is not randomized | Keep randomization as a procedure; it has no bit overhead but affects receiver synchronization and implementation tests. |
+
 ## ITU-R Rain and Earth-Space Propagation Extracts
 
 Sources: ITU-R P.838-3 `Specific attenuation model for rain for use in prediction methods`; ITU-R P.839-4 `Rain height model for prediction methods`; ITU-R P.618-14 `Propagation data and prediction methods required for the design of Earth-space telecommunication systems`.
@@ -160,6 +188,8 @@ Source: CCSDS 131.0-B-5, `TM Synchronization and Channel Coding`, September 2023
 | ITU-P525 | Listed as source; formulas partly seeded | Equations 1-11 extracted into catalog and variables | Add unit-test examples for all practical-unit conversions when calculators are implemented. |
 | DESCANSO/DSN/ITU antenna patterns/Balanis | Listed as source; antenna/link formulas partly seeded | Received-power chain, aperture efficiency, pointing/polarization loss, noise density, link margins, ranging SNR, DSN atmospheric noise-temperature, ITU earth-station reference patterns, and Balanis antenna definitions/array seeds extracted | Extract DSN 101/103/104 antenna station tables, antenna-temperature submodels, reflector-specific constants, and deterministic examples for each workbench. |
 | Digital comm books | Listed as source; BER/PER/modulation formulas partly seeded | Baseband timing, energy metrics, Shannon/Nyquist, pulse shaping, quantization, matched-filter detection, OFDM, phase jitter, and MIMO formulas added | Extract exact CCSDS modulation families and add test vectors for BER, quantization, OFDM, and phase-noise calculators. |
+| CCSDS-401 | Listed as RF/modulation source; generic symbol-rate formulas seeded | QPSK bit/phase mapping, modulator imbalance margins, subcarrier-ratio checks, symbol-rate offset/stability margins, GMSK/filter bandwidth relationship, and high-rate modulation quality margins extracted | Add machine-readable modulation-family and limit tables before app implementation. |
+| CCSDS-211.2 | Listed as Proximity-1 coding/sync source; only generic net-rate formula seeded | PLTU size/efficiency, idle PN sizing, allowed `Rd` validation, convolutional expansion, LDPC `(2048,1024)` plus 64-bit CSM overhead, and randomizer procedure extracted | Direct `211.0-B-6` and `211.1-B-4` extraction still needed for data-link frame fields and physical-layer exact modes. |
 | ITU-P618/P676/P838/P839/P840 | Listed as source; rain and total attenuation top-level formulas seeded | P.838 rain specific attenuation, P.839 rain height, P.618 slant-path rain attenuation/total attenuation/scintillation/sky-noise, P.676 gaseous attenuation, and P.840 cloud/fog attenuation formulas extracted | Continue low-elevation multipath, depolarization, coefficient map/table assets, and implementation-ready coefficient packaging. |
 | CCSDS-414.1 | Listed as source; PN formulas partly seeded | Chip-rate equations, selector rules, cross-support examples, acquisition scaling, delay limits, and jitter reference rows extracted | Extract full transparent/regenerative mode field matrices and station/on-board performance tables. |
 | CCSDS-131 | Listed as source; generic coding formulas seeded | Public B-5 convolutional, R-S, Turbo, LDPC, ASM, CSM, randomizer, and frame-length extracts added | Verify deltas against Issue 6 when the official B-6 PDF is accessible. |

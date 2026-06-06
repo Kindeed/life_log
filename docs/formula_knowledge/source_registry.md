@@ -7,7 +7,7 @@ This registry records the standards, handbooks, and published books that should 
 | Source ID | Source | Authority | Current relevance | Use in knowledge base |
 | --- | --- | --- | --- | --- |
 | CCSDS-SLS | CCSDS Space Link Services area | CCSDS | SLS covers layers 1 and 2: RF/modulation, channel coding, data link, data compression, and ranging. | Top-level domain map for telemetry, telecommand, ranging, and space link formulas. |
-| CCSDS-401 | CCSDS 401.0-B, Radio Frequency and Modulation Systems | CCSDS SLS-RFM | RF, modulation, frequency assignment, spectral constraints. | RF/modulation formulas, bandwidth checks, Doppler and spectrum allocation context. |
+| CCSDS-401 | CCSDS 401.0-B-32, Radio Frequency and Modulation Systems, Part 1: Earth Stations and Spacecraft | CCSDS SLS-RFM | Public Issue 32, October 2021 PDF extracted for first-pass RF/modulation constraints. | QPSK mapping, coded-symbol-rate stability, subcarrier-ratio checks, GMSK/filter bandwidth parameters, modulator imbalance margins, and spectrum/modulation applicability context. |
 | CCSDS-131 | CCSDS 131.0-B, TM Synchronization and Channel Coding | CCSDS SLS-C&S | Active TM coding standard; CCSDS lists Issue 6 in April 2026. Current public extraction uses Issue 5 from September 2023 until the Issue 6 PDF is retrievable and checked. | TM sync markers, randomization, convolutional/turbo/LDPC/Reed-Solomon families, coded stream overhead. |
 | CCSDS-131.2 | CCSDS 131.2-B, Flexible Advanced Coding and Modulation Scheme for High Rate Telemetry Applications | CCSDS SLS-C&S | High-rate telemetry coding and modulation. | ACM/SCCC-oriented high-rate telemetry calculators. |
 | CCSDS-131.3 | CCSDS 131.3-B, CCSDS Space Link Protocols over ETSI DVB-S2 Standard | CCSDS SLS-C&S | High data rate telemetry, DVB-S2 MODCOD applicability, USLP support. | MODCOD table extraction, spectral efficiency, frame overhead. |
@@ -23,7 +23,7 @@ This registry records the standards, handbooks, and published books that should 
 | CCSDS-123 | CCSDS 123.0-B-2, Multispectral and Hyperspectral Image Compression | CCSDS SLS-DC | Low-complexity lossless and near-lossless compression for 3-D image data. | Multispectral/hyperspectral data-rate and volume calculators. |
 | CCSDS-211.0 | CCSDS 211.0-B-6, Proximity-1 Space Link Protocol--Data Link Layer | CCSDS SLS-SLP | Proximity-1 data link layer and transfer frames. | Relay/orbiter-lander transfer frame and throughput calculators. |
 | CCSDS-211.1 | CCSDS 211.1-B-4, Proximity-1 Physical Layer | CCSDS SLS-RFM | Proximity-1 physical layer procedures, reconfirmed through June 2024. | Proximity link RF, rate, modulation, and physical-layer parameter extraction. |
-| CCSDS-211.2 | CCSDS 211.2-B-3, Proximity-1 Coding and Synchronization Sublayer | CCSDS SLS-C&S | Proximity-1 coding and synchronization. | Proximity coding/sync overhead and coded rate formulas. |
+| CCSDS-211.2 | CCSDS 211.2-B-3, Proximity-1 Coding and Synchronization Sublayer | CCSDS SLS-C&S | Public Issue 3, October 2019 PDF extracted for first-pass PLTU, idle, coding, LDPC/CSM, and randomizer formulas. | Proximity coding/sync overhead, allowed `Rd` validation, coded-rate expansion, LDPC/CSM efficiency, and PLTU efficiency formulas. |
 | ITU-P525 | ITU-R P.525-5, Calculation of free-space attenuation | ITU-R | Current Recommendation dated 11/2024; equations 1-11 extracted into `standard_extracts.md`. | FSPL, field strength, PFD, isotropic received power, and radar free-space loss formulas. |
 | ITU-P618 | ITU-R P.618-14, Earth-space propagation prediction | ITU-R | In force, approved 2023-08-23; rain, total attenuation, scintillation, and sky-noise extracts started in `standard_extracts.md`. | Earth-space attenuation, rain fade, scintillation, availability, sky noise temperature. |
 | ITU-P676 | ITU-R P.676-13, Attenuation by atmospheric gases and related effects | ITU-R | In force, approved 2022-08-24; official page updated 2024-06-21; first-pass gas attenuation extracts started. | Oxygen/water vapor attenuation, path integration, line-by-line and approximate slant-path gas attenuation. |
@@ -51,10 +51,10 @@ This registry records the standards, handbooks, and published books that should 
 
 ## Next Source Extraction Tasks
 
-1. Continue active CCSDS PDF extraction for 131.0-B-6, 732.0-B, 732.1-B, COP-1, compression, and Proximity-1; first-pass extracts already exist for 131.0-B-5, 231.0-B-4, 414.1-B-3, 132.0-B-3, and 232.0-B-4.
+1. Continue active CCSDS PDF extraction for 131.0-B-6, 732.0-B, 732.1-B, COP-1, compression, and Proximity-1; first-pass extracts already exist for 401.0-B-32, 211.2-B-3, 131.0-B-5, 231.0-B-4, 414.1-B-3, 132.0-B-3, and 232.0-B-4.
 2. Extract only implementation-relevant tables: code rates, frame lengths, sync marker sizes, transfer frame fields, MODCOD identifiers, PN chip-rate values, and mode/managed-parameter options.
 3. Cross-check ITU-R P.618 dependencies: P.618 calls into P.837, P.838, P.839, P.840, P.676 depending on fade mechanism.
-4. Extract CCSDS compression and Proximity-1 sizing fields where public Blue/Green Books define selectable parameters.
+4. Extract CCSDS compression and remaining Proximity-1 sizing fields where public Blue/Green Books define selectable parameters, especially 211.0 data-link fields and 211.1 physical-layer modes/rates.
 5. Add ECSS and Chinese/GJB public index references only where public bibliographic details are available. Do not encode restricted standards text.
 
 ## Reference Links
@@ -66,6 +66,7 @@ This registry records the standards, handbooks, and published books that should 
 | CCSDS search | https://ccsds.org/searchpubs/ |
 | CCSDS-131 | https://ccsds.org/publications/allpubs/entry/3449/ |
 | CCSDS-131 B-5 PDF | https://public.ccsds.org/Pubs/131x0b5.pdf |
+| CCSDS-401 PDF | https://public.ccsds.org/Pubs/401x0b32.pdf |
 | CCSDS-231 | https://ccsds.org/publications/allpubs/entry/3203/ |
 | CCSDS-231 PDF | https://public.ccsds.org/Pubs/231x0b4e1.pdf |
 | CCSDS-132 PDF | https://public.ccsds.org/Pubs/132x0b3.pdf |
@@ -74,6 +75,7 @@ This registry records the standards, handbooks, and published books that should 
 | CCSDS-414.1 PDF | https://public.ccsds.org/Pubs/414x1b3e1.pdf |
 | CCSDS-121/122/123 search | https://ccsds.org/searchpubs/ |
 | CCSDS Proximity-1 search | https://ccsds.org/searchpubs/ |
+| CCSDS-211.2 PDF | https://public.ccsds.org/Pubs/211x2b3.pdf |
 | ITU-P525 | https://www.itu.int/rec/R-REC-P.525/en |
 | ITU-P525-5 PDF | https://www.itu.int/dms_pubrec/itu-r/rec/p/R-REC-P.525-5-202411-I!!PDF-E.pdf |
 | ITU-P618 | https://www.itu.int/rec/R-REC-P.618-14-202308-I/en |
