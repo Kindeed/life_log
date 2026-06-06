@@ -185,7 +185,11 @@ Recommended implementation order:
    - M-PPM bit rate, slot width, peak-to-average power ratio, and photon efficiency
    - Poisson OOK/PPM BER/SER seeds and background-sensitive warnings
    - uplink beacon acquisition power for tracking photoelectron requirements
-   - remaining source work: atmospheric optical turbulence/scintillation, daytime sky background, detector-array combining, and coded SCPPM/PPM performance tables
+   - diffuse sky, point-source, and solar-background power cards
+   - diffraction-limited FOV, seeing-limited FOV, Fried parameter, focal-plane spot-size cards
+   - detector-array selected-set signal/background combining and PPM error objective
+   - ITU-R P.1814 terrestrial FSO link-margin, geometric spreading, visibility attenuation, weak-turbulence scintillation, and ambient-light cards
+   - remaining source work: coded SCPPM/PPM performance tables, Hufnagel-Valley/CLEAR turbulence profile datasets, P.1814 mid/far-IR coefficient tables, rain/fog CCDF procedure, optical validation examples, and production-ready detector-array optimization tests
 
 8. System closure workbench:
    - mission data volume

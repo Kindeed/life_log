@@ -598,6 +598,34 @@ Notation:
 | OPT-018 | `Ps_PPM_Kb0 = (M_PPM-1)*exp(-K_s)/M_PPM` | PPM order and signal photons | M-PPM symbol error probability on a background-free Poisson channel. | DESCANSO-OPTICAL | Seeded |
 | OPT-019 | `Pb_PPM = M_PPM/(2*(M_PPM-1))*Ps_PPM` | PPM symbol error probability | Converts equally likely M-PPM symbol errors to bit error probability. | DESCANSO-OPTICAL | Seeded |
 | OPT-020 | `P_beacon_req = (h*c/lambda)*N_pe_frame*F_frame/(G_t_opt*(lambda/(4*pi*R))^2*G_r_opt*eta_QE*eta_atmos*eta_ATP*eta_trans)` | acquisition frame requirement and optical link factors | Required uplink beacon power to deliver a target number of signal photoelectrons per tracking frame. | DESCANSO-OPTICAL | Procedure |
+| OPT-021 | `P_sky = L_lambda*A_R_opt*Omega_FOV*Delta_lambda*eta_R` | sky radiance, effective receiver area, FOV solid angle, optical bandpass, receive efficiency | Diffuse sky-background optical power collected inside the detector field of view. | DESCANSO-OPTICAL, ITU-P1814 | Seeded |
+| OPT-022 | `P_point = H_lambda*A_R_opt*Delta_lambda*eta_R` | point-source spectral irradiance, receiver area, bandpass, receive efficiency | Background optical power from a stellar or planetary point source in the receiver field of view. | DESCANSO-OPTICAL | Seeded |
+| OPT-023 | `Omega_FOV_small ~= pi*(theta_FOV/2)^2` | circular full-angle field of view | Small-angle solid angle for a circular detector field stop or pixel footprint. | DESCANSO-OPTICAL, BOOK-BALANIS | Seeded |
+| OPT-024 | `theta_FOV_diff ~= 2.44*lambda/D_r` | wavelength and receive aperture diameter | Diffraction-limited receive field-of-view or Airy-disk angular scale. | DESCANSO-OPTICAL, BOOK-BALANIS | Seeded |
+| OPT-025 | `D_n(r_sep) = C_n2*r_sep^(2/3)` | refractive-index structure parameter and separation | Refractive-index structure function in the inertial range of optical turbulence. | DESCANSO-OPTICAL | Procedure |
+| OPT-026 | `k_opt = 2*pi/lambda` | optical wavelength | Optical wave number for turbulence and scintillation calculations. | DESCANSO-OPTICAL, ITU-P1814 | Seeded |
+| OPT-027 | `r0 = 1.67*(sec(zeta_zenith)*k_opt^2*integral(C_n2(h_path) dh_path))^(-3/5)` | zenith angle, optical wave number, refractive-index profile | Fried atmospheric coherence diameter for a downlink plane-wave path. | DESCANSO-OPTICAL | Procedure |
+| OPT-028 | `theta_seeing ~= lambda/r0` | wavelength and Fried parameter | Atmospheric seeing angular broadening caused by turbulence. | DESCANSO-OPTICAL | Seeded |
+| OPT-029 | `spot_diff_diameter ~= 2.44*f_opt*lambda/D_r` | focal length, wavelength, receive aperture | Diffraction-limited focal-plane spot diameter. | DESCANSO-OPTICAL, BOOK-BALANIS | Seeded |
+| OPT-030 | `spot_seeing_diameter ~= 2.44*f_opt*lambda/r0` | focal length, wavelength, Fried parameter | Atmosphere-limited focal-plane spot diameter; ratio to diffraction-limited size is approximately `D_r/r0`. | DESCANSO-OPTICAL | Seeded |
+| OPT-031 | `K_s_array = sum_i_in_S K_s_i` | selected detector elements and signal counts | Signal photoelectron count collected by a selected detector-array subset. | DESCANSO-OPTICAL | Procedure |
+| OPT-032 | `K_b_array = sum_i_in_S K_b_i` | selected detector elements and background counts | Background and dark-count total for the same detector-array subset. | DESCANSO-OPTICAL | Procedure |
+| OPT-033 | `DetectorSet_opt = argmin_S P_SE(K_s_array(S), K_b_array(S), M_PPM)` | candidate detector subsets and PPM error model | Adaptive detector-array selection objective for turbulence-distorted focal-plane spots. | DESCANSO-OPTICAL | Procedure |
+| OPT-034 | `M_link_FSO_dB = P_e_dBm - S_r_dBm - A_geo_dB - A_atmo_dB - A_scint_dB - A_system_dB` | emitter power, receiver sensitivity, geometric/atmospheric/scintillation/system losses | ITU-R P.1814 terrestrial FSO link margin accounting. | ITU-P1814 | Seeded |
+| OPT-035 | `A_geo_dB = max(0, 10log10(S_d/Scapture))` | beam footprint and receiver capture surface | Geometrical attenuation from beam spreading; clipped at zero when the receiver captures the full beam. | ITU-P1814 | Seeded |
+| OPT-036 | `S_d = pi*(d_km*theta_mrad)^2/4` | path distance and beam divergence | Transmit-beam surface area at receiver range using P.1814 km/mrad units. | ITU-P1814 | Seeded |
+| OPT-037 | `gamma_atmo = gamma_clear_air + gamma_excess` | clear-air and excess attenuation components | Specific atmospheric attenuation decomposition for FSO absorption and scattering. | ITU-P1814 | Seeded |
+| OPT-038 | `gamma_sp = K_VIS/V_km` | visibility and measurement-method coefficient | Visibility-to-specific-attenuation relationship for suspended particles near the visible reference window. | ITU-P1814 | Seeded |
+| OPT-039 | `V_T2 = ln(0.02)/ln(0.05)*V_T5 ~= 1.31*V_T5` | visibility thresholds | Converts WMO/MOR 5 percent threshold visibility to the 2 percent threshold used by P.1814 wavelength models. | ITU-P1814 | Seeded |
+| OPT-040 | `gamma_sp_lambda = (17/V_km)*(0.55/lambda_um)^q_VIS` | visibility, optical wavelength, particle-size exponent | P.1814 suspended-particle specific attenuation for 0.4 to 1.55 um. | ITU-P1814 | Seeded |
+| OPT-041 | `q_VIS = piecewise(1.6 if V_km>50; 1.3 if 6<V_km<=50; 0.16*V_km+0.34 if 1<=V_km<=6; V_km-0.5 if 0.5<=V_km<1; 0 if V_km<0.5)` | visibility in km | Particle-size exponent used in the P.1814 visibility/wavelength attenuation model. | ITU-P1814 | Procedure |
+| OPT-042 | `A_clear_air_dB = gamma_clear_air*L_km` | clear-air specific attenuation and path length | Clear-air FSO path attenuation for links within the P.1814 validity range. | ITU-P1814 | Seeded |
+| OPT-043 | `A_sp_dB = gamma_sp*L_km` | suspended-particle specific attenuation and path length | Suspended-particle path attenuation before rain/fog statistical corrections. | ITU-P1814 | Seeded |
+| OPT-044 | `sigma_chi2_dB2 = 23.17*k_opt^(7/6)*C_n2*L_m^(11/6)` | optical wave number, turbulence strength, path length | Weak-turbulence log-amplitude scintillation variance for a plane wave. | ITU-P1814 | Procedure |
+| OPT-045 | `A_scint_dB ~= 2*sqrt(sigma_chi2_dB2)` | log-amplitude scintillation variance | P.1814 engineering scintillation attenuation allowance for weak turbulence. | ITU-P1814 | Seeded |
+| OPT-046 | `P_radiated_sun = 1200*cos(pi/2 - El_sun)` | solar elevation angle | Approximate solar radiated power incident on a horizontal surface in the P.1814 ambient-light model. | ITU-P1814 | Seeded |
+| OPT-047 | `F_solar = 8.97e-13*lambda_nm^5 - 4.65e-9*lambda_nm^4 + 9.37e-6*lambda_nm^3 - 9.067e-3*lambda_nm^2 + 4.05*lambda_nm - 5.70` | optical wavelength in nm | P.1814 polynomial fit for solar spectral power versus wavelength. | ITU-P1814 | Procedure |
+| OPT-048 | `P_solar = F_solar*P_radiated_sun*Scapture*W_receiver/100` | solar spectral factor, capture area, receiver optical bandwidth | Ambient solar power entering an FSO receiver when solar conjunction or near-axis sunlight is relevant. | ITU-P1814 | Seeded |
 
 ## Orbit, Geometry, Coverage, and Contact
 

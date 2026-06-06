@@ -687,6 +687,58 @@ This glossary defines shared symbols for the formula knowledge base. App impleme
 | `Ps_PPM` | `ppm_symbol_error_probability` | PPM symbol error probability | ratio |
 | `N_pe_frame` | `tracking_photoelectrons_per_frame` | target signal photoelectrons per acquisition/tracking frame | photoelectron/frame |
 | `F_frame` | `tracking_frame_rate` | acquisition/tracking sensor frame rate | frame/s |
+| `L_lambda` | `sky_spectral_radiance` | sky spectral radiance at the receive wavelength and solar geometry | W/m^2/sr/um |
+| `H_lambda` | `point_source_spectral_irradiance` | stellar or planetary point-source spectral irradiance at receiver | W/m^2/um |
+| `A_R_opt` | `optical_receiver_effective_area` | effective optical receiver collection area | m^2 |
+| `Omega_FOV` | `optical_receiver_fov_solid_angle` | detector or field-stop solid angle | sr |
+| `theta_FOV` | `optical_receiver_fov_angle` | receiver full-angle field of view | rad, urad |
+| `theta_FOV_diff` | `diffraction_limited_fov` | diffraction-limited full-angle FOV scale | rad, urad |
+| `Delta_lambda` | `optical_filter_bandwidth` | receiver optical bandpass | um, nm |
+| `eta_R` | `optical_receiver_system_efficiency` | receive optical system efficiency for background/light collection | ratio |
+| `P_sky` | `sky_background_power` | diffuse sky-background optical power in receiver FOV | W |
+| `P_point` | `point_source_background_power` | point-source optical background power | W |
+| `r_sep` | `turbulence_separation` | spatial separation used in refractive-index structure function | m |
+| `D_n` | `refractive_index_structure_function` | refractive-index structure function value | unitless |
+| `C_n2` | `refractive_index_structure_parameter` | refractive-index structure parameter for optical turbulence | m^(-2/3) |
+| `k_opt` | `optical_wave_number` | optical wave number | 1/m |
+| `zeta_zenith` | `optical_zenith_angle` | zenith angle for optical atmospheric path | rad, deg |
+| `h_path` | `optical_turbulence_path_height` | path-height coordinate for integrating `C_n2` | m |
+| `r0` | `fried_parameter` | atmospheric coherence diameter | m, cm |
+| `theta_seeing` | `atmospheric_seeing_angle` | angular broadening caused by turbulence | rad, urad |
+| `f_opt` | `optical_receiver_focal_length` | receive telescope focal length | m |
+| `spot_diff_diameter` | `diffraction_limited_spot_diameter` | focal-plane diffraction-limited spot diameter | m, um |
+| `spot_seeing_diameter` | `seeing_limited_spot_diameter` | focal-plane spot diameter broadened by atmospheric seeing | m, um |
+| `S` | `selected_detector_set` | selected detector-array element subset | set |
+| `K_s_i` / `K_b_i` | `detector_element_signal_background_counts` | per-element signal and background counts | photon, photoelectron |
+| `K_s_array` / `K_b_array` | `detector_array_signal_background_counts` | selected-array signal and background count totals | photon, photoelectron |
+| `P_SE` | `ppm_symbol_error_probability_array` | symbol error probability for a detector-array selection | ratio |
+| `M_link_FSO_dB` | `fso_link_margin` | terrestrial free-space optical link margin | dB |
+| `P_e_dBm` | `fso_emitter_power` | emitted optical power in P.1814 link margin | dBm |
+| `S_r_dBm` | `fso_receiver_sensitivity` | receiver sensitivity at selected data rate/bandwidth | dBm |
+| `A_geo_dB` | `fso_geometrical_attenuation` | attenuation from beam spreading and receiver capture area | dB |
+| `A_atmo_dB` | `fso_atmospheric_attenuation` | total atmospheric attenuation for FSO link budget | dB |
+| `A_scint_dB` | `fso_scintillation_attenuation` | scintillation fade allowance | dB |
+| `A_system_dB` | `fso_system_loss` | pointing, optics, beam-wander, and other system losses | dB |
+| `S_d` | `fso_beam_surface_at_receiver` | beam footprint surface area at receiver range | m^2 |
+| `Scapture` | `fso_receiver_capture_surface` | receiver capture surface area | m^2 |
+| `d_km` | `fso_link_distance` | terrestrial FSO emitter-receiver distance | km |
+| `theta_mrad` | `fso_beam_divergence_mrad` | beam divergence used in P.1814 geometric attenuation | mrad |
+| `gamma_atmo` | `fso_specific_atmospheric_attenuation` | total specific atmospheric attenuation | dB/km |
+| `gamma_clear_air` | `fso_specific_clear_air_attenuation` | specific attenuation under clear-air conditions | dB/km |
+| `gamma_excess` | `fso_specific_excess_attenuation` | specific attenuation from aerosol, haze, fog, rain, snow, hail, or similar particles | dB/km |
+| `gamma_sp` | `fso_specific_suspended_particle_attenuation` | specific attenuation due to suspended particles | dB/km |
+| `K_VIS` | `visibility_conversion_coefficient` | coefficient selected by visibility measurement method | dB |
+| `V_km` | `visibility_distance` | meteorological visibility or MOR-derived visibility | km |
+| `V_T2` / `V_T5` | `visibility_threshold_distance` | visibility referenced to 2 percent or 5 percent irradiance threshold | km |
+| `lambda_um` / `lambda_nm` | `optical_wavelength_um_nm` | optical wavelength for attenuation or solar polynomial models | um, nm |
+| `q_VIS` | `visibility_wavelength_exponent` | P.1814 particle-size exponent for wavelength-dependent suspended-particle attenuation | unitless |
+| `L_km` / `L_m` | `fso_path_length` | FSO path length in the units required by a specific formula | km, m |
+| `sigma_chi2_dB2` | `scintillation_log_amplitude_variance` | log-amplitude scintillation variance | dB^2 |
+| `El_sun` | `solar_elevation_angle` | sun elevation angle in the P.1814 ambient-light model | rad |
+| `P_radiated_sun` | `solar_radiated_power` | approximate solar radiated power | W/m^2 |
+| `F_solar` | `solar_spectral_power_factor` | solar spectral power factor from P.1814 polynomial fit | model-specific |
+| `W_receiver` | `receiver_optical_bandwidth_nm` | receiver optical bandwidth in the P.1814 solar-background model | nm |
+| `P_solar` | `solar_background_power` | solar ambient power entering the receiver | W |
 
 ## Orbit, Coverage, and Contact
 
