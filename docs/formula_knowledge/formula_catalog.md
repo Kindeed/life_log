@@ -246,6 +246,11 @@ Notation:
 | BB-074 | `GroupDelayVariationFraction = tau_g_variation / T_s` | in-band group-delay variation and signal duration | Expresses channel group-delay variation as a fraction of symbol duration; CCSDS 401 high-rate EES text uses 10 percent as an acceptable reference value. | CCSDS-401 | Seeded |
 | BB-075 | `AMPMMargin_deg_per_dB = AMPM_Limit_deg_per_dB - AMPM_Slope_deg_per_dB` | amplifier AM/PM conversion slope | Margin to the CCSDS 401 high-rate modulation AM/PM slope limit, commonly 5 deg/dB unless receiver equalization is applied. | CCSDS-401 | Seeded |
 | BB-076 | `SubcarrierFrequencyOffsetMargin_Hz = OffsetFractionLimit*f_sc - abs(Delta_f_sc)` | subcarrier frequency and measured offset | Margin to telecommand or telemetry subcarrier frequency-offset limits such as `2e-4*f_sc` or 200 ppm. | CCSDS-401 | Seeded |
+| BB-077 | `R_chs = R_cs` | Proximity-1 channel and coded symbol rates | Proximity-1 Physical Layer relationship for the specified Bi-Phase-L or bypass modulation scheme. | CCSDS-211.1, ISO-21460 | Seeded |
+| BB-078 | `ProxRcsError = min(abs(R_cs - R_cs_allowed_i))` | selected coded symbol rate and allowed-rate table | Validation distance to the Proximity-1 Physical Layer discrete coded-symbol-rate set, 1000 through 4096000 symbols/s by powers of two. | CCSDS-211.1, ISO-21460 | Seeded |
+| BB-079 | `ChannelSymbolRateOffset = abs(R_chs_meas - R_chs_nom) / R_chs_nom` | measured and nominal channel symbol rates | Fractional channel-symbol-rate offset for Proximity-1 physical-layer acquisition/compliance checks. | CCSDS-211.1, ISO-21460 | Seeded |
+| BB-080 | `ProxChannelOffsetMargin = 0.001 - ChannelSymbolRateOffset` | channel-symbol-rate offset | Margin to the Proximity-1 physical-layer channel-symbol-rate offset limit of less than 0.1 percent. | CCSDS-211.1 | Seeded |
+| BB-081 | `ProxShortTermStabilityMargin = 0.01 - abs(Delta_R_chs/R_chs)` | short-term channel-symbol-rate variation | Margin to the Proximity-1 short-term channel-symbol-rate stability value of 1 percent. | CCSDS-211.1 | Seeded |
 
 ## Telemetry, PCM, Space Packet, and Transfer Frames
 
@@ -530,6 +535,15 @@ Notation:
 | PROTO-024 | `ProxLDPCOutputBits = ProxLDPCBlocks * (64 + 2048)` | CSM plus LDPC codeword | Coded stream size when a 64-bit Codeword Sync Marker immediately precedes each LDPC codeword. CSM pattern is `034776C7272895B0`. | CCSDS-211.2 | Seeded |
 | PROTO-025 | `ProxLDPCEfficiency = 1024 / (2048 + 64)` | LDPC message, codeword, and CSM bits | Physical stream efficiency of Proximity-1 LDPC before PLTU/idle/frame-layer overhead. | CCSDS-211.2 | Seeded |
 | PROTO-026 | `RandomizedCodewordBit_i = LDPCCodewordBit_i xor PN_(i mod 255)` | LDPC codeword and pseudo-random sequence | Proximity-1 LDPC codeword randomization; the CSM itself is not randomized and the all-ones generator resets each codeword. | CCSDS-211.2 | Procedure |
+| PROTO-027 | `ProxV3HeaderBits = 2+1+1+2+10+1+3+1+11+8 = 40` | Version-3 transfer-frame header fields | Sum of the mandatory Proximity-1 Version-3 Transfer Frame header fields: TFVN, QoS, PDU type, DFC ID, SCID, PCID, Port ID, source/destination, frame length, and frame sequence number. | CCSDS-211.0, ISO-22663 | Seeded |
+| PROTO-028 | `ProxV3HeaderOctets = ProxV3HeaderBits / 8 = 5` | Version-3 transfer-frame header bits | Fixed Version-3 Transfer Frame header length. | CCSDS-211.0, ISO-22663 | Seeded |
+| PROTO-029 | `ProxV3DataFieldOctets = ProxV3FrameOctets - 5` | complete frame and fixed header | Proximity-1 Version-3 Transfer Frame data-field capacity for a selected frame size. | CCSDS-211.0, ISO-22663 | Seeded |
+| PROTO-030 | `ProxV3MaxDataFieldOctets = 2048 - 5 = 2043` | maximum Version-3 frame length | Maximum Version-3 Transfer Frame data-field capacity before PLTU ASM/CRC and channel-coding overhead. | CCSDS-211.0, ISO-22663 | Seeded |
+| PROTO-031 | `ProxV3FrameEfficiency = ProxV3DataFieldOctets / ProxV3FrameOctets` | data field and complete transfer frame | Data-field fraction of a Proximity-1 Version-3 Transfer Frame. | CCSDS-211.0, ISO-22663 | Seeded |
+| PROTO-032 | `ProxV3TotalWithPLTUOverheadBits = 8*ProxV3FrameOctets + 56` | Version-3 frame and PLTU overhead | Transfer frame plus Proximity-1 ASM and CRC-32 overhead before optional channel coding. | CCSDS-211.0, CCSDS-211.2 | Seeded |
+| PROTO-033 | `ProxV3NetFrameEfficiency = 8*ProxV3DataFieldOctets / ProxV3TotalWithPLTUOverheadBits` | data field, transfer frame, ASM, CRC | Useful data-field fraction after fixed Version-3 header plus PLTU ASM/CRC overhead, before idle and coding. | CCSDS-211.0, CCSDS-211.2 | Seeded |
+| PROTO-034 | `ProxFrameSequenceModulus = 2^8 = 256` | frame sequence number width | Wrap modulus for the 8-bit Proximity-1 frame sequence number. | CCSDS-211.0, ISO-22663 | Seeded |
+| PROTO-035 | `ProxSCIDCount = 2^10; ProxPortCount = 2^3; ProxPCIDCount = 2` | SCID, Port ID, PCID field widths | Addressing/multiplexing cardinalities implied by the Version-3 header field widths. | CCSDS-211.0, ISO-22663 | Seeded |
 
 ## Measurement, Unit, and RF Lab Conversions
 

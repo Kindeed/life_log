@@ -64,7 +64,8 @@ Each pass should produce a reviewed delta to `formula_catalog.md` and, where nee
    - CCSDS 211.0-B, 211.1-B, and 211.2-B.
    - Extract compression packetization overhead, Proximity-1 physical/coding/data-link mode tables, and relay-link net-rate formulas.
    - Current CCSDS 211.2-B-3 extraction covers PLTU size/efficiency, idle PN repeats, acquisition/tail bit budgets, allowed `Rd` validation, convolutional rate expansion, LDPC `(2048,1024)` plus 64-bit CSM overhead, and LDPC randomizer procedure.
-   - Remaining Proximity work is direct 211.0 data-link field extraction and 211.1 physical-layer mode/rate extraction; the direct `211x0b6.pdf` and `211x1b4.pdf` guesses returned 404 during this pass, so use the CCSDS publication/search pages rather than assumed PDF names.
+   - Current ISO 22663 / CCSDS 211.0-B-5 extraction covers Version-3 Transfer Frame fixed header, maximum data-field capacity, field-width/cardinality outputs, and frame-plus-PLTU efficiency; CCSDS registry shows 211.0-B-6 as current and adds Version-4/USLP text, but the direct `211x0b6.pdf` guess returned 404, so B-6 exact deltas still need retrieval.
+   - Current ISO 21460 / CCSDS 211.1-B-4 extraction covers `R_d/R_cs/R_chs` reference points, `R_chs=R_cs`, discrete physical-layer coded-symbol-rate validation, and channel-symbol-rate offset/stability margins; remaining physical-layer work is UHF channel/hailing/polarization table extraction.
 
 7. Orbit/contact and RF measurement pass:
    - SMAD, Vallado, Bate, DSN 810-005, and ITU-R P.525.
@@ -134,12 +135,15 @@ Recommended implementation order:
    - matched-filter decision metrics
    - OFDM subcarrier, cyclic-prefix, and PAPR outputs
    - phase jitter/frequency-offset sanity checks
+   - Proximity-1 `R_d/R_cs/R_chs` reference-point explanation
+   - Proximity-1 coded/channel symbol-rate allowed-set, offset, and stability warnings
 
 5. CCSDS frame/coding workbench:
    - TM/TC/AOS/USLP frame efficiency
    - CLTU overhead
    - sync marker overhead
    - selected code-rate tables
+   - Proximity-1 Version-3 Transfer Frame header/data-field efficiency
    - Proximity-1 PLTU/CRC/ASM efficiency
    - Proximity-1 idle/acquisition/tail overhead
    - Proximity-1 convolutional and LDPC/CSM physical-stream efficiency

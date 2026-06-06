@@ -310,6 +310,11 @@ This glossary defines shared symbols for the formula knowledge base. App impleme
 | `AMPM_Slope_deg_per_dB` | `ampm_slope_deg_per_db` | amplifier AM/PM conversion slope | deg/dB |
 | `Delta_f_sc` | `subcarrier_frequency_offset` | measured subcarrier frequency offset | Hz |
 | `OffsetFractionLimit` | `subcarrier_offset_fraction_limit` | allowed subcarrier frequency offset as a fraction of `f_sc` | ratio |
+| `R_chs_meas` | `measured_channel_symbol_rate` | measured channel symbol rate at transmitter output reference point | symbol/s |
+| `R_chs_nom` | `nominal_channel_symbol_rate` | nominal configured channel symbol rate | symbol/s |
+| `Delta_R_chs` | `channel_symbol_rate_variation` | short-term channel-symbol-rate variation | symbol/s |
+| `R_cs_allowed_i` | `proximity_allowed_coded_symbol_rate` | one value in the Proximity-1 physical-layer coded-symbol-rate set | symbol/s |
+| `ChannelSymbolRateOffset` | `channel_symbol_rate_offset` | fractional offset between measured and nominal channel symbol rates | ratio |
 | `r_conv` | `convolutional_code_rate` | CCSDS convolutional code rate | ratio |
 | `K_conv` | `constraint_length` | convolutional code constraint length; CCSDS text uses `K` | bit |
 | `J` | `rs_symbol_bits` | Reed-Solomon symbol length | bit/symbol |
@@ -597,6 +602,17 @@ This glossary defines shared symbols for the formula knowledge base. App impleme
 | `CSM_Bits` | `proximity_codeword_sync_marker_bits` | Proximity-1 LDPC Codeword Sync Marker length, 64 bits | bit |
 | `PN_Prox_Idle` | `proximity_idle_pn_sequence` | Proximity-1 idle PN sequence value `352EF853` | hex constant |
 | `PN_i` | `proximity_randomizer_bit` | pseudo-randomizer bit at index `i`, periodic with length 255 for Proximity-1 LDPC | bit |
+| `ProxV3HeaderBits` | `proximity_v3_header_bits` | Proximity-1 Version-3 Transfer Frame header length | bit |
+| `ProxV3HeaderOctets` | `proximity_v3_header_octets` | Proximity-1 Version-3 Transfer Frame header length | octet |
+| `ProxV3FrameOctets` | `proximity_v3_frame_octets` | complete Proximity-1 Version-3 Transfer Frame length | octet |
+| `ProxV3DataFieldOctets` | `proximity_v3_data_field_octets` | Version-3 Transfer Frame data-field length | octet |
+| `ProxV3MaxDataFieldOctets` | `proximity_v3_max_data_field_octets` | maximum Version-3 Transfer Frame data-field capacity | octet |
+| `ProxV3FrameEfficiency` | `proximity_v3_frame_efficiency` | Version-3 data-field fraction before PLTU ASM/CRC overhead | ratio |
+| `ProxV3NetFrameEfficiency` | `proximity_v3_net_frame_efficiency` | Version-3 data-field fraction after fixed PLTU ASM/CRC overhead | ratio |
+| `ProxFrameSequenceModulus` | `proximity_frame_sequence_modulus` | wrap modulus for the 8-bit frame sequence number | unit |
+| `ProxSCIDCount` | `proximity_spacecraft_id_count` | number of spacecraft identifiers representable by a 10-bit SCID field | unit |
+| `ProxPortCount` | `proximity_port_count` | number of Port ID values representable by a 3-bit field | unit |
+| `ProxPCIDCount` | `proximity_physical_channel_id_count` | number of Physical Channel ID values representable by a 1-bit field | unit |
 | `PlaintextBits` | `plaintext_bits` | security payload bits before security overhead | bit |
 | `IVBits` | `initialization_vector_bits` | security initialization vector length | bit |
 | `AuthTagBits` | `auth_tag_bits` | authentication tag length | bit |
