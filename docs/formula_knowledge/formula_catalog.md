@@ -799,6 +799,31 @@ Notation:
 | TRK-105 | `s_DOR(t) = sqrt(2*P_T)*sin(2*pi*f_c*t + theta_d(t) + theta_1*sin(2*pi*f_1*t) + theta_2*sin(2*pi*f_2*t))` | carrier, telemetry, and DOR tones | Delta-DOR downlink signal model with one or two sinusoidal DOR tones. | DSN-810-005-210 | Seeded |
 | TRK-106 | `B_span_DOR_single = 2*f_DOR` | one sinusoidal DOR tone | Spanned bandwidth between the lower and upper fundamental harmonics of one DOR tone. | DSN-810-005-210 | Seeded |
 | TRK-107 | `DelayAmbiguity_DOR = 1/B_span_DOR` | spanned bandwidth | Differential group-delay ambiguity spacing for DOR tone geometry. | DSN-810-005-210 | Seeded |
+| TRK-108 | `rho_vec = r_sc - r_site` | spacecraft and station state vectors | Topocentric station-to-spacecraft vector in the selected inertial or Earth-fixed frame. | BOOK-VALLADO, DESCANSO-DSTSE | Seeded |
+| TRK-109 | `rho_geom = norm(rho_vec)` | topocentric vector | Geometric station-to-spacecraft range before media, clock, and hardware corrections. | BOOK-VALLADO, DESCANSO-DSTSE | Seeded |
+| TRK-110 | `rho_hat = rho_vec / rho_geom` | topocentric vector and range | Unit line-of-sight vector used by range-rate, angle, and measurement-partial calculations. | BOOK-VALLADO | Seeded |
+| TRK-111 | `rho_dot = dot(rho_hat, v_sc - v_site)` | line-of-sight unit vector and relative velocity | Geometric range rate from projected relative velocity. | BOOK-VALLADO, DSN-810-005-202 | Seeded |
+| TRK-112 | `Az = atan2(rho_E, rho_N)` | ENU topocentric components | Ground-station azimuth angle from local east and north components. | BOOK-VALLADO, BOOK-SMAD | Seeded |
+| TRK-113 | `El = atan2(rho_U, sqrt(rho_E^2 + rho_N^2))` | ENU topocentric components | Ground-station elevation angle from local up and horizontal range. | BOOK-VALLADO, BOOK-SMAD | Seeded |
+| TRK-114 | `AngularSeparation = acos(dot(s_1,s_2))` | two source or pointing unit vectors | Angular separation between spacecraft/quasar, beam pointing, or two tracked objects. | BOOK-VALLADO, DESCANSO-DSTSE | Seeded |
+| TRK-115 | `LOSAngularRate = norm(cross(rho_vec,rho_dot_vec)) / rho_geom^2` | topocentric vector and relative velocity vector | Apparent line-of-sight angular rate for antenna tracking and external measurement planning. | BOOK-VALLADO, BOOK-SMAD | Seeded |
+| TRK-116 | `OneWayLightTimeModel = rho_geom / c` | geometric range | First-order one-way light-time model before iterative transmit/receive epoch correction. | BOOK-VALLADO, DESCANSO-DSTSE | Seeded |
+| TRK-117 | `TwoWayLightTimeModel = tau_uplink + tau_downlink` | uplink and downlink light-time legs | Two-way coherent tracking light time as the sum of uplink and downlink path times. | DSN-810-005, DESCANSO-DSTSE | Procedure |
+| TRK-118 | `f_downlink_coherent = k_turnaround * f_uplink` | spacecraft turnaround ratio and uplink frequency | Ideal coherent downlink frequency before Doppler, oscillator, and transponder imperfections. | DSN-810-005-202, DSN-810-005-203 | Seeded |
+| TRK-119 | `Doppler2WayObserved = f_uplink - f_downlink/k_turnaround` | uplink and received downlink frequencies | DSN-style two-way Doppler observable using a coherent turnaround ratio; sign convention must be explicit in the UI. | DSN-810-005-202 | Procedure |
+| TRK-120 | `Doppler3WayObserved = f_tx_station - f_rx_station/k_turnaround` | transmitting and receiving station frequency references | Three-way Doppler observable when uplink and downlink are handled by different stations or frequency references. | DSN-810-005-202 | Procedure |
+| TRK-121 | `RangeWeight = 1 / sigma_range^2` | range standard deviation | Scalar least-squares weight for a range observation with independent Gaussian error. | BOOK-VALLADO, JCGM-100 | Seeded |
+| TRK-122 | `DopplerWeight = 1 / sigma_doppler^2` | Doppler standard deviation | Scalar least-squares weight for a Doppler observation with independent Gaussian error. | BOOK-VALLADO, JCGM-100 | Seeded |
+| TRK-123 | `NormalizedResidual_i = residual_i / sigma_i` | observation residual and standard deviation | Normalized residual for outlier screening and mixed-measurement comparison. | BOOK-VALLADO, JCGM-100 | Seeded |
+| TRK-124 | `ChiSquare = sum_i(NormalizedResidual_i^2)` | normalized residuals | Weighted residual chi-square statistic for an observation batch. | BOOK-VALLADO, JCGM-100 | Seeded |
+| TRK-125 | `WeightedRMSResidual = sqrt(ChiSquare / N_obs)` | chi-square and observation count | Unit-weight RMS residual for a weighted tracking-data fit. | BOOK-VALLADO | Seeded |
+| TRK-126 | `H = partial h(x) / partial x` | observation model and state vector | Linearized measurement sensitivity/design matrix for orbit determination. | BOOK-VALLADO | Procedure |
+| TRK-127 | `W_obs = R_obs^-1` | observation covariance matrix | Observation weight matrix from measurement covariance. | BOOK-VALLADO, JCGM-100 | Seeded |
+| TRK-128 | `NormalMatrix = H^T * W_obs * H` | design matrix and weight matrix | Normal matrix for a batch least-squares orbit-determination update. | BOOK-VALLADO | Seeded |
+| TRK-129 | `P_state = inv(NormalMatrix)` | normal matrix | Formal state covariance from the inverse normal matrix when the linearized model is well conditioned. | BOOK-VALLADO | Procedure |
+| TRK-130 | `StateStdDev_j = sqrt(P_state[j,j])` | state covariance diagonal | One-sigma formal uncertainty of an estimated state or parameter component. | BOOK-VALLADO, JCGM-100 | Seeded |
+| TRK-131 | `PositionUncertainty3D = sqrt(sigma_x^2 + sigma_y^2 + sigma_z^2)` | position-component standard deviations | RSS three-dimensional position uncertainty summary. | BOOK-VALLADO, JCGM-100 | Seeded |
+| TRK-132 | `FusedObservableSigma = 1 / sqrt(sum_i(1/sigma_i^2))` | independent same-observable uncertainties | Standard deviation after inverse-variance fusion of independent measurements of the same quantity. | JCGM-100, BOOK-VALLADO | Seeded |
 
 ## System-Level Mission and Operations Budgets
 

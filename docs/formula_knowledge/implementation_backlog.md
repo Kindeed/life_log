@@ -84,7 +84,7 @@ Each pass should produce a reviewed delta to `formula_catalog.md` and, where nee
    - SMAD, Vallado, Bate, DSN 810-005, and ITU-R P.525.
    - Extract slant range, elevation, pass/contact estimates, range-rate, antenna slew rate, PFD, PSD, and lab power/voltage conversion formulas.
    - Current measurement uncertainty extraction covers JCGM/NIST combined standard uncertainty, independent RSS, expanded uncertainty, Type-A repeatability, small-signal dB uncertainty conversion, Y-factor calibration uncertainty, `G/T`, `N0`, `C/N0`, `Eb/N0`, margin uncertainty, BER/FER point estimates, binomial standard uncertainty, Clopper-Pearson and Wilson confidence intervals, zero-error/allowed-error pass probabilities, test-duration sizing, and measured `Eb/N0`/implementation-loss references.
-   - Current orbit/contact extraction covers two-body energy/vis-viva/angular-momentum/eccentricity/conic relations, station geodetic-to-ECEF, ECEF-to-ENU, local az/el/range, first-order ECI/ECEF warning, minimum-elevation access geometry, coverage radius, access flag, approximate pass duration, ground-track shift, circular-orbit subsatellite point estimates, J2 secular RAAN/perigee/mean-anomaly rates, sun-synchronous inclination estimate, repeat-ground-track closure, Kepler propagation, AOS/LOS/max-elevation event definitions, Hohmann transfer, plane-change, and combined maneuver formulas.
+   - Current orbit/contact extraction covers two-body energy/vis-viva/angular-momentum/eccentricity/conic relations, station geodetic-to-ECEF, ECEF-to-ENU, local az/el/range, first-order ECI/ECEF warning, minimum-elevation access geometry, topocentric tracking geometry, observation weighting, normalized residuals, formal covariance, coverage radius, access flag, approximate pass duration, ground-track shift, circular-orbit subsatellite point estimates, J2 secular RAAN/perigee/mean-anomaly rates, sun-synchronous inclination estimate, repeat-ground-track closure, Kepler propagation, AOS/LOS/max-elevation event definitions, Hohmann transfer, plane-change, and combined maneuver formulas.
    - Current system operations extraction covers generated data, usable contact time, per-pass and aggregate downlink capacity, storage end/peak margin, contact efficiency, passes required, required net/line rate, contact bit budget, required compression ratio, queue drain time, energy, battery depth of discharge, recorder turnover, contact utilization, science return, and command round-trip light time.
    - Remaining orbit/system/measurement work is numerical validation examples, high-precision Earth-orientation/EOP handling, SGP4/TLE integration, propagated AOS/LOS root-bracketing tests, repeat-ground-track integer-search examples, maneuver edge-case handling, exact binomial interval helper tests, calibration-report examples, BER/FER acceptance card UI examples, schedule import/export, and timeline consistency checks.
 
@@ -207,7 +207,10 @@ Recommended implementation order:
    - Doppler range-rate error budget
    - Doppler count interval and resolver quantization
    - corrected round-trip propagation time and range residual
+   - topocentric range, range rate, azimuth/elevation, angular separation, and line-of-sight angular rate
+   - one-way/two-way light-time summaries and coherent two-way/three-way Doppler convention cards
    - radiometric RSS error budget
+   - range/Doppler observation weights, normalized residual, chi-square, weighted RMS residual, formal covariance, state sigma, 3-D position uncertainty, and fused-observable sigma
    - oscillator guard margin
    - Delta-DOR geometry estimates
    - VLBI synthesized bandwidth and delay/path error
