@@ -223,6 +223,36 @@ This glossary defines shared symbols for the formula knowledge base. App impleme
 | `N0` | `noise_density` | noise spectral density | dBW/Hz |
 | `B` / `B_n` | `noise_bandwidth` | receiver noise bandwidth | Hz |
 | `G0`, `G1`, `gamma` | `dsn_gain_curve_parameters` | DSN station gain-versus-elevation parameters | dBi, dBi/deg^2, deg |
+| `G_chain_dB` | `receiver_chain_gain` | total receiver chain gain from input reference point to selected output | dB |
+| `G_stage_i_dB` / `L_stage_i_dB` | `receiver_stage_gain_loss` | gain and loss of receiver stage `i` | dB |
+| `P_stage_i_dBm` | `receiver_stage_power` | signal power at receiver stage `i` | dBm |
+| `N_floor_dBm` | `receiver_noise_floor` | input-referred noise floor over selected bandwidth | dBm |
+| `Sensitivity_dBm` | `receiver_sensitivity` | minimum input signal power for required SNR | dBm |
+| `MDS_dBm` | `minimum_discernible_signal` | minimum discernible input signal at stated detection threshold | dBm |
+| `P_1dB_in_dBm` | `input_1db_compression_power` | input-referred 1 dB compression point | dBm |
+| `CompressionHeadroom_dB` | `compression_headroom` | margin from peak signal to compression point | dB |
+| `InputDynamicRange_dB` | `input_dynamic_range` | span from minimum discernible signal to compression point | dB |
+| `IIP3_dBm` / `OIP3_dBm` | `receiver_ip3` | input/output third-order intercept point | dBm |
+| `P_tone_in_dBm` | `two_tone_input_power` | power of each equal input tone in a two-tone test | dBm |
+| `IM3_input_dBm` | `input_referred_im3_power` | input-referred third-order intermodulation product power | dBm |
+| `SFDR_dB` | `spurious_free_dynamic_range` | spurious-free dynamic range in selected bandwidth | dB |
+| `P_blocker_in_dBm` | `blocker_input_power` | undesired blocker power at receiver input | dBm |
+| `Desense_dB` | `receiver_desensitization` | SNR degradation caused by blocker or interference power | dB |
+| `L_phase_dBc_Hz(Deltaf)` | `lo_phase_noise_offset` | single-sideband LO phase noise at offset from carrier | dBc/Hz |
+| `ReciprocalMixingNoise_dBm` | `reciprocal_mixing_noise` | blocker noise converted by LO phase noise into receiver bandwidth | dBm |
+| `IRR_dB` | `image_rejection_ratio` | image-frequency rejection ratio | dB |
+| `ImageLeakage_dBm` | `image_leakage_power` | residual image response after finite image rejection | dBm |
+| `G_AGC_required_dB` | `agc_required_gain` | gain needed to place signal at target downstream level | dB |
+| `AGCHeadroom_dB` | `agc_range_headroom` | margin to AGC gain-range endpoints | dB |
+| `V_FS_pp` | `adc_fullscale_vpp` | ADC full-scale sine-wave peak-to-peak voltage | Vpp |
+| `R_in` | `adc_input_resistance` | ADC or measurement input resistance | ohm |
+| `P_adc_fullscale_dBm` | `adc_fullscale_power` | full-scale sine power at ADC input | dBm |
+| `ADCLoadingMargin_dB` | `adc_loading_margin` | margin from signal peak to ADC full scale | dB |
+| `QuantNoiseDensity_dBFS_Hz` | `quantization_noise_density_dbfs_hz` | quantization noise density relative to full scale | dBFS/Hz |
+| `f_s` | `sampling_rate` | sample rate | Hz |
+| `sigma_t_jitter` | `aperture_jitter_rms` | RMS sampling aperture jitter | s |
+| `SNR_jitter_dB` | `jitter_limited_snr` | SNR limit caused by aperture jitter | dB |
+| `SINAD_total_dB` | `combined_sinad` | combined signal-to-noise-and-distortion metric from independent impairment terms | dB |
 
 ## Link Budget
 

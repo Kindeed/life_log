@@ -60,6 +60,7 @@ Each pass should produce a reviewed delta to `formula_catalog.md` and, where nee
    - Use `standard_extracts.md` P.525 rows to build MHz/km, GHz/km, field-strength, PFD, isotropic received-power, and radar-loss regression cases.
    - Use `standard_extracts.md` ITU spectrum rows to build PSD-density, occupied-bandwidth, guard-band, spectral-mask, adjacent-power, OOB-power, spurious-margin, and frequency-tolerance regression cases before app UI work.
    - Use `standard_extracts.md` DESCANSO/DSN rows to build antenna aperture, pointing/polarization, received-power, carrier/data/ranging margin, atmospheric noise-temperature, receiver reference-plane, and Y-factor calibration regression cases.
+   - Use `standard_extracts.md` DIGCOM-025/DIGCOM-026 rows to build receiver-chain gain, per-stage level, sensitivity/MDS, compression, IP3/IM3/SFDR, blocking/desense, reciprocal-mixing, image-rejection, AGC-range, ADC-loading, quantization-density, jitter-SNR, and combined-SINAD regression cases.
    - Use `standard_extracts.md` ITUANT/BOOKANT rows to build off-axis gain, side-lobe objective, beam solid angle, directivity, far-field distance, reflector focal/depth/feed-edge/blockage/spillover outputs, antenna XPD, array-factor, scan-steering, grating-lobe, scan-loss, scan beam-broadening, projected aperture, coherent array EIRP, true-time-delay, phase-quantization, beam-squint, aperture taper, measured-pattern integration, active VSWR, coupling-efficiency, taper-synthesis, and antenna-gain-measurement examples before adding antenna UI controls.
    - Current first-pass extraction includes P.676 gas attenuation structure, P.840 cloud/fog attenuation, P.618 scintillation and sky-noise formulas, S.465/S.580 earth-station antenna pattern formulas, receiver/passive-loss/Y-factor formulas, receiver/link uncertainty propagation formulas, DSN 101/103/104 station gain/noise-temperature model rows, Balanis/Mailloux reflector/feed geometry, aperture-field, measured-pattern, taper, coupling, coherent array EIRP, true-time-delay steering, gain-measurement formulas, CCSDS 401 QPSK/modulation-margin/symbol-rate/subcarrier checks, Goldsmith/Rappaport shadowing/outage/selectivity/fade-dynamics formulas, and Maral/Bousquet multi-hop availability, multi-hop `C/N0`, intersatellite FSPL, and non-equal carrier allocation formulas; next work is coefficient/map assets, DSN station coefficient tables, machine-readable modulation/limit tables, measured-pattern import examples, embedded-element/subarray validation cases, active-array validation cases, antenna temperature validation examples, receiver-chain uncertainty UI scenarios, and validated fading-channel examples.
 
@@ -130,6 +131,11 @@ Recommended implementation order:
    - occupied bandwidth, channel-occupancy ratio, lower/upper guard band, and worst-side guard margin
    - spectrum-mask curve margin and worst-mask-margin summary
    - adjacent-channel power ratio, OOB integrated power, spurious conducted/radiated margin, carrier-frequency tolerance, and Doppler guard margin
+   - receiver-chain gain and per-stage power levels
+   - sensitivity, minimum discernible signal, compression headroom, and input dynamic range
+   - IIP3/OIP3, cascaded IP3/P1dB, IM3 margin, SFDR, blocker margin, and desense
+   - reciprocal-mixing noise, image leakage, image-rejection margin, AGC required gain/headroom
+   - ADC full-scale power, ADC loading margin, quantization-noise density, jitter-limited SNR, and combined SINAD
 
 2. Full link budget workbench:
    - EIRP
