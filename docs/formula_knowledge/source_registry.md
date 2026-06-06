@@ -25,10 +25,11 @@ This registry records the standards, handbooks, and published books that should 
 | CCSDS-211.1 | CCSDS 211.1-B-4, Proximity-1 Physical Layer | CCSDS SLS-RFM | Proximity-1 physical layer procedures, reconfirmed through June 2024. | Proximity link RF, rate, modulation, and physical-layer parameter extraction. |
 | CCSDS-211.2 | CCSDS 211.2-B-3, Proximity-1 Coding and Synchronization Sublayer | CCSDS SLS-C&S | Proximity-1 coding and synchronization. | Proximity coding/sync overhead and coded rate formulas. |
 | ITU-P525 | ITU-R P.525-5, Calculation of free-space attenuation | ITU-R | Current Recommendation dated 11/2024; equations 1-11 extracted into `standard_extracts.md`. | FSPL, field strength, PFD, isotropic received power, and radar free-space loss formulas. |
-| ITU-P618 | ITU-R P.618-14, Earth-space propagation prediction | ITU-R | In force, approved 2023-08-23; rain and total attenuation extracts started in `standard_extracts.md`. | Earth-space attenuation, rain fade, scintillation, availability. |
-| ITU-P676 | ITU-R P.676, Attenuation by atmospheric gases | ITU-R | Gas attenuation model. | Oxygen/water vapor attenuation and path integration. |
+| ITU-P618 | ITU-R P.618-14, Earth-space propagation prediction | ITU-R | In force, approved 2023-08-23; rain, total attenuation, scintillation, and sky-noise extracts started in `standard_extracts.md`. | Earth-space attenuation, rain fade, scintillation, availability, sky noise temperature. |
+| ITU-P676 | ITU-R P.676-13, Attenuation by atmospheric gases and related effects | ITU-R | In force, approved 2022-08-24; official page updated 2024-06-21; first-pass gas attenuation extracts started. | Oxygen/water vapor attenuation, path integration, line-by-line and approximate slant-path gas attenuation. |
 | ITU-P838 | ITU-R P.838-3, Specific attenuation model for rain | ITU-R | Rain specific attenuation model; P.838-3 remains listed on ITU official pages. | `gamma_R = k R^alpha` and polarization-dependent coefficients. |
 | ITU-P839 | ITU-R P.839-4, Rain height model | ITU-R | Needed by P.618 rain path geometry; P.839-4 remains listed on ITU official pages. | Rain height and slant-path length support. |
+| ITU-P840 | ITU-R P.840-9, Attenuation due to clouds and fog | ITU-R | In force, approved 2023-08; first-pass cloud/fog attenuation extracts started. | Cloud/fog liquid water attenuation, integrated cloud liquid water maps, log-normal cloud attenuation approximation. |
 | DSN-810-005 | DSN Telecommunications Link Design Handbook | NASA/JPL DSN | Current public DSN handbook download page lists modules and recent release clearances; modules 105E, 202E, 203E, 210E, 211G, and 214C have first-pass extracts. | Deep-space link, DSN station capability, Doppler tracking, sequential/PN ranging, Delta-DOR, VLBI, command/telemetry/ranging modules. |
 | DESCANSO-DSTSE | Deep Space Telecommunications Systems Engineering | NASA/JPL DESCANSO | Public deep-space communications reference; antenna/link, baseband, Doppler, ranging, VLBI/DOR, and radiometric-error extracts are started in `standard_extracts.md`. | Link equation derivations, antenna gain/effective aperture, system noise temperature, modulation/coding context, tracking/ranging observables, and external-measurement formulas. |
 | NASA-SST-COMM | NASA SmallSat State of the Art, Communications | NASA | Small satellite RF/optical communication overview. | System-level trade examples and calculator scenario framing. |
@@ -76,10 +77,13 @@ This registry records the standards, handbooks, and published books that should 
 | ITU-P618 | https://www.itu.int/rec/R-REC-P.618-14-202308-I/en |
 | ITU-P618-14 PDF | https://www.itu.int/dms_pubrec/itu-r/rec/p/R-REC-P.618-14-202308-I!!PDF-E.pdf |
 | ITU-P676 | https://www.itu.int/rec/R-REC-P.676/en |
+| ITU-P676-13 PDF | https://www.itu.int/dms_pubrec/itu-r/rec/p/R-REC-P.676-13-202208-I!!PDF-E.pdf |
 | ITU-P838 | https://www.itu.int/rec/R-REC-P.838/en |
 | ITU-P838-3 PDF | https://www.itu.int/dms_pubrec/itu-r/rec/p/r-rec-p.838-3-200503-i!!pdf-e.pdf |
 | ITU-P839 | https://www.itu.int/rec/R-REC-P.839/en |
 | ITU-P839-4 PDF | https://www.itu.int/dms_pubrec/itu-r/rec/p/r-rec-p.839-4-201309-i!!pdf-e.pdf |
+| ITU-P840 | https://www.itu.int/rec/R-REC-P.840/en |
+| ITU-P840-9 PDF | https://www.itu.int/dms_pubrec/itu-r/rec/p/R-REC-P.840-9-202308-I!!PDF-E.pdf |
 | DSN-810-005 | https://deepspace.jpl.nasa.gov/dsndocs/810-005/ |
 | DSN-810-005 downloads | https://deepspace.jpl.nasa.gov/dsndocs/810-005/downloads/ |
 | DSN-810-005 front matter | https://deepspace.jpl.nasa.gov/dsndocs/810-005/fm.pdf |

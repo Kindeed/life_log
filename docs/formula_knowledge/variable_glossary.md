@@ -114,6 +114,63 @@ This glossary defines shared symbols for the formula knowledge base. App impleme
 | `beta` | `rain_probability_extrapolation_beta` | P.618 probability extrapolation branch value | unitless |
 | `p_exceed` | `exceedance_probability_percent` | percentage of average year that attenuation is exceeded | percent |
 | `R_eff` | `effective_earth_radius` | effective Earth radius used by P.618 rain geometry, 8500 km | km |
+| `gamma_o` | `oxygen_specific_attenuation` | oxygen/dry-air specific attenuation | dB/km |
+| `gamma_w` | `water_vapour_specific_attenuation` | water-vapour specific attenuation | dB/km |
+| `gamma_gas` | `gas_specific_attenuation` | total gaseous specific attenuation | dB/km |
+| `Npp_oxygen` | `oxygen_imaginary_refractivity` | imaginary part of oxygen/dry-air complex refractivity | unitless |
+| `Npp_water` | `water_vapour_imaginary_refractivity` | imaginary part of water-vapour complex refractivity | unitless |
+| `Npp_D` | `dry_continuum_imaginary_refractivity` | dry continuum contribution in P.676 | unitless |
+| `rho_wv` | `water_vapour_density` | water vapour density | g/m^3 |
+| `rho_ws` | `surface_water_vapour_density` | surface water vapour density | g/m^3 |
+| `e_wv` | `water_vapour_partial_pressure` | water vapour partial pressure | hPa |
+| `p_dry` | `dry_air_pressure` | dry-air pressure | hPa |
+| `P_s` | `surface_barometric_pressure` | surface total barometric pressure | hPa |
+| `T_K` | `air_temperature_k` | air temperature | K |
+| `T_surface` | `surface_temperature_k` | surface temperature | K |
+| `theta_300` | `temperature_ratio_300_over_t` | P.676 temperature ratio, `300/T_K` | ratio |
+| `S_i` | `spectral_line_strength` | oxygen or water-vapour line strength | varies |
+| `F_i` | `spectral_line_shape_factor` | oxygen or water-vapour line-shape factor | 1/GHz |
+| `f_i` | `spectral_line_frequency` | line centre frequency | GHz |
+| `Delta_f` | `spectral_line_width` | pressure/Doppler broadened line width | GHz |
+| `delta_i` | `oxygen_line_interference_factor` | line interference correction factor | unitless |
+| `a_i` | `gas_layer_path_length` | path length through atmospheric layer i | km |
+| `gamma_i` | `layer_specific_attenuation` | specific attenuation in atmospheric layer i | dB/km |
+| `A_o` | `oxygen_slant_attenuation` | slant path gaseous attenuation attributable to oxygen | dB |
+| `A_w` | `water_vapour_slant_attenuation` | slant path gaseous attenuation attributable to water vapour | dB |
+| `h_o` | `oxygen_equivalent_height` | equivalent oxygen attenuation height | km |
+| `h_w` | `water_vapour_equivalent_height` | equivalent water-vapour attenuation height | km |
+| `a_o` / `b_o` / `c_o` / `d_o` | `oxygen_height_coefficients` | P.676 coefficient-table values for oxygen equivalent height | varies |
+| `A_hw` / `B_hw` | `water_height_coefficients` | P.676 water-vapour equivalent-height constants | varies |
+| `a_hw_i` / `b_hw_i` / `f_hw_i` | `water_height_line_coefficients` | P.676 water-vapour equivalent-height coefficients | varies |
+| `gamma_c` | `cloud_specific_attenuation` | specific attenuation in cloud or fog | dB/km |
+| `K_l` | `cloud_liquid_specific_attenuation_coefficient` | P.840 cloud liquid water specific attenuation coefficient | (dB/km)/(g/m^3) |
+| `rho_l` | `cloud_liquid_water_density` | liquid water density in cloud or fog | g/m^3 |
+| `epsilon_p` | `water_permittivity_real` | real part of water dielectric permittivity | unitless |
+| `epsilon_pp` | `water_permittivity_imaginary` | imaginary part of water dielectric permittivity | unitless |
+| `eta_cloud` | `cloud_permittivity_auxiliary_ratio` | P.840 auxiliary ratio `(2+epsilon_p)/epsilon_pp` | unitless |
+| `epsilon_0` / `epsilon_1` / `epsilon_2` | `water_debye_permittivity_terms` | P.840 double-Debye permittivity constants | unitless |
+| `f_p` | `water_principal_relaxation_frequency` | principal relaxation frequency of liquid water | GHz |
+| `f_s_cloud` | `water_secondary_relaxation_frequency` | secondary relaxation frequency of liquid water | GHz |
+| `K_L` | `cloud_liquid_mass_absorption_coefficient` | mass absorption coefficient for integrated cloud liquid water | dB/(kg/m^2), dB/mm |
+| `L_cloud` | `integrated_cloud_liquid_water_content` | integrated cloud liquid water content | kg/m^2, mm |
+| `L_cloud_p` | `integrated_cloud_liquid_water_percent_p` | integrated cloud liquid water content at exceedance probability | kg/m^2, mm |
+| `P_L` | `cloud_probability` | probability of cloud at a location | percent |
+| `m_L` | `cloud_lognormal_mean` | log-normal mean parameter for integrated cloud liquid water | unitless |
+| `sigma_L` | `cloud_lognormal_stddev` | log-normal standard deviation parameter for integrated cloud liquid water | unitless |
+| `Qinv` | `inverse_normal_ccdf` | inverse standard normal complementary cumulative distribution function | unitless |
+| `N_wet` | `wet_refractivity_term` | wet term of surface radio refractivity | N-units |
+| `sigma_ref` | `scintillation_reference_stddev` | reference standard deviation of signal amplitude | dB |
+| `h_L` | `turbulent_layer_height` | height of turbulent layer used in scintillation prediction | m |
+| `L_scint` | `scintillation_effective_path_length` | effective path length for scintillation prediction | m |
+| `eta_ant` | `antenna_efficiency` | antenna efficiency used for scintillation antenna averaging | ratio |
+| `D_eff` | `effective_antenna_diameter` | effective antenna diameter | m |
+| `x_scint` | `scintillation_antenna_averaging_argument` | antenna averaging argument in P.618 | unitless |
+| `g_x` | `scintillation_antenna_averaging_factor` | P.618 antenna averaging factor before square root | unitless |
+| `sigma_scint` | `scintillation_signal_stddev` | standard deviation of scintillation amplitude | dB |
+| `a_scint` | `scintillation_time_percentage_factor` | time percentage factor for scintillation fade depth | unitless |
+| `A_atm_no_scint` | `atmospheric_attenuation_without_scintillation` | total atmospheric attenuation excluding scintillation | dB |
+| `T_sky` | `sky_noise_temperature` | sky noise temperature at ground-station antenna | K |
+| `T_mr` | `mean_radiating_temperature` | atmospheric mean radiating temperature | K |
 | `e` | `field_strength_v_m` | RMS electric field strength | V/m |
 | `E` | `field_strength_dbuv_m` | electric field strength in logarithmic units | dB(uV/m) |
 | `s` / `S` | `power_flux_density` | power flux density | W/m^2, dBW/m^2 |

@@ -50,6 +50,7 @@ Each pass should produce a reviewed delta to `formula_catalog.md` and, where nee
    - Extract FSPL variants, rain/gas/cloud/scintillation procedures, elevation/path geometry and applicability limits.
    - Use `standard_extracts.md` P.525 rows to build MHz/km, GHz/km, field-strength, PFD, isotropic received-power, and radar-loss regression cases.
    - Use `standard_extracts.md` DESCANSO/DSN rows to build antenna aperture, pointing/polarization, received-power, carrier/data/ranging margin, and atmospheric noise-temperature regression cases.
+   - Current ITU first-pass extraction includes P.676 gas attenuation structure, P.840 cloud/fog attenuation, and P.618 scintillation and sky-noise formulas; next work is coefficient/map assets and validation examples.
 
 5. Textbook cross-check pass:
    - Balanis for antenna formulas.
@@ -106,8 +107,10 @@ Recommended implementation order:
    - ITU-R P.525 FSPL
    - P.838 rain specific attenuation
    - P.618 Earth-space rain fade skeleton
-   - P.676 gas attenuation skeleton
+   - P.676 gas attenuation line-by-line/approximate modes
+   - P.840 cloud attenuation instantaneous/statistical/log-normal modes
    - P.839 rain height and P.618 slant-path rain geometry
+   - P.618 scintillation and sky-noise temperature
    - P.618 total attenuation combiner for rain, gas, cloud, and scintillation
 
 4. Baseband and channel workbench:

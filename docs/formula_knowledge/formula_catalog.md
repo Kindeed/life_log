@@ -112,6 +112,39 @@ Notation:
 | LINK-063 | `A_rain_p = A_0_01*(p_exceed/0.01)^(-(0.655 + 0.033*ln(p_exceed) - 0.045*ln(A_0_01) - beta*(1-p_exceed)*sin(theta_elev)))` | target exceedance probability | Rain attenuation exceeded for `p_exceed` percent of an average year, valid over the P.618 probability range. | ITU-P618 | Seeded |
 | LINK-064 | `A_T(p_exceed) = A_G(p_exceed) + sqrt((A_R(p_exceed)+A_C(p_exceed))^2 + A_S(p_exceed)^2)` | gas, rain, cloud, scintillation | Total attenuation for `0.001% <= p_exceed <= 5%`, combining simultaneous effects. | ITU-P618 | Procedure |
 | LINK-065 | `A_T(p_exceed) = A_G(p_exceed) + sqrt(A_C(p_exceed)^2 + A_S(p_exceed)^2)` | gas, cloud, scintillation | Total attenuation for `5% < p_exceed <= 50%`; P.618 holds cloud and gas terms at 5% for p below 5%. | ITU-P618 | Procedure |
+| LINK-066 | `gamma_gas = gamma_o + gamma_w = 0.1820*f_GHz*(Npp_oxygen + Npp_water)` | complex refractivity imaginary parts | ITU-R P.676 line-by-line specific gaseous attenuation from oxygen/dry air and water vapour. | ITU-P676 | Procedure |
+| LINK-067 | `e_wv = rho_wv*T_K/216.7` | water vapour density and temperature | Converts water vapour density to water vapour partial pressure for P.676. | ITU-P676 | Seeded |
+| LINK-068 | `Npp_oxygen = sum(S_i*F_i for oxygen lines) + Npp_D` | spectroscopic line table | Imaginary oxygen/dry-air refractivity including dry continuum. | ITU-P676 | Procedure |
+| LINK-069 | `Npp_water = sum(S_i*F_i for water-vapour lines)` | spectroscopic line table | Imaginary water-vapour refractivity from water-vapour spectral lines. | ITU-P676 | Procedure |
+| LINK-070 | `S_i_oxygen = a1*1e-7*p_dry*theta_300^3*exp(a2*(1-theta_300))` | oxygen line coefficients | Oxygen line strength for P.676 line-by-line calculation. | ITU-P676 | Procedure |
+| LINK-071 | `S_i_water = b1*1e-1*e_wv*theta_300^3.5*exp(b2*(1-theta_300))` | water-vapour line coefficients | Water-vapour line strength for P.676 line-by-line calculation. | ITU-P676 | Procedure |
+| LINK-072 | `F_i = f_GHz/f_i*((Delta_f-delta_i*(f_i-f_GHz))/((f_i-f_GHz)^2+Delta_f^2) + (Delta_f-delta_i*(f_i+f_GHz))/((f_i+f_GHz)^2+Delta_f^2))` | line frequency, width, and interference factor | P.676 spectral line-shape factor. | ITU-P676 | Procedure |
+| LINK-073 | `A_gas_profile = sum(path_length_i*gamma_i)` | layer path length and layer specific attenuation | P.676 slant-path gaseous attenuation by summing atmospheric layers. | ITU-P676 | Procedure |
+| LINK-074 | `A_o_inst = gamma_o*h_o/sin(theta_elev)` | oxygen specific attenuation and equivalent height | P.676 approximate instantaneous slant oxygen attenuation. | ITU-P676 | Procedure |
+| LINK-075 | `h_o = a_o(f)+b_o(f)*T_surface+c_o(f)*P_s+d_o(f)*rho_ws` | coefficient data file | Oxygen equivalent height in the P.676 approximate method. | ITU-P676 | Procedure |
+| LINK-076 | `A_w_inst = gamma_w*h_w/sin(theta_elev)` | water-vapour specific attenuation and equivalent height | P.676 approximate instantaneous water-vapour attenuation method 1. | ITU-P676 | Procedure |
+| LINK-077 | `h_w = A_hw*f_GHz + B_hw + sum(a_hw_i/((f_GHz-f_hw_i)^2+b_hw_i))` | water-vapour equivalent-height coefficients | Water-vapour equivalent height approximation for P.676 method 1. | ITU-P676 | Procedure |
+| LINK-078 | `A_G = A_o + A_w` | oxygen and water-vapour attenuation | Total gaseous attenuation term for P.618 total-attenuation combination. | ITU-P676, ITU-P618 | Seeded |
+| LINK-079 | `gamma_c = K_l*rho_l` | cloud liquid coefficient and liquid density | Specific attenuation inside cloud/fog under P.840 Rayleigh approximation. | ITU-P840 | Seeded |
+| LINK-080 | `K_l = 0.819*f_GHz/(epsilon_pp*(1+eta_cloud^2))` | dielectric permittivity model | Cloud liquid water specific attenuation coefficient. | ITU-P840 | Procedure |
+| LINK-081 | `eta_cloud = (2 + epsilon_p)/epsilon_pp` | real and imaginary permittivity | P.840 auxiliary ratio for liquid-water attenuation. | ITU-P840 | Seeded |
+| LINK-082 | `epsilon_0 = 77.66 + 103.3*(300/T_cloud - 1)` | liquid water temperature | Static dielectric constant term in the P.840 double-Debye model. | ITU-P840 | Seeded |
+| LINK-083 | `epsilon_1 = 0.0671*epsilon_0`; `epsilon_2 = 3.52` | liquid water dielectric constants | Secondary dielectric constants in the P.840 model. | ITU-P840 | Seeded |
+| LINK-084 | `f_p = 20.20 - 146*(300/T_cloud - 1) + 316*(300/T_cloud - 1)^2`; `f_s = 39.8*f_p` | relaxation frequencies | Principal and secondary relaxation frequencies for liquid water. | ITU-P840 | Seeded |
+| LINK-085 | `K_L = K_l(f_GHz,273.75K)*(A1*exp(-((f_GHz-f1_cloud)^2)/sigma1_cloud)+A2*exp(-((f_GHz-f2_cloud)^2)/sigma2_cloud)+A3)` | P.840 fitted coefficients | Cloud liquid mass absorption coefficient used with integrated liquid water. | ITU-P840 | Procedure |
+| LINK-086 | `A_C_inst = K_L*L_cloud/sin(theta_elev)` | integrated cloud liquid water | Instantaneous slant cloud attenuation. | ITU-P840 | Seeded |
+| LINK-087 | `A_C_stat = K_L*L_cloud_p/sin(theta_elev)` | cloud liquid water at exceedance probability | Statistical slant cloud attenuation. | ITU-P840 | Procedure |
+| LINK-088 | `A_C_logn = if p_exceed<P_L then K_L*exp(m_L + sigma_L*Qinv(p_exceed/P_L))/sin(theta_elev) else 0` | cloud probability and log-normal parameters | P.840 log-normal cloud attenuation approximation. | ITU-P840 | Procedure |
+| LINK-089 | `sigma_ref = 3.6e-3 + 1e-4*N_wet` | wet refractivity term | P.618 reference standard deviation for tropospheric scintillation amplitude. | ITU-P618 | Seeded |
+| LINK-090 | `L_scint = 2*h_L/(sqrt(sin(theta_elev)^2 + 2.35e-4) + sin(theta_elev))` | turbulent-layer height and elevation | Effective path length for scintillation prediction. | ITU-P618 | Seeded |
+| LINK-091 | `D_eff = sqrt(eta_ant)*D` | antenna efficiency and diameter | Effective antenna diameter for scintillation antenna averaging. | ITU-P618 | Seeded |
+| LINK-092 | `x_scint = 1.22*D_eff^2*f_GHz/L_scint` | effective antenna diameter, frequency, path length | P.618 antenna-averaging argument. | ITU-P618 | Seeded |
+| LINK-093 | `g_x = 3.86*(x_scint^2+1)^(11/12)*sin((11/6)*atan(1/x_scint)) - 7.08*x_scint^(5/6)` | antenna-averaging argument | P.618 antenna averaging helper. If `g_x < 0`, scintillation fade depth is set to zero. | ITU-P618 | Seeded |
+| LINK-094 | `sigma_scint = sigma_ref*f_GHz^(7/12)*sqrt(g_x)/sin(theta_elev)^1.2` | reference sigma and antenna averaging | Standard deviation of tropospheric scintillation amplitude for elevation at least 5 degrees. | ITU-P618 | Seeded |
+| LINK-095 | `a_scint(p) = -0.061*(log10(p_exceed))^3 + 0.072*(log10(p_exceed))^2 - 1.71*log10(p_exceed) + 3.0` | exceedance probability | P.618 time-percentage factor for scintillation, valid over the stated probability range. | ITU-P618 | Seeded |
+| LINK-096 | `A_S = a_scint(p_exceed)*sigma_scint` | time-percentage factor and sigma | Tropospheric scintillation fade depth exceeded for `p_exceed` percent of time. | ITU-P618 | Seeded |
+| LINK-097 | `T_sky = T_mr*(1 - 10^(-A_atm_no_scint/10)) + 2.7*10^(-A_atm_no_scint/10)` | atmospheric attenuation and mean radiating temperature | P.618 sky noise temperature at a ground-station antenna. | ITU-P618 | Seeded |
+| LINK-098 | `T_mr = 37.34 + 0.81*T_surface` | surface temperature | P.618 mean radiating temperature estimate for clear/cloudy weather when surface temperature is known. | ITU-P618 | Seeded |
 
 ## Modulation, Baseband, and Digital Communication
 
