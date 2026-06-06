@@ -107,6 +107,44 @@ This glossary defines shared symbols for the formula knowledge base. App impleme
 | `f0` | `array_design_frequency` | phase-shifter steering design frequency | Hz |
 | `theta_scan_f0` | `design_frequency_scan_angle` | commanded scan angle at the design frequency | rad, deg |
 | `theta_squint_f` | `beam_squint_angle` | shifted beam angle at another frequency | rad, deg |
+| `E_a(x,y)` | `aperture_field_distribution` | complex aperture illumination field over aperture coordinates | complex field-unit |
+| `x` / `y` | `aperture_coordinates` | aperture-plane coordinates | m |
+| `eta_taper_cont` | `continuous_aperture_taper_efficiency` | illumination taper efficiency from continuous aperture field | ratio |
+| `F_ap(u,v)` | `aperture_far_field_pattern` | aperture far-field pattern as a function of direction cosines | complex field-unit |
+| `G_meas_i_dBi` | `measured_pattern_gain_sample` | measured gain at pattern sample `i` | dBi |
+| `G_peak_dBi` | `measured_peak_gain` | peak gain used to normalize measured pattern samples | dBi |
+| `P_n_meas_i` | `measured_normalized_power_sample` | measured normalized power-pattern sample | ratio |
+| `DeltaOmega_i` | `pattern_sample_solid_angle` | solid-angle weight for measured pattern sample `i` | sr |
+| `Omega_A_meas` | `measured_beam_solid_angle` | beam solid angle estimated from measured or simulated samples | sr |
+| `D0_meas` | `measured_pattern_directivity` | directivity estimated from sampled pattern integration | ratio, dBi |
+| `eta_beam` | `beam_efficiency` | main-beam power fraction relative to total radiated pattern power | ratio |
+| `E_edge` / `E_center` | `aperture_edge_center_field` | edge and center illumination field magnitudes | field-unit |
+| `EdgeTaper_dB` | `edge_taper` | aperture/feed edge taper | dB |
+| `a_n` | `array_excitation_amplitude` | complex excitation amplitude for element `n` | complex ratio |
+| `eta_amp_array` | `array_amplitude_taper_efficiency` | coherent gain efficiency from array amplitude taper | ratio |
+| `TaperLoss_dB` | `array_taper_loss` | gain loss from amplitude taper | dB |
+| `SLL_meas_dB` | `measured_sidelobe_level` | sidelobe level relative to main lobe | dB |
+| `AF_null` / `AF_main` | `array_null_main_pattern_magnitude` | null and main-lobe pattern magnitudes for null-depth checks | ratio |
+| `NullDepth_dB` | `array_null_depth` | null depth relative to main lobe | dB |
+| `SLL_target_dB` | `target_sidelobe_level` | target sidelobe level for array taper synthesis | dB |
+| `n_bar` | `taylor_near_sidelobe_count` | Taylor taper near-in sidelobe control parameter | count |
+| `w_n_Dolph` | `dolph_chebyshev_weight` | generated Dolph-Chebyshev element weight | complex ratio |
+| `w_n_Taylor` | `taylor_weight` | generated Taylor element weight | complex ratio |
+| `S_nm` | `array_scattering_parameter` | S-parameter from port `m` to port `n` in an array network | complex ratio |
+| `Gamma_active_n` | `active_reflection_coefficient` | active reflection coefficient for element `n` under selected excitation | complex ratio |
+| `VSWR_active_n` | `active_vswr` | active voltage standing wave ratio for element `n` | ratio |
+| `a` | `array_incident_power_wave_vector` | incident power-wave excitation vector for the array network | complex vector |
+| `S_array` | `array_scattering_matrix` | array multiport scattering matrix | complex matrix |
+| `I_N` | `array_identity_matrix` | identity matrix matching the array S-matrix dimension | matrix |
+| `P_accepted_array` | `array_accepted_power` | total accepted array input power after reflection/coupling | normalized W |
+| `eta_coupling` | `array_coupling_efficiency` | accepted power divided by incident power under selected excitation | ratio |
+| `M_ij_dB` | `antenna_pair_gain_sum_observable` | gain-sum observable from antenna pair `i,j` measurement | dB |
+| `P_r_ij_dBW` | `antenna_pair_received_power` | received power for transmitting antenna `i` and receiving antenna `j` | dBW |
+| `P_t_i_dBW` | `antenna_pair_transmit_power` | transmit power applied for antenna `i` measurement | dBW |
+| `L_fs_ij_dB` | `antenna_pair_free_space_loss` | free-space path loss for antenna pair `i,j` range | dB |
+| `G_AUT_dBi` | `antenna_under_test_gain` | gain of antenna under test from transfer measurement | dBi |
+| `G_ref_dBi` | `reference_antenna_gain` | calibrated reference antenna gain | dBi |
+| `P_AUT_dB` / `P_ref_dB` | `aut_reference_power_readings` | received-power readings for AUT and reference antenna under same range setup | dB |
 
 ## Noise and Receiver
 
