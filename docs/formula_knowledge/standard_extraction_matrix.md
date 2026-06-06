@@ -25,10 +25,10 @@ This file turns the source registry into concrete extraction work. The intent is
 | Source | Extract | Output artifacts | Formula catalog targets | Notes |
 | --- | --- | --- | --- | --- |
 | ITU-R P.525 | FSPL equations, radar free-space loss, conversion formulas | free-space/radar formula variants | LINK-001, LINK-002, LINK-018 to LINK-026, TRK-014 to TRK-016, MEAS-009, MEAS-010 | P.525-5 equations 1-11 extracted in `standard_extracts.md`; next step is calculator test vectors. |
-| ITU-R P.618 | Earth-space attenuation procedure, availability percentage, elevation/path geometry | P.618 procedure checklist and input schema | LINK-009, LINK-011, SYS-010 | Depends on other ITU recommendations. |
+| ITU-R P.618 | Earth-space attenuation procedure, availability percentage, elevation/path geometry | P.618 procedure checklist and input schema | LINK-009, LINK-011, LINK-052 to LINK-065, SYS-010 | Rain attenuation and total attenuation formulas extracted; scintillation, depolarization, and full availability procedure remain. |
 | ITU-R P.676 | gaseous attenuation model and required atmospheric inputs | gas attenuation procedure | LINK-012 | Likely table/procedure-heavy. |
-| ITU-R P.838 | rain specific attenuation coefficients and polarization/elevation handling | `k`, `alpha` coefficient table schema | LINK-010, LINK-011 | The formula is simple; coefficients are the key extraction. |
-| ITU-R P.839 | rain height model | rain-height helper procedure | LINK-011 | Required by P.618 rain path geometry. |
+| ITU-R P.838 | rain specific attenuation coefficients and polarization/elevation handling | `k`, `alpha` coefficient table schema | LINK-010, LINK-011, LINK-045 to LINK-049 | Formula and curve-fit structure extracted; coefficient tables need machine-readable assets. |
+| ITU-R P.839 | rain height model | rain-height helper procedure | LINK-050, LINK-051 | Rain-height relation extracted; digital map interpolation needs data asset handling. |
 | ITU-R P.840 | cloud/fog attenuation | cloud attenuation procedure | LINK-009 | Add after P.618/P.838. |
 
 ## NASA/JPL and Textbook Cross-Checks

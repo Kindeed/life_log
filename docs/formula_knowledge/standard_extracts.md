@@ -37,6 +37,21 @@ Sources: NASA/JPL DESCANSO `Deep Space Telecommunications Systems Engineering`; 
 | DS-ATM-003 | DSN 810-005 105E section 2.1.3, equation 3 | `T_atm(theta)=T_M*(1-1/L(theta))`, `L(theta)=10^(A(theta)/10)` | Converts atmospheric attenuation into noise-temperature contribution. |
 | DS-ATM-004 | DSN 810-005 105E section 2.1.4, equations 4 to 6 | `T_CMB=2.725 K`; `T_CMB_eff=T_CMB/L(theta)`; `T_op=T_AMW+T_atm+T_CMB_eff` with `T_AMW=T1+T2*exp(-a_noise*theta)` | Adds sky-noise closure for receiver G/T and `N0` calculations. |
 
+## ITU-R Rain and Earth-Space Propagation Extracts
+
+Sources: ITU-R P.838-3 `Specific attenuation model for rain for use in prediction methods`; ITU-R P.839-4 `Rain height model for prediction methods`; ITU-R P.618-14 `Propagation data and prediction methods required for the design of Earth-space telecommunication systems`.
+
+| Extract ID | Standard location | Equation or table | Implementation note |
+| --- | --- | --- | --- |
+| ITURAIN-001 | P.838-3, equation 1 | `gamma_R = k*R^alpha` | Specific attenuation from rain rate. P.618 uses `R0.01` as the rain-rate input for its long-term rain attenuation procedure. |
+| ITURAIN-002 | P.838-3, equations 2 and 3, tables 1 to 4 | Curve fits for `k_H`, `k_V`, `alpha_H`, and `alpha_V` as functions of `f_GHz`, using tabulated constants | Keep coefficient constants as table data; do not hard-code prose-only approximations. |
+| ITURAIN-003 | P.838-3, equations 4 and 5 | `k=(k_H+k_V+(k_H-k_V)cos(theta)^2 cos(2*tau))/2`; `alpha=(k_H alpha_H+k_V alpha_V+(k_H alpha_H-k_V alpha_V)cos(theta)^2 cos(2*tau))/(2k)` | Converts horizontal/vertical coefficients to path elevation and polarization tilt. |
+| ITURAIN-004 | P.839-4, recommendation 2 | `h_R = h_0 + 0.36 km` | `h_0` comes from the P.839 digital 0 deg C isotherm map; use bilinear interpolation between grid points. |
+| ITURAIN-005 | P.618-14 section 2.2.1.1, equations 1 to 3 | `L_s=(h_R-h_s)/sin(theta)` for `theta>=5 deg`; low-elevation `L_s` uses effective Earth radius; `L_G=L_s cos(theta)` | Start of the slant-path rain geometry. If `h_R-h_s<=0`, predicted rain attenuation is zero. |
+| ITURAIN-006 | P.618-14 section 2.2.1.1, equations 4 to 7 | `gamma_R=k(R0.01)^alpha`; compute `r0.01`, `v0.01`, `L_E=L_R v0.01`, and `A0.01=gamma_R L_E` | This is the implementation core for annual 0.01% rain fade. |
+| ITURAIN-007 | P.618-14 section 2.2.1.1, equation 8 | `A_p=A0.01*(p/0.01)^(-(0.655+0.033ln(p)-0.045ln(A0.01)-beta(1-p)sin(theta)))` | Probability extrapolation for `0.001% <= p <= 5%`; beta is branch-dependent on p, latitude, and elevation. |
+| ITURAIN-008 | P.618-14 section 2.5, equations 65 to 68 | `A_T=A_G+sqrt((A_R+A_C)^2+A_S^2)` for `0.001%<=p<=5%`; `A_T=A_G+sqrt(A_C^2+A_S^2)` for `5%<p<=50%`; use `A_C(5%)` and `A_G(5%)` below 5% | Total attenuation combines rain, gas, cloud, and scintillation. Gas/cloud/scintillation still need P.676/P.840/P.618 subprocedure extraction. |
+
 ## CCSDS 414.1-B-3 PN Ranging
 
 Source: CCSDS 414.1-B-3, `Pseudo-Noise (PN) Ranging Systems`, January 2022. The document control notes an October 2024 editorial page-size change.
@@ -82,6 +97,7 @@ Source: CCSDS 131.0-B-5, `TM Synchronization and Channel Coding`, September 2023
 | --- | --- | --- | --- |
 | ITU-P525 | Listed as source; formulas partly seeded | Equations 1-11 extracted into catalog and variables | Add unit-test examples for all practical-unit conversions when calculators are implemented. |
 | DESCANSO/DSN | Listed as source; antenna/link formulas partly seeded | Received-power chain, aperture efficiency, pointing/polarization loss, noise density, link margins, ranging SNR, and DSN atmospheric noise-temperature formulas extracted | Extract DSN 101/103/104 antenna station tables and build deterministic examples for each workbench. |
+| ITU-P618/P838/P839 | Listed as source; rain and total attenuation top-level formulas seeded | P.838 rain specific attenuation, P.839 rain height, and P.618 slant-path rain attenuation plus total attenuation formulas extracted | Extract P.676 gas, P.840 cloud, P.618 scintillation/depolarization, and coefficient map/table assets. |
 | CCSDS-414.1 | Listed as source; PN formulas partly seeded | Chip-rate equations, selector rules, cross-support examples, acquisition scaling, delay limits, and jitter reference rows extracted | Extract full transparent/regenerative mode field matrices and station/on-board performance tables. |
 | CCSDS-131 | Listed as source; generic coding formulas seeded | Public B-5 convolutional, R-S, Turbo, LDPC, ASM, CSM, randomizer, and frame-length extracts added | Verify deltas against Issue 6 when the official B-6 PDF is accessible. |
 | CCSDS-231 | Listed as source; CLTU formulas partly seeded | BCH/LDPC codeword sizing, CLTU start/tail lengths, fill formulas, managed parameters extracted | Extract PLOP timing details and any mission-specific maximum CLTU constraints when implementing. |

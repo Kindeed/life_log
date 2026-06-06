@@ -25,10 +25,10 @@ This registry records the standards, handbooks, and published books that should 
 | CCSDS-211.1 | CCSDS 211.1-B-4, Proximity-1 Physical Layer | CCSDS SLS-RFM | Proximity-1 physical layer procedures, reconfirmed through June 2024. | Proximity link RF, rate, modulation, and physical-layer parameter extraction. |
 | CCSDS-211.2 | CCSDS 211.2-B-3, Proximity-1 Coding and Synchronization Sublayer | CCSDS SLS-C&S | Proximity-1 coding and synchronization. | Proximity coding/sync overhead and coded rate formulas. |
 | ITU-P525 | ITU-R P.525-5, Calculation of free-space attenuation | ITU-R | Current Recommendation dated 11/2024; equations 1-11 extracted into `standard_extracts.md`. | FSPL, field strength, PFD, isotropic received power, and radar free-space loss formulas. |
-| ITU-P618 | ITU-R P.618-14, Earth-space propagation prediction | ITU-R | In force, approved 2023-08-23; free download. | Earth-space attenuation, rain fade, scintillation, availability. |
+| ITU-P618 | ITU-R P.618-14, Earth-space propagation prediction | ITU-R | In force, approved 2023-08-23; rain and total attenuation extracts started in `standard_extracts.md`. | Earth-space attenuation, rain fade, scintillation, availability. |
 | ITU-P676 | ITU-R P.676, Attenuation by atmospheric gases | ITU-R | Gas attenuation model. | Oxygen/water vapor attenuation and path integration. |
-| ITU-P838 | ITU-R P.838, Specific attenuation model for rain | ITU-R | Rain specific attenuation model. | `gamma_R = k R^alpha` and polarization-dependent coefficients. |
-| ITU-P839 | ITU-R P.839, Rain height model | ITU-R | Needed by P.618 rain path geometry. | Rain height and slant-path length support. |
+| ITU-P838 | ITU-R P.838-3, Specific attenuation model for rain | ITU-R | Rain specific attenuation model; P.838-3 remains listed on ITU official pages. | `gamma_R = k R^alpha` and polarization-dependent coefficients. |
+| ITU-P839 | ITU-R P.839-4, Rain height model | ITU-R | Needed by P.618 rain path geometry; P.839-4 remains listed on ITU official pages. | Rain height and slant-path length support. |
 | DSN-810-005 | DSN Telecommunications Link Design Handbook | NASA/JPL DSN | Current public DSN handbook download page lists modules and recent release clearances; module 105E atmospheric/noise extracts are started. | Deep-space link, DSN station capability, command/telemetry/ranging modules. |
 | DESCANSO-DSTSE | Deep Space Telecommunications Systems Engineering | NASA/JPL DESCANSO | Public deep-space communications reference; antenna/link extracts are started in `standard_extracts.md`. | Link equation derivations, antenna gain/effective aperture, system noise temperature, modulation/coding context. |
 | NASA-SST-COMM | NASA SmallSat State of the Art, Communications | NASA | Small satellite RF/optical communication overview. | System-level trade examples and calculator scenario framing. |
@@ -74,9 +74,12 @@ This registry records the standards, handbooks, and published books that should 
 | ITU-P525 | https://www.itu.int/rec/R-REC-P.525/en |
 | ITU-P525-5 PDF | https://www.itu.int/dms_pubrec/itu-r/rec/p/R-REC-P.525-5-202411-I!!PDF-E.pdf |
 | ITU-P618 | https://www.itu.int/rec/R-REC-P.618-14-202308-I/en |
+| ITU-P618-14 PDF | https://www.itu.int/dms_pubrec/itu-r/rec/p/R-REC-P.618-14-202308-I!!PDF-E.pdf |
 | ITU-P676 | https://www.itu.int/rec/R-REC-P.676/en |
 | ITU-P838 | https://www.itu.int/rec/R-REC-P.838/en |
+| ITU-P838-3 PDF | https://www.itu.int/dms_pubrec/itu-r/rec/p/r-rec-p.838-3-200503-i!!pdf-e.pdf |
 | ITU-P839 | https://www.itu.int/rec/R-REC-P.839/en |
+| ITU-P839-4 PDF | https://www.itu.int/dms_pubrec/itu-r/rec/p/r-rec-p.839-4-201309-i!!pdf-e.pdf |
 | DSN-810-005 | https://deepspace.jpl.nasa.gov/dsndocs/810-005/ |
 | DSN-810-005 downloads | https://deepspace.jpl.nasa.gov/dsndocs/810-005/downloads/ |
 | DSN-810-005 front matter | https://deepspace.jpl.nasa.gov/dsndocs/810-005/fm.pdf |

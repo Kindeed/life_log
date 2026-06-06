@@ -78,10 +78,42 @@ This glossary defines shared symbols for the formula knowledge base. App impleme
 | `A_gas` | `gas_attenuation` | atmospheric gas attenuation | dB |
 | `A_cloud` | `cloud_attenuation` | cloud/fog attenuation | dB |
 | `A_scint` | `scintillation_loss` | scintillation fade allowance | dB |
+| `A_R` | `rain_attenuation_probability` | rain attenuation exceeded for a fixed probability | dB |
+| `A_G` | `gaseous_attenuation_probability` | gaseous attenuation for a fixed probability | dB |
+| `A_C` | `cloud_attenuation_probability` | cloud attenuation for a fixed probability | dB |
+| `A_S` | `scintillation_attenuation_probability` | tropospheric scintillation attenuation for a fixed probability | dB |
+| `A_T` | `total_atmospheric_attenuation_probability` | total atmospheric attenuation combining simultaneous impairments | dB |
+| `A_0_01` | `rain_attenuation_0_01_percent` | rain attenuation exceeded for 0.01% of an average year | dB |
+| `A_rain_p` | `rain_attenuation_percent_p` | rain attenuation exceeded for `p_exceed` percent of an average year | dB |
 | `A_zen` | `zenith_atmospheric_attenuation` | atmospheric attenuation at zenith | dB |
 | `A_atm` | `atmospheric_attenuation` | atmosphere attenuation at an elevation angle | dB |
 | `AM` | `air_mass_factor` | flat-Earth air mass scaling factor | unitless |
 | `L_atm` | `atmospheric_loss_factor` | linear atmospheric loss factor | ratio |
+| `gamma_R` | `rain_specific_attenuation` | rain specific attenuation | dB/km |
+| `R_p` | `rain_rate_percent_p` | rain rate exceeded for p% of an average year | mm/h |
+| `R_0_01` | `rain_rate_0_01_percent` | one-minute rain rate exceeded for 0.01% of an average year | mm/h |
+| `k_rain` | `rain_specific_attenuation_k` | ITU-R P.838 rain coefficient adjusted for path and polarization | unitless |
+| `alpha_rain` | `rain_specific_attenuation_alpha` | ITU-R P.838 rain exponent adjusted for path and polarization | unitless |
+| `k_H` / `k_V` | `rain_k_horizontal_vertical` | ITU-R P.838 horizontal/vertical rain coefficients | unitless |
+| `alpha_H` / `alpha_V` | `rain_alpha_horizontal_vertical` | ITU-R P.838 horizontal/vertical rain exponents | unitless |
+| `tau` | `polarization_tilt_angle` | polarization tilt angle relative to horizontal; 45 deg for circular polarization | deg, rad |
+| `theta_elev` | `path_elevation_angle` | Earth-space path elevation angle | deg, rad |
+| `theta_elev_deg` | `path_elevation_angle_deg` | path elevation angle in degrees for ITU-R P.618 exponential terms | deg |
+| `h_0` | `zero_c_isotherm_height` | annual mean 0 deg C isotherm height above mean sea level | km |
+| `h_R` | `rain_height` | annual mean rain height above mean sea level | km |
+| `h_s` | `station_height_amsl` | earth station height above mean sea level | km |
+| `L_s` | `rain_slant_path_length` | slant path length below rain height | km |
+| `L_G` | `rain_horizontal_projection` | horizontal projection of the rain slant path | km |
+| `L_R` | `rain_adjusted_slant_path` | adjusted slant path used by vertical factor | km |
+| `L_E` | `rain_effective_path_length` | effective rain path length | km |
+| `r_0_01` | `rain_horizontal_reduction_factor` | P.618 horizontal reduction factor for 0.01% | ratio |
+| `v_0_01` | `rain_vertical_adjustment_factor` | P.618 vertical adjustment factor for 0.01% | ratio |
+| `zeta` | `rain_auxiliary_angle` | auxiliary angle for vertical adjustment branch | deg, rad |
+| `chi` | `rain_latitude_adjustment` | P.618 latitude adjustment term | deg |
+| `phi_lat` | `station_latitude` | earth station latitude | deg |
+| `beta` | `rain_probability_extrapolation_beta` | P.618 probability extrapolation branch value | unitless |
+| `p_exceed` | `exceedance_probability_percent` | percentage of average year that attenuation is exceeded | percent |
+| `R_eff` | `effective_earth_radius` | effective Earth radius used by P.618 rain geometry, 8500 km | km |
 | `e` | `field_strength_v_m` | RMS electric field strength | V/m |
 | `E` | `field_strength_dbuv_m` | electric field strength in logarithmic units | dB(uV/m) |
 | `s` / `S` | `power_flux_density` | power flux density | W/m^2, dBW/m^2 |

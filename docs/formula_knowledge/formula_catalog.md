@@ -85,12 +85,33 @@ Notation:
 | LINK-036 | `RangingInputSNR = P_R_ul / (B_R * N0_ul)` | uplink ranging sideband power, transponder ranging bandwidth, uplink noise density | Ranging channel input SNR at the spacecraft receiver. | DESCANSO-DSTSE | Seeded |
 | LINK-037 | `RangingMargin_dB = OutputSNR_dB - RequiredSNR_dB` | returned ranging SNR and required SNR | Ranging performance margin. | DESCANSO-DSTSE | Seeded |
 | LINK-038 | `T_M = 255 + 25*CD` | weather cumulative distribution `CD` | DSN 105E atmosphere mean effective radiating temperature model. | DSN-810-005-105E | Seeded |
-| LINK-039 | `A_atm(theta) = A_zen / sin(theta)` | zenith attenuation and elevation angle | Flat-Earth elevation scaling for atmospheric attenuation. | DSN-810-005-105E | Procedure |
-| LINK-040 | `L_atm = 10^(A_atm(theta)/10)` | atmospheric attenuation in dB | Converts atmospheric attenuation to linear loss factor. | DSN-810-005-105E | Seeded |
-| LINK-041 | `T_atm(theta) = T_M * (1 - 1/L_atm)` | atmosphere mean radiating temperature and loss factor | Atmospheric noise-temperature contribution. | DSN-810-005-105E | Seeded |
-| LINK-042 | `T_CMB_eff(theta) = T_CMB / L_atm` | cosmic microwave background and atmosphere loss | Effective cosmic background noise contribution after atmospheric attenuation. | DSN-810-005-105E | Seeded |
-| LINK-043 | `T_AMW(theta) = T1 + T2*exp(-a_noise*theta)` | antenna module coefficients | DSN antenna-microwave noise-temperature component used by station modules. | DSN-810-005-105E | Procedure |
-| LINK-044 | `T_op(theta) = T_AMW(theta) + T_atm(theta) + T_CMB_eff(theta)` | antenna-microwave, atmosphere, cosmic terms | System operating noise temperature with atmosphere and attenuated cosmic background. | DSN-810-005-105E | Seeded |
+| LINK-039 | `A_atm(theta_elev) = A_zen / sin(theta_elev)` | zenith attenuation and elevation angle | Flat-Earth elevation scaling for atmospheric attenuation. | DSN-810-005-105E | Procedure |
+| LINK-040 | `L_atm = 10^(A_atm(theta_elev)/10)` | atmospheric attenuation in dB | Converts atmospheric attenuation to linear loss factor. | DSN-810-005-105E | Seeded |
+| LINK-041 | `T_atm(theta_elev) = T_M * (1 - 1/L_atm)` | atmosphere mean radiating temperature and loss factor | Atmospheric noise-temperature contribution. | DSN-810-005-105E | Seeded |
+| LINK-042 | `T_CMB_eff(theta_elev) = T_CMB / L_atm` | cosmic microwave background and atmosphere loss | Effective cosmic background noise contribution after atmospheric attenuation. | DSN-810-005-105E | Seeded |
+| LINK-043 | `T_AMW(theta_elev) = T1 + T2*exp(-a_noise*theta_elev)` | antenna module coefficients | DSN antenna-microwave noise-temperature component used by station modules. | DSN-810-005-105E | Procedure |
+| LINK-044 | `T_op(theta_elev) = T_AMW(theta_elev) + T_atm(theta_elev) + T_CMB_eff(theta_elev)` | antenna-microwave, atmosphere, cosmic terms | System operating noise temperature with atmosphere and attenuated cosmic background. | DSN-810-005-105E | Seeded |
+| LINK-045 | `gamma_R = k_rain * R_p^alpha_rain` | `R_p`: rain rate mm/h exceeded for probability p | ITU-R rain specific attenuation power-law model. P.618 uses `R_0_01` for the 0.01% annual statistic. | ITU-P838, ITU-P618 | Seeded |
+| LINK-046 | `log10(k_pol) = sum(a_j * exp(-((log10(f_GHz)-b_j)/c_j)^2)) + m_k*log10(f_GHz) + c_k` | P.838 coefficient table constants | Curve fit for horizontal or vertical rain coefficient `k_H`/`k_V` over 1 to 1000 GHz. | ITU-P838 | Procedure |
+| LINK-047 | `alpha_pol = sum(a_j * exp(-((log10(f_GHz)-b_j)/c_j)^2)) + m_alpha*log10(f_GHz) + c_alpha` | P.838 coefficient table constants | Curve fit for horizontal or vertical rain exponent `alpha_H`/`alpha_V`. | ITU-P838 | Procedure |
+| LINK-048 | `k_rain = (k_H + k_V + (k_H-k_V)*cos(theta_elev)^2*cos(2*tau))/2` | elevation and polarization tilt | Path/polarization-adjusted rain coefficient. `tau=45 deg` for circular polarization. | ITU-P838 | Seeded |
+| LINK-049 | `alpha_rain = (k_H*alpha_H + k_V*alpha_V + (k_H*alpha_H-k_V*alpha_V)*cos(theta_elev)^2*cos(2*tau))/(2*k_rain)` | horizontal/vertical coefficients | Path/polarization-adjusted rain exponent. | ITU-P838 | Seeded |
+| LINK-050 | `h_R = h_0 + 0.36 km` | `h_0`: annual mean 0 deg C isotherm height | ITU-R rain height above mean sea level when no local rain-height data are available. | ITU-P839 | Seeded |
+| LINK-051 | `h_0 = bilinear(lat, lon, h0_grid)` | P.839 digital map grid | Interpolates 0 deg C isotherm height from four nearest P.839 map grid points. | ITU-P839 | Procedure |
+| LINK-052 | `L_s = (h_R - h_s)/sin(theta_elev)` | rain height, station height, elevation | Slant path length below rain height for elevation angles at least 5 degrees. | ITU-P618 | Seeded |
+| LINK-053 | `L_s = 2*(h_R-h_s)/(sqrt(sin(theta_elev)^2 + 2*(h_R-h_s)/R_eff) + sin(theta_elev))` | low elevation geometry | Slant path length below rain height for elevation angles below 5 degrees. | ITU-P618 | Seeded |
+| LINK-054 | `L_G = L_s*cos(theta_elev)` | slant path length and elevation | Horizontal projection of the slant rain path. | ITU-P618 | Seeded |
+| LINK-055 | `r_0_01 = 1/(1 + 0.78*sqrt(L_G*gamma_R/f_GHz) - 0.38*(1-exp(-2*L_G)))` | horizontal path projection and rain specific attenuation | Horizontal reduction factor for 0.01% of an average year. | ITU-P618 | Seeded |
+| LINK-056 | `zeta = atan((h_R-h_s)/(L_G*r_0_01))` | rain height and reduced horizontal path | Auxiliary angle for vertical adjustment factor. | ITU-P618 | Seeded |
+| LINK-057 | `L_R = if zeta>theta_elev then L_G*r_0_01/cos(theta_elev) else (h_R-h_s)/sin(theta_elev)` | reduced slant path | Adjusted slant-path term used by P.618 vertical factor. | ITU-P618 | Procedure |
+| LINK-058 | `chi = max(0, 36 - abs(phi_lat))` | station latitude in degrees | Latitude adjustment term used in P.618 rain vertical factor. | ITU-P618 | Seeded |
+| LINK-059 | `v_0_01 = 1/(1 + sqrt(sin(theta_elev))*(31*(1-exp(-theta_elev_deg/(1+chi)))*sqrt(L_R*gamma_R)/f_GHz^2 - 0.45))` | elevation, latitude term, path, rain, frequency | Vertical adjustment factor for 0.01% of an average year; P.618 uses elevation in degrees in the exponential term. | ITU-P618 | Seeded |
+| LINK-060 | `L_E = L_R*v_0_01` | adjusted path and vertical factor | Effective rain path length. | ITU-P618 | Seeded |
+| LINK-061 | `A_0_01 = gamma_R*L_E` | rain specific attenuation and effective path | Rain attenuation exceeded for 0.01% of an average year. | ITU-P618 | Seeded |
+| LINK-062 | `beta = 0` or `-0.005*(abs(phi_lat)-36)` or `-0.005*(abs(phi_lat)-36)+1.8-4.25*sin(theta_elev)` | probability, latitude, elevation branch | P.618 beta branch used for annual probability extrapolation from `A_0_01`. | ITU-P618 | Procedure |
+| LINK-063 | `A_rain_p = A_0_01*(p_exceed/0.01)^(-(0.655 + 0.033*ln(p_exceed) - 0.045*ln(A_0_01) - beta*(1-p_exceed)*sin(theta_elev)))` | target exceedance probability | Rain attenuation exceeded for `p_exceed` percent of an average year, valid over the P.618 probability range. | ITU-P618 | Seeded |
+| LINK-064 | `A_T(p_exceed) = A_G(p_exceed) + sqrt((A_R(p_exceed)+A_C(p_exceed))^2 + A_S(p_exceed)^2)` | gas, rain, cloud, scintillation | Total attenuation for `0.001% <= p_exceed <= 5%`, combining simultaneous effects. | ITU-P618 | Procedure |
+| LINK-065 | `A_T(p_exceed) = A_G(p_exceed) + sqrt(A_C(p_exceed)^2 + A_S(p_exceed)^2)` | gas, cloud, scintillation | Total attenuation for `5% < p_exceed <= 50%`; P.618 holds cloud and gas terms at 5% for p below 5%. | ITU-P618 | Procedure |
 
 ## Modulation, Baseband, and Digital Communication
 

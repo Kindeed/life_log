@@ -105,6 +105,8 @@ Recommended implementation order:
    - P.838 rain specific attenuation
    - P.618 Earth-space rain fade skeleton
    - P.676 gas attenuation skeleton
+   - P.839 rain height and P.618 slant-path rain geometry
+   - P.618 total attenuation combiner for rain, gas, cloud, and scintillation
 
 4. Baseband and channel workbench:
    - symbol rate
