@@ -1,0 +1,70 @@
+# Source Registry
+
+This registry records the standards, handbooks, and published books that should govern formula expansion. URLs point to official or publisher pages when possible. Formula extraction should use the latest active issue unless a mission specifically requires an older issue.
+
+## Public Standards and Handbooks
+
+| Source ID | Source | Authority | Current relevance | Use in knowledge base |
+| --- | --- | --- | --- | --- |
+| CCSDS-SLS | CCSDS Space Link Services area | CCSDS | SLS covers layers 1 and 2: RF/modulation, channel coding, data link, data compression, and ranging. | Top-level domain map for telemetry, telecommand, ranging, and space link formulas. |
+| CCSDS-401 | CCSDS 401.0-B, Radio Frequency and Modulation Systems | CCSDS SLS-RFM | RF, modulation, frequency assignment, spectral constraints. | RF/modulation formulas, bandwidth checks, Doppler and spectrum allocation context. |
+| CCSDS-131 | CCSDS 131.0-B, TM Synchronization and Channel Coding | CCSDS SLS-C&S | Active TM coding standard; CCSDS lists Issue 6 in April 2026. | TM sync markers, randomization, convolutional/turbo/LDPC/Reed-Solomon families, coded stream overhead. |
+| CCSDS-131.2 | CCSDS 131.2-B, Flexible Advanced Coding and Modulation Scheme for High Rate Telemetry Applications | CCSDS SLS-C&S | High-rate telemetry coding and modulation. | ACM/SCCC-oriented high-rate telemetry calculators. |
+| CCSDS-131.3 | CCSDS 131.3-B, CCSDS Space Link Protocols over ETSI DVB-S2 Standard | CCSDS SLS-C&S | High data rate telemetry, DVB-S2 MODCOD applicability, USLP support. | MODCOD table extraction, spectral efficiency, frame overhead. |
+| CCSDS-231 | CCSDS 231.0-B-4, TC Synchronization and Channel Coding | CCSDS SLS-C&S | Active TC synchronization/channel coding standard, July 2021. | CLTU, BCH/LDPC coding, repeated transmission, uplink coding overhead. |
+| CCSDS-232 | CCSDS 232.0-B-4, TC Space Data Link Protocol | CCSDS SLS-SLP | TC asynchronous transfer frame protocol. | TC frame overhead, command throughput, COP-related sizing. |
+| CCSDS-132 | CCSDS 132.0-B, TM Space Data Link Protocol | CCSDS SLS-SLP | TM transfer frame protocol. | TM frame/packet overhead and virtual-channel throughput. |
+| CCSDS-732 | CCSDS 732.0-B-5, AOS Space Data Link Protocol | CCSDS SLS-SLP | AOS data link, October 2025. | AOS frame overhead, insert zone, virtual channels, packet service throughput. |
+| CCSDS-732.1 | CCSDS 732.1-B-3, Unified Space Data Link Protocol | CCSDS SLS-SLP | USLP, June 2024. | Unified frame overhead and service-mode sizing. |
+| CCSDS-414.1 | CCSDS 414.1-B-3, Pseudo-Noise Ranging Systems | CCSDS SLS-RFM | PN ranging, transparent/regenerative systems, January 2022. | PN ranging chip-rate, ambiguity, modulation and processing architecture. |
+| CCSDS-415 | CCSDS 415.0-G, Data Transmission and PN Ranging for 2 GHz CDMA Link via Data Relay Satellite | CCSDS SLS-RFM | Spread-spectrum and CDMA support material. | Spread-spectrum ranging and link-budget extensions. |
+| ITU-P525 | ITU-R P.525, Calculation of free-space attenuation | ITU-R | Free-space attenuation; current table of contents shows P.525-5 dated 11/2024. | FSPL and radar free-space loss formulas. |
+| ITU-P618 | ITU-R P.618-14, Earth-space propagation prediction | ITU-R | In force, approved 2023-08-23; free download. | Earth-space attenuation, rain fade, scintillation, availability. |
+| ITU-P676 | ITU-R P.676, Attenuation by atmospheric gases | ITU-R | Gas attenuation model. | Oxygen/water vapor attenuation and path integration. |
+| ITU-P838 | ITU-R P.838, Specific attenuation model for rain | ITU-R | Rain specific attenuation model. | `gamma_R = k R^alpha` and polarization-dependent coefficients. |
+| ITU-P839 | ITU-R P.839, Rain height model | ITU-R | Needed by P.618 rain path geometry. | Rain height and slant-path length support. |
+| DSN-810-005 | DSN Telecommunications Link Design Handbook | NASA/JPL DSN | Current front matter page shows DSN No. 810-005, issue date 2026-05-22. | Deep-space link, DSN station capability, command/telemetry/ranging modules. |
+| DESCANSO-DSTSE | Deep Space Telecommunications Systems Engineering | NASA/JPL DESCANSO | Public deep-space communications reference. | Link equation derivations, antenna gain/effective aperture, system noise temperature, modulation/coding context. |
+| NASA-SST-COMM | NASA SmallSat State of the Art, Communications | NASA | Small satellite RF/optical communication overview. | System-level trade examples and calculator scenario framing. |
+
+## Published Books
+
+| Source ID | Book | Publisher page evidence | Use in knowledge base |
+| --- | --- | --- | --- |
+| BOOK-MARAL | Maral, Bousquet, Sun, *Satellite Communications Systems*, 6th ed. | Wiley page lists link-performance chapter coverage. | Satellite uplink/downlink/overall link performance, transponder and intersatellite link formulas. |
+| BOOK-SMAD | Wertz et al., *Space Mission Engineering: The New SMAD* | Google Books description lists communications and engineering reference coverage. | Mission-level communications budget, contact time, coverage, design trade calculators. |
+| BOOK-BALANIS | Balanis, *Antenna Theory: Analysis and Design*, 4th ed. | Wiley page lists antenna parameters, effective areas, Friis, radar equation, antenna temperature. | Antenna gain, effective aperture, beamwidth, polarization, reflector/dish sizing, array fundamentals. |
+| BOOK-SKLAR | Sklar and Harris, *Digital Communications*, 3rd ed. | Pearson page lists modulation, coding, synchronization, OFDM, MIMO, link budgets. | Eb/N0, BER/PER, modulation, baseband, channel coding, synchronization formulas. |
+| BOOK-PROAKIS | Proakis and Salehi, *Digital Communications* | Published textbook; add publisher URL during next pass. | BER curves, matched filtering, AWGN, coding, synchronization. |
+| BOOK-HAYKIN | Haykin, *Communication Systems* | Published textbook; add publisher URL during next pass. | Baseband/passband signals, noise, modulation, filtering. |
+
+## Next Source Extraction Tasks
+
+1. Download and inspect the active CCSDS PDFs for 131.0-B-6, 231.0-B-4, 414.1-B-3, 132.0-B, 232.0-B, 732.0-B, and 732.1-B.
+2. Extract only implementation-relevant tables: code rates, frame lengths, sync marker sizes, transfer frame fields, MODCOD identifiers, PN chip-rate values.
+3. Cross-check ITU-R P.618 dependencies: P.618 calls into P.837, P.838, P.839, P.840, P.676 depending on fade mechanism.
+4. Add ECSS and Chinese/GJB public index references only where public bibliographic details are available. Do not encode restricted standards text.
+
+## Reference Links
+
+| Source ID | Link |
+| --- | --- |
+| CCSDS-SLS | https://ccsds.org/publications/sls/ |
+| CCSDS active publications | https://ccsds.org/publications/allpubs/ |
+| CCSDS search | https://ccsds.org/searchpubs/ |
+| CCSDS-231 | https://ccsds.org/publications/allpubs/entry/3203/ |
+| CCSDS-414.1 | https://ccsds.org/publications/allpubs/entry/3249/ |
+| ITU-P525 | https://www.itu.int/rec/R-REC-P.525/en |
+| ITU-P618 | https://www.itu.int/rec/R-REC-P.618-14-202308-I/en |
+| ITU-P676 | https://www.itu.int/rec/R-REC-P.676/en |
+| ITU-P838 | https://www.itu.int/rec/R-REC-P.838/en |
+| ITU-P839 | https://www.itu.int/rec/R-REC-P.839/en |
+| DSN-810-005 | https://deepspace.jpl.nasa.gov/dsndocs/810-005/ |
+| DSN-810-005 front matter | https://deepspace.jpl.nasa.gov/dsndocs/810-005/fm.pdf |
+| DESCANSO-DSTSE | https://descanso.jpl.nasa.gov/dstse/DSTSE.pdf |
+| JPL DESCANSO monographs | https://descanso.jpl.nasa.gov/monograph/mono.html |
+| NASA-SST-COMM | https://www.nasa.gov/smallsat-institute/sst-soa/soa-communications/ |
+| BOOK-MARAL | https://onlinelibrary.wiley.com/doi/book/10.1002/9781119673811 |
+| BOOK-BALANIS | https://www.wiley-vch.de/de/fachgebiete/ingenieurwesen/antenna-theory-978-1-118-64206-1 |
+| BOOK-SKLAR | https://www.pearson.com/en-ca/subject-catalog/p/digital-communications-fundamentals-and-applications/P200000000614/9780134588568 |
+| BOOK-SMAD | https://books.google.com/books/about/Space_Mission_Engineering.html?id=4JM7tAEACAAJ |
