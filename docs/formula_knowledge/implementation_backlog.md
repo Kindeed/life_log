@@ -85,8 +85,8 @@ Each pass should produce a reviewed delta to `formula_catalog.md` and, where nee
    - Extract slant range, elevation, pass/contact estimates, range-rate, antenna slew rate, PFD, PSD, and lab power/voltage conversion formulas.
    - Current measurement uncertainty extraction covers JCGM/NIST combined standard uncertainty, independent RSS, expanded uncertainty, Type-A repeatability, small-signal dB uncertainty conversion, Y-factor calibration uncertainty, `G/T`, `N0`, `C/N0`, `Eb/N0`, margin uncertainty, BER/FER point estimates, binomial standard uncertainty, Clopper-Pearson and Wilson confidence intervals, zero-error/allowed-error pass probabilities, test-duration sizing, and measured `Eb/N0`/implementation-loss references.
    - Current orbit/contact extraction covers two-body energy/vis-viva/angular-momentum/eccentricity/conic relations, station geodetic-to-ECEF, ECEF-to-ENU, local az/el/range, first-order ECI/ECEF warning, minimum-elevation access geometry, topocentric tracking geometry, observation weighting, normalized residuals, formal covariance, coverage radius, access flag, approximate pass duration, ground-track shift, circular-orbit subsatellite point estimates, J2 secular RAAN/perigee/mean-anomaly rates, sun-synchronous inclination estimate, repeat-ground-track closure, Kepler propagation, AOS/LOS/max-elevation event definitions, Hohmann transfer, plane-change, and combined maneuver formulas.
-   - Current system operations extraction covers generated data, usable contact time, per-pass and aggregate downlink capacity, storage end/peak margin, contact efficiency, passes required, required net/line rate, contact bit budget, required compression ratio, queue drain time, energy, battery depth of discharge, recorder turnover, contact utilization, science return, and command round-trip light time.
-   - Remaining orbit/system/measurement work is numerical validation examples, high-precision Earth-orientation/EOP handling, SGP4/TLE integration, propagated AOS/LOS root-bracketing tests, repeat-ground-track integer-search examples, maneuver edge-case handling, exact binomial interval helper tests, calibration-report examples, BER/FER acceptance card UI examples, schedule import/export, and timeline consistency checks.
+   - Current system operations extraction covers generated data, usable contact time, per-pass and aggregate downlink capacity, storage end/peak margin, contact efficiency, passes required, required net/line rate, contact bit budget, required compression ratio, queue drain time, backlog growth, data latency, schedule slack, expected downlink/science return, pass success probability, operations availability, resource/power/thermal margins, battery state of charge, mode energy/data/duty, station load/conflict, priority-weighted return, command-response latency, autonomy coverage, closure score, energy, battery depth of discharge, recorder turnover, contact utilization, science return, and command round-trip light time.
+   - Remaining orbit/system/measurement work is numerical validation examples, high-precision Earth-orientation/EOP handling, SGP4/TLE integration, propagated AOS/LOS root-bracketing tests, repeat-ground-track integer-search examples, maneuver edge-case handling, exact binomial interval helper tests, calibration-report examples, BER/FER acceptance card UI examples, schedule import/export, contact-window import, station-conflict validation, and timeline consistency checks.
 
 ## Stage 3: App Data Model
 
@@ -236,6 +236,11 @@ Recommended implementation order:
    - net downlink rate
    - storage margin
    - power/duty-cycle closure
+   - contact window duration, usable track time, contact data margin, and schedule slack
+   - backlog recurrence, backlog growth rate, queue drain time, and data latency margin
+   - pass success probability, expected downlink bits, expected science return, and operations availability
+   - generic resource margin, power margin, energy balance, battery SOC, and thermal dissipation margin
+   - mode energy, mode data, mode duty cycle, station load factor, station conflict, ground-return completeness, priority-weighted return, command-response latency, autonomy coverage, and closure-score bottleneck cards
 
 ## Stage 5: UI Implication
 

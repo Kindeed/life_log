@@ -1095,6 +1095,80 @@ This glossary defines shared symbols for the formula knowledge base. App impleme
 | `DownlinkedScienceBits` | `downlinked_science_bits` | science data returned to ground | bit |
 | `ScienceReturnFraction` | `science_return_fraction` | returned science fraction | ratio |
 | `Range` | `operations_range` | one-way distance for light-time planning | m, km |
+| `t_AOS` | `acquisition_of_signal_time` | acquisition-of-signal time for a contact | timestamp, s |
+| `t_LOS` | `loss_of_signal_time` | loss-of-signal time for a contact | timestamp, s |
+| `ContactWindowDuration` | `contact_window_duration` | gross visibility/contact window duration | s |
+| `T_acq` | `contact_acquisition_overhead` | acquisition overhead inside a scheduled contact | s |
+| `T_slew_settle` | `slew_settle_time` | spacecraft or antenna slew and settle overhead | s |
+| `T_handover_guard` | `handover_guard_time` | guard time reserved around station/network handover | s |
+| `T_config` | `configuration_time` | configuration, ranging, synchronization, or session setup overhead | s |
+| `UsableTrackTime` | `usable_track_time` | contact time remaining after track overheads | s |
+| `ContactDemandBits` | `contact_demand_bits` | data volume demanded within one contact | bit |
+| `ContactDataMarginBits` | `contact_data_margin_bits` | per-contact capacity margin before carryover | bit |
+| `ContactCapacityMarginFraction` | `contact_capacity_margin_fraction` | per-contact capacity margin relative to demand | ratio |
+| `BacklogStart` | `backlog_start_bits` | downlink backlog at the start of an interval | bit |
+| `BacklogNext` | `backlog_next_bits` | downlink backlog after one interval | bit |
+| `DownlinkedBits` | `downlinked_bits` | data volume returned to ground in an interval | bit |
+| `AverageDownlinkRate` | `average_downlink_rate` | average useful downlink rate over a planning period | bps |
+| `BacklogGrowthRate` | `backlog_growth_rate` | net data-queue growth rate | bps |
+| `t_data_generated` | `data_generation_time` | time a data product is generated | timestamp, s |
+| `t_downlink_complete` | `downlink_completion_time` | time a data product completes ground return | timestamp, s |
+| `DataLatency` | `data_latency` | elapsed time from data generation to return | s |
+| `MaxDataLatency` | `max_data_latency` | worst-case data latency over a schedule | s |
+| `LatencyRequirement` | `latency_requirement` | maximum allowed data-return latency | s |
+| `LatencyMargin` | `latency_margin` | remaining margin against latency requirement | s |
+| `LatestFinishTime` | `latest_finish_time` | latest allowable completion time | timestamp, s |
+| `EarliestFinishTime` | `earliest_finish_time` | earliest achievable completion time | timestamp, s |
+| `ScheduleSlack` | `schedule_slack` | available schedule slack before deadline | s |
+| `LinkAvailability` | `pass_link_availability` | link availability for one planned pass | ratio |
+| `GroundStationAvailability` | `ground_station_availability` | probability or fraction that assigned ground station is available | ratio |
+| `SpacecraftModeAvailability` | `spacecraft_mode_availability` | probability or fraction that spacecraft mode supports the pass | ratio |
+| `PassSuccessProbability` | `pass_success_probability` | first-order probability that a pass succeeds | ratio |
+| `ExpectedDownlinkBits` | `expected_downlink_bits` | probability-weighted downlink return | bit |
+| `ExpectedScienceReturnFraction` | `expected_science_return_fraction` | expected science return fraction after pass success probability | ratio |
+| `SubsystemAvailability_k` | `subsystem_availability` | availability of required subsystem k | ratio |
+| `OperationsAvailability` | `operations_availability` | serial availability of required operations chain | ratio |
+| `ResourceCapacity` | `resource_capacity` | capacity of a generic constrained resource | varies |
+| `ResourceRequired` | `resource_required` | requirement for a generic constrained resource | varies |
+| `ResourceMargin` | `resource_margin` | absolute margin for a generic resource | varies |
+| `ResourceMarginPercent` | `resource_margin_percent` | percent margin relative to required resource | percent |
+| `PowerAvailable` | `power_available` | available power for mode or interval | W |
+| `PowerRequired` | `power_required` | required power for mode or interval | W |
+| `PowerMargin` | `power_margin` | available minus required power | W |
+| `EnergyGenerated` | `energy_generated` | energy generated during interval | J, Wh |
+| `EnergyStart` | `energy_start` | stored energy at interval start | J, Wh |
+| `EnergyReserve` | `energy_reserve` | required energy reserve | J, Wh |
+| `EnergyBalance` | `energy_balance` | generated plus starting energy minus used energy and reserve | J, Wh |
+| `BatterySOCStart` | `battery_soc_start` | battery state of charge at interval start | ratio |
+| `BatterySOCNext` | `battery_soc_next` | battery state of charge after interval | ratio |
+| `RadiatorCapacity` | `radiator_capacity` | thermal rejection capacity | W |
+| `DissipatedPower` | `dissipated_power` | heat that must be rejected | W |
+| `ThermalDissipationMargin` | `thermal_dissipation_margin` | thermal rejection margin | W |
+| `ModePower` | `mode_power` | power in one scheduled mode | W |
+| `ModeDuration` | `mode_duration` | duration of one scheduled mode | s |
+| `ModeEnergy` | `mode_energy` | energy consumed by one mode | J, Wh |
+| `ModeDataRate` | `mode_data_rate` | data rate generated by one mode | bps |
+| `ModeDataGenerated` | `mode_data_generated` | data generated by one mode | bit |
+| `SumDuration_i` | `mode_total_duration` | total duration accumulated in mode i | s |
+| `AverageModeDutyCycle_i` | `average_mode_duty_cycle` | average duty cycle of mode i over planning period | ratio |
+| `ScheduledTrackTime` | `scheduled_track_time` | total ground-station time scheduled | s |
+| `StationAvailableTime` | `station_available_time` | available station time in the planning interval | s |
+| `StationLoadFactor` | `station_load_factor` | scheduled station time divided by available time | ratio |
+| `ContactWindow_a` / `ContactWindow_b` | `contact_windows` | two contact windows compared for conflict | interval |
+| `same_station` | `same_station_flag` | whether two contacts require the same station resource | boolean |
+| `StationConflict` | `station_conflict` | whether two assigned contacts overlap at one station | boolean |
+| `GroundReturnCompleteness` | `ground_return_completeness` | returned fraction of generated data | ratio |
+| `PriorityWeight_i` | `priority_weight` | priority weight assigned to data product i | ratio |
+| `DownlinkedBits_i` | `downlinked_bits_by_product` | returned bits for product i | bit |
+| `GeneratedBits_i` | `generated_bits_by_product` | generated bits for product i | bit |
+| `PriorityWeightedReturn` | `priority_weighted_return` | priority-weighted data return fraction | ratio |
+| `OnboardCommandProcessingTime` | `onboard_command_processing_time` | onboard command processing delay | s |
+| `GroundProcessingTime` | `ground_processing_time` | ground-side processing delay before response is available | s |
+| `CommandResponseLatency` | `command_response_latency` | expected command-to-response elapsed time | s |
+| `StoredCommandDuration` | `stored_command_duration` | duration covered by stored command timeline | s |
+| `SafeModeHoldTime` | `safe_mode_hold_time` | time spacecraft can hold safe operations without new commands | s |
+| `AutonomyCoverageTime` | `autonomy_coverage_time` | planned plus safe autonomous operations coverage time | s |
+| `OperationsClosureScore` | `operations_closure_score` | conservative scalar summary of normalized storage/power/latency margins | ratio |
 
 ## Optical Communications
 

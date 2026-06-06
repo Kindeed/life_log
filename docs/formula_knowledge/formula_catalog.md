@@ -859,6 +859,36 @@ Notation:
 | SYS-028 | `ContactUtilization = DataVolume / DownlinkCapacityBits` | demanded volume and scheduled capacity | Fraction of scheduled downlink capacity consumed by a demand set. | BOOK-SMAD | Seeded |
 | SYS-029 | `ScienceReturnFraction = DownlinkedScienceBits / GeneratedScienceBits` | science data generated and returned | System-level science return metric for operations trade studies. | BOOK-SMAD, NASA-SST-COMM | Seeded |
 | SYS-030 | `CommandRoundTripLightTime = 2*Range/c` | range and speed of light | First-order two-way light-time relevant to command-response operations. | DSN-810-005, BOOK-SMAD | Seeded |
+| SYS-031 | `ContactWindowDuration = t_LOS - t_AOS` | loss-of-signal and acquisition-of-signal times | Gross duration of one visibility/contact window. | BOOK-SMAD, BOOK-VALLADO | Seeded |
+| SYS-032 | `UsableTrackTime = max(0, ContactWindowDuration - T_acq - T_slew_settle - T_handover_guard - T_config)` | contact overhead terms | Track time remaining after acquisition, slew/settle, handover guard, and configuration overhead. | BOOK-SMAD, NASA-SST-SOA | Seeded |
+| SYS-033 | `ContactDataMarginBits = PassCapacityBits - ContactDemandBits` | pass capacity and demand | Per-contact data-capacity margin before recorder-level carryover. | BOOK-SMAD | Seeded |
+| SYS-034 | `ContactCapacityMarginFraction = ContactDataMarginBits / ContactDemandBits` | margin and demand | Fractional per-contact data margin relative to demanded bits. | NASA-SE-HANDBOOK, BOOK-SMAD | Seeded |
+| SYS-035 | `BacklogNext = max(0, BacklogStart + GeneratedBits - DownlinkedBits)` | data queue state and flows | Downlink backlog after one planning interval. | BOOK-SMAD, NASA-SST-SOA | Seeded |
+| SYS-036 | `BacklogGrowthRate = AverageGeneratedRate - AverageDownlinkRate` | average generation and downlink rates | First-order queue growth or drain rate over a planning period. | BOOK-SMAD | Seeded |
+| SYS-037 | `DataLatency = t_downlink_complete - t_data_generated` | data generation and return times | Latency from data acquisition to complete ground return. | BOOK-SMAD, NASA-SST-SOA | Seeded |
+| SYS-038 | `MaxDataLatency = max_i(DataLatency_i)` | latency samples | Worst-case data-return latency over a schedule or product set. | BOOK-SMAD | Seeded |
+| SYS-039 | `LatencyMargin = LatencyRequirement - MaxDataLatency` | latency requirement and achieved latency | Remaining margin against a data-return latency requirement. | NASA-SE-HANDBOOK, BOOK-SMAD | Seeded |
+| SYS-040 | `ScheduleSlack = LatestFinishTime - EarliestFinishTime` | schedule window bounds | Time slack available before a task or data-return deadline. | NASA-SE-HANDBOOK, BOOK-SMAD | Seeded |
+| SYS-041 | `PassSuccessProbability = LinkAvailability * GroundStationAvailability * SpacecraftModeAvailability` | independent pass success factors | First-order probability that a planned pass can complete under independent availability assumptions. | BOOK-SMAD, NASA-SE-HANDBOOK | Procedure |
+| SYS-042 | `ExpectedDownlinkBits = sum_j(PassCapacityBits_j * PassSuccessProbability_j)` | pass capacities and success probabilities | Expected returned bits over a set of planned contacts. | BOOK-SMAD, NASA-SST-SOA | Seeded |
+| SYS-043 | `ExpectedScienceReturnFraction = ExpectedDownlinkBits / GeneratedScienceBits` | expected returned bits and generated science volume | Expected science-return fraction after pass success probability. | BOOK-SMAD, NASA-SST-SOA | Seeded |
+| SYS-044 | `OperationsAvailability = Product_k(SubsystemAvailability_k)` | required subsystem availabilities | Serial-system availability when every required subsystem must be available. | NASA-SE-HANDBOOK | Procedure |
+| SYS-045 | `ResourceMargin = ResourceCapacity - ResourceRequired` | resource capacity and requirement | Generic absolute margin for power, memory, mass, contact time, or data volume. | NASA-SE-HANDBOOK | Seeded |
+| SYS-046 | `ResourceMarginPercent = 100*ResourceMargin/ResourceRequired` | absolute margin and requirement | Percent margin relative to the required resource. | NASA-SE-HANDBOOK | Seeded |
+| SYS-047 | `PowerMargin = PowerAvailable - PowerRequired` | available and required power | Power budget margin for a mode, pass, or planning interval. | NASA-SE-HANDBOOK, BOOK-SMAD | Seeded |
+| SYS-048 | `EnergyBalance = EnergyGenerated + EnergyStart - EnergyUsed - EnergyReserve` | generated, initial, used, and reserve energy | Energy balance after preserving a required reserve. | BOOK-SMAD, NASA-SST-SOA | Seeded |
+| SYS-049 | `BatterySOCNext = clamp(BatterySOCStart + (EnergyGenerated - EnergyUsed)/BatteryCapacityEnergy, 0, 1)` | battery state and energy flows | First-order battery state of charge after a schedule segment. | BOOK-SMAD, NASA-SST-SOA | Procedure |
+| SYS-050 | `ThermalDissipationMargin = RadiatorCapacity - DissipatedPower` | radiator capacity and dissipated power | Thermal rejection margin for an operating mode. | BOOK-SMAD, NASA-SE-HANDBOOK | Seeded |
+| SYS-051 | `ModeEnergy = ModePower * ModeDuration` | mode power and duration | Energy consumed by one scheduled spacecraft or payload mode. | BOOK-SMAD | Seeded |
+| SYS-052 | `ModeDataGenerated = ModeDataRate * ModeDuration` | mode data rate and duration | Data generated by one scheduled payload or housekeeping mode. | BOOK-SMAD | Seeded |
+| SYS-053 | `AverageModeDutyCycle_i = SumDuration_i / PlanningPeriod` | accumulated mode duration and period | Duty cycle of mode `i` over the operations planning interval. | BOOK-SMAD | Seeded |
+| SYS-054 | `StationLoadFactor = ScheduledTrackTime / StationAvailableTime` | scheduled and available station time | Ground-station loading factor for schedule feasibility. | BOOK-SMAD, DSN-810-005 | Seeded |
+| SYS-055 | `StationConflict = overlap(ContactWindow_a, ContactWindow_b) > 0 and same_station` | contact windows and station assignment | Boolean conflict check for two contacts sharing the same station resource. | BOOK-SMAD | Procedure |
+| SYS-056 | `GroundReturnCompleteness = DownlinkedBits / GeneratedBits` | generated and returned bits | Fraction of generated data returned to ground, independent of science prioritization. | BOOK-SMAD, NASA-SST-SOA | Seeded |
+| SYS-057 | `PriorityWeightedReturn = sum_i(PriorityWeight_i * DownlinkedBits_i) / sum_i(PriorityWeight_i * GeneratedBits_i)` | product priorities and data volumes | Priority-weighted data return metric for operations trade studies. | BOOK-SMAD | Procedure |
+| SYS-058 | `CommandResponseLatency = CommandRoundTripLightTime + OnboardCommandProcessingTime + GroundProcessingTime` | light time and processing delays | Expected time from command transmission to observable response availability. | DSN-810-005, BOOK-SMAD | Seeded |
+| SYS-059 | `AutonomyCoverageTime = StoredCommandDuration + SafeModeHoldTime` | stored command timeline and safe-mode hold | Time the spacecraft can continue planned/safe operations without new ground commands. | NASA-SE-HANDBOOK, BOOK-SMAD | Seeded |
+| SYS-060 | `OperationsClosureScore = min(StoragePeakMarginBits/StorageCapacityBits, PowerMargin/PowerRequired, LatencyMargin/LatencyRequirement)` | normalized storage, power, and latency margins | Conservative scalar summary of system closure bottleneck; UI should also show each contributing margin separately. | NASA-SE-HANDBOOK, BOOK-SMAD | Procedure |
 
 ## Optical / Laser Communication Extensions
 
