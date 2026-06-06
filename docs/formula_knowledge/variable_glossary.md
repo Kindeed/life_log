@@ -342,6 +342,81 @@ This glossary defines shared symbols for the formula knowledge base. App impleme
 | `B_waveform` | `waveform_bandwidth` | waveform or compressed-pulse bandwidth | Hz |
 | `PRF` | `pulse_repetition_frequency` | radar pulse repetition frequency | Hz |
 | `T_coh` | `coherent_integration_time` | coherent processing/integration time | s |
+| `PCN0_DL` | `downlink_residual_carrier_power_noise_density` | downlink residual-carrier power-to-noise spectral density | Hz, dB-Hz |
+| `PTN0_DL` | `downlink_total_power_noise_density` | downlink total carrier/signal power-to-noise spectral density | Hz, dB-Hz |
+| `EsN0` | `symbol_energy_noise_density_linear` | symbol energy to one-sided noise spectral density in linear units | ratio |
+| `S_L` | `costas_squaring_loss` | suppressed-carrier Costas-loop squaring loss | ratio |
+| `rho_L_dB` | `carrier_loop_snr_db` | carrier-loop signal-to-noise ratio | dB |
+| `rho_L_min_dB` | `carrier_loop_snr_threshold_db` | recommended minimum carrier-loop signal-to-noise ratio | dB |
+| `sigma_V` | `range_rate_stddev` | standard deviation of Doppler-derived range rate | m/s |
+| `sigma_VN` | `doppler_thermal_range_rate_stddev` | Doppler range-rate standard deviation from thermal noise | m/s |
+| `sigma_VF` | `doppler_frequency_source_range_rate_stddev` | Doppler range-rate standard deviation from frequency-source instability | m/s |
+| `sigma_VS` | `doppler_scintillation_range_rate_stddev` | Doppler range-rate standard deviation from solar phase scintillation | m/s |
+| `sigma_VI` | `doppler_data_imbalance_range_rate_stddev` | Doppler range-rate standard deviation from telemetry data imbalance | m/s |
+| `theta_t` | `telemetry_modulation_index` | telemetry modulation index used in data-imbalance Doppler model | rad |
+| `Idata` | `telemetry_data_imbalance` | imbalance fraction between binary zero and one telemetry symbols | ratio |
+| `n_zero` | `telemetry_zero_count` | number of logical zero telemetry symbols | count |
+| `n_one` | `telemetry_one_count` | number of logical one telemetry symbols | count |
+| `T_Doppler` | `doppler_integration_time` | Doppler measurement integration time | s |
+| `sigma_y` | `allan_deviation` | Allan deviation of a frequency source over an averaging time | ratio |
+| `sigma_phiN` | `carrier_phase_thermal_stddev` | carrier-loop phase error standard deviation from thermal noise | rad |
+| `sigma_phiF` | `carrier_phase_source_stddev` | carrier-loop phase error standard deviation from phase/frequency source noise | rad |
+| `sigma_phiS` | `carrier_phase_scintillation_stddev` | carrier-loop phase error standard deviation from solar phase scintillation | rad |
+| `RU` | `range_unit` | DSN range unit, proportional to two-way phase delay | unitless |
+| `f_S` | `s_band_uplink_frequency` | S-band uplink carrier frequency | Hz |
+| `f_X` | `x_band_uplink_frequency` | X-band uplink carrier frequency | Hz |
+| `f_K` | `k_band_uplink_frequency` | K-band uplink carrier frequency | Hz |
+| `f_Ka` | `ka_band_uplink_frequency` | Ka-band uplink carrier frequency | Hz |
+| `f_0` | `sequential_component_zero_frequency` | component-zero frequency for sequential ranging | Hz |
+| `f_n` | `sequential_component_frequency` | frequency of sequential ranging component n | Hz |
+| `n_RC` | `range_clock_component_number` | component number used as sequential-ranging range clock | unit |
+| `n_L` | `last_ambiguity_component_number` | last ambiguity-resolving component number in sequential ranging | unit |
+| `f_RC_seq` | `sequential_range_clock_frequency` | sequential-ranging range-clock frequency | Hz |
+| `BandFactor` | `uplink_band_factor` | DSN band-dependent multiplier: 1, 221/749, 221/2407, or 221/3599 | ratio |
+| `f_uplink` | `uplink_carrier_frequency` | selected uplink carrier frequency | Hz |
+| `T1` | `range_clock_integration_time` | integration time for the range clock | s |
+| `T2` | `ambiguity_component_integration_time` | integration time for each ambiguity-resolving component | s |
+| `PRN0` | `ranging_power_noise_density_linear` | ranging signal power to noise spectral density in linear units | Hz |
+| `sigma_rhoN_seq` | `sequential_thermal_range_error` | sequential-ranging thermal-noise range standard deviation | m |
+| `sigma_rhoN_target` | `target_thermal_range_error` | target thermal-noise range standard deviation | m |
+| `sigma_rhoTCT` | `time_code_translator_range_jitter` | range error from Time Code Translator timing jitter | m |
+| `sigma_rho_seq` | `sequential_total_range_error` | sequential-ranging total range standard deviation | m |
+| `N_C` | `ambiguity_component_count` | number of ambiguity-resolving components | count |
+| `P_acq_seq` | `sequential_acquisition_probability` | probability of acquiring a sequential range measurement | ratio |
+| `A_over_B` | `pn_chip_rate_rational_factor` | rational chip-rate factor used by DSN PN ranging | ratio |
+| `l_CR` | `dsn_pn_chip_rate_l` | DSN module 214 PN chip-rate selector | unit |
+| `k_CR` | `dsn_pn_chip_rate_k` | DSN module 214 PN chip-rate exponent selector | unit |
+| `f_chip_DSN` | `dsn_pn_chip_rate` | DSN PN ranging chip rate | chips/s |
+| `f_RC_PN` | `pn_range_clock_frequency` | PN range-clock frequency | Hz |
+| `b_n` | `pn_component_code_bit` | binary bit of PN component code n | bit |
+| `c_n` | `pn_component_code_chip` | bipolar chip of PN component code n | +1/-1 |
+| `lambda_n` | `pn_component_code_length` | length of PN component code n | chips |
+| `L_PN` | `pn_composite_code_period` | composite PN range-code period | chips |
+| `R_1` | `range_clock_cross_correlation_factor` | cross-correlation factor against the range clock | ratio |
+| `T_PN` | `pn_ranging_integration_time` | PN range measurement integration time | s |
+| `sigma_rho_PN` | `pn_thermal_range_error` | PN-ranging thermal-noise range standard deviation | m |
+| `sigma_RR` | `regenerative_ranging_range_error` | regenerative PN range standard deviation | m |
+| `sigma_UL` | `uplink_regeneration_range_error` | range error from uplink range-clock regeneration jitter | m |
+| `B_RL` | `uplink_range_clock_loop_bandwidth` | uplink code/range-clock tracking loop bandwidth | Hz |
+| `PRPT_UL` | `uplink_ranging_power_fraction` | uplink ranging-signal to total-power ratio | ratio |
+| `PTN0_UL` | `uplink_total_power_noise_density` | uplink total power to noise spectral density | Hz |
+| `P_n` | `pn_component_acquisition_probability` | probability of acquiring PN component code n | ratio |
+| `Delta_f_RC` | `range_clock_frequency_mismatch` | frequency mismatch between received range clock and local model | Hz |
+| `SNR_CH` | `vlbi_channel_snr` | single-channel VLBI correlation SNR | ratio |
+| `SNR_post` | `vlbi_post_correlation_snr` | post-correlation VLBI SNR | ratio |
+| `BW_obs` | `vlbi_observation_bandwidth` | observation bandwidth used in VLBI delay error estimate | Hz |
+| `f_CH` | `vlbi_channel_center_frequency` | center frequency of a VLBI synthesis channel | Hz |
+| `f_AVG` | `vlbi_average_channel_frequency` | average center frequency across VLBI synthesis channels | Hz |
+| `BW_RMS` | `vlbi_rms_synthesized_bandwidth` | RMS synthesized bandwidth | Hz |
+| `n_channels` | `vlbi_channel_count` | number of comparable VLBI channels | count |
+| `s_DOR` | `delta_dor_downlink_signal` | Delta-DOR downlink signal model | amplitude |
+| `theta_d` | `telemetry_phase_modulation` | telemetry/data phase modulation process on the Delta-DOR carrier | rad |
+| `theta_1` | `dor_tone_1_modulation_index` | modulation index for DOR tone 1 | rad |
+| `theta_2` | `dor_tone_2_modulation_index` | modulation index for DOR tone 2 | rad |
+| `f_1` | `dor_tone_1_frequency` | first DOR tone frequency | Hz |
+| `f_2` | `dor_tone_2_frequency` | second DOR tone frequency | Hz |
+| `f_DOR` | `dor_tone_frequency` | DOR tone frequency used for single-tone spanned bandwidth | Hz |
+| `B_span_DOR` | `dor_spanned_bandwidth` | spanned bandwidth between DOR spectral components | Hz |
 | `Delta_f_osc` | `oscillator_error` | oscillator frequency error | Hz |
 | `GuardBand` | `protection_band` | allocated guard band | Hz |
 | `b` | `baseline_vector` | Delta-DOR baseline vector | m |

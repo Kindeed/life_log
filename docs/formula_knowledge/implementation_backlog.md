@@ -41,8 +41,8 @@ Each pass should produce a reviewed delta to `formula_catalog.md` and, where nee
    - CCSDS 414.1-B-3 PN Ranging.
    - DSN 810-005 ranging/frequency/timing modules.
    - Extract transparent/regenerative PN ranging modes, chip-rate table, ambiguity, timing, Doppler, Delta-DOR.
-   - Current extraction includes CCSDS PN chip-rate/acquisition/delay limits plus DESCANSO Doppler, Doppler counting, ranging variance, corrected round-trip delay, residuals, RSS uncertainty, VLBI/DOR, and radar-style external measurement formulas.
-   - Use `standard_extracts.md` PN and DSTRK rows to build chip-rate selector validation, annex B regression cases, Doppler-count examples, range-correction examples, and Delta-DOR geometry cases before app UI work.
+   - Current extraction includes CCSDS PN chip-rate/acquisition/delay limits plus DESCANSO and DSN 202/203/210/211/214 Doppler, carrier-loop SNR, Doppler error, Doppler counting, sequential ranging, PN/regenerative ranging, ranging variance, corrected round-trip delay, residuals, RSS uncertainty, VLBI/DOR, and radar-style external measurement formulas.
+   - Use `standard_extracts.md` PN, DSTRK, DSN202, DSN203, DSN210, DSN211, and DSN214 rows to build chip-rate selector validation, annex B regression cases, Doppler-count examples, carrier-loop margin examples, range-correction examples, sequential/PN acquisition examples, and Delta-DOR geometry cases before app UI work.
 
 4. RF/propagation pass:
    - CCSDS 401.0-B RF/modulation.
@@ -129,12 +129,16 @@ Recommended implementation order:
 
 6. Tracking/ranging workbench:
    - PN ranging resolution/ambiguity
+   - sequential ranging RU, component frequency, acquisition probability, and cycle time
    - Doppler and range-rate
+   - Doppler carrier-loop SNR and lock margin
+   - Doppler range-rate error budget
    - Doppler count interval and resolver quantization
    - corrected round-trip propagation time and range residual
    - radiometric RSS error budget
    - oscillator guard margin
    - Delta-DOR geometry estimates
+   - VLBI synthesized bandwidth and delay/path error
    - radar/external-measurement range, resolution, PRF ambiguity, and velocity-resolution cards
 
 7. System closure workbench:

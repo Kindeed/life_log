@@ -35,7 +35,7 @@ This file turns the source registry into concrete extraction work. The intent is
 
 | Source | Extract | Output artifacts | Formula catalog targets | Notes |
 | --- | --- | --- | --- | --- |
-| DSN 810-005 | DSN link, telemetry, command, ranging, frequency/timing modules | DSN scenario checklist, station-parameter fields | LINK, TC, TRK, ORB | Module 105E atmospheric attenuation/noise-temperature formulas extracted; station antenna modules 101/103/104 remain. |
+| DSN 810-005 | DSN link, telemetry, command, ranging, Doppler, Delta-DOR, VLBI, frequency/timing modules | DSN scenario checklist, station-parameter fields, tracking/ranging observable formulas | LINK, TC, TRK, ORB | Module 105E atmospheric attenuation/noise-temperature formulas extracted; modules 202E/203E/210E/211G/214C first-pass tracking/ranging formulas extracted; station antenna modules 101/103/104 and detailed error-budget tables remain. |
 | DESCANSO-DSTSE | antenna gain, effective aperture, system temperature, link derivation, Doppler, ranging, VLBI/DOR, radiometric error budgets | derivation notes, variable definitions, tracking observable notes | RF-003, RF-004, RF-010, RF-021 to RF-030, LINK-003, LINK-027 to LINK-037, TRK-024 to TRK-053 | Antenna/link formulas plus first-pass Doppler, Doppler counting, ranging delay variance, corrected round-trip delay, residual, RSS uncertainty, and DOR/VLBI formulas extracted. |
 | Balanis | antenna parameters, Friis, radar equation, antenna temperature, arrays | antenna formula batch | RF, TRK-014, TRK-015 | Use published-book concepts; do not copy text. |
 | Sklar / Proakis / Haykin | BER/PER, modulation, coding, synchronization, source coding | digital-comms formula batch | BB-001 to BB-062, COMP, PROTO | Baseband timing/energy, Shannon/Nyquist, pulse shaping, quantization, matched-filter, OFDM, phase-jitter, and MIMO seeds added; detailed BER tables and synchronization loop procedures remain. |
@@ -47,7 +47,7 @@ This file turns the source registry into concrete extraction work. The intent is
 | Batch | Status | Completion evidence required |
 | --- | --- | --- |
 | Source registry | started | Every source has official/publisher URL and intended use. |
-| Formula seed catalog | started | Each domain has formula entries and variable definitions; current catalog has 353 formula or formula-family rows. |
+| Formula seed catalog | started | Each domain has formula entries and variable definitions; update the formula count in `coverage_matrix.md` after each committed extraction batch. |
 | CCSDS table extraction | started | Table entries captured with source section/page references and tests for selected examples; CCSDS 131 B-5, 231, 132, 232, and 414.1 have first-pass extracts. |
 | ITU-R propagation procedures | not started | Procedure checklist, coefficient schema, validity ranges, and sample validation cases. |
 | App integration | not started for new knowledge base | Data model, calculators, tests, and phone UI verification. |

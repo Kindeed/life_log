@@ -322,6 +322,52 @@ Notation:
 | TRK-059 | `DopplerResolution = 1/T_coh` | coherent integration time | Doppler-bin resolution for coherent processing. | BOOK-BALANIS, BOOK-SKLAR | Seeded |
 | TRK-060 | `VelocityResolution_mono = lambda/(2*T_coh)` | monostatic radar wavelength | Radial-velocity resolution from Doppler resolution. | BOOK-BALANIS | Seeded |
 | TRK-061 | `VelocityUnamb_mono = lambda*PRF/4` | pulse repetition frequency | First-order unambiguous radial velocity for pulsed monostatic radar. | BOOK-BALANIS | Seeded |
+| TRK-062 | `rho_L_residual = PCN0_DL / B_L` | residual carrier `P_C/N0`, loop bandwidth | DSN residual-carrier loop signal-to-noise ratio. | DSN-810-005-202 | Seeded |
+| TRK-063 | `rho_L_residual_nrz = PCN0_DL / (B_L * (1 + 2*EsN0))` | direct NRZ telemetry on residual carrier | Residual-carrier loop SNR including direct-modulation telemetry sideband loss. | DSN-810-005-202 | Seeded |
+| TRK-064 | `rho_L_bpsk = PTN0_DL * S_L / B_L` | total downlink power-to-noise density and squaring loss | Suppressed-carrier BPSK Costas-loop signal-to-noise ratio. | DSN-810-005-202 | Seeded |
+| TRK-065 | `S_L = EsN0^2 / (1 + 2*EsN0)` | symbol energy-to-noise density | Suppressed-carrier BPSK Costas-loop squaring loss. | DSN-810-005-202 | Seeded |
+| TRK-066 | `rho_L_margin_dB = rho_L_dB - rho_L_min_dB` | `rho_L_min_dB`: mode threshold | Carrier-loop lock margin against DSN recommended minima. | DSN-810-005-202 | Seeded |
+| TRK-067 | `sigma_f_oneway = f_C * sigma_V / c` | range-rate standard deviation | Converts one-way Doppler range-rate error to frequency error. | DSN-810-005-202 | Seeded |
+| TRK-068 | `sigma_f_twoway = 2*f_C * sigma_V / c` | two-way or three-way range-rate error | Converts coherent two-way/three-way range-rate error to Doppler frequency error. | DSN-810-005-202 | Seeded |
+| TRK-069 | `sigma_V_total = sqrt(sigma_VN^2 + sigma_VF^2 + sigma_VS^2)` | thermal, frequency-source, scintillation terms | DSN Doppler range-rate error root-sum-square model. | DSN-810-005-202 | Seeded |
+| TRK-070 | `Idata = abs(n_zero - n_one) / (n_zero + n_one)` | telemetry symbol counts | Direct-modulation data imbalance. | DSN-810-005-202 | Seeded |
+| TRK-071 | `sigma_VI_oneway ~= c*theta_t*Idata*B_L / (sqrt(24)*pi*f_C)` | direct BPSK imbalance | One-way Doppler error from data imbalance. | DSN-810-005-202 | Seeded |
+| TRK-072 | `sigma_VI_twoway ~= c*theta_t*Idata*B_L / (2*sqrt(24)*pi*f_C)` | direct BPSK imbalance | Two-way/three-way Doppler error from data imbalance. | DSN-810-005-202 | Seeded |
+| TRK-073 | `sigma_VN_oneway^2 = 2*(c/(2*pi*f_C*T_Doppler))^2 / rho_L` | thermal noise and count time | One-way Doppler range-rate variance from downlink thermal noise. | DSN-810-005-202 | Seeded |
+| TRK-074 | `sigma_VF_oneway ~= c*sigma_y(T_Doppler)` | Allan deviation | One-way Doppler range-rate error from frequency-source instability when the loop passes the source phase noise. | DSN-810-005-202 | Seeded |
+| TRK-075 | `sigma_phi_total = sqrt(sigma_phiN^2 + sigma_phiF^2 + sigma_phiS^2)` | carrier-loop phase-error terms | Carrier phase-error RSS model; separate from Doppler measurement error. | DSN-810-005-202 | Seeded |
+| TRK-076 | `TwoWayDelay_S = 2*RU/f_S` | S-band uplink carrier | DSN range-unit conversion to two-way time delay for S-band uplink. | DSN-810-005-203, DSN-810-005-214 | Seeded |
+| TRK-077 | `TwoWayDelay_X = (749/221) * 2*RU/f_X` | X-band uplink carrier | DSN range-unit conversion to two-way time delay for X-band uplink. | DSN-810-005-203, DSN-810-005-214 | Seeded |
+| TRK-078 | `TwoWayDelay_K = (2407/221) * 2*RU/f_K` | K-band uplink carrier | DSN range-unit conversion to two-way time delay for K-band uplink. | DSN-810-005-203, DSN-810-005-214 | Seeded |
+| TRK-079 | `TwoWayDelay_Ka = (3599/221) * 2*RU/f_Ka` | Ka-band uplink carrier | DSN range-unit conversion to two-way time delay for Ka-band uplink. | DSN-810-005-203, DSN-810-005-214 | Seeded |
+| TRK-080 | `f_n = 2^(-n) * f_0` | sequential ranging component number | Sequential-ranging component frequency. | DSN-810-005-203 | Seeded |
+| TRK-081 | `AmbiguityRange_n = c / (2*f_n)` | component frequency | A-priori one-way range ambiguity tolerance for a periodic range component. | DSN-810-005-203 | Seeded |
+| TRK-082 | `f_RC_seq = 2^(-7-n_RC) * BandFactor * f_uplink` | uplink band and range-clock component | Sequential-ranging range-clock frequency. `BandFactor` is 1, 221/749, 221/2407, or 221/3599 for S/X/K/Ka uplink. | DSN-810-005-203 | Seeded |
+| TRK-083 | `SeqCycleTime = T1 + 3 + (n_L - n_RC)*(T2 + 1)` | sequential-ranging timing choices | Cycle time for one sequential-ranging measurement. | DSN-810-005-203 | Seeded |
+| TRK-084 | `sigma_rhoN_seq = c / (sqrt(32)*pi*f_RC_seq*sqrt(T1*PRN0))` | range-clock integration and ranging `Pr/N0` | Sequential-ranging thermal-noise range error for sinewave range clock. | DSN-810-005-203 | Seeded |
+| TRK-085 | `T1_required_seq = c^2 / (32*pi^2*f_RC_seq^2*PRN0*sigma_rhoN_target^2)` | target thermal range error | Required range-clock integration time for sequential-ranging thermal-noise target. | DSN-810-005-203 | Seeded |
+| TRK-086 | `sigma_rho_seq = sqrt(sigma_rhoN_seq^2 + sigma_rhoTCT^2)` | thermal and TCT jitter terms | Sequential-ranging range error including Time Code Translator jitter. | DSN-810-005-203 | Seeded |
+| TRK-087 | `sigma_tau_seq = 2*sigma_rho_seq / c` | one-way range error | Sequential-ranging two-way delay standard deviation. | DSN-810-005-203 | Seeded |
+| TRK-088 | `N_C = n_L - n_RC` | last and range-clock component numbers | Number of ambiguity-resolving components in sequential ranging. | DSN-810-005-203 | Seeded |
+| TRK-089 | `P_acq_seq = (0.5 + 0.5*erf(sqrt(T2*PRN0)))^N_C` | ambiguity component integration | Sequential-ranging probability of acquisition. | DSN-810-005-203 | Seeded |
+| TRK-090 | `f_chip_DSN = BandFactor * (A_over_B) * f_uplink` | PN ranging chip-rate factor | DSN PN chip rate for S/X/K/Ka uplinks using the module 214 band factor. | DSN-810-005-214, CCSDS-414.1 | Seeded |
+| TRK-091 | `A_over_B = l_CR / (128 * 2^k_CR)` | PN chip-rate selectors | Rational chip-rate factor used by DSN module 214. | DSN-810-005-214, CCSDS-414.1 | Seeded |
+| TRK-092 | `f_RC_PN = f_chip_DSN / 2` | PN chip rate | PN range-clock frequency. | DSN-810-005-214, CCSDS-414.1 | Seeded |
+| TRK-093 | `c_n(i) = 2*b_n(i) - 1` | binary component code bit | Converts PN component-code bits to bipolar chips. | DSN-810-005-214 | Seeded |
+| TRK-094 | `b_n_periodic(i) = b_n(i mod lambda_n)` | finite PN component code | Periodic extension of a component code. | DSN-810-005-214 | Seeded |
+| TRK-095 | `L_PN = product(lambda_n) = 1009470` | six DSN/CCSDS component-code lengths | Composite PN range-code period. | DSN-810-005-214, CCSDS-414.1 | Seeded |
+| TRK-096 | `PN_AmbiguityResolution = c*L_PN/(4*f_RC_PN)` | PN code period and range clock | One-way ambiguity resolution of the DSN/T4B/T2B PN range code family. | DSN-810-005-214 | Seeded |
+| TRK-097 | `sigma_rho_PN = c / (f_RC_PN*A_c*R_1*sqrt(32*pi^2*T_PN*PRN0))` | PN code, correlation loss, integration | PN-ranging thermal-noise range error. | DSN-810-005-214 | Seeded |
+| TRK-098 | `sigma_RR = sqrt(sigma_rho_PN^2 + sigma_UL^2)` | downlink and uplink-regeneration terms | Regenerative PN ranging total range error. | DSN-810-005-214 | Seeded |
+| TRK-099 | `sigma_UL = c/(4*pi*R_1*f_RC_PN) * sqrt(B_RL/(PRPT_UL*PTN0_UL))` | uplink range-clock tracking loop | Uplink thermal-noise range error term for regenerative PN ranging. | DSN-810-005-214 | Seeded |
+| TRK-100 | `P_acq_PN = product(P_n for n=2..6)` | component-code acquisition probabilities | PN range-code probability of acquisition. | DSN-810-005-214 | Seeded |
+| TRK-101 | `A_c = abs(sinc(2*Delta_f_RC*T_PN))` | non-coherent range-clock frequency mismatch | PN non-coherent correlation amplitude loss. | DSN-810-005-214 | Seeded |
+| TRK-102 | `SNR_post = n_channels * SNR_CH` | comparable VLBI channels | Post-correlation SNR from multiple similar VLBI channels. | DSN-810-005-211 | Seeded |
+| TRK-103 | `sigma_path_VLBI = c/(2*pi*SNR_post*BW_obs)` | post-correlation SNR and observation bandwidth | VLBI path-length error from correlation delay measurement. | DSN-810-005-211 | Seeded |
+| TRK-104 | `BW_RMS = sqrt(sum((f_CH - f_AVG)^2)/n_channels)` | channel center frequencies | RMS synthesized bandwidth for wideband VLBI. | DSN-810-005-211 | Seeded |
+| TRK-105 | `s_DOR(t) = sqrt(2*P_T)*sin(2*pi*f_c*t + theta_d(t) + theta_1*sin(2*pi*f_1*t) + theta_2*sin(2*pi*f_2*t))` | carrier, telemetry, and DOR tones | Delta-DOR downlink signal model with one or two sinusoidal DOR tones. | DSN-810-005-210 | Seeded |
+| TRK-106 | `B_span_DOR_single = 2*f_DOR` | one sinusoidal DOR tone | Spanned bandwidth between the lower and upper fundamental harmonics of one DOR tone. | DSN-810-005-210 | Seeded |
+| TRK-107 | `DelayAmbiguity_DOR = 1/B_span_DOR` | spanned bandwidth | Differential group-delay ambiguity spacing for DOR tone geometry. | DSN-810-005-210 | Seeded |
 
 ## System-Level Mission and Operations Budgets
 
