@@ -39,7 +39,9 @@ Each pass should produce a reviewed delta to `formula_catalog.md` and, where nee
    - Use `standard_extracts.md` CCSDS 132/133/232/732.1 rows to create TM/Space Packet/TC/USLP field-capacity schemas, packet-efficiency outputs, VCF Count/OID validation, and SDLS overhead test cases.
    - Current CCSDS 133.0-B-2 extraction covers Space Packet primary-header width, data-field length count, min/max packet length, APID/idle packet constants, sequence-count modulus, secondary-header/user-data capacity, and packet efficiency.
    - Current CCSDS 732.1-B-3 extraction covers USLP identifier widths, non-truncated and truncated primary-header sizes, Frame Length count, VCF Count length/modulus, TFDF/TFDZ capacity, OCF/FECF overhead, OID constants, fixed-TFDZ idle fill, SDLS capacity, and first-order segmentation count.
-   - Remaining data-link work is exact AOS B-5 retrieval/extraction, packet extraction examples across TM/AOS/USLP, machine-readable construction-rule tables, and COP/FARM timing.
+   - Remaining data-link work is exact AOS B-5 retrieval/extraction, packet extraction examples across TM/AOS/USLP, and machine-readable construction-rule tables.
+   - Current CCSDS 232.1-B-2 extraction covers COP-1 FOP/FARM variables, 8-bit sequence arithmetic, `T1_Initial` delay budget, Transmission_Limit/Count, Sent_Queue, FOP/FARM sliding windows, CLCW reporting period, and Type-BD one-shot behavior.
+   - Remaining COP work is state-table event test extraction, PLOP timing, and systematic retransmission examples.
 
 3. Ranging/tracking pass:
    - CCSDS 414.1-B-3 PN Ranging.
@@ -154,6 +156,7 @@ Recommended implementation order:
    - CLTU overhead
    - sync marker overhead
    - selected code-rate tables
+   - COP-1 FOP/FARM sequence state, T1 timer budget, FOP/FARM window checks, retransmission limit, Sent_Queue, and CLCW reporting cadence
    - USLP MCID/GVCID/GMAP ID widths, VCF Count options, truncated frames, TFDF/TFDZ, OID, and SDLS overhead
    - Proximity-1 Version-3 Transfer Frame header/data-field efficiency
    - Proximity-1 PLTU/CRC/ASM efficiency

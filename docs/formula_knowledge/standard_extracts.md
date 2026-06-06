@@ -271,7 +271,8 @@ Sources: Vallado, `Fundamentals of Astrodynamics and Applications`; Bate, Muelle
 | CCSDS-231 | Listed as source; CLTU formulas partly seeded | BCH/LDPC codeword sizing, CLTU start/tail lengths, fill formulas, managed parameters extracted | Extract PLOP timing details and any mission-specific maximum CLTU constraints when implementing. |
 | CCSDS-132 | Listed as source; generic TM frame formulas seeded | TM primary/secondary header fields, data-field capacity, OCF/FECF overhead, SDLS capacity extracted | Add machine-readable field schema and examples for packet/OID extraction. |
 | CCSDS-133 | Referenced by seeded packet overhead formulas; no extracted rows | Space Packet primary-header field widths, packet length count, APID/idle packet, sequence modulus, secondary-header/user-data capacity, and packet efficiency extracted | Add packet extraction examples across TM/AOS/USLP frames and optional secondary-header schemas. |
-| CCSDS-232 | Listed as source; generic TC frame formulas seeded | TC frame length count, data-field capacity, segment header, control command sizes, FECF, SDLS capacity extracted | Add COP/FARM timing and sequence-control behavior in a later pass. |
+| CCSDS-232 | Listed as source; generic TC frame formulas seeded | TC frame length count, data-field capacity, segment header, control command sizes, FECF, SDLS capacity extracted | Add cross-standard TC/COP examples when implementing. |
+| CCSDS-232.1 | Listed as future COP/FARM source; only generic ARQ formulas existed | COP-1 FOP/FARM variables, go-back-N retransmission, 8-bit sequence modulus, `T1_Initial` delay budget, Transmission_Limit/Count, FOP/FARM windows, CLCW reporting period, and BD one-shot behavior extracted | Convert FOP/FARM state-table events into machine-readable procedure tests before app implementation. |
 | CCSDS-732.1 | Listed as source; generic USLP overhead formulas seeded | USLP identifier widths, primary-header length, Frame Length count, VCF Count options, truncated header, TFDF/TFDZ capacity, OCF/FECF, OID constants, and SDLS TFDF capacity extracted | Add AOS cross-check, exact packet extraction examples, SDLS managed-parameter options, and machine-readable TFDZ construction-rule table. |
 
 ## CCSDS 231.0-B-4 TC Synchronization and Channel Coding
@@ -290,6 +291,27 @@ Source: CCSDS 231.0-B-4, `TC Synchronization and Channel Coding`, July 2021.
 | TCCH-008 | Section 5.2.2 | Start sequence lengths: 16 bits for BCH; 64 bits for LDPC | Start bit patterns are standard constants; calculators normally only need lengths. |
 | TCCH-009 | Section 5.2.4 | Tail sequence lengths: 64 bits for BCH; optional 128 bits for LDPC(128,64); no tail for LDPC(512,256) | Tail handling is a managed option for short LDPC. |
 | TCCH-010 | Section 8.2 | Managed parameters include code type, maximum CLTU length, repetitions maximum, PLOP, BCH randomizer, BCH decoding mode, LDPC code length, LDPC tail usage | Convert to calculator validation/options before app implementation. |
+
+## CCSDS 232.1-B-2 Communications Operation Procedure-1
+
+Source: CCSDS 232.1-B-2, `Communications Operation Procedure-1`, September 2010, including Technical Corrigendum 1 dated April 2019.
+
+| Extract ID | Standard location | Equation or table | Implementation note |
+| --- | --- | --- | --- |
+| COP1-001 | Sections 2.1 and 2.2 | COP-1 uses go-back-N ARQ; FOP-1 retransmits all unacknowledged Type-A Transfer Frames on the VC when a CLCW Retransmit flag or timeout requires recovery | Catalog adds `COP1_GoBackN_RetransmitFrames = SentQueueLength`. |
+| COP1-002 | Section 5.1.1 | FOP-1 maintains per-VC variables including `V(S)`, Wait_Queue, Sent_Queue, `NN(R)`, `T1_Initial`, Transmission_Limit, Transmission_Count, `K`, Timeout_Type, and Suspend_State | Variable glossary adds COP-1 field IDs for calculator state display and validation. |
+| COP1-003 | Sections 5.1.3 and 5.2.4 | `V(S)` supplies the next Type-AD `N(S)` and is incremented after insertion into the frame | Catalog adds modulo-256 next-sequence formula. |
+| COP1-004 | Section 5.1.8 | `NN(R)` is the sequence number of the oldest unacknowledged AD frame on the Sent_Queue | Catalog adds outstanding-frame distance between `V(S)` and `NN(R)`. |
+| COP1-005 | Section 5.1.9.2 | Normal `T1_Initial` lower bound is the sum of sending lower-layer delay, maximum-frame serial transmit time, forward light time, receiving lower-layer delay, CLCW sample/encode time, return CLCW transmit time, return light time, and CLCW extraction/delivery time | Catalog adds `COP1_T1_Min` and the maximum-frame transmit-time subformula. |
+| COP1-006 | Sections 5.1.10.2 and 5.1.10.4 | Transmission_Limit applies to the first frame on the Sent_Queue; Transmission_Count increments on retransmission and resets to 1 after acknowledgements or when a new queue starts | Catalog adds attempts remaining, retransmission-allowed, and first-frame max-transmission formulas. |
+| COP1-007 | Section 5.1.4 | Wait_Queue maximum capacity is one Type-AD FDU | Catalog adds `COP1_WaitQueueCapacityFDUs = 1`. |
+| COP1-008 | Section 5.2.10 | A new Type-AD FDU can be transmitted when `V(S) < NN(R) + K` and an FDU is waiting, with modulo arithmetic for the 8-bit sequence space | Catalog adds FOP window-open test using modulo distance. |
+| COP1-009 | Section 6.1.8 and table 7-2 | With Type-AD retransmission allowed, FARM window `W` is an even integer from 2 to 254; `PW=NW=W/2` | Catalog adds FARM window range and split formulas. |
+| COP1-010 | Section 6.1.8.3.1 | Positive-window condition covers expected and ahead-of-expected `N(S)` values; `N(S)=V(R)` is accepted, larger positive offsets are discarded and set Retransmit | Catalog adds positive-window offset and condition formulas. |
+| COP1-011 | Section 6.1.8.3.1 | Negative-window frames are discarded without additional action; outside the FARM window causes lockout | Catalog adds negative-window and lockout-area condition formulas. |
+| COP1-012 | Section 6.2 note | COP-1 Frame Sequence Number is an 8-bit field; FARM arithmetic for `V(R)`, `N(S)`, `PW`, and `NW` is modulo 256 | Catalog adds `COP1_FrameSequenceModulus = 256`. |
+| COP1-013 | Tables 7-1 and 7-2 | Managed parameters include `K` in 1..255 with `K <= PW`, `Timeout_Type` in {0,1}, FARM `W/PW/NW`, and CLCW reporting period | Catalog adds K constraint and CLCW report-rate formula. |
+| COP1-014 | Sections 5.1.9 and 5.1.10.4 | Type-BD expedited frames do not use the Timer or Transmission_Count and are transmitted once | Catalog adds `COP1_BD_MaxTransmissions = 1`. |
 
 ## CCSDS 132.0-B-3 TM Space Data Link Protocol
 

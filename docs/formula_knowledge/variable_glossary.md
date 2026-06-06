@@ -374,6 +374,37 @@ This glossary defines shared symbols for the formula knowledge base. App impleme
 | `n_ldpc` | `ldpc_codeword_bits` | LDPC transmitted codeword length | bit |
 | `TailBits` | `tail_bits` | CLTU tail-sequence length | bit |
 | `Repetitions` | `cltu_repetitions` | number of CLTU transfers requested by the repetitions parameter | unit |
+| `COP1_FrameSequenceModulus` | `cop1_frame_sequence_modulus` | modulo base for COP-1 8-bit frame sequence arithmetic | unit |
+| `V_S` | `cop1_transmitter_frame_sequence_number` | FOP-1 Transmitter_Frame_Sequence_Number, the next Type-AD `N(S)` to transmit | integer |
+| `V_R` | `cop1_receiver_frame_sequence_number` | FARM-1 Receiver_Frame_Sequence_Number, the next expected Type-AD `N(S)` | integer |
+| `N_S` | `cop1_frame_sequence_number` | Frame Sequence Number in a Type-AD Transfer Frame primary header | integer |
+| `N_R` | `cop1_next_expected_frame_sequence_number` | Next Expected Frame Sequence Number reported in a CLCW | integer |
+| `NN_R` | `cop1_expected_acknowledgement_frame_sequence_number` | oldest unacknowledged Type-AD frame sequence number on the Sent_Queue | integer |
+| `K` | `cop1_fop_sliding_window_width` | FOP_Sliding_Window_Width managed parameter | frame |
+| `W` | `cop1_farm_sliding_window_width` | FARM_Sliding_Window_Width managed parameter | frame |
+| `PW` | `cop1_farm_positive_window_width` | positive part of the FARM sliding window | frame |
+| `NW` | `cop1_farm_negative_window_width` | negative part of the FARM sliding window | frame |
+| `COP1_OutstandingADFrames` | `cop1_outstanding_ad_frames` | Type-AD sequence distance between `V(S)` and `NN(R)` | frame |
+| `COP1_FOPWindowOpen` | `cop1_fop_window_open` | whether FOP-1 may accept/transmit another Type-AD FDU under window control | boolean |
+| `T1_Initial` | `cop1_t1_initial` | FOP-1 timer initial value | s |
+| `t_send_lower` | `cop1_sending_lower_processing_time` | processing delay below FOP-1 at the sending end | s |
+| `T_max_frame_tx` | `cop1_max_frame_transmission_time` | time to radiate a maximum-length transfer frame including CLTU and coding bits | s |
+| `MaxCLTUBits` | `max_cltu_bits` | maximum CLTU/coded bit count for the selected TC path | bit |
+| `tau_forward` | `forward_one_way_light_time` | one-way propagation time from sender to receiver | s |
+| `tau_return` | `return_one_way_light_time` | one-way propagation time for the return CLCW path | s |
+| `t_farm_lower` | `cop1_receiving_lower_processing_time` | processing delay below FARM-1 at the receiving end | s |
+| `t_clcw_sample` | `clcw_status_sample_encode_time` | worst-case time to sample and encode FARM-1 status as a CLCW | s |
+| `T_clcw_tx` | `clcw_return_transmission_time` | worst-case time to transmit the CLCW in the return-link data structure | s |
+| `t_clcw_extract` | `clcw_extract_delivery_time` | time to extract the CLCW and deliver it to FOP-1 | s |
+| `Transmission_Limit` | `cop1_transmission_limit` | maximum transmissions of the first frame on the Sent_Queue, including first transmission | unit |
+| `Transmission_Count` | `cop1_transmission_count` | count of transmissions for the first frame on the Sent_Queue | unit |
+| `COP1_AttemptsRemaining` | `cop1_attempts_remaining` | remaining transmissions before reaching Transmission_Limit | unit |
+| `SentQueueLength` | `cop1_sent_queue_length` | number of Type-AD or Type-BC frames held in the Sent_Queue | frame |
+| `COP1_PositiveWindowOffset` | `cop1_positive_window_offset` | modulo-256 distance from `V(R)` to received `N(S)` | frame |
+| `COP1_NegativeWindowOffset` | `cop1_negative_window_offset` | modulo-256 distance from received `N(S)` back to `V(R)` | frame |
+| `CLCW_ReportingPeriod` | `clcw_reporting_period` | managed CLCW status reporting period | s |
+| `CLCW_ReportRate` | `clcw_report_rate` | CLCW status reports per second | Hz |
+| `Timeout_Type` | `cop1_timeout_type` | FOP-1 timeout action selector, 0 or 1 | enum |
 
 ## Tracking, Ranging, and Doppler
 

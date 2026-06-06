@@ -371,6 +371,29 @@ Notation:
 | TC-023 | `LDPC_CLTU_Bits = 64 + n_ldpc * LDPC_Codewords + TailBits` | start sequence, LDPC codewords, optional tail | Total CLTU size when LDPC coding is used. `TailBits` is 0 or 128 for LDPC(128,64), and 0 for LDPC(512,256). | CCSDS-231 | Seeded |
 | TC-024 | `RepeatedCLTUBits = Repetitions * CLTU_Bits` | repetitions parameter | Radiated CLTU bit count for repeated transfer. | CCSDS-231 | Seeded |
 | TC-025 | `CLTU_Duration = CLTU_Bits / ChannelSymbolRate` | channel symbol/bit rate after coding | First-order CLTU transmission duration. | CCSDS-231 | Seeded |
+| TC-026 | `COP1_FrameSequenceModulus = 2^8 = 256` | COP-1 Frame Sequence Number width | Wrap modulus for COP-1 `N(S)`, `V(S)`, `V(R)`, `N(R)`, and `NN(R)` arithmetic. | CCSDS-232.1 | Seeded |
+| TC-027 | `COP1_NextVS = (V_S + 1) mod 256` | transmitter frame sequence number | FOP-1 increments `V(S)` after inserting it into the `N(S)` field of a Type-AD Transfer Frame. | CCSDS-232.1 | Seeded |
+| TC-028 | `COP1_OutstandingADFrames = (V_S - NN_R) mod 256` | `V(S)` and oldest unacknowledged frame | Count of Type-AD frames transmitted ahead of the oldest unacknowledged frame. | CCSDS-232.1 | Seeded |
+| TC-029 | `COP1_FOPWindowOpen = COP1_OutstandingADFrames < K` | FOP sliding-window width | FOP-1 may transmit a new Type-AD FDU only while the outstanding sequence distance is within the FOP sliding window. | CCSDS-232.1 | Procedure |
+| TC-030 | `1 <= K <= min(PW,255)` | FOP and FARM positive-window widths | Managed-parameter constraint for `FOP_Sliding_Window_Width`; `K` may never exceed 255. | CCSDS-232.1 | Seeded |
+| TC-031 | `COP1_T1_Min = t_send_lower + T_max_frame_tx + tau_forward + t_farm_lower + t_clcw_sample + T_clcw_tx + tau_return + t_clcw_extract` | COP-1 timer-delay components | Minimum normal-operation `T1_Initial` budget for one VC, following the standard's listed delay components. | CCSDS-232.1 | Seeded |
+| TC-032 | `T_max_frame_tx = MaxCLTUBits / UplinkBitRate` | maximum-length transfer frame with CLTU/coding bits | Serial transmission time term used inside the `T1_Initial` budget. | CCSDS-232.1, CCSDS-231 | Seeded |
+| TC-033 | `COP1_RoundTripLightTime = tau_forward + tau_return` | forward and return one-way light times | Propagation part of the COP-1 acknowledgement loop, including relay paths when present. | CCSDS-232.1, BOOK-SMAD | Seeded |
+| TC-034 | `COP1_AttemptsRemaining = Transmission_Limit - Transmission_Count` | FOP-1 transmission counters | Remaining transmissions before the first frame on the Sent_Queue reaches the managed transmission limit. | CCSDS-232.1 | Seeded |
+| TC-035 | `COP1_RetransmissionAllowed = Transmission_Count < Transmission_Limit` | transmission count and limit | Condition for timer-triggered recovery before an Alert or Suspend action. | CCSDS-232.1 | Procedure |
+| TC-036 | `COP1_FirstFrameMaxTransmissions = Transmission_Limit` | managed transmission limit | Maximum number of transmissions of the first frame on the Sent_Queue, including the first transmission. | CCSDS-232.1 | Seeded |
+| TC-037 | `COP1_WaitQueueCapacityFDUs = 1` | FOP-1 Wait_Queue | Maximum number of Type-AD FDUs held in the FOP-1 Wait_Queue. | CCSDS-232.1 | Seeded |
+| TC-038 | `COP1_GoBackN_RetransmitFrames = SentQueueLength` | unacknowledged Sent_Queue frames | Go-back-N retransmission resends all unacknowledged Type-A Transfer Frames on the VC. | CCSDS-232.1 | Seeded |
+| TC-039 | `COP1_FARM_W_Range = even W, 2 <= W <= 254` | retransmission-allowed FARM window | FARM sliding-window total width constraint when Type-AD retransmission is allowed. | CCSDS-232.1 | Seeded |
+| TC-040 | `COP1_FARM_PW = COP1_FARM_NW = W/2` | FARM total, positive, and negative windows | Positive and negative FARM window widths for normal retransmission-allowed COP-1 operation. | CCSDS-232.1 | Seeded |
+| TC-041 | `COP1_FARM_LockoutSpan = 256 - W` | frame sequence modulus and FARM window | Sequence-number span outside the FARM sliding window. | CCSDS-232.1 | Seeded |
+| TC-042 | `COP1_PositiveWindowOffset = (N_S - V_R) mod 256` | received frame sequence and receiver expected sequence | Sequence distance from expected frame into the positive side of the FARM window. | CCSDS-232.1 | Seeded |
+| TC-043 | `COP1_InPositiveWindow = 0 <= COP1_PositiveWindowOffset <= PW - 1` | positive-window offset and width | FARM positive-window test; `N(S)=V(R)` is the accept case, larger positive offsets are discarded and set Retransmit. | CCSDS-232.1 | Procedure |
+| TC-044 | `COP1_NegativeWindowOffset = (V_R - N_S) mod 256` | receiver expected sequence and received frame sequence | Sequence distance from expected frame into the negative side of the FARM window. | CCSDS-232.1 | Seeded |
+| TC-045 | `COP1_InNegativeWindow = 1 <= COP1_NegativeWindowOffset <= NW` | negative-window offset and width | FARM negative-window test for duplicate or late retransmitted Type-AD frames that are discarded without additional action. | CCSDS-232.1 | Procedure |
+| TC-046 | `COP1_InLockoutArea = not (COP1_InPositiveWindow or COP1_InNegativeWindow)` | FARM window tests | FARM lockout-area condition; lockout frames are discarded and set the Lockout Flag. | CCSDS-232.1 | Procedure |
+| TC-047 | `CLCW_ReportRate = 1 / CLCW_ReportingPeriod` | FARM managed reporting period | CLCW status reporting cadence for COP-1 acknowledgement and flow-control visibility. | CCSDS-232.1 | Seeded |
+| TC-048 | `COP1_BD_MaxTransmissions = 1` | Type-BD expedited service | Type-BD frames do not use the COP-1 timer or Transmission_Count and are transmitted once. | CCSDS-232.1 | Seeded |
 
 ## Ranging, Doppler, Tracking, and External Measurement
 
