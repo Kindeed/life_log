@@ -999,6 +999,36 @@ This glossary defines shared symbols for the formula knowledge base. App impleme
 | `u` | `argument_of_latitude` | argument of latitude | rad, deg |
 | `lat_ss` | `subsatellite_latitude` | subsatellite latitude | rad, deg |
 | `lon_ss` | `subsatellite_longitude` | subsatellite longitude | rad, deg |
+| `J2` | `second_zonal_harmonic` | central body's second zonal gravity coefficient | unitless |
+| `Omega_dot_J2` | `raan_rate_j2` | J2 secular right-ascension-of-ascending-node rate | rad/s, deg/day |
+| `omega_dot_J2` | `argument_of_perigee_rate_j2` | J2 secular argument-of-perigee rate | rad/s, deg/day |
+| `M_dot_J2` | `mean_anomaly_rate_j2` | mean anomaly rate including first-order J2 correction | rad/s, deg/day |
+| `Omega_dot_target` | `target_raan_precession_rate` | required nodal precession rate, e.g. for sun-synchronous design | rad/s, deg/day |
+| `i_sunsync` | `sun_synchronous_inclination` | inclination that approximately gives the target nodal precession | rad, deg |
+| `T_nodal` | `nodal_period` | approximate period between equivalent argument-of-latitude crossings | s, min |
+| `Delta_lambda_node` | `ascending_node_longitude_spacing` | longitude shift between successive ascending-node crossings | rad, deg |
+| `N_orbits` | `repeat_cycle_orbit_count` | integer number of orbits in a candidate repeat cycle | count |
+| `N_days` | `repeat_cycle_day_count` | integer number of sidereal days in a candidate repeat cycle | count |
+| `RepeatGroundTrackError` | `repeat_ground_track_error` | angular closure error for repeat-ground-track candidate | rad, deg |
+| `M_anom` | `mean_anomaly` | Keplerian mean anomaly | rad, deg |
+| `M0` | `epoch_mean_anomaly` | mean anomaly at epoch `t0` | rad, deg |
+| `t` / `t0` | `time_and_epoch` | propagation time and reference epoch | s, datetime |
+| `E_anom` | `eccentric_anomaly` | eccentric anomaly for an elliptical orbit | rad, deg |
+| `g_access` | `access_event_function` | elevation-minus-mask root function for access events | rad, deg |
+| `AOS_Time` | `acquisition_of_signal_time` | upward elevation-mask crossing time | datetime, s |
+| `LOS_Time` | `loss_of_signal_time` | downward elevation-mask crossing time | datetime, s |
+| `d(el)/dt` | `elevation_rate` | time derivative of elevation angle | rad/s, deg/s |
+| `d2(el)/dt2` | `elevation_acceleration` | second time derivative of elevation angle | rad/s^2, deg/s^2 |
+| `MaxElevationTime` | `maximum_elevation_time` | time of maximum pass elevation | datetime, s |
+| `r1` / `r2` | `initial_final_circular_orbit_radius` | initial and final circular orbit radii for transfer calculations | m, km |
+| `Delta_v1_H` | `hohmann_first_impulse` | first impulse of a Hohmann transfer | m/s, km/s |
+| `Delta_v2_H` | `hohmann_second_impulse` | second impulse of a Hohmann transfer | m/s, km/s |
+| `Delta_v_H_total` | `hohmann_total_delta_v` | total Hohmann transfer delta-v magnitude | m/s, km/s |
+| `T_Hohmann` | `hohmann_transfer_time` | half-ellipse Hohmann transfer time of flight | s, min |
+| `Delta_i` | `inclination_change` | plane-change angle | rad, deg |
+| `Delta_v_plane` | `plane_change_delta_v` | pure plane-change delta-v | m/s, km/s |
+| `v_before` / `v_after` | `pre_post_maneuver_speed` | speed before and after an impulsive maneuver | m/s, km/s |
+| `Delta_v_combined` | `combined_speed_plane_change_delta_v` | combined speed-change and plane-change impulse | m/s, km/s |
 
 ## Compression and Source Coding
 

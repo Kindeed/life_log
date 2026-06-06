@@ -804,6 +804,26 @@ Notation:
 | ORB-035 | `GroundTrackShiftPerOrbit = omega_E * T` | Earth rotation rate and orbital period | Longitude shift of Earth under the orbit between consecutive revolutions, before nodal regression corrections. | BOOK-VALLADO, BOOK-SMAD | Seeded |
 | ORB-036 | `lat_ss = asin(sin(i)*sin(u))` | inclination and argument of latitude | Subsatellite latitude for a circular orbit in a simple inertial-to-rotating geometry. | BOOK-VALLADO | Seeded |
 | ORB-037 | `lon_ss = atan2(cos(i)*sin(u), cos(u)) - theta_GMST` | inclination, argument of latitude, Earth rotation | Subsatellite longitude for a circular orbit before longitude normalization and perturbation corrections. | BOOK-VALLADO | Procedure |
+| ORB-038 | `Omega_dot_J2 = -1.5*J2*n*(R_e/p)^2*cos(i)` | J2, mean motion, semilatus rectum, inclination | Secular right-ascension-of-ascending-node regression from Earth's oblateness. | BOOK-VALLADO, BOOK-SMAD | Seeded |
+| ORB-039 | `omega_dot_J2 = 0.75*J2*n*(R_e/p)^2*(5*cos(i)^2 - 1)` | J2 and orbit elements | Secular argument-of-perigee drift from J2. | BOOK-VALLADO, BOOK-BATE | Seeded |
+| ORB-040 | `M_dot_J2 = n + 0.75*J2*n*(R_e/p)^2*sqrt(1-e^2)*(3*cos(i)^2 - 1)` | J2 and orbit elements | First-order secular mean-anomaly rate including J2 correction. | BOOK-VALLADO | Procedure |
+| ORB-041 | `cos(i_sunsync) = -Omega_dot_target / (1.5*J2*n*(R_e/p)^2)` | target nodal precession rate | Sun-synchronous inclination estimate from required nodal precession. | BOOK-VALLADO, BOOK-SMAD | Procedure |
+| ORB-042 | `T_nodal ~= 2*pi/(M_dot_J2 + omega_dot_J2)` | corrected mean-anomaly and perigee rates | Approximate nodal/argument-of-latitude period used by repeating-ground-track checks. | BOOK-VALLADO | Procedure |
+| ORB-043 | `Delta_lambda_node = (omega_E - Omega_dot_J2)*T_nodal` | Earth rotation and nodal regression | Longitude spacing between successive ascending-node crossings. | BOOK-VALLADO, CELESTRAK | Seeded |
+| ORB-044 | `RepeatGroundTrackError = abs(N_orbits*Delta_lambda_node - 2*pi*N_days)` | repeat cycle integers | Closure error for a candidate repeat-ground-track cycle. | BOOK-VALLADO, BOOK-SMAD | Procedure |
+| ORB-045 | `M_anom(t) = M0 + n*(t - t0)` | epoch mean anomaly and mean motion | Two-body mean anomaly propagation from an epoch. | BOOK-VALLADO, BOOK-BATE | Seeded |
+| ORB-046 | `M_anom = E_anom - e*sin(E_anom)` | eccentric anomaly and eccentricity | Kepler's equation for elliptical orbits. | BOOK-VALLADO, BOOK-BATE | Procedure |
+| ORB-047 | `tan(nu/2) = sqrt((1+e)/(1-e))*tan(E_anom/2)` | eccentric and true anomaly | Converts eccentric anomaly to true anomaly for an elliptic orbit. | BOOK-VALLADO, BOOK-BATE | Seeded |
+| ORB-048 | `g_access(t) = el(t) - E_min` | propagated elevation and elevation mask | Access event function; AOS/LOS occur at roots of `g_access(t)` with opposite crossing directions. | BOOK-VALLADO, BOOK-SMAD | Procedure |
+| ORB-049 | `AOS_Time = root(g_access(t)=0, d(el)/dt>0)` | access event function | Acquisition-of-signal time as an upward elevation-mask crossing. | BOOK-VALLADO, BOOK-SMAD | Procedure |
+| ORB-050 | `LOS_Time = root(g_access(t)=0, d(el)/dt<0)` | access event function | Loss-of-signal time as a downward elevation-mask crossing. | BOOK-VALLADO, BOOK-SMAD | Procedure |
+| ORB-051 | `MaxElevationTime = root(d(el)/dt=0, d2(el)/dt2<0)` | elevation time history | Time of maximum elevation during a pass. | BOOK-VALLADO, BOOK-SMAD | Procedure |
+| ORB-052 | `Delta_v1_H = sqrt(mu/r1)*(sqrt(2*r2/(r1+r2)) - 1)` | initial and final circular radii | First impulse of a coplanar Hohmann transfer from radius `r1` to `r2`. | BOOK-VALLADO, BOOK-BATE | Seeded |
+| ORB-053 | `Delta_v2_H = sqrt(mu/r2)*(1 - sqrt(2*r1/(r1+r2)))` | initial and final circular radii | Second impulse circularizing a coplanar Hohmann transfer. Sign convention assumes raising transfer; use magnitude for cost. | BOOK-VALLADO, BOOK-BATE | Seeded |
+| ORB-054 | `Delta_v_H_total = abs(Delta_v1_H) + abs(Delta_v2_H)` | Hohmann impulses | Total two-impulse Hohmann transfer delta-v. | BOOK-VALLADO, BOOK-BATE | Seeded |
+| ORB-055 | `T_Hohmann = pi*sqrt(((r1+r2)/2)^3/mu)` | Hohmann transfer semi-major axis | Time of flight for a half-ellipse Hohmann transfer. | BOOK-VALLADO, BOOK-BATE | Seeded |
+| ORB-056 | `Delta_v_plane = 2*v*sin(Delta_i/2)` | speed and inclination change | Pure plane-change delta-v at constant speed. | BOOK-VALLADO, BOOK-BATE | Seeded |
+| ORB-057 | `Delta_v_combined = sqrt(v_before^2 + v_after^2 - 2*v_before*v_after*cos(Delta_i))` | pre/post maneuver speeds and plane change | Combined speed-change and plane-change impulse magnitude. | BOOK-VALLADO, BOOK-BATE | Seeded |
 
 ## Data Compression and Source Coding
 

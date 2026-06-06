@@ -82,9 +82,9 @@ Each pass should produce a reviewed delta to `formula_catalog.md` and, where nee
 7. Orbit/contact and RF measurement pass:
    - SMAD, Vallado, Bate, DSN 810-005, and ITU-R P.525.
    - Extract slant range, elevation, pass/contact estimates, range-rate, antenna slew rate, PFD, PSD, and lab power/voltage conversion formulas.
-   - Current orbit/contact extraction covers two-body energy/vis-viva/angular-momentum/eccentricity/conic relations, station geodetic-to-ECEF, ECEF-to-ENU, local az/el/range, first-order ECI/ECEF warning, minimum-elevation access geometry, coverage radius, access flag, approximate pass duration, ground-track shift, and circular-orbit subsatellite point estimates.
+   - Current orbit/contact extraction covers two-body energy/vis-viva/angular-momentum/eccentricity/conic relations, station geodetic-to-ECEF, ECEF-to-ENU, local az/el/range, first-order ECI/ECEF warning, minimum-elevation access geometry, coverage radius, access flag, approximate pass duration, ground-track shift, circular-orbit subsatellite point estimates, J2 secular RAAN/perigee/mean-anomaly rates, sun-synchronous inclination estimate, repeat-ground-track closure, Kepler propagation, AOS/LOS/max-elevation event definitions, Hohmann transfer, plane-change, and combined maneuver formulas.
    - Current system operations extraction covers generated data, usable contact time, per-pass and aggregate downlink capacity, storage end/peak margin, contact efficiency, passes required, required net/line rate, contact bit budget, required compression ratio, queue drain time, energy, battery depth of discharge, recorder turnover, contact utilization, science return, and command round-trip light time.
-   - Remaining orbit/system work is numerical validation examples, high-precision Earth-orientation/EOP handling, J2 nodal regression, repeat-ground-track constraints, propagated AOS/LOS solving, schedule import/export, and timeline consistency checks.
+   - Remaining orbit/system work is numerical validation examples, high-precision Earth-orientation/EOP handling, SGP4/TLE integration, propagated AOS/LOS root-bracketing tests, repeat-ground-track integer-search examples, maneuver edge-case handling, schedule import/export, and timeline consistency checks.
 
 ## Stage 3: App Data Model
 
