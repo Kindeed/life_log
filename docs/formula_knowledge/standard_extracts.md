@@ -292,6 +292,19 @@ Sources: Vallado, `Fundamentals of Astrodynamics and Applications`; Bate, Muelle
 | ORBSYS-007 | SMAD/NASA SmallSat communications operations context | Generated data, usable contact time, per-pass capacity, aggregate downlink capacity, storage balance, and contact efficiency | Catalog adds SYS-011 to SYS-018 as system closure formulas that connect orbit access to link budget outputs. |
 | ORBSYS-008 | SMAD operations budget context | Required net/line rate, target downlink bits, required compression ratio, queue drain time, energy use, battery depth of discharge, recorder turnover, contact utilization, science return, and light-time | Catalog adds SYS-019 to SYS-030; later app UI should present these as a schedule/workflow summary rather than isolated calculators. |
 
+## Satellite Transponder and Multi-Carrier Link Extracts
+
+Sources: Maral, Bousquet, and Sun, `Satellite Communications Systems`, 6th edition; ITU-R P.525-5, `Calculation of free-space attenuation`; Balanis, `Antenna Theory`; SMAD power/thermal sizing context.
+
+| Extract ID | Standard location | Equation or table | Implementation note |
+| --- | --- | --- | --- |
+| SATLINK-001 | Maral/Bousquet transponder operating-point material, cross-checked with P.525 free-space spreading and aperture relation | Satellite incident PFD, saturation flux density, input back-off, transponder input power, and effective transponder gain | Catalog adds LINK-117 to LINK-120; UI should keep PFD/SFD/IBO in a transponder input pane rather than mixing them into generic path loss. |
+| SATLINK-002 | Maral/Bousquet multi-carrier transponder loading discussion | Output back-off, operating satellite EIRP, equal-carrier power share, per-carrier EIRP, and per-carrier back-off | Catalog adds LINK-121 to LINK-125; non-equal carrier allocation remains a later allocation table/procedure. |
+| SATLINK-003 | Maral/Bousquet satellite link budget combination | Cascaded uplink/downlink `C/N0` and generic reciprocal `C/N` impairment summation | Catalog adds LINK-126 to LINK-128; all dB ratios must be converted to linear values before reciprocal summation. |
+| SATLINK-004 | Maral/Bousquet interference and intermodulation budget treatment | Carrier-to-interference margin, interference power aggregation, total `C/I`, and `C/IM` from measured or modeled intermodulation | Catalog adds LINK-129 to LINK-132; exact adjacent-satellite, cross-pol, and IM product curves need scenario-specific tables. |
+| SATLINK-005 | Maral/Bousquet HPA back-off context plus SMAD spacecraft power/thermal closure | HPA efficiency derating, DC power, and dissipated heat from RF output and efficiency | Catalog adds LINK-133 to LINK-135; `eta_hpa_oper` should prefer measured HPA curves over the first-order derating formula. |
+| SATLINK-006 | Maral/Bousquet transponder resource allocation context | Transponder bandwidth utilization and RF power utilization from assigned carriers | Catalog adds LINK-136 and LINK-137; later UI should show power-limited versus bandwidth-limited bottlenecks. |
+
 ## Extraction Status Delta
 
 | Source | Previous status | Current status | Remaining work |
@@ -315,6 +328,7 @@ Sources: Vallado, `Fundamentals of Astrodynamics and Applications`; Bate, Muelle
 | CCSDS-232 | Listed as source; generic TC frame formulas seeded | TC frame length count, data-field capacity, segment header, control command sizes, FECF, SDLS capacity extracted | Add cross-standard TC/COP examples when implementing. |
 | CCSDS-232.1 | Listed as future COP/FARM source; only generic ARQ formulas existed | COP-1 FOP/FARM variables, go-back-N retransmission, 8-bit sequence modulus, `T1_Initial` delay budget, Transmission_Limit/Count, FOP/FARM windows, CLCW reporting period, and BD one-shot behavior extracted | Convert FOP/FARM state-table events into machine-readable procedure tests before app implementation. |
 | CCSDS-732.1 | Listed as source; generic USLP overhead formulas seeded | USLP identifier widths, primary-header length, Frame Length count, VCF Count options, truncated header, TFDF/TFDZ capacity, OCF/FECF, OID constants, and SDLS TFDF capacity extracted | Add AOS cross-check, exact packet extraction examples, SDLS managed-parameter options, and machine-readable TFDZ construction-rule table. |
+| Maral/Bousquet satellite transponder links | Listed as scenario source; transponder formulas not yet extracted | PFD/SFD/IBO/OBO, transponder input/gain, per-carrier EIRP, cascaded `C/N0`, interference/intermodulation, HPA DC/thermal power, and bandwidth/power utilization formulas added | Add saturation curves, measured HPA/intermodulation models, non-equal carrier allocation, intersatellite relay examples, and validation examples. |
 
 ## CCSDS 231.0-B-4 TC Synchronization and Channel Coding
 

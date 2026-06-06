@@ -277,6 +277,54 @@ This glossary defines shared symbols for the formula knowledge base. App impleme
 | `T_AMW` | `antenna_microwave_noise_temp` | antenna and microwave hardware noise-temperature component | K |
 | `T_op` | `operating_system_noise_temp` | system operating noise temperature including sky terms | K |
 | `T1`, `T2`, `a_noise` | `antenna_noise_model_coefficients` | coefficients for DSN antenna-microwave noise model | K, K, 1/deg |
+| `PFD_sat_dBW_m2` | `satellite_incident_pfd` | power flux density incident at the satellite receive antenna reference plane | dBW/m^2 |
+| `EIRP_uplink_dBW` | `uplink_eirp` | earth-station or relay uplink EIRP toward the satellite | dBW |
+| `L_uplink_path_dB` | `uplink_additional_loss` | uplink attenuation, polarization, pointing, and implementation losses excluding the `10log10(4*pi*R_uplink^2)` spreading term | dB |
+| `R_uplink` | `uplink_range` | uplink slant range used in incident PFD calculation | m |
+| `SFD_dBW_m2` | `satellite_saturation_flux_density` | satellite input saturation flux density reference | dBW/m^2 |
+| `IBO_dB` | `input_backoff` | transponder input back-off relative to saturation | dB |
+| `P_in_sat_dBW` | `satellite_transponder_input_power` | carrier power at the satellite receiver/transponder input reference point | dBW |
+| `G_rx_sat_dBi` | `satellite_receive_antenna_gain` | satellite receive antenna gain toward the uplink station | dBi |
+| `lambda_u` | `uplink_wavelength` | uplink wavelength used for receive aperture conversion | m |
+| `L_rx_sat_dB` | `satellite_receive_chain_loss` | satellite receive feed, pointing, polarization, and input chain losses | dB |
+| `G_transponder_dB` | `transponder_gain` | effective bent-pipe transponder gain at the selected operating point | dB |
+| `P_out_sat_dBW` | `satellite_transponder_output_power` | operating RF output carrier power from the satellite transponder or HPA | dBW |
+| `P_out_sat_dBW_sat` | `satellite_transponder_saturated_output_power` | saturated RF output power reference for transponder or HPA back-off | dBW |
+| `OBO_dB` | `output_backoff` | output back-off relative to saturated transponder or HPA output | dB |
+| `EIRP_sat_oper_dBW` | `satellite_operating_eirp` | satellite downlink EIRP after output back-off | dBW |
+| `EIRP_sat_sat_dBW` | `satellite_saturated_eirp` | saturated satellite downlink EIRP reference | dBW |
+| `P_carrier_share_dB` | `equal_carrier_power_share` | per-carrier power share for equal-power carriers | dB |
+| `N_carriers` | `carrier_count` | number of equal-power carriers sharing a transponder | count |
+| `OBO_total_dB` | `aggregate_output_backoff` | total transponder output back-off for the aggregate carrier loading | dB |
+| `EIRP_sat_per_carrier_dBW` | `satellite_per_carrier_eirp` | per-carrier satellite EIRP in multi-carrier operation | dBW |
+| `OBO_per_carrier_dB` | `per_carrier_output_backoff` | per-carrier output back-off relative to saturated single-carrier EIRP | dB |
+| `(C/N0)_uplink_linear` | `uplink_cn0_linear` | uplink carrier-to-noise-density ratio in linear Hz units | Hz |
+| `(C/N0)_downlink_linear` | `downlink_cn0_linear` | downlink carrier-to-noise-density ratio in linear Hz units | Hz |
+| `(C/N0)_total_linear` | `total_cn0_linear` | cascaded carrier-to-noise-density ratio in linear Hz units | Hz |
+| `(C/N)_i_linear` | `cn_section_linear` | carrier-to-noise ratio contribution for a selected independent section | ratio |
+| `(C/I)_linear` | `carrier_to_interference_linear` | carrier-to-interference ratio in linear form | ratio |
+| `(C/IM)_linear` | `carrier_to_intermod_linear` | carrier-to-intermodulation ratio in linear form | ratio |
+| `C_I_margin_dB` | `carrier_interference_margin` | available minus required carrier-to-interference ratio | dB |
+| `C_I_available_dB` | `available_carrier_interference_ratio` | available carrier-to-interference ratio | dB |
+| `C_I_required_dB` | `required_carrier_interference_ratio` | required carrier-to-interference ratio | dB |
+| `I_i_linear` | `interference_power_linear` | individual interference power at a common reference point | W, ratio |
+| `I_total_linear` | `total_interference_power_linear` | sum of independent interference powers at a common reference point | W, ratio |
+| `I_total_linear_W` | `total_interference_power_w` | total interference power in watts | W |
+| `C_I_total_dB` | `total_carrier_interference_ratio` | carrier-to-interference ratio after aggregating interference powers | dB |
+| `C_dBW` | `carrier_power` | carrier power at the selected receiver or transponder reference point | dBW |
+| `C_IM_dB` | `carrier_intermod_ratio` | carrier-to-intermodulation ratio | dB |
+| `IM_dBW` | `intermodulation_power` | intermodulation distortion power at the selected reference point | dBW |
+| `eta_hpa_oper` | `hpa_operating_efficiency` | HPA efficiency at the selected output back-off | ratio |
+| `eta_hpa_sat` | `hpa_saturated_efficiency` | HPA efficiency at saturated output | ratio |
+| `P_rf_out` | `hpa_rf_output_power` | RF output power from the HPA | W |
+| `P_dc_hpa` | `hpa_dc_input_power` | DC input power required by the HPA | W |
+| `P_diss_hpa` | `hpa_dissipated_power` | HPA heat dissipation for thermal sizing | W |
+| `B_carrier_i` | `carrier_occupied_bandwidth` | occupied bandwidth for carrier i | Hz |
+| `B_transponder` | `transponder_bandwidth` | usable transponder bandwidth | Hz |
+| `TransponderUtilization` | `transponder_bandwidth_utilization` | fraction of transponder bandwidth occupied by assigned carriers | ratio |
+| `P_carrier_i_linear` | `carrier_power_linear` | assigned RF power for carrier i in linear units | W |
+| `P_transponder_oper_linear` | `transponder_operating_power_linear` | available operating transponder RF output power in linear units | W |
+| `PowerUtilization` | `transponder_power_utilization` | fraction of operating transponder RF power allocated to active carriers | ratio |
 
 ## Wireless Channel and Fading
 

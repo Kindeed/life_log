@@ -126,6 +126,12 @@ Recommended implementation order:
    - C/N0, Eb/N0, Es/N0
    - required EIRP / required G/T
    - margin and bottleneck explanation
+   - satellite incident PFD, saturation flux density, IBO, OBO, and transponder gain
+   - per-carrier satellite EIRP and output back-off for multi-carrier loading
+   - cascaded uplink/downlink C/N0 and reciprocal impairment summation
+   - C/I, C/IM, interference aggregation, and interference margin
+   - HPA DC power, dissipated heat, and efficiency derating
+   - transponder bandwidth/power utilization with power-limited versus bandwidth-limited bottleneck output
 
 3. Propagation workbench:
    - ITU-R P.525 FSPL

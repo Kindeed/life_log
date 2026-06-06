@@ -218,6 +218,27 @@ Notation:
 | LINK-114 | `P_b_BPSK_Rayleigh = 0.5*(1 - sqrt(gamma_bar/(1 + gamma_bar)))` | average bit SNR | Average coherent BPSK bit error probability over Rayleigh fading. | BOOK-PROAKIS, BOOK-GOLDSMITH | Seeded |
 | LINK-115 | `C_inst = B*log2(1 + gamma_inst)` | bandwidth and instantaneous SNR | Instantaneous Shannon capacity for a flat-fading channel state. | BOOK-GOLDSMITH, BOOK-SKLAR | Seeded |
 | LINK-116 | `C_ergodic = E_h[B*log2(1 + gamma_inst(h))]` | channel-state distribution | Ergodic fading-channel capacity with receiver-side channel-state averaging. | BOOK-GOLDSMITH | Procedure |
+| LINK-117 | `PFD_sat_dBW_m2 = EIRP_uplink_dBW - L_uplink_path_dB - 10log10(4*pi*R_uplink^2)` | uplink EIRP, additional uplink losses, uplink range | Power flux density incident at the satellite receive antenna. | BOOK-MARAL, ITU-P525 | Seeded |
+| LINK-118 | `IBO_dB = SFD_dBW_m2 - PFD_sat_dBW_m2` | saturation flux density and incident PFD | Transponder input back-off from saturation, expressed from the satellite input PFD reference. | BOOK-MARAL | Seeded |
+| LINK-119 | `P_in_sat_dBW = PFD_sat_dBW_m2 + G_rx_sat_dBi + 10log10(lambda_u^2/(4*pi)) - L_rx_sat_dB` | incident PFD, receive gain, wavelength, satellite receive losses | Satellite receiver/transponder input carrier power from incident PFD and receive aperture relation. | BOOK-MARAL, BOOK-BALANIS | Seeded |
+| LINK-120 | `G_transponder_dB = P_out_sat_dBW - P_in_sat_dBW` | transponder output and input carrier power | Effective bent-pipe transponder gain at the selected operating point. | BOOK-MARAL | Seeded |
+| LINK-121 | `OBO_dB = P_out_sat_dBW_sat - P_out_sat_dBW` | saturated and operating output powers | Output back-off from saturated transponder or HPA output. | BOOK-MARAL | Seeded |
+| LINK-122 | `EIRP_sat_oper_dBW = EIRP_sat_sat_dBW - OBO_dB` | saturated satellite EIRP and output back-off | Operating satellite EIRP after output back-off. | BOOK-MARAL | Seeded |
+| LINK-123 | `P_carrier_share_dB = -10log10(N_carriers)` | equal-power carrier count | Per-carrier power share for equal carriers in a multi-carrier transponder. | BOOK-MARAL | Seeded |
+| LINK-124 | `EIRP_sat_per_carrier_dBW = EIRP_sat_sat_dBW - OBO_total_dB - 10log10(N_carriers)` | saturated EIRP, aggregate OBO, equal carrier count | Per-carrier satellite EIRP in equal-carrier multi-carrier operation. | BOOK-MARAL | Seeded |
+| LINK-125 | `OBO_per_carrier_dB = OBO_total_dB + 10log10(N_carriers)` | aggregate OBO and carrier count | Per-carrier output back-off relative to saturated single-carrier EIRP. | BOOK-MARAL | Seeded |
+| LINK-126 | `(C/N0)_total_linear^-1 = (C/N0)_uplink_linear^-1 + (C/N0)_downlink_linear^-1` | uplink and downlink carrier-to-noise density ratios | Cascaded bent-pipe carrier-to-noise-density combination. Convert each dB-Hz term to linear Hz first. | BOOK-MARAL | Seeded |
+| LINK-127 | `(C/N)_total_linear^-1 = sum_i((C/N)_i_linear^-1)` | independent noise and impairment sections | Generic reciprocal summation for independent C/N contributors over the same reference bandwidth. | BOOK-MARAL, BOOK-SKLAR | Seeded |
+| LINK-128 | `(C/(N+I+IM))_linear^-1 = (C/N)_linear^-1 + (C/I)_linear^-1 + (C/IM)_linear^-1` | noise, interference, intermodulation ratios | Composite carrier quality when thermal noise, interference, and intermodulation are represented as independent carrier-relative impairments. | BOOK-MARAL | Seeded |
+| LINK-129 | `C_I_margin_dB = C_I_available_dB - C_I_required_dB` | available and required carrier-to-interference ratios | Interference margin for adjacent satellite, cross-polar, co-channel, or in-band interferers. | BOOK-MARAL, ITU-S465 | Seeded |
+| LINK-130 | `I_total_linear = sum_i(I_i_linear)` | individual interference powers at same reference point | Linear summation of independent interference powers before converting to C/I. | BOOK-MARAL, BOOK-SKLAR | Seeded |
+| LINK-131 | `C_I_total_dB = C_dBW - 10log10(I_total_linear_W)` | carrier power and total interference power | Total carrier-to-interference ratio from aggregated interference powers. | BOOK-MARAL | Seeded |
+| LINK-132 | `C_IM_dB = C_dBW - IM_dBW` | carrier and intermodulation distortion power | Carrier-to-intermodulation ratio from a selected HPA/transponder operating point or measured intermodulation product. | BOOK-MARAL | Procedure |
+| LINK-133 | `eta_hpa_oper ~= eta_hpa_sat*10^(-OBO_dB/10)` | saturated efficiency and output back-off | First-order HPA efficiency derating with RF output back-off; use measured HPA curves when available. | BOOK-MARAL | Procedure |
+| LINK-134 | `P_dc_hpa = P_rf_out/eta_hpa_oper` | RF output power and operating HPA efficiency | DC power required by an RF power amplifier at the selected operating point. | BOOK-MARAL, BOOK-SMAD | Seeded |
+| LINK-135 | `P_diss_hpa = P_dc_hpa - P_rf_out` | DC input and RF output power | Heat dissipated by the HPA for thermal and power subsystem sizing. | BOOK-MARAL, BOOK-SMAD | Seeded |
+| LINK-136 | `TransponderUtilization = sum_i(B_carrier_i)/B_transponder` | occupied carrier bandwidths and transponder bandwidth | Fraction of transponder bandwidth occupied by assigned carriers. | BOOK-MARAL | Seeded |
+| LINK-137 | `PowerUtilization = sum_i(P_carrier_i_linear)/P_transponder_oper_linear` | assigned carrier powers and available operating RF output power | Fraction of operating transponder RF power allocated to active carriers. | BOOK-MARAL | Seeded |
 
 ## Modulation, Baseband, and Digital Communication
 
