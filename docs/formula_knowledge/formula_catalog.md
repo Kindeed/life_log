@@ -179,6 +179,24 @@ Notation:
 | LINK-096 | `A_S = a_scint(p_exceed)*sigma_scint` | time-percentage factor and sigma | Tropospheric scintillation fade depth exceeded for `p_exceed` percent of time. | ITU-P618 | Seeded |
 | LINK-097 | `T_sky = T_mr*(1 - 10^(-A_atm_no_scint/10)) + 2.7*10^(-A_atm_no_scint/10)` | atmospheric attenuation and mean radiating temperature | P.618 sky noise temperature at a ground-station antenna. | ITU-P618 | Seeded |
 | LINK-098 | `T_mr = 37.34 + 0.81*T_surface` | surface temperature | P.618 mean radiating temperature estimate for clear/cloudy weather when surface temperature is known. | ITU-P618 | Seeded |
+| LINK-099 | `y(t) = h(t) * x(t) + n(t)` | channel impulse response, transmitted signal, noise | Linear baseband channel model with convolution and additive noise. | BOOK-GOLDSMITH, BOOK-PROAKIS | Seeded |
+| LINK-100 | `h(tau,t) = sum_i a_i(t)*exp(-j*2*pi*f_c*tau_i(t))*delta(tau-tau_i(t))` | multipath amplitudes, delays, carrier frequency | Time-varying tapped multipath channel impulse response. | BOOK-GOLDSMITH, BOOK-RAPPAPORT | Procedure |
+| LINK-101 | `tau_bar = sum_i(P_i*tau_i)/sum_i(P_i)` | power-delay profile taps | Mean excess delay from a discrete power-delay profile. | BOOK-RAPPAPORT, BOOK-GOLDSMITH | Seeded |
+| LINK-102 | `sigma_tau = sqrt(sum_i(P_i*tau_i^2)/sum_i(P_i) - tau_bar^2)` | power-delay profile taps | RMS delay spread, used to assess frequency selectivity. | BOOK-RAPPAPORT, BOOK-GOLDSMITH | Seeded |
+| LINK-103 | `B_c_50 ~= 1/(5*sigma_tau)` | RMS delay spread | Approximate coherence bandwidth for moderate frequency correlation. | BOOK-RAPPAPORT, BOOK-GOLDSMITH | Procedure |
+| LINK-104 | `B_c_90 ~= 1/(50*sigma_tau)` | RMS delay spread | Approximate coherence bandwidth for high frequency correlation. | BOOK-RAPPAPORT | Procedure |
+| LINK-105 | `f_Dmax = v_rel/lambda` | relative speed and wavelength | Maximum Doppler shift for a moving terminal or reflector. | BOOK-RAPPAPORT, BOOK-GOLDSMITH | Seeded |
+| LINK-106 | `T_c ~= 0.423/f_Dmax` | maximum Doppler shift | Common coherence-time approximation for fading channels. | BOOK-RAPPAPORT, BOOK-GOLDSMITH | Procedure |
+| LINK-107 | `PL_logdist_dB = PL_d0_dB + 10*n_path*log10(d/d0) + X_sigma` | reference path loss, path-loss exponent, lognormal shadowing | Log-distance path-loss model with Gaussian shadowing term in dB. | BOOK-RAPPAPORT, BOOK-GOLDSMITH | Seeded |
+| LINK-108 | `gamma_inst = |h|^2 * gamma_bar` | fading coefficient and average SNR | Instantaneous SNR under flat fading with normalized channel gain convention. | BOOK-GOLDSMITH, BOOK-PROAKIS | Seeded |
+| LINK-109 | `P_out = Pr(gamma_inst < gamma_th)` | instantaneous and threshold SNR | Generic outage probability definition. | BOOK-GOLDSMITH | Seeded |
+| LINK-110 | `P_out_rayleigh = 1 - exp(-gamma_th/gamma_bar)` | threshold and average SNR | Rayleigh flat-fading outage probability for exponential instantaneous SNR. | BOOK-GOLDSMITH, BOOK-PROAKIS | Seeded |
+| LINK-111 | `f_R(r) = r/sigma_h^2 * exp(-r^2/(2*sigma_h^2))`, `r>=0` | Rayleigh envelope scale | Rayleigh fading envelope probability density. | BOOK-RAPPAPORT, BOOK-GOLDSMITH | Seeded |
+| LINK-112 | `F_R(r) = 1 - exp(-r^2/(2*sigma_h^2))` | Rayleigh envelope scale | Rayleigh fading envelope cumulative distribution. | BOOK-RAPPAPORT, BOOK-GOLDSMITH | Seeded |
+| LINK-113 | `K_Rice = s_LOS^2/(2*sigma_h^2)` | LOS component and diffuse component scale | Rician K factor as specular-to-diffuse power ratio. | BOOK-RAPPAPORT, BOOK-GOLDSMITH | Seeded |
+| LINK-114 | `P_b_BPSK_Rayleigh = 0.5*(1 - sqrt(gamma_bar/(1 + gamma_bar)))` | average bit SNR | Average coherent BPSK bit error probability over Rayleigh fading. | BOOK-PROAKIS, BOOK-GOLDSMITH | Seeded |
+| LINK-115 | `C_inst = B*log2(1 + gamma_inst)` | bandwidth and instantaneous SNR | Instantaneous Shannon capacity for a flat-fading channel state. | BOOK-GOLDSMITH, BOOK-SKLAR | Seeded |
+| LINK-116 | `C_ergodic = E_h[B*log2(1 + gamma_inst(h))]` | channel-state distribution | Ergodic fading-channel capacity with receiver-side channel-state averaging. | BOOK-GOLDSMITH | Procedure |
 
 ## Modulation, Baseband, and Digital Communication
 

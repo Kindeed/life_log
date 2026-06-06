@@ -62,8 +62,9 @@ Each pass should produce a reviewed delta to `formula_catalog.md` and, where nee
 5. Textbook cross-check pass:
    - Balanis for antenna formulas.
    - Sklar/Proakis/Haykin for modulation, coding, BER/PER, synchronization.
+   - Goldsmith/Rappaport for wireless channel, fading, delay spread, Doppler, coherence, outage, and shadowing formulas.
    - Maral/Bousquet and SMAD for satellite/system link budget organization.
-   - Use `standard_extracts.md` digital-communications rows to build baseband timing, quantization, matched-filter, OFDM, phase-error, and MIMO calculator tests before UI work.
+   - Use `standard_extracts.md` digital-communications rows to build baseband timing, quantization, matched-filter, OFDM, phase-error, MIMO, fading-channel, outage, and log-distance path-loss calculator tests before UI work.
 
 6. Compression and Proximity-1 pass:
    - CCSDS 121.0-B, 122.0-B, and 123.0-B.

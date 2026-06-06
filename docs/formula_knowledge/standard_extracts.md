@@ -57,7 +57,7 @@ Sources: ITU-R S.465-6 `Reference radiation pattern of earth station antennas in
 
 ## Digital Communications Textbook Cross-Checks
 
-Sources: Sklar/Harris `Digital Communications: Fundamentals and Applications`, 3rd edition; Proakis/Salehi `Digital Communications`, 5th edition; Haykin/Moher `Communication Systems`, 5th edition; NASA/JPL DESCANSO chapter 5 for deep-space telemetry modulation examples.
+Sources: Sklar/Harris `Digital Communications: Fundamentals and Applications`, 3rd edition; Proakis/Salehi `Digital Communications`, 5th edition; Haykin/Moher `Communication Systems`, 5th edition; Goldsmith `Wireless Communications`; Rappaport `Wireless Communications: Principles and Practice`, 2nd edition; NASA/JPL DESCANSO chapter 5 for deep-space telemetry modulation examples.
 
 | Extract ID | Standard location | Equation or table | Implementation note |
 | --- | --- | --- | --- |
@@ -68,6 +68,8 @@ Sources: Sklar/Harris `Digital Communications: Fundamentals and Applications`, 3
 | DIGCOM-005 | DESCANSO section 5.3.1 and Proakis optimum receiver material | Matched filter/correlation detector decision statistic; coherent antipodal error `P_e=Q(sqrt(2Eb/N0))=0.5 erfc(sqrt(Eb/N0))` | DESCANSO states DSN uses matched/correlation detection and models AWGN for deep-space telemetry. |
 | DIGCOM-006 | DESCANSO section 5.2.2 and Sklar modulation topics | QPSK/SQPSK use two orthogonal BPSK components; QPSK/SQPSK have BPSK-like power efficiency and roughly half the bandwidth at same data rate and power | These are explanatory mode notes, not independent formulas beyond symbol-rate and bandwidth equations. |
 | DIGCOM-007 | Sklar/Harris OFDM/MIMO/synchronization topics | OFDM `Delta_f=1/T_u`, `T_ofdm=T_u+T_cp`, `CP_Overhead=T_cp/T_ofdm`, MIMO `C=log2(det(I+rho/Nt HH^H))` | Mark OFDM/MIMO formulas as scenario seeds until detailed pilot, framing, channel-state, and implementation-loss models are extracted. |
+| DIGCOM-008 | Goldsmith and Rappaport wireless-channel chapters; Proakis fading-channel material | Baseband channel `y=h*x+n`, tapped multipath impulse response, mean excess delay, RMS delay spread, coherence bandwidth/time, and maximum Doppler shift | Use these as a channel workbench group. The approximate coherence bandwidth/time constants are model-selection outputs, not universal requirements. |
+| DIGCOM-009 | Goldsmith/Rappaport fading and path-loss material; Proakis fading-channel performance material | Log-distance shadowing, Rayleigh envelope PDF/CDF, Rician K factor, Rayleigh outage probability, Rayleigh BPSK average BER, and fading capacity definitions | Separate deterministic link budget from stochastic channel outputs: right-side UI should show average SNR, outage probability, and selected fading-model performance independently. |
 
 ## CCSDS 401.0-B-32 RF and Modulation Systems
 

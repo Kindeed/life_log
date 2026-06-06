@@ -53,6 +53,8 @@ This registry records the standards, handbooks, and published books that should 
 | BOOK-SKLAR | Sklar and Harris, *Digital Communications*, 3rd ed. | Pearson/InformIT pages list modulation, coding, synchronization, OFDM, MIMO, link budgets, and baseband transmission coverage. | Eb/N0, BER/PER, modulation, baseband, channel coding, synchronization, OFDM, MIMO formulas. |
 | BOOK-PROAKIS | Proakis and Salehi, *Digital Communications*, 5th ed. | Bibliographic/publisher evidence lists digital modulation schemes, AWGN optimum receivers, carrier/symbol synchronization, information theory, and coding topics. | BER curves, matched filtering, AWGN, coding, synchronization. |
 | BOOK-HAYKIN | Haykin and Moher, *Communication Systems*, 5th ed. | Wiley/bibliographic pages list analog and digital communications, signal processing, filtering, and systems coverage. | Baseband/passband signals, noise, modulation, filtering. |
+| BOOK-GOLDSMITH | Goldsmith, *Wireless Communications* | Cambridge University Press page identifies wireless channel characteristics, capacity limits, modulation, coding, multicarrier, spread spectrum, and multiple-antenna coverage. | Fading-channel models, outage, coherence bandwidth/time, adaptive modulation context, and wireless capacity formulas. |
+| BOOK-RAPPAPORT | Rappaport, *Wireless Communications: Principles and Practice*, 2nd ed. | InformIT/Pearson page lists radio propagation, path-loss models, wireless system design, and chapter supplements. | Log-distance path loss, shadowing, Rayleigh/Rician fading, Doppler, delay spread, and practical wireless channel formulas. |
 | BOOK-SAYOOD | Sayood, *Introduction to Data Compression*, 4th ed. | Elsevier/O'Reilly pages list information theory, coding, quantization, subband coding, bit allocation, and image-compression coverage. | Cross-check entropy, average code length, quantization, and compression-ratio formulas without copying standard-specific algorithm tables. |
 | BOOK-SALOMON | Salomon, *Data Compression: The Complete Reference* | Springer and Google Books pages identify broad lossless/lossy compression, Huffman, arithmetic, dictionary, image, wavelet, and quantization coverage. | General compression terminology and sanity checks for textbook formulas. |
 | BOOK-VALLADO | Vallado, *Fundamentals of Astrodynamics and Applications* | Microcosm/AIAA/CelesTrak publisher and support pages identify the astrodynamics reference and source-code material. | Orbit geometry, ground-station look angles, visibility, range/range-rate support. |
@@ -132,6 +134,8 @@ This registry records the standards, handbooks, and published books that should 
 | BOOK-SKLAR O'Reilly TOC | https://www.oreilly.com/library/view/digital-communications-fundamentals/9780134588636/bk01-toc.xhtml |
 | BOOK-PROAKIS bibliographic | https://www.campusbooks.com/books/9780072957167-digital-communications |
 | BOOK-HAYKIN bibliographic | https://ndlsearch.ndl.go.jp/books/R100000002-I000010817499 |
+| BOOK-GOLDSMITH Cambridge | https://www.cambridge.org/core/books/wireless-communications/800BA8A8211FBECB133A7BB77CD2E2BD |
+| BOOK-RAPPAPORT InformIT | https://www.informit.com/store/wireless-communications-principles-and-practice-9780130422323 |
 | BOOK-SMAD | https://books.google.com/books/about/Space_Mission_Engineering.html?id=4JM7tAEACAAJ |
 | BOOK-SAYOOD | https://www.oreilly.com/library/view/introduction-to-data/9780124157965/ |
 | BOOK-SALOMON | https://link.springer.com/book/10.1007/978-3-642-86092-8 |

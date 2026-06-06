@@ -250,6 +250,39 @@ This glossary defines shared symbols for the formula knowledge base. App impleme
 | `T_op` | `operating_system_noise_temp` | system operating noise temperature including sky terms | K |
 | `T1`, `T2`, `a_noise` | `antenna_noise_model_coefficients` | coefficients for DSN antenna-microwave noise model | K, K, 1/deg |
 
+## Wireless Channel and Fading
+
+| Symbol | Field ID suggestion | Meaning | Unit |
+| --- | --- | --- | --- |
+| `x(t)` | `transmitted_baseband_signal` | transmitted baseband waveform | signal-unit |
+| `y(t)` | `received_baseband_signal` | received baseband waveform after channel and noise | signal-unit |
+| `h(t)` / `h(tau,t)` | `channel_impulse_response` | baseband channel impulse response, optionally time varying | unitless or path-gain |
+| `n(t)` | `additive_noise_waveform` | additive receiver/channel noise waveform | signal-unit |
+| `a_i(t)` | `multipath_complex_gain` | complex gain of multipath component i | complex ratio |
+| `tau_i` | `multipath_delay` | excess delay of multipath component i | s |
+| `P_i` | `power_delay_profile_tap_power` | power in delay tap i | W, relative power, dB |
+| `tau_bar` | `mean_excess_delay` | power-weighted mean excess delay | s |
+| `sigma_tau` | `rms_delay_spread` | root-mean-square delay spread | s |
+| `B_c_50` / `B_c_90` | `coherence_bandwidth` | approximate coherence bandwidth for selected correlation criterion | Hz |
+| `v_rel` | `relative_speed` | relative speed causing Doppler spread | m/s |
+| `f_Dmax` | `maximum_doppler_shift` | maximum Doppler shift | Hz |
+| `T_c` | `coherence_time` | approximate time over which fading is highly correlated | s |
+| `PL_logdist` | `log_distance_path_loss` | path loss from log-distance/shadowing model | dB |
+| `PL_d0` | `reference_distance_path_loss` | path loss at reference distance `d0` | dB |
+| `d0` | `reference_distance` | reference distance for log-distance path loss | m |
+| `n_path` | `path_loss_exponent` | environment-specific path-loss exponent | unitless |
+| `X_sigma` | `shadowing_random_variable` | zero-mean Gaussian shadowing term in dB | dB |
+| `gamma_bar` | `average_snr` | average SNR before instantaneous fading realization | ratio |
+| `gamma_inst` | `instantaneous_snr` | instantaneous SNR after fading realization | ratio |
+| `gamma_th` | `outage_snr_threshold` | SNR threshold defining outage | ratio |
+| `P_out` | `outage_probability` | probability that instantaneous SNR is below threshold | ratio |
+| `r` | `fading_envelope` | fading envelope magnitude | ratio |
+| `sigma_h` | `rayleigh_scale` | Rayleigh diffuse-component scale parameter | ratio |
+| `K_Rice` | `rician_k_factor` | specular-to-diffuse power ratio | ratio, dB |
+| `s_LOS` | `los_component_amplitude` | deterministic/specular component amplitude in a Rician channel | ratio |
+| `C_inst` | `instantaneous_channel_capacity` | instantaneous flat-fading capacity | bit/s |
+| `C_ergodic` | `ergodic_channel_capacity` | channel capacity averaged over fading states | bit/s |
+
 ## Modulation and Coding
 
 | Symbol | Field ID suggestion | Meaning | Unit |
