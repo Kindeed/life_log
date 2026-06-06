@@ -1083,6 +1083,53 @@ This glossary defines shared symbols for the formula knowledge base. App impleme
 
 | Symbol | Field ID suggestion | Meaning | Unit |
 | --- | --- | --- | --- |
+| `u_c(y)` | `combined_standard_uncertainty` | combined standard uncertainty of a derived result | result unit |
+| `u(x_i,x_j)` | `input_covariance` | covariance between two input estimates | input-unit product |
+| `df/dx_i` | `sensitivity_coefficient` | local sensitivity of result function to input estimate `x_i` | result unit per input unit |
+| `u(x_i)` | `input_standard_uncertainty` | standard uncertainty of input estimate `x_i` | input unit |
+| `U` | `expanded_uncertainty` | expanded uncertainty interval half-width | result unit |
+| `k_coverage` | `coverage_factor` | multiplier from combined standard uncertainty to expanded uncertainty | ratio |
+| `u_x_dB` | `power_like_db_uncertainty` | dB standard uncertainty of a power-like quantity | dB |
+| `u_x` | `linear_quantity_uncertainty` | standard uncertainty of a linear quantity | same as `x` |
+| `x` | `linear_quantity_value` | positive linear quantity being converted to or from dB uncertainty | varies |
+| `u_V_dB` | `amplitude_db_uncertainty` | dB standard uncertainty of an amplitude-like quantity | dB |
+| `u_V` | `amplitude_uncertainty` | standard uncertainty of voltage, field strength, or another amplitude-like input | amplitude unit |
+| `V` | `amplitude_value` | voltage, field strength, or another amplitude-like input value | amplitude unit |
+| `u_sum_dB` | `db_budget_uncertainty` | RSS uncertainty of a dB gain/loss/margin sum | dB |
+| `u_i_dB` | `db_budget_term_uncertainty` | standard uncertainty of one independent dB budget term | dB |
+| `x_bar` | `sample_mean` | arithmetic mean of repeated observations | observation unit |
+| `s_sample` | `sample_standard_deviation` | sample standard deviation of repeated observations | observation unit |
+| `N_samples` | `sample_count` | number of repeated observations | count |
+| `u_mean` | `mean_standard_uncertainty` | Type-A standard uncertainty of the sample mean | observation unit |
+| `u_Y` | `y_factor_uncertainty` | standard uncertainty of the linear hot/cold Y-factor | ratio |
+| `u_Thot` | `hot_load_temperature_uncertainty` | standard uncertainty of the hot-load temperature | K |
+| `u_Tcold` | `cold_load_temperature_uncertainty` | standard uncertainty of the cold-load temperature | K |
+| `dTe_dY` | `noise_temp_y_sensitivity` | sensitivity of equivalent noise temperature to Y-factor | K |
+| `dTe_dThot` | `noise_temp_hot_load_sensitivity` | sensitivity of equivalent noise temperature to hot-load temperature | ratio |
+| `dTe_dTcold` | `noise_temp_cold_load_sensitivity` | sensitivity of equivalent noise temperature to cold-load temperature | ratio |
+| `u_Te_yfactor` | `y_factor_noise_temperature_uncertainty` | propagated uncertainty of Y-factor equivalent noise temperature | K |
+| `Y_dB` | `y_factor_db` | measured hot/cold Y-factor in dB | dB |
+| `u_G_dB` | `antenna_gain_uncertainty_db` | standard uncertainty of antenna gain | dB |
+| `u_Tsys` | `system_temperature_uncertainty` | standard uncertainty of system noise temperature | K |
+| `u_GT_dB` | `g_over_t_uncertainty_db` | standard uncertainty of `G/T` | dB |
+| `u_N0_dBHz` | `noise_density_uncertainty_dbhz` | standard uncertainty of noise density | dB-Hz |
+| `u_EIRP_dB` | `eirp_uncertainty_db` | standard uncertainty of effective isotropic radiated power | dB |
+| `u_Ltotal_dB` | `total_loss_uncertainty_db` | standard uncertainty of total link loss | dB |
+| `u_CN0_dBHz` | `cn0_uncertainty_dbhz` | standard uncertainty of carrier-to-noise density | dB-Hz |
+| `u_Rb` | `bit_rate_uncertainty` | standard uncertainty of bit rate | bit/s |
+| `u_Rb_dB` | `bit_rate_uncertainty_db` | bit-rate standard uncertainty converted to dB | dB |
+| `u_EbN0_dB` | `ebn0_uncertainty_db` | standard uncertainty of energy-per-bit to noise-density ratio | dB |
+| `u_AvailableEbN0_dB` | `available_ebn0_uncertainty_db` | standard uncertainty of available `Eb/N0` | dB |
+| `u_RequiredEbN0_dB` | `required_ebn0_uncertainty_db` | standard uncertainty of required `Eb/N0` threshold | dB |
+| `u_Margin_dB` | `link_margin_uncertainty_db` | standard uncertainty of link margin | dB |
+| `ErrorBits` | `error_bits` | counted bit errors during a BER test interval | bit |
+| `TestBits` | `tested_bits` | total bits observed during a BER test interval | bit |
+| `BER_hat` | `ber_point_estimate` | observed bit error rate point estimate | ratio |
+| `u_BER_hat` | `ber_standard_uncertainty` | large-sample standard uncertainty of observed BER | ratio |
+| `BER_upper_zero` | `zero_error_ber_upper_bound` | one-sided upper BER bound when no errors are observed | ratio |
+| `alpha_tail` | `confidence_tail_probability` | one-sided tail probability, e.g. 0.05 for 95% upper confidence | ratio |
+| `BER_target` | `target_bit_error_rate` | BER requirement used for test-duration sizing | ratio |
+| `TestBits_95_zero` | `zero_error_test_bits_95` | approximate tested bits required for 95% zero-error demonstration | bit |
 | `HeaderBits` | `header_bits` | protocol header length | bit |
 | `TrailerBits` | `trailer_bits` | protocol trailer length | bit |
 | `PLTU_Bits` | `proximity_pltu_bits` | complete Proximity-1 Link Transmission Unit size | bit |

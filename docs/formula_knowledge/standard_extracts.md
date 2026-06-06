@@ -226,6 +226,20 @@ Source: NASA/JPL DESCANSO `Deep Space Telecommunications Systems Engineering`, c
 | DSN211-001 | DSN 810-005 module 211G, section 2.2, equations 1 to 4 | VLBI channel SNR, multi-channel post-correlation SNR, delay/path error, and RMS synthesized bandwidth | Catalog includes the unambiguous multi-channel SNR, path-error, and RMS-bandwidth forms. Single-channel SNR normalization should be implemented only after unit tests against examples. |
 | DSN210-001 | DSN 810-005 module 210E, section 2.2 to 2.4, equation 1 and DOR tone ambiguity discussion | Delta-DOR downlink signal model, DOR tone spanned bandwidth, and reciprocal-spanned-bandwidth group-delay ambiguity spacing | Supports UI controls for one-tone/two-tone DOR planning and ambiguity checks. |
 
+## Measurement Uncertainty and Lab Confidence Cross-Checks
+
+Sources: JCGM 100:2008 `Guide to the Expression of Uncertainty in Measurement`, NIST Technical Note 1297, and the NIST/SEMATECH e-Handbook binomial confidence-interval guidance. These extracts are used to add uncertainty and confidence cards beside RF, antenna, receiver, link, tracking, and baseband outputs.
+
+| Extract ID | Standard location | Equation or table | Implementation note |
+| --- | --- | --- | --- |
+| MEASUNC-001 | JCGM 100:2008 clauses 3.3.6, 5.1, and NIST TN 1297 Appendix A | Combined standard uncertainty is the square root of combined variance from sensitivity coefficients, variances, and covariances | Catalog rows MEAS-013 and MEAS-014 use this as the generic uncertainty engine. UI should default to independent RSS but expose covariance-aware wording for advanced/error-budget screens. |
+| MEASUNC-002 | JCGM 100:2008 clause 6.2 and NIST coverage-factor guidance | `U = k*u_c(y)` | Use for reporting expanded uncertainty. Keep `k` visible in the output instead of implying a universal confidence level. |
+| MEASUNC-003 | NIST TN 1297 Type-A discussion and Appendix A repeated-observation relations | Sample mean uncertainty uses sample standard deviation divided by square root of sample count | Supports RF lab repeatability cards, calibration-run summaries, and measured pattern/gain scenarios. |
+| MEASUNC-004 | JCGM/NIST propagation applied to logarithmic RF quantities | Small-signal relative uncertainty converts to dB through `10/ln(10)` for power-like quantities and `20/ln(10)` for amplitude-like quantities | Use only for small uncertainties around positive quantities; exact upper/lower conversions can be added later for large uncertainty intervals. |
+| MEASUNC-005 | JCGM/NIST propagation applied to receiver Y-factor calibration | Y-factor equivalent-noise-temperature uncertainty follows the partial derivatives with respect to `Y`, `T_hot`, and `T_cold` | Complements existing receiver/noise formulas and lets the right-side UI show calibrated `T_e` with uncertainty. |
+| MEASUNC-006 | JCGM/NIST propagation applied to link budgets | Independent dB uncertainty terms RSS through `G/T`, `N0`, `C/N0`, `Eb/N0`, and margin | Lets link-budget output show available margin, required margin, and margin uncertainty rather than a single deterministic value. |
+| MEASUNC-007 | NIST/SEMATECH binomial confidence interval guidance | Exact binomial confidence limits are preferred for small failure counts; zero-error upper bound reduces to `1-alpha_tail^(1/N)` and approximates to `3/N` at 95% confidence | Use for BER test cards. Normal-approximation standard uncertainty is acceptable only as a large-sample summary beside the exact/small-count warning. |
+
 ## CCSDS 414.1-B-3 PN Ranging
 
 Source: CCSDS 414.1-B-3, `Pseudo-Noise (PN) Ranging Systems`, January 2022. The document control notes an October 2024 editorial page-size change.

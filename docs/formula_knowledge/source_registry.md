@@ -45,6 +45,9 @@ This registry records the standards, handbooks, and published books that should 
 | CELESTRAK | CelesTrak astrodynamics and coordinate-system references | CelesTrak | Public astrodynamics reference material maintained by T.S. Kelso; useful for ECI/ECEF/topocentric coordinate cross-checks and SGP4/TLE validation material. | Coordinate-frame, ground-track, sidereal-time, repeat-track, SGP4/TLE, and access-calculation sanity checks. |
 | NAVIPEDIA-COORD | Navipedia coordinate transformations | ESA Navipedia | Public coordinate-transformation reference with ECEF, ENU, and geodetic relations. | Ground-station ECEF/ENU transform formulas for antenna pointing and contact geometry. |
 | IERS-CONV | IERS Conventions | IERS | Authoritative Earth-orientation and terrestrial/celestial reference-system conventions. | High-precision ECI/ECEF transformation scope and warnings; simple workbench formulas must flag missing EOP corrections. |
+| JCGM-100 | JCGM 100:2008, Guide to the Expression of Uncertainty in Measurement | JCGM/BIPM | Public GUM reference for combined standard uncertainty, covariance handling, sensitivity coefficients, and expanded uncertainty. | Measurement uncertainty propagation for RF lab, receiver, link-budget, antenna, ranging, and BER-adjacent result cards. |
+| NIST-TN1297 | Guidelines for Evaluating and Expressing the Uncertainty of NIST Measurement Results | NIST | Public NIST technical note aligned with the GUM, including combined standard uncertainty, law of propagation, and coverage-factor explanations. | Practical uncertainty formulas, Type-A repeatability rows, dB uncertainty conversions, and reporting notes. |
+| NIST-SEMATECH | NIST/SEMATECH e-Handbook of Statistical Methods | NIST/SEMATECH | Public statistics handbook with binomial confidence-interval guidance and exact small-sample cautions. | BER point estimate, binomial standard uncertainty, and zero-error upper-bound checks. |
 
 ## Published Books
 
@@ -140,6 +143,11 @@ This registry records the standards, handbooks, and published books that should 
 | NAVIPEDIA-ENU | https://gssc.esa.int/navipedia/index.php/Transformations_between_ECEF_and_ENU_coordinates |
 | NAVIPEDIA-GEODETIC | https://gssc.esa.int/navipedia/index.php/Ellipsoidal_and_Cartesian_Coordinates_Conversion |
 | IERS-CONV | https://iers-conventions.obspm.fr/conventions_versions.php |
+| JCGM-100 PDF | https://www.bipm.org/documents/20126/2071204/JCGM_100_2008_E.pdf |
+| NIST-TN1297 combined standard uncertainty | https://www.nist.gov/pml/nist-technical-note-1297/nist-tn-1297-5-combined-standard-uncertainty |
+| NIST-TN1297 law of propagation | https://www.nist.gov/pml/nist-technical-note-1297/nist-tn-1297-appendix-law-propagation-uncertainty |
+| NIST-TN1297 coverage factor | https://physics.nist.gov/cuu/Uncertainty/coverage.html |
+| NIST-SEMATECH binomial confidence intervals | https://www.itl.nist.gov/div898/handbook/prc/section2/prc241.htm |
 | BOOK-MARAL | https://onlinelibrary.wiley.com/doi/book/10.1002/9781119673811 |
 | BOOK-BALANIS | https://www.wiley-vch.de/de/fachgebiete/ingenieurwesen/antenna-theory-978-1-118-64206-1 |
 | BOOK-MAILLOUX | https://us.artechhouse.com/Phased-Array-Antenna-Handbook-Third-Edition-P1938.aspx |

@@ -926,6 +926,27 @@ Notation:
 | MEAS-010 | `PFD_dBW_m2 = EIRP_dBW - 10log10(4 pi R^2)` | dB form | PFD in dBW/m^2. | ITU-P525, BOOK-MARAL | Seeded |
 | MEAS-011 | `PSD_dBW_Hz = P_dBW - 10log10(B)` | bandwidth `B` | Power spectral density. | General RF engineering | Seeded |
 | MEAS-012 | `CN0_from_CNR = C/N + 10log10(B_n)` | measured C/N and bandwidth | Converts measured carrier-to-noise ratio to C/N0. | BOOK-SKLAR, DSN-810-005 | Seeded |
+| MEAS-013 | `u_c(y)^2 = sum_i sum_j (df/dx_i)(df/dx_j) u(x_i,x_j)` | input estimates, sensitivity coefficients, and covariance terms | General law of propagation of uncertainty for a result derived from several measured or calibrated inputs. | JCGM-100, NIST-TN1297, DESCANSO-DSTSE | Seeded |
+| MEAS-014 | `u_c(y) = sqrt(sum_i ((df/dx_i) u(x_i))^2)` | independent input uncertainties | RSS form for independent inputs; useful for quick RF lab budgets, link-margin budgets, and radiometric error cards. | JCGM-100, NIST-TN1297 | Seeded |
+| MEAS-015 | `U = k_coverage * u_c(y)` | coverage factor and combined standard uncertainty | Expanded uncertainty interval for reporting calibrated or measured quantities. | JCGM-100, NIST-TN1297 | Seeded |
+| MEAS-016 | `u_x_dB ~= (10/ln(10)) * u_x/x` | power-like linear quantity | Small-signal conversion from relative standard uncertainty to dB uncertainty for power, loss, gain, temperature, or rate ratios. | JCGM-100, NIST-TN1297, General RF engineering | Seeded |
+| MEAS-017 | `u_x/x ~= (ln(10)/10) * u_x_dB` | power-like dB uncertainty | Converts a small dB standard uncertainty back to relative linear uncertainty. | JCGM-100, NIST-TN1297, General RF engineering | Seeded |
+| MEAS-018 | `u_V_dB ~= (20/ln(10)) * u_V/V` | voltage-like quantity | Small-signal dB uncertainty for voltage, field strength, or amplitude ratios. | JCGM-100, NIST-TN1297, General RF engineering | Seeded |
+| MEAS-019 | `u_sum_dB = sqrt(sum_i u_i_dB^2)` | independent dB add/subtract terms | Standard uncertainty of a dB budget made from independent gains, losses, and margins. | JCGM-100, NIST-TN1297 | Seeded |
+| MEAS-020 | `u_mean = s_sample / sqrt(N_samples)` | sample standard deviation and sample count | Type-A standard uncertainty of a repeated-measurement mean. | JCGM-100, NIST-TN1297 | Seeded |
+| MEAS-021 | `s_sample = sqrt(sum_i (x_i - x_bar)^2/(N_samples - 1))` | repeated observations | Sample standard deviation for RF lab repeatability and calibration runs. | JCGM-100, NIST-TN1297 | Seeded |
+| MEAS-022 | `u_Te_yfactor = sqrt((dTe_dY u_Y)^2 + (dTe_dThot u_Thot)^2 + (dTe_dTcold u_Tcold)^2)` | Y-factor and load temperature uncertainties | Uncertainty propagation for receiver equivalent-noise-temperature calibration. | JCGM-100, NIST-TN1297, BOOK-SKLAR, DSN-810-005 | Seeded |
+| MEAS-023 | `dTe_dY=(T_cold-T_hot)/(Y-1)^2; dTe_dThot=1/(Y-1); dTe_dTcold=-Y/(Y-1)` | Y-factor equivalent-noise-temperature equation derivatives | Sensitivity coefficients used by the Y-factor uncertainty row. | JCGM-100, NIST-TN1297, BOOK-SKLAR | Procedure |
+| MEAS-024 | `Y = 10^(Y_dB/10)` | hot/cold power ratio in dB | Converts measured Y-factor from dB before applying receiver-temperature and uncertainty formulas. | BOOK-SKLAR, DSN-810-005, General RF engineering | Seeded |
+| MEAS-025 | `u_GT_dB = sqrt(u_G_dB^2 + ((10/ln(10)) u_Tsys/T_sys)^2)` | antenna gain and system-temperature uncertainties | Standard uncertainty of receiver figure of merit `G/T` in dB/K. | JCGM-100, NIST-TN1297, DSN-810-005 | Seeded |
+| MEAS-026 | `u_N0_dBHz = (10/ln(10)) * u_Tsys/T_sys` | system temperature uncertainty | Noise-density uncertainty induced by system-temperature uncertainty when Boltzmann constant is exact for the scenario. | JCGM-100, NIST-TN1297, BOOK-SKLAR | Seeded |
+| MEAS-027 | `u_CN0_dBHz = sqrt(u_EIRP_dB^2 + u_GT_dB^2 + u_Ltotal_dB^2)` | EIRP, G/T, and total path/loss uncertainties | Link-budget uncertainty for carrier-to-noise-density outputs when dB inputs are independent. | JCGM-100, NIST-TN1297, DESCANSO-DSTSE | Seeded |
+| MEAS-028 | `u_EbN0_dB = sqrt(u_CN0_dBHz^2 + u_Rb_dB^2)` | C/N0 and bit-rate uncertainties | Propagates link-budget uncertainty into `Eb/N0`. | JCGM-100, NIST-TN1297, BOOK-SKLAR | Seeded |
+| MEAS-029 | `u_Margin_dB = sqrt(u_AvailableEbN0_dB^2 + u_RequiredEbN0_dB^2)` | available and required Eb/N0 uncertainties | Standard uncertainty of a link margin, including measurement/model uncertainty on both sides of the comparison. | JCGM-100, NIST-TN1297, DESCANSO-DSTSE | Seeded |
+| MEAS-030 | `BER_hat = ErrorBits / TestBits` | observed bit errors and tested bits | Point estimate of bit error rate from a counted test interval. | BOOK-SKLAR, NIST-SEMATECH | Seeded |
+| MEAS-031 | `u_BER_hat = sqrt(BER_hat*(1-BER_hat)/TestBits)` | binomial BER estimate | Large-sample standard uncertainty of the observed BER proportion. | NIST-SEMATECH, BOOK-SKLAR | Seeded |
+| MEAS-032 | `BER_upper_zero = 1 - alpha_tail^(1/TestBits); BER_upper_95 ~= 3/TestBits` | zero observed errors and one-sided tail probability | Exact zero-error binomial upper bound and common 95% rule-of-three approximation for BER tests. | NIST-SEMATECH, BOOK-SKLAR | Seeded |
+| MEAS-033 | `TestBits_95_zero ~= 3/BER_target` | target BER with zero observed errors | Approximate tested-bit count required to demonstrate a BER target with 95% confidence under the zero-error rule-of-three. | NIST-SEMATECH, BOOK-SKLAR | Seeded |
 
 ## Current App Coverage Summary
 
