@@ -975,6 +975,45 @@ This glossary defines shared symbols for the formula knowledge base. App impleme
 | `F_solar` | `solar_spectral_power_factor` | solar spectral power factor from P.1814 polynomial fit | model-specific |
 | `W_receiver` | `receiver_optical_bandwidth_nm` | receiver optical bandwidth in the P.1814 solar-background model | nm |
 | `P_solar` | `solar_background_power` | solar ambient power entering the receiver | W |
+| `f_optical` | `optical_carrier_frequency` | optical carrier frequency | Hz, THz |
+| `Delta_f_optical` | `optical_frequency_spacing` | optical frequency spacing or equivalent filter bandwidth | Hz, GHz |
+| `Delta_nu_laser` | `laser_linewidth` | optical source linewidth | Hz |
+| `tau_coh` | `optical_coherence_time` | linewidth-limited optical coherence time | s |
+| `L_coh` | `optical_coherence_length` | linewidth-limited optical coherence length | m |
+| `n_medium` | `optical_medium_refractive_index` | refractive index of the propagation medium used for coherence length | ratio |
+| `R_slot` | `optical_slot_rate` | optical signaling slot rate | slot/s |
+| `R_b_OOK` | `ook_bit_rate` | binary OOK net or coded bit rate | bit/s |
+| `T_pulse` | `optical_pulse_width` | optical pulse duration inside a slot or OOK symbol | s |
+| `T_ook_symbol` | `ook_symbol_duration` | OOK symbol duration | s |
+| `OOK_DutyCycle` | `ook_duty_cycle` | pulsed OOK duty cycle | ratio |
+| `P_avg_OOK` | `ook_average_power` | OOK average optical transmit power | W |
+| `P_peak_OOK` | `ook_peak_power` | OOK optical peak power | W |
+| `GuardSlots` | `ppm_guard_slots` | guard slots added to one PPM symbol frame | slot |
+| `PPM_FrameSlots` | `ppm_frame_slots` | total guarded slots in a PPM symbol frame | slot |
+| `PPM_FrameDuration` | `ppm_frame_duration` | duration of one guarded PPM symbol frame | s |
+| `R_b_PPM_coded` | `guarded_ppm_coded_bit_rate` | net coded bit rate of guarded PPM | bit/s |
+| `PulseSlots` | `ppm_pulse_slots` | slots occupied by optical pulses inside one PPM frame | slot |
+| `PPM_DutyCycle` | `ppm_duty_cycle` | optical duty cycle of a guarded PPM frame | ratio |
+| `P_avg_PPM` | `ppm_average_power` | PPM average optical transmit power | W |
+| `P_peak_PPM` | `ppm_peak_power` | PPM optical peak power | W |
+| `SymbolRepeats` | `ppm_symbol_repeats` | repetition count applied to each PPM symbol frame | count |
+| `RepeatedPPMSlots` | `repeated_ppm_slots` | slot count after symbol repetition | slot |
+| `SCPPM_InputBits` | `scppm_input_bits` | transfer-frame, CRC, and termination bits entering the optical coding chain | bit |
+| `CRCBits` | `optical_crc_bits` | CRC bits appended before optical channel coding | bit |
+| `TerminationBits` | `optical_termination_bits` | trellis or code termination bits | bit |
+| `r_scppm_outer` | `scppm_outer_code_rate` | outer code rate in an SCPPM-style optical chain | ratio |
+| `SCPPM_CodeBits` | `scppm_encoded_bits` | encoded bits before PPM symbol mapping | bit |
+| `SCPPM_PPMSymbols` | `scppm_ppm_symbols` | PPM symbols required for encoded bits | symbol |
+| `SCPPM_TransmittedSlots` | `scppm_transmitted_slots` | transmitted optical slots after PPM mapping, guard slots, and repetition | slot |
+| `SCPPM_SlotEfficiency` | `scppm_slot_efficiency` | useful transfer-frame bits per transmitted optical slot | bit/slot |
+| `n_rs_row` / `n_rs_col` | `rspc_row_column_code_symbols` | row and column Reed-Solomon code lengths in a product code | symbol |
+| `k_rs_row` / `k_rs_col` | `rspc_row_column_info_symbols` | row and column Reed-Solomon information lengths in a product code | symbol |
+| `J_rs` | `rspc_symbol_bits` | bits per Reed-Solomon product-code symbol | bit/symbol |
+| `RSPC_CodeSymbols` | `rspc_code_symbols` | total code symbols in a Reed-Solomon product-code block | symbol |
+| `RSPC_InfoSymbols` | `rspc_information_symbols` | information symbols in a Reed-Solomon product-code block | symbol |
+| `RSPC_Rate` | `rspc_code_rate` | overall Reed-Solomon product-code rate | ratio |
+| `RSPC_ParitySymbols` | `rspc_parity_symbols` | parity symbols in a Reed-Solomon product-code block | symbol |
+| `RSPC_BlockDuration` | `rspc_block_duration` | serialized product-code block transmission duration | s |
 
 ## Orbit, Coverage, and Contact
 

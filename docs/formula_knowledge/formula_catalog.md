@@ -782,6 +782,31 @@ Notation:
 | OPT-046 | `P_radiated_sun = 1200*cos(pi/2 - El_sun)` | solar elevation angle | Approximate solar radiated power incident on a horizontal surface in the P.1814 ambient-light model. | ITU-P1814 | Seeded |
 | OPT-047 | `F_solar = 8.97e-13*lambda_nm^5 - 4.65e-9*lambda_nm^4 + 9.37e-6*lambda_nm^3 - 9.067e-3*lambda_nm^2 + 4.05*lambda_nm - 5.70` | optical wavelength in nm | P.1814 polynomial fit for solar spectral power versus wavelength. | ITU-P1814 | Procedure |
 | OPT-048 | `P_solar = F_solar*P_radiated_sun*Scapture*W_receiver/100` | solar spectral factor, capture area, receiver optical bandwidth | Ambient solar power entering an FSO receiver when solar conjunction or near-axis sunlight is relevant. | ITU-P1814 | Seeded |
+| OPT-049 | `f_optical = c/lambda` | optical wavelength | Converts wavelength to optical carrier frequency. | CCSDS-141, DESCANSO-OPTICAL | Seeded |
+| OPT-050 | `lambda = c/f_optical` | optical carrier frequency | Converts optical frequency to wavelength. | CCSDS-141, DESCANSO-OPTICAL | Seeded |
+| OPT-051 | `Delta_f_optical ~= c*Delta_lambda/lambda^2` | small wavelength spacing around `lambda` | First-order wavelength-to-frequency spacing conversion for optical channels or filter bandwidths. | CCSDS-141, General physics | Seeded |
+| OPT-052 | `tau_coh ~= 1/(pi*Delta_nu_laser)` | laser linewidth | First-order coherence-time estimate for a Lorentzian optical linewidth. | CCSDS-141, optical comm references | Seeded |
+| OPT-053 | `L_coh ~= c*tau_coh/n_medium` | coherence time and optical medium index | Coherence length corresponding to a linewidth-limited source. | CCSDS-141, optical comm references | Seeded |
+| OPT-054 | `R_slot = 1/T_slot` | optical slot width | Optical slot rate for OOK/PPM-style direct-detection signaling. | CCSDS-141, CCSDS-142 | Seeded |
+| OPT-055 | `R_b_OOK = R_code*R_slot` | binary OOK slot rate and code rate | Coded or net bit rate for one binary optical decision per slot. | CCSDS-141, BOOK-SKLAR | Seeded |
+| OPT-056 | `OOK_DutyCycle = T_pulse/T_ook_symbol` | optical pulse width and OOK symbol duration | Duty cycle of a pulsed OOK optical waveform. | CCSDS-141 | Seeded |
+| OPT-057 | `P_peak_OOK = P_avg_OOK/OOK_DutyCycle` | average optical power and duty cycle | Peak optical power required for a pulsed OOK average-power target. | CCSDS-141, DESCANSO-OPTICAL | Seeded |
+| OPT-058 | `PPM_FrameSlots = M_PPM + GuardSlots` | PPM order and guard slots | Total slots in one PPM symbol frame when guard slots are inserted. | CCSDS-142, DESCANSO-OPTICAL | Seeded |
+| OPT-059 | `PPM_FrameDuration = PPM_FrameSlots*T_slot` | PPM frame slots and slot width | Duration of one guarded PPM symbol frame. | CCSDS-142, DESCANSO-OPTICAL | Seeded |
+| OPT-060 | `R_b_PPM_coded = R_code*log2(M_PPM)/PPM_FrameDuration` | code rate, PPM order, and guarded frame duration | Net coded information bit rate for guarded M-PPM. | CCSDS-142, DESCANSO-OPTICAL | Seeded |
+| OPT-061 | `PPM_DutyCycle = PulseSlots/PPM_FrameSlots` | pulse slots per symbol frame | Optical duty cycle for one or more pulse slots per guarded PPM symbol. | CCSDS-142 | Seeded |
+| OPT-062 | `P_peak_PPM = P_avg_PPM/PPM_DutyCycle` | average optical power and PPM duty cycle | Peak optical power implied by a PPM average-power constraint. | CCSDS-142, DESCANSO-OPTICAL | Seeded |
+| OPT-063 | `RepeatedPPMSlots = SymbolRepeats*PPM_FrameSlots` | symbol repetition count and guarded frame slots | Slot count after symbol repetition for acquisition robustness or coding/synchronization support. | CCSDS-142 | Seeded |
+| OPT-064 | `SCPPM_InputBits = TransferFrameBits + CRCBits + TerminationBits` | transfer frame, CRC, and trellis termination | Input block size entering a serially concatenated PPM coding chain. | CCSDS-142 | Seeded |
+| OPT-065 | `SCPPM_CodeBits = SCPPM_InputBits/r_scppm_outer` | outer code rate | Encoded bit count after the outer code in an SCPPM-style optical coding chain. | CCSDS-142 | Procedure |
+| OPT-066 | `SCPPM_PPMSymbols = ceil(SCPPM_CodeBits/log2(M_PPM))` | coded bits and PPM order | Number of PPM symbols needed to map coded bits into PPM positions. | CCSDS-142 | Seeded |
+| OPT-067 | `SCPPM_TransmittedSlots = SCPPM_PPMSymbols*(M_PPM+GuardSlots)*SymbolRepeats` | PPM symbol count, guard slots, and repetition | Total transmitted optical slots after guarded PPM mapping and symbol repetition. | CCSDS-142 | Seeded |
+| OPT-068 | `SCPPM_SlotEfficiency = TransferFrameBits/SCPPM_TransmittedSlots` | useful frame bits and transmitted slots | Useful transfer-frame bits per transmitted optical slot before photon-count and channel losses. | CCSDS-142 | Seeded |
+| OPT-069 | `RSPC_CodeSymbols = n_rs_row*n_rs_col` | row and column R-S code lengths | Code-symbol count in a two-dimensional Reed-Solomon product code block. | CCSDS-142.10, BOOK-SKLAR | Seeded |
+| OPT-070 | `RSPC_InfoSymbols = k_rs_row*k_rs_col` | row and column R-S information lengths | Information-symbol count in a Reed-Solomon product code block. | CCSDS-142.10, BOOK-SKLAR | Seeded |
+| OPT-071 | `RSPC_Rate = (k_rs_row*k_rs_col)/(n_rs_row*n_rs_col)` | product-code dimensions | Overall code rate of a rectangular Reed-Solomon product code. | CCSDS-142.10, BOOK-SKLAR | Seeded |
+| OPT-072 | `RSPC_ParitySymbols = n_rs_row*n_rs_col - k_rs_row*k_rs_col` | product-code dimensions | Total parity/check symbols in a Reed-Solomon product code block. | CCSDS-142.10, BOOK-SKLAR | Seeded |
+| OPT-073 | `RSPC_BlockDuration = RSPC_CodeSymbols*J_rs/R_slot` | product-code symbols, symbol bits, and optical slot rate | Time to transmit one Reed-Solomon product code block when symbols are serialized onto optical slots. | CCSDS-142.10 | Seeded |
 
 ## Orbit, Geometry, Coverage, and Contact
 
