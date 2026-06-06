@@ -404,6 +404,26 @@ Notation:
 | BB-138 | `G_coding_dB = EbN0_uncoded_req_dB - EbN0_coded_req_dB` | same target error probability | Coding gain at a specified BER/FER target. | BOOK-SKLAR, BOOK-PROAKIS | Seeded |
 | BB-139 | `R_code = k_code / n_code` | block code dimensions | Generic block-code rate for an `(n,k)` code. | BOOK-SKLAR, BOOK-PROAKIS | Seeded |
 | BB-140 | `CanCorrectErrors = floor((d_min_code - 1)/2)` | code minimum Hamming distance | Error-correction capability of a block code under bounded-distance decoding. | BOOK-SKLAR, BOOK-PROAKIS | Seeded |
+| BB-141 | `CanDetectErrors = d_min_code - 1` | code minimum Hamming distance | Maximum number of symbol or bit errors guaranteed detectable by a block code. | BOOK-SKLAR, BOOK-PROAKIS | Seeded |
+| BB-142 | `P_BDD_correct = sum_{i=0}^{t_code} C(n_code,i) p_ch^i (1-p_ch)^(n_code-i)` | bounded-distance correction radius and channel error probability | Probability that a bounded-distance block decoder sees a correctable error pattern. | BOOK-SKLAR, BOOK-PROAKIS | Procedure |
+| BB-143 | `P_BDD_fail = 1 - P_BDD_correct` | bounded-distance correction probability | Block failure probability under independent channel symbol or bit errors and bounded-distance decoding. | BOOK-SKLAR, BOOK-PROAKIS | Procedure |
+| BB-144 | `P_RS_sym = 1 - (1 - BER_in)^J` | bit error probability and R-S symbol width | Converts independent input bit errors to Reed-Solomon symbol error probability. | BOOK-SKLAR, CCSDS-131 | Seeded |
+| BB-145 | `P_RS_codeword_fail = sum_{i=E+1}^{RS_n} C(RS_n,i) P_RS_sym^i (1-P_RS_sym)^(RS_n-i)` | R-S correction capability and symbol error probability | R-S codeword failure probability when more than `E` symbols in a codeword are in error. | BOOK-SKLAR, CCSDS-131 | Procedure |
+| BB-146 | `P_RS_interleaved_fail ~= 1 - (1 - P_RS_codeword_fail)^I` | interleaving depth and per-codeword failure probability | First-order failure probability for an interleaved group of R-S codewords. | BOOK-SKLAR, CCSDS-131 | Procedure |
+| BB-147 | `RS_BurstCorrectBits ~= E * I * J` | R-S symbol correction and interleaving depth | Approximate correctable burst length for symbol-aligned R-S interleaving. Alignment and decoder erasure handling can change the usable margin. | BOOK-SKLAR, CCSDS-131 | Seeded |
+| BB-148 | `RS_InterleaverFillLatency = RS_CodeblockBits / R_coded` | interleaved codeblock bits and coded bit rate | Time to fill one complete interleaved R-S codeblock before transmission or decoding. | BOOK-SKLAR, CCSDS-131 | Seeded |
+| BB-149 | `R_concat = r_inner * RS_InfoBits / RS_CodeblockBits` | inner code rate and R-S outer-code efficiency | Effective code rate for a concatenated inner code plus R-S outer code, excluding sync and framing overhead. | BOOK-SKLAR, CCSDS-131 | Seeded |
+| BB-150 | `P_pair_d = Q(sqrt(2*d*R_code*EbN0))` | Hamming distance `d` and information-bit `Eb/N0` | Pairwise error probability for a binary linear code over AWGN with coherent BPSK and soft-decision reference assumptions. | BOOK-PROAKIS, BOOK-SKLAR | Procedure |
+| BB-151 | `P_block_union <= sum_{d=d_min_code}^{n_code} A_d * P_pair_d` | code weight enumerator | Union bound on block error probability for a binary linear block code. | BOOK-PROAKIS, BOOK-SKLAR | Procedure |
+| BB-152 | `P_bit_union <= (1/k_code) * sum_d B_d * P_pair_d` | bit-weight enumerator | Union bound on bit error probability using information-bit weights. | BOOK-PROAKIS, BOOK-SKLAR | Procedure |
+| BB-153 | `P_conv_bit_union <= sum_{d=d_free}^{d_max} c_d * Q(sqrt(2*d*R_code*EbN0))` | convolutional code distance spectrum | Truncated union bound for convolutional-code bit error probability. | BOOK-PROAKIS, BOOK-SKLAR | Procedure |
+| BB-154 | `TracebackDepth ~= L_tb_factor * K_conv` | convolutional constraint length and decoder factor | Rule-of-thumb Viterbi traceback depth; common factors are about 5 to 10 constraint lengths depending on code and puncturing. | BOOK-SKLAR, BOOK-PROAKIS | Procedure |
+| BB-155 | `p_hard_BPSK = Q(sqrt(2*R_code*EbN0))` | information-bit `Eb/N0` and code rate | Hard-decision coded-bit crossover probability for BPSK when `Eb/N0` is referenced to information bits. | BOOK-SKLAR, BOOK-PROAKIS | Seeded |
+| BB-156 | `P_uncoded_block = 1 - (1 - p_ch)^n_code` | independent channel errors and block length | Probability that an uncoded or unchecked block contains at least one channel error. | BOOK-SKLAR, BOOK-PROAKIS | Seeded |
+| BB-157 | `LLR_BPSK = 2*y/sigma_n^2` | BPSK sample and AWGN variance | Soft-bit log-likelihood ratio for normalized antipodal BPSK in AWGN. | BOOK-PROAKIS, BOOK-SKLAR | Seeded |
+| BB-158 | `LLR_clip = min(max(LLR_BPSK, -LLR_max), LLR_max)` | decoder soft-input saturation limit | Clipped LLR used by fixed-point or bounded-metric soft-decision decoders. | BOOK-PROAKIS, BOOK-SKLAR | Procedure |
+| BB-159 | `sum_{i=0}^{t_code} C(n_code,i) <= 2^(n_code-k_code)` | block-code length, dimension, correction radius | Hamming bound for a perfect or feasible bounded-distance block code. | BOOK-SKLAR, BOOK-PROAKIS | Procedure |
+| BB-160 | `d_min_code <= n_code - k_code + 1` | block-code length and dimension | Singleton bound on minimum distance. MDS codes meet this bound; many practical codes do not. | BOOK-SKLAR, BOOK-PROAKIS | Seeded |
 
 ## Telemetry, PCM, Space Packet, and Transfer Frames
 

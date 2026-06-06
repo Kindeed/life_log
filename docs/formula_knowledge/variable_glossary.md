@@ -541,12 +541,47 @@ This glossary defines shared symbols for the formula knowledge base. App impleme
 | `ChannelSymbolRateOffset` | `channel_symbol_rate_offset` | fractional offset between measured and nominal channel symbol rates | ratio |
 | `r_conv` | `convolutional_code_rate` | CCSDS convolutional code rate | ratio |
 | `K_conv` | `constraint_length` | convolutional code constraint length; CCSDS text uses `K` | bit |
+| `CanDetectErrors` | `detectable_error_count` | guaranteed detectable error count from minimum distance | bit or symbol |
+| `CanCorrectErrors` | `correctable_error_count` | guaranteed correctable error count from minimum distance | bit or symbol |
+| `t_code` | `bounded_distance_radius` | bounded-distance correction radius | bit or symbol |
+| `n_code` | `codeword_length` | generic block-code length | bit or symbol |
+| `k_code` | `code_information_length` | generic block-code information length | bit or symbol |
+| `d_min_code` | `minimum_hamming_distance` | minimum Hamming distance of a code | bit or symbol |
+| `p_ch` | `channel_error_probability` | independent channel bit or symbol error probability entering a decoder | ratio |
+| `P_BDD_correct` | `bounded_distance_correct_probability` | probability of a correctable bounded-distance error pattern | ratio |
+| `P_BDD_fail` | `bounded_distance_fail_probability` | probability of an uncorrectable bounded-distance error pattern | ratio |
 | `J` | `rs_symbol_bits` | Reed-Solomon symbol length | bit/symbol |
 | `E` | `rs_error_correction_symbols` | Reed-Solomon symbol-error correction capability per codeword | symbol |
 | `I` | `rs_interleaving_depth` | Reed-Solomon interleaving depth | unit |
 | `RS_n` | `rs_codeword_symbols` | Reed-Solomon codeword length | symbol |
 | `RS_k` | `rs_information_symbols` | Reed-Solomon information symbols per codeword before virtual fill | symbol |
 | `q_rs` | `rs_virtual_fill_symbols_per_codeword` | virtual fill symbols per R-S codeword that are not transmitted | symbol |
+| `BER_in` | `decoder_input_bit_error_rate` | bit error probability entering a symbol-oriented decoder | ratio |
+| `P_RS_sym` | `rs_symbol_error_probability` | Reed-Solomon input symbol error probability | ratio |
+| `P_RS_codeword_fail` | `rs_codeword_failure_probability` | probability that one R-S codeword has more than `E` symbol errors | ratio |
+| `P_RS_interleaved_fail` | `rs_interleaved_failure_probability` | approximate failure probability for an interleaved R-S group | ratio |
+| `RS_BurstCorrectBits` | `rs_burst_correctable_bits` | approximate burst length correctable by R-S interleaving | bit |
+| `RS_InterleaverFillLatency` | `rs_interleaver_fill_latency` | time to fill a complete interleaved R-S codeblock | s |
+| `R_concat` | `concatenated_code_rate` | effective rate of concatenated inner and outer codes before sync/framing overhead | ratio |
+| `r_inner` | `inner_code_rate` | rate of an inner code such as convolutional, Turbo, or LDPC | ratio |
+| `A_d` | `codeword_weight_enumerator` | number of codewords at Hamming distance or weight `d` | count |
+| `B_d` | `information_bit_weight_enumerator` | total information-bit weight associated with distance `d` events | bit-count |
+| `P_pair_d` | `pairwise_error_probability` | pairwise error probability for a distance-`d` code event | ratio |
+| `P_block_union` | `block_error_union_bound` | union-bound estimate or upper bound for block error probability | ratio |
+| `P_bit_union` | `bit_error_union_bound` | union-bound estimate or upper bound for bit error probability | ratio |
+| `d_free` | `free_distance` | free distance of a convolutional code | bit |
+| `d_max` | `distance_spectrum_truncation` | maximum distance included in a truncated spectrum sum | bit |
+| `c_d` | `convolutional_bit_weight_spectrum` | coefficient for bit errors at convolutional code path distance `d` | bit-count |
+| `P_conv_bit_union` | `convolutional_bit_error_union_bound` | truncated union-bound estimate for convolutional-code bit error probability | ratio |
+| `TracebackDepth` | `viterbi_traceback_depth` | Viterbi decoder traceback depth | trellis step |
+| `L_tb_factor` | `traceback_depth_factor` | traceback multiplier applied to convolutional constraint length | ratio |
+| `p_hard_BPSK` | `hard_decision_bpsk_crossover` | hard-decision crossover probability for BPSK coded-bit decisions | ratio |
+| `P_uncoded_block` | `uncoded_block_error_probability` | probability of at least one channel error in a block | ratio |
+| `LLR_BPSK` | `bpsk_log_likelihood_ratio` | soft-bit LLR for normalized BPSK in AWGN | log ratio |
+| `y` | `matched_filter_sample` | normalized matched-filter sample entering a soft decoder | amplitude |
+| `sigma_n` | `noise_standard_deviation` | AWGN sample standard deviation | amplitude |
+| `LLR_clip` | `clipped_log_likelihood_ratio` | LLR after decoder saturation limits | log ratio |
+| `LLR_max` | `maximum_llr_magnitude` | maximum LLR magnitude accepted by a fixed-point decoder | log ratio |
 | `r_turbo` | `turbo_nominal_code_rate` | CCSDS Turbo nominal code rate | ratio |
 | `k_turbo` | `turbo_information_block_bits` | Turbo information block length | bit |
 | `r_ldpc` | `ldpc_code_rate` | CCSDS LDPC code rate | ratio |

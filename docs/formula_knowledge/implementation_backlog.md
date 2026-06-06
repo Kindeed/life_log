@@ -66,7 +66,7 @@ Each pass should produce a reviewed delta to `formula_catalog.md` and, where nee
    - Sklar/Proakis/Haykin plus Gardner/Mengali for modulation, coding, BER/PER, synchronization, EVM/MER, soft decisions, pulse shaping, and receiver loops.
    - Goldsmith/Rappaport for wireless channel, fading, delay spread, Doppler, coherence, outage, and shadowing formulas.
    - Maral/Bousquet and SMAD for satellite/system link budget organization.
-   - Use `standard_extracts.md` digital-communications and measurement-confidence rows to build baseband timing, quantization, matched-filter, EVM/MER, LLR demapper, raised-cosine/RRC, synchronization-loop, timing-error detector, OFDM, phase-error, MIMO, AWGN modulation BER/SER, BER/FER confidence, zero-error demonstration, allowed-error pass probability, fading-channel BER/outage, diversity-combining, coding-gain, minimum-distance, and log-distance path-loss calculator tests before UI work.
+   - Use `standard_extracts.md` digital-communications and measurement-confidence rows to build baseband timing, quantization, matched-filter, EVM/MER, LLR demapper, raised-cosine/RRC, synchronization-loop, timing-error detector, OFDM, phase-error, MIMO, AWGN modulation BER/SER, BER/FER confidence, zero-error demonstration, allowed-error pass probability, fading-channel BER/outage, diversity-combining, coding-gain, bounded-distance, R-S interleaver failure, union-bound, convolutional traceback, LLR clipping, Hamming/Singleton bound, minimum-distance, and log-distance path-loss calculator tests before UI work.
 
 6. Compression and Proximity-1 pass:
    - CCSDS 121.0-B, 122.0-B, and 123.0-B.
