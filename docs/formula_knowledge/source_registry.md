@@ -56,6 +56,8 @@ This registry records the standards, handbooks, and published books that should 
 | BOOK-SKLAR | Sklar and Harris, *Digital Communications*, 3rd ed. | Pearson/InformIT pages list modulation, coding, synchronization, OFDM, MIMO, link budgets, and baseband transmission coverage. | Eb/N0, BER/PER, modulation, baseband, channel coding, synchronization, OFDM, MIMO formulas. |
 | BOOK-PROAKIS | Proakis and Salehi, *Digital Communications*, 5th ed. | Bibliographic/publisher evidence lists digital modulation schemes, AWGN optimum receivers, carrier/symbol synchronization, information theory, and coding topics. | BER curves, matched filtering, AWGN, coding, synchronization. |
 | BOOK-HAYKIN | Haykin and Moher, *Communication Systems*, 5th ed. | Wiley/bibliographic pages list analog and digital communications, signal processing, filtering, and systems coverage. | Baseband/passband signals, noise, modulation, filtering. |
+| BOOK-GARDNER | Gardner, *Phaselock Techniques*, 3rd ed. | Wiley page identifies the revised PLL reference and loop-filter/frequency-synthesis coverage. | Phase-locked loop bandwidth, damping, settling, and carrier-recovery implementation checks. |
+| BOOK-MENGALI | Mengali and D'Andrea, *Synchronization Techniques for Digital Receivers* | Springer page identifies timing, carrier frequency, and carrier phase recovery coverage for digital receivers. | Carrier recovery, symbol timing recovery, timing-error detectors, and synchronization-loop scenario formulas. |
 | BOOK-GOLDSMITH | Goldsmith, *Wireless Communications* | Cambridge University Press page identifies wireless channel characteristics, capacity limits, modulation, coding, multicarrier, spread spectrum, and multiple-antenna coverage. | Fading-channel models, outage, coherence bandwidth/time, adaptive modulation context, and wireless capacity formulas. |
 | BOOK-RAPPAPORT | Rappaport, *Wireless Communications: Principles and Practice*, 2nd ed. | InformIT/Pearson page lists radio propagation, path-loss models, wireless system design, and chapter supplements. | Log-distance path loss, shadowing, Rayleigh/Rician fading, Doppler, delay spread, and practical wireless channel formulas. |
 | BOOK-SAYOOD | Sayood, *Introduction to Data Compression*, 4th ed. | Elsevier/O'Reilly pages list information theory, coding, quantization, subband coding, bit allocation, and image-compression coverage. | Cross-check entropy, average code length, quantization, and compression-ratio formulas without copying standard-specific algorithm tables. |
@@ -141,6 +143,8 @@ This registry records the standards, handbooks, and published books that should 
 | BOOK-SKLAR O'Reilly TOC | https://www.oreilly.com/library/view/digital-communications-fundamentals/9780134588636/bk01-toc.xhtml |
 | BOOK-PROAKIS bibliographic | https://www.campusbooks.com/books/9780072957167-digital-communications |
 | BOOK-HAYKIN bibliographic | https://ndlsearch.ndl.go.jp/books/R100000002-I000010817499 |
+| BOOK-GARDNER | https://www.wiley-vch.de/en/areas-interest/engineering/electrical-electronics-engineering-10ee/signal-processing-10eej/phaselock-techniques-978-0-471-43063-6 |
+| BOOK-MENGALI | https://link.springer.com/book/10.1007/978-1-4899-1807-9 |
 | BOOK-GOLDSMITH Cambridge | https://www.cambridge.org/core/books/wireless-communications/800BA8A8211FBECB133A7BB77CD2E2BD |
 | BOOK-RAPPAPORT InformIT | https://www.informit.com/store/wireless-communications-principles-and-practice-9780130422323 |
 | BOOK-SMAD | https://books.google.com/books/about/Space_Mission_Engineering.html?id=4JM7tAEACAAJ |

@@ -61,7 +61,7 @@ Sources: ITU-R S.465-6 `Reference radiation pattern of earth station antennas in
 
 ## Digital Communications Textbook Cross-Checks
 
-Sources: Sklar/Harris `Digital Communications: Fundamentals and Applications`, 3rd edition; Proakis/Salehi `Digital Communications`, 5th edition; Haykin/Moher `Communication Systems`, 5th edition; Goldsmith `Wireless Communications`; Rappaport `Wireless Communications: Principles and Practice`, 2nd edition; NASA/JPL DESCANSO chapter 5 for deep-space telemetry modulation examples.
+Sources: Sklar/Harris `Digital Communications: Fundamentals and Applications`, 3rd edition; Proakis/Salehi `Digital Communications`, 5th edition; Haykin/Moher `Communication Systems`, 5th edition; Gardner `Phaselock Techniques`, 3rd edition; Mengali/D'Andrea `Synchronization Techniques for Digital Receivers`; Goldsmith `Wireless Communications`; Rappaport `Wireless Communications: Principles and Practice`, 2nd edition; NASA/JPL DESCANSO chapter 5 for deep-space telemetry modulation examples.
 
 | Extract ID | Standard location | Equation or table | Implementation note |
 | --- | --- | --- | --- |
@@ -74,6 +74,10 @@ Sources: Sklar/Harris `Digital Communications: Fundamentals and Applications`, 3
 | DIGCOM-007 | Sklar/Harris OFDM/MIMO/synchronization topics | OFDM `Delta_f=1/T_u`, `T_ofdm=T_u+T_cp`, `CP_Overhead=T_cp/T_ofdm`, MIMO `C=log2(det(I+rho/Nt HH^H))` | Mark OFDM/MIMO formulas as scenario seeds until detailed pilot, framing, channel-state, and implementation-loss models are extracted. |
 | DIGCOM-008 | Goldsmith and Rappaport wireless-channel chapters; Proakis fading-channel material | Baseband channel `y=h*x+n`, tapped multipath impulse response, mean excess delay, RMS delay spread, coherence bandwidth/time, and maximum Doppler shift | Use these as a channel workbench group. The approximate coherence bandwidth/time constants are model-selection outputs, not universal requirements. |
 | DIGCOM-009 | Goldsmith/Rappaport fading and path-loss material; Proakis fading-channel performance material | Log-distance shadowing, Rayleigh envelope PDF/CDF, Rician K factor, Rayleigh outage probability, Rayleigh BPSK average BER, and fading capacity definitions | Separate deterministic link budget from stochastic channel outputs: right-side UI should show average SNR, outage probability, and selected fading-model performance independently. |
+| DIGCOM-010 | Sklar/Harris and Proakis modulation quality and optimum receiver material | EVM is measured from constellation error vectors; MER is `-20log10(EVM_rms)`; nearest-neighbor hard decisions use minimum Euclidean distance | Catalog adds BB-082 to BB-087. These become receiver-quality result cards and constellation diagnostic outputs. |
+| DIGCOM-011 | Proakis soft-decision demodulation and coding material | Soft-bit LLRs sum likelihoods over constellation subsets; max-log LLR replaces log-sum-exp with minimum-distance terms | Catalog adds BB-088 to BB-089. Keep bit-to-symbol mapping explicit because LLR signs and partitions depend on labeling. |
+| DIGCOM-012 | Proakis/Sklar pulse-shaping and matched-filter material | Nyquist zero-ISI condition, raised-cosine response, and root-raised-cosine transmit/receive matched-filter pair | Catalog adds BB-090 to BB-092. UI should separate baseband one-sided response from passband occupied bandwidth. |
+| DIGCOM-013 | Gardner and Mengali/D'Andrea synchronization material | Second-order loop bandwidth/damping/natural-frequency relations, normalized loop bandwidth, settling/overshoot approximations, Gardner/Mueller-Muller/early-late timing detectors, Costas BPSK detector, and Mth-power PSK phase estimator | Catalog adds BB-093 to BB-102. These are implementation and acquisition aids; exact loop coefficients still need target architecture and sample-rate conventions. |
 
 ## DESCANSO Deep Space Optical Communications
 

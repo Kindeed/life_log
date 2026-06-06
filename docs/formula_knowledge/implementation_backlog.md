@@ -61,10 +61,10 @@ Each pass should produce a reviewed delta to `formula_catalog.md` and, where nee
 
 5. Textbook cross-check pass:
    - Balanis for antenna formulas.
-   - Sklar/Proakis/Haykin for modulation, coding, BER/PER, synchronization.
+   - Sklar/Proakis/Haykin plus Gardner/Mengali for modulation, coding, BER/PER, synchronization, EVM/MER, soft decisions, pulse shaping, and receiver loops.
    - Goldsmith/Rappaport for wireless channel, fading, delay spread, Doppler, coherence, outage, and shadowing formulas.
    - Maral/Bousquet and SMAD for satellite/system link budget organization.
-   - Use `standard_extracts.md` digital-communications rows to build baseband timing, quantization, matched-filter, OFDM, phase-error, MIMO, fading-channel, outage, and log-distance path-loss calculator tests before UI work.
+   - Use `standard_extracts.md` digital-communications rows to build baseband timing, quantization, matched-filter, EVM/MER, LLR demapper, raised-cosine/RRC, synchronization-loop, timing-error detector, OFDM, phase-error, MIMO, fading-channel, outage, and log-distance path-loss calculator tests before UI work.
 
 6. Compression and Proximity-1 pass:
    - CCSDS 121.0-B, 122.0-B, and 123.0-B.
@@ -150,8 +150,13 @@ Recommended implementation order:
    - GMSK/filter `BTS` to bandwidth conversion
    - quantization and ENOB
    - matched-filter decision metrics
+   - EVM/MER constellation quality and RSS EVM contributor breakdown
+   - nearest-neighbor hard decisions and soft-bit LLR/max-log demapping
+   - Nyquist zero-ISI, raised-cosine, and root-raised-cosine response cards
    - OFDM subcarrier, cyclic-prefix, and PAPR outputs
    - phase jitter/frequency-offset sanity checks
+   - second-order loop bandwidth, damping, settling, overshoot, and normalized loop bandwidth
+   - Gardner, Mueller-Muller, early-late, Costas, and Mth-power synchronization detector outputs
    - Proximity-1 `R_d/R_cs/R_chs` reference-point explanation
    - Proximity-1 coded/channel symbol-rate allowed-set, offset, and stability warnings
 

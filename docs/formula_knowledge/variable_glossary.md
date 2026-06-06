@@ -333,6 +333,23 @@ This glossary defines shared symbols for the formula knowledge base. App impleme
 | `SER` | `symbol_error_rate` | symbol error probability | ratio |
 | `PER` | `packet_error_rate` | packet or frame error probability | ratio |
 | `EVM` | `evm` | error vector magnitude | ratio, percent |
+| `ErrorVector_i` | `constellation_error_vector` | measured symbol minus ideal reference symbol | complex signal-unit |
+| `r_i` | `measured_constellation_symbol` | measured received constellation symbol | complex signal-unit |
+| `s_ref_i` | `reference_constellation_symbol` | ideal reference symbol corresponding to `r_i` | complex signal-unit |
+| `s_k` | `candidate_constellation_symbol` | kth ideal constellation point | complex signal-unit |
+| `EVM_rms` | `evm_rms` | root-mean-square error vector magnitude | ratio, percent |
+| `EVM_total` | `total_evm` | root-sum-square EVM from independent impairments | ratio, percent |
+| `EVM_noise` / `EVM_phase` / `EVM_iq` / `EVM_nonlinear` | `evm_contributors` | EVM contribution from noise, phase error, I/Q imbalance, and nonlinear distortion | ratio, percent |
+| `MER_dB` | `modulation_error_ratio` | modulation error ratio derived from RMS EVM | dB |
+| `Decision(r_i)` | `hard_symbol_decision` | nearest-neighbor hard decision for a received symbol | constellation symbol |
+| `d_min` | `minimum_constellation_distance` | minimum Euclidean distance among constellation points | signal-unit |
+| `LLR_b` | `soft_bit_log_likelihood_ratio` | log-likelihood ratio for one coded bit position | log ratio |
+| `S_b0` / `S_b1` | `constellation_bit_partitions` | subsets of symbols whose selected bit equals zero or one | set |
+| `LLR_maxlog_b` | `maxlog_soft_bit_llr` | max-log approximation to the soft-bit LLR | log ratio |
+| `p_Nyquist` | `nyquist_pulse_response` | pulse response satisfying zero-ISI samples at symbol times | signal-unit |
+| `H_RC(f)` | `raised_cosine_response` | raised-cosine frequency response | response-unit |
+| `H_RRC(f)` | `root_raised_cosine_response` | root-raised-cosine frequency response | response-unit |
+| `f1` / `f2` | `raised_cosine_band_edges` | lower and upper transition-band edges in raised-cosine response | Hz |
 | `Q(x)` | `gaussian_q_function` | Gaussian tail probability function | unitless |
 | `erfc(x)` | `complementary_error_function` | complementary error function | unitless |
 | `Delta_q` | `quantizer_step` | uniform quantizer step size | input-unit |
@@ -356,6 +373,21 @@ This glossary defines shared symbols for the formula knowledge base. App impleme
 | `sigma_phase` | `phase_error_rms` | RMS phase error | rad |
 | `Delta_f` | `frequency_offset` | carrier or oscillator frequency offset | Hz |
 | `T_obs` | `observation_time` | observation/integration interval for phase rotation | s |
+| `B_loop_Hz` | `sync_loop_noise_bandwidth` | synchronization loop noise bandwidth | Hz |
+| `BT_loop` | `normalized_loop_bandwidth` | loop bandwidth normalized by symbol period | cycles/symbol |
+| `omega_n` | `loop_natural_frequency` | second-order loop natural radian frequency | rad/s |
+| `zeta` | `loop_damping_factor` | second-order loop damping factor | unitless |
+| `T_settle_2pct` | `loop_settling_time_2pct` | approximate two-percent settling time | s |
+| `M_overshoot` | `loop_step_overshoot` | underdamped second-order step-response overshoot | ratio |
+| `e_Gardner` | `gardner_timing_error` | Gardner timing-error detector output | detector-unit |
+| `e_MM` | `mueller_muller_timing_error` | Mueller-Muller timing-error detector output | detector-unit |
+| `e_EL` | `early_late_timing_error` | early-late timing-error detector output | detector-unit |
+| `y_k` / `y_{k-1/2}` / `y_{k+1/2}` | `timing_recovery_samples` | matched-filter samples used by timing-error detectors | complex signal-unit |
+| `a_hat_k` | `detected_symbol_decision` | detected or sliced symbol used in decision-directed timing recovery | complex signal-unit |
+| `Delta_EL` | `early_late_sample_offset` | early/late sample offset around a symbol timing hypothesis | s |
+| `e_Costas_BPSK` | `costas_bpsk_phase_error` | BPSK Costas-loop phase detector output | detector-unit |
+| `I_k` / `Q_k` | `costas_iq_outputs` | in-phase and quadrature matched-filter outputs | signal-unit |
+| `theta_hat_MPSK` | `mpsk_carrier_phase_estimate` | carrier phase estimate from Mth-power PSK method | rad, deg |
 | `H` | `mimo_channel_matrix` | MIMO channel matrix | unitless |
 | `N_t` | `mimo_tx_antennas` | number of transmit antennas | unit |
 | `N_r` | `mimo_rx_antennas` | number of receive antennas | unit |

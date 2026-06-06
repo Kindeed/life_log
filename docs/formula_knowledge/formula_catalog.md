@@ -304,6 +304,27 @@ Notation:
 | BB-079 | `ChannelSymbolRateOffset = abs(R_chs_meas - R_chs_nom) / R_chs_nom` | measured and nominal channel symbol rates | Fractional channel-symbol-rate offset for Proximity-1 physical-layer acquisition/compliance checks. | CCSDS-211.1, ISO-21460 | Seeded |
 | BB-080 | `ProxChannelOffsetMargin = 0.001 - ChannelSymbolRateOffset` | channel-symbol-rate offset | Margin to the Proximity-1 physical-layer channel-symbol-rate offset limit of less than 0.1 percent. | CCSDS-211.1 | Seeded |
 | BB-081 | `ProxShortTermStabilityMargin = 0.01 - abs(Delta_R_chs/R_chs)` | short-term channel-symbol-rate variation | Margin to the Proximity-1 short-term channel-symbol-rate stability value of 1 percent. | CCSDS-211.1 | Seeded |
+| BB-082 | `ErrorVector_i = r_i - s_ref_i` | measured symbol and ideal reference symbol | Complex error vector for constellation quality measurements. | BOOK-SKLAR, BOOK-PROAKIS | Seeded |
+| BB-083 | `EVM_rms = sqrt(sum_i abs(ErrorVector_i)^2 / sum_i abs(s_ref_i)^2)` | error vectors and reference constellation symbols | RMS error vector magnitude normalized to the reference constellation energy. | BOOK-SKLAR, BOOK-PROAKIS | Seeded |
+| BB-084 | `MER_dB = -20log10(EVM_rms)` | RMS EVM ratio | Modulation error ratio derived from EVM. | BOOK-SKLAR, BOOK-HAYKIN | Seeded |
+| BB-085 | `EVM_total = sqrt(EVM_noise^2 + EVM_phase^2 + EVM_iq^2 + EVM_nonlinear^2 + ...)` | independent EVM contributors | RSS combination for independent implementation impairments. | BOOK-SKLAR, BOOK-HAYKIN | Procedure |
+| BB-086 | `Decision(r_i) = argmin_k abs(r_i - s_k)^2` | received symbol and constellation points | Nearest-neighbor hard decision rule in Euclidean signal space. | BOOK-PROAKIS, BOOK-SKLAR | Seeded |
+| BB-087 | `d_min = min_{i!=j} abs(s_i - s_j)` | constellation points | Minimum Euclidean constellation distance for uncoded detection and design comparisons. | BOOK-PROAKIS | Seeded |
+| BB-088 | `LLR_b(r)=ln(sum_{s in S_b0} exp(-abs(r-s)^2/N0) / sum_{s in S_b1} exp(-abs(r-s)^2/N0))` | received symbol, bit partitions, noise density | Exact AWGN soft-bit log-likelihood ratio for a constellation bit position. | BOOK-PROAKIS, BOOK-SKLAR | Procedure |
+| BB-089 | `LLR_maxlog_b(r)=(min_{s in S_b1} abs(r-s)^2 - min_{s in S_b0} abs(r-s)^2)/N0` | received symbol, bit partitions, noise density | Max-log approximation for soft demapping. | BOOK-PROAKIS, BOOK-SKLAR | Procedure |
+| BB-090 | `p_Nyquist(n*T_s)=1 if n=0 else 0` | pulse response sampled at symbol instants | Nyquist zero-ISI pulse condition. | BOOK-PROAKIS, BOOK-SKLAR | Seeded |
+| BB-091 | `H_RC(f)=piecewise(T_s, abs(f)<=f1; T_s/2*(1+cos(pi*T_s/alpha*(abs(f)-f1))), f1<abs(f)<=f2; 0 otherwise)` | `f1=(1-alpha)/(2*T_s)`, `f2=(1+alpha)/(2*T_s)` | Raised-cosine frequency response. | BOOK-PROAKIS, BOOK-SKLAR | Procedure |
+| BB-092 | `H_RRC(f)=sqrt(H_RC(f))` | raised-cosine response | Root-raised-cosine matched-filter response pair whose cascade gives raised-cosine shaping. | BOOK-PROAKIS, BOOK-SKLAR | Seeded |
+| BB-093 | `BT_loop = B_loop_Hz*T_s` | loop bandwidth and symbol period | Normalized synchronization-loop bandwidth in cycles per symbol. | BOOK-GARDNER, BOOK-MENGALI | Seeded |
+| BB-094 | `B_loop_Hz = omega_n/(4*pi)*(zeta + 1/(4*zeta))` | natural radian frequency and damping factor | Second-order loop noise-bandwidth approximation in hertz. | BOOK-GARDNER | Procedure |
+| BB-095 | `omega_n = 4*pi*B_loop_Hz/(zeta + 1/(4*zeta))` | loop bandwidth and damping factor | Natural radian frequency from loop noise bandwidth and damping factor. | BOOK-GARDNER | Seeded |
+| BB-096 | `T_settle_2pct ~= 4/(zeta*omega_n)` | damping factor and natural radian frequency | Approximate two-percent settling time for a second-order loop model. | BOOK-GARDNER | Seeded |
+| BB-097 | `M_overshoot = exp(-pi*zeta/sqrt(1-zeta^2))` | damping factor less than one | Step-response overshoot of an underdamped second-order loop approximation. | BOOK-GARDNER | Seeded |
+| BB-098 | `e_Gardner[k]=Re((y_{k-1/2}-y_{k+1/2})*conj(y_k))` | half-symbol-spaced matched-filter samples | Gardner timing-error detector form for two-samples-per-symbol timing recovery. | BOOK-MENGALI, BOOK-GARDNER | Procedure |
+| BB-099 | `e_MM[k]=Re(conj(a_hat_{k-1})*y_k - conj(a_hat_k)*y_{k-1})` | symbol samples and detected symbols | Mueller-Muller timing-error detector form for decision-directed timing recovery. | BOOK-MENGALI | Procedure |
+| BB-100 | `e_EL[k]=abs(y(t_k+Delta_EL))^2 - abs(y(t_k-Delta_EL))^2` | early and late samples around a timing hypothesis | Early-late timing-error detector energy difference. | BOOK-MENGALI, BOOK-GARDNER | Procedure |
+| BB-101 | `e_Costas_BPSK = I_k*Q_k` | in-phase and quadrature matched-filter outputs | BPSK Costas-loop phase detector near lock. | BOOK-GARDNER, BOOK-MENGALI | Procedure |
+| BB-102 | `theta_hat_MPSK = angle(sum_k r_k^M)/M` | M-PSK received symbols | Mth-power carrier-phase estimate that removes M-PSK data modulation under ideal assumptions. | BOOK-MENGALI, BOOK-PROAKIS | Procedure |
 
 ## Telemetry, PCM, Space Packet, and Transfer Frames
 
