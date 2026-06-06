@@ -54,6 +54,15 @@ Notation:
 | LINK-015 | `C = B log2(1 + S/N)` | `C`: channel capacity bps; `B`: bandwidth Hz | Shannon capacity upper bound. | BOOK-SKLAR | Seeded |
 | LINK-016 | `Required EIRP = Required C/N0 - G/T + L_total - 228.6` | dB units | Inverts link equation for transmitter sizing. | DSN-810-005, BOOK-MARAL | Seeded |
 | LINK-017 | `Required G/T = Required C/N0 - EIRP + L_total - 228.6` | dB/K | Inverts link equation for ground-station sizing. | DSN-810-005, BOOK-MARAL | Seeded |
+| LINK-018 | `e = sqrt(30 p) / d` | `e`: RMS field strength V/m; `p`: EIRP W; `d`: distance m | ITU-R P.525 point-to-area field strength. | ITU-P525 | Seeded |
+| LINK-019 | `e_mV_m = 173 sqrt(p_kW) / d_km` | practical units | ITU-R P.525 field-strength expression in mV/m, kW, and km. | ITU-P525 | Seeded |
+| LINK-020 | `s = e^2 / (120 pi) = p / (4 pi d^2)` | `s`: power flux density W/m^2 | Plane-wave PFD relation from ITU-R P.525. | ITU-P525 | Seeded |
+| LINK-021 | `p_r = p lambda^2 / ((4 pi d)^2)` | isotropic receiving antenna | Received power at isotropic receive antenna in free space. | ITU-P525 | Seeded |
+| LINK-022 | `L_bf = 20 log10(4 pi d / lambda)` | same units for `d` and `lambda` | ITU-R free-space basic transmission loss. | ITU-P525 | Seeded |
+| LINK-023 | `L_bf = 32.4 + 20 log10(f_MHz) + 20 log10(d_km)` | `f_MHz`, `d_km` | ITU-R P.525 practical FSPL form. | ITU-P525 | Seeded |
+| LINK-024 | `E = Pt - 20 log10(d_km) + 74.8` | `E`: dB(uV/m); `Pt`: dBW isotropic power | Field strength from isotropically transmitted power. | ITU-P525 | Seeded |
+| LINK-025 | `Pr = E - 20 log10(f_GHz) - 167.2` | `Pr`: dBW received by isotropic matched antenna | Available isotropic receive power from field strength. | ITU-P525 | Seeded |
+| LINK-026 | `S_dBW_m2 = E - 145.8` | `S`: dBW/m^2; `E`: dB(uV/m) | Power flux density from electric field strength. | ITU-P525 | Seeded |
 
 ## Modulation, Baseband, and Digital Communication
 
@@ -130,6 +139,14 @@ Notation:
 | TRK-013 | `sigma_theta ~= c sigma_tau / |b_perp|` | delay error and projected baseline | Approximate angular error from delay error. | DSN-810-005 | Seeded |
 | TRK-014 | `P_r = P_t G_t G_r lambda^2 sigma / ((4pi)^3 R^4 L)` | radar cross-section `sigma` | Monostatic radar range equation. | BOOK-BALANIS | Seeded |
 | TRK-015 | `P_r = P_t G_t G_r lambda^2 sigma / ((4pi)^3 R_t^2 R_r^2 L)` | bistatic ranges | Bistatic radar-style external measurement power. | BOOK-BALANIS | Seeded |
+| TRK-016 | `L_br = 103.4 + 20 log10(f_MHz) + 40 log10(d_km) - 10 log10(sigma)` | `sigma`: radar cross-section m^2 | ITU-R P.525 radar free-space basic transmission loss for common-antenna radar. | ITU-P525 | Seeded |
+| TRK-017 | `Fchip_S = l_pn * f_S_MHz / (128 * 2^k_pn)` | S-band uplink, CCSDS 414.1 table 3-1 | PN ranging uplink chip rate for S-band. `Fchip` is in Mchip/s; `k_pn`/`l_pn` are implementation aliases for the standard's `k`/`l` selectors. | CCSDS-414.1 | Seeded |
+| TRK-018 | `Fchip_X = l_pn * (221/749) * f_X_MHz / (128 * 2^k_pn)` | X-band uplink, table 3-1 | PN ranging uplink chip rate for X-band. | CCSDS-414.1 | Seeded |
+| TRK-019 | `Fchip_Ka = l_pn * (221/3599) * f_Ka_MHz / (128 * 2^k_pn)` | Ka-band uplink, table 3-1 | PN ranging uplink chip rate for Ka-band. | CCSDS-414.1 | Seeded |
+| TRK-020 | `Tacq = Tacq_ref / 10^((PrN0_dBHz - PrN0_ref_dBHz)/10)` | acquisition reference table | PN ranging acquisition-time scaling. Regenerative tables use 30 dB-Hz references; transparent station table uses 10 dB-Hz. | CCSDS-414.1 | Procedure |
+| TRK-021 | `DelayStabilityLimit = max(1/(30 Fchip), 20 ns)` | `Fchip`: chip/s | On-board or transparent ranging-delay stability bound. | CCSDS-414.1 | Seeded |
+| TRK-022 | `DelayCalibrationLimit = max(1/(500 Fchip), 1 ns)` | `Fchip`: chip/s | Transponder delay calibration accuracy bound. | CCSDS-414.1 | Seeded |
+| TRK-023 | `JitterTotal_RSS = sqrt(sum(jitter_i^2))` | independent jitter components | End-to-end ranging jitter combination by root-sum-square. | CCSDS-414.1 | Seeded |
 
 ## System-Level Mission and Operations Budgets
 

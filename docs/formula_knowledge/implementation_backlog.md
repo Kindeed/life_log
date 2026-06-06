@@ -38,11 +38,13 @@ Each pass should produce a reviewed delta to `formula_catalog.md` and, where nee
    - CCSDS 414.1-B-3 PN Ranging.
    - DSN 810-005 ranging/frequency/timing modules.
    - Extract transparent/regenerative PN ranging modes, chip-rate table, ambiguity, timing, Doppler, Delta-DOR.
+   - Use `standard_extracts.md` PN rows to build chip-rate selector validation and annex B regression cases before app UI work.
 
 4. RF/propagation pass:
    - CCSDS 401.0-B RF/modulation.
    - ITU-R P.525, P.618, P.676, P.838, P.839, P.840.
    - Extract FSPL variants, rain/gas/cloud/scintillation procedures, elevation/path geometry and applicability limits.
+   - Use `standard_extracts.md` P.525 rows to build MHz/km, GHz/km, field-strength, PFD, isotropic received-power, and radar-loss regression cases.
 
 5. Textbook cross-check pass:
    - Balanis for antenna formulas.

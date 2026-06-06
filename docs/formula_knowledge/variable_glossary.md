@@ -53,11 +53,18 @@ This glossary defines shared symbols for the formula knowledge base. App impleme
 | --- | --- | --- | --- |
 | `R` / `d` | `range` / `distance` | link range | m, km |
 | `L_fs` | `fspl` | free-space path loss | dB |
+| `L_bf` | `free_space_basic_transmission_loss` | ITU-R free-space basic transmission loss | dB |
 | `L_total` | `total_loss` | total path and implementation loss | dB |
 | `A_rain` | `rain_attenuation` | rain attenuation | dB |
 | `A_gas` | `gas_attenuation` | atmospheric gas attenuation | dB |
 | `A_cloud` | `cloud_attenuation` | cloud/fog attenuation | dB |
 | `A_scint` | `scintillation_loss` | scintillation fade allowance | dB |
+| `e` | `field_strength_v_m` | RMS electric field strength | V/m |
+| `E` | `field_strength_dbuv_m` | electric field strength in logarithmic units | dB(uV/m) |
+| `s` / `S` | `power_flux_density` | power flux density | W/m^2, dBW/m^2 |
+| `p` | `eirp_w` | equivalent isotropically radiated power | W |
+| `Pt` | `isotropic_tx_power_dbw` | isotropically transmitted power | dBW |
+| `Pr` | `isotropic_rx_power_dbw` | available received power through isotropic matched antenna | dBW |
 | `C/N0` | `cn0` | carrier-to-noise-density ratio | dB-Hz |
 | `Eb/N0` | `ebn0` | energy-per-bit to noise-density ratio | dB |
 | `Es/N0` | `esn0` | energy-per-symbol to noise-density ratio | dB |
@@ -110,8 +117,16 @@ This glossary defines shared symbols for the formula knowledge base. App impleme
 | Symbol | Field ID suggestion | Meaning | Unit |
 | --- | --- | --- | --- |
 | `R_chip` | `chip_rate` | PN ranging chip rate | chips/s |
+| `Fchip` | `pn_chip_rate` | CCSDS PN ranging chip rate | Mchip/s, chips/s |
+| `Fclock` | `pn_ranging_clock` | PN ranging clock frequency; CCSDS table 3-1 uses `Fchip = 2 Fclock` | MHz |
+| `l_pn` | `pn_chip_rate_l` | CCSDS PN chip-rate selector; implementation alias for the standard symbol `l` | unit |
+| `k_pn` | `pn_chip_rate_k` | CCSDS PN chip-rate exponent selector; implementation alias for the standard symbol `k` to avoid conflict with Boltzmann constant | unit |
+| `Tacq` | `pn_acquisition_time` | PN ranging code phase acquisition time | s |
+| `PrN0` | `ranging_power_noise_density` | ranging power over noise spectral density | dB-Hz |
+| `B_L` | `chip_tracking_loop_bandwidth` | chip tracking loop noise bandwidth | Hz |
 | `N_code` | `code_length` | PN code length | chip |
 | `sigma_t` | `timing_error` | timing uncertainty | s, ns |
+| `sigma` | `radar_cross_section` | radar target cross-section | m^2 |
 | `f_D` | `doppler_shift` | Doppler frequency shift | Hz |
 | `v_r` | `relative_velocity` | radial relative velocity | m/s, km/s |
 | `Delta_f_osc` | `oscillator_error` | oscillator frequency error | Hz |

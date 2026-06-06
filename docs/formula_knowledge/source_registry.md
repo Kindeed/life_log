@@ -16,7 +16,7 @@ This registry records the standards, handbooks, and published books that should 
 | CCSDS-132 | CCSDS 132.0-B, TM Space Data Link Protocol | CCSDS SLS-SLP | TM transfer frame protocol. | TM frame/packet overhead and virtual-channel throughput. |
 | CCSDS-732 | CCSDS 732.0-B-5, AOS Space Data Link Protocol | CCSDS SLS-SLP | AOS data link, October 2025. | AOS frame overhead, insert zone, virtual channels, packet service throughput. |
 | CCSDS-732.1 | CCSDS 732.1-B-3, Unified Space Data Link Protocol | CCSDS SLS-SLP | USLP, June 2024. | Unified frame overhead and service-mode sizing. |
-| CCSDS-414.1 | CCSDS 414.1-B-3, Pseudo-Noise Ranging Systems | CCSDS SLS-RFM | PN ranging, transparent/regenerative systems, January 2022. | PN ranging chip-rate, ambiguity, modulation and processing architecture. |
+| CCSDS-414.1 | CCSDS 414.1-B-3, Pseudo-Noise Ranging Systems | CCSDS SLS-RFM | PN ranging, transparent/regenerative systems, January 2022; chip-rate and acquisition extracts started in `standard_extracts.md`. | PN ranging chip-rate, ambiguity, modulation and processing architecture. |
 | CCSDS-415 | CCSDS 415.0-G, Data Transmission and PN Ranging for 2 GHz CDMA Link via Data Relay Satellite | CCSDS SLS-RFM | Spread-spectrum and CDMA support material. | Spread-spectrum ranging and link-budget extensions. |
 | CCSDS-121 | CCSDS 121.0-B-3, Lossless Data Compression | CCSDS SLS-DC | Source-coding data-compression algorithm and source-packet insertion. | Lossless compression ratio, packetization overhead, data-volume reduction. |
 | CCSDS-122 | CCSDS 122.0-B-2, Image Data Compression | CCSDS SLS-DC | Image compression for payload instrument data and compression-rate control. | Payload image compression sizing and storage/downlink budget reduction. |
@@ -24,7 +24,7 @@ This registry records the standards, handbooks, and published books that should 
 | CCSDS-211.0 | CCSDS 211.0-B-6, Proximity-1 Space Link Protocol--Data Link Layer | CCSDS SLS-SLP | Proximity-1 data link layer and transfer frames. | Relay/orbiter-lander transfer frame and throughput calculators. |
 | CCSDS-211.1 | CCSDS 211.1-B-4, Proximity-1 Physical Layer | CCSDS SLS-RFM | Proximity-1 physical layer procedures, reconfirmed through June 2024. | Proximity link RF, rate, modulation, and physical-layer parameter extraction. |
 | CCSDS-211.2 | CCSDS 211.2-B-3, Proximity-1 Coding and Synchronization Sublayer | CCSDS SLS-C&S | Proximity-1 coding and synchronization. | Proximity coding/sync overhead and coded rate formulas. |
-| ITU-P525 | ITU-R P.525, Calculation of free-space attenuation | ITU-R | Free-space attenuation; current table of contents shows P.525-5 dated 11/2024. | FSPL and radar free-space loss formulas. |
+| ITU-P525 | ITU-R P.525-5, Calculation of free-space attenuation | ITU-R | Current Recommendation dated 11/2024; equations 1-11 extracted into `standard_extracts.md`. | FSPL, field strength, PFD, isotropic received power, and radar free-space loss formulas. |
 | ITU-P618 | ITU-R P.618-14, Earth-space propagation prediction | ITU-R | In force, approved 2023-08-23; free download. | Earth-space attenuation, rain fade, scintillation, availability. |
 | ITU-P676 | ITU-R P.676, Attenuation by atmospheric gases | ITU-R | Gas attenuation model. | Oxygen/water vapor attenuation and path integration. |
 | ITU-P838 | ITU-R P.838, Specific attenuation model for rain | ITU-R | Rain specific attenuation model. | `gamma_R = k R^alpha` and polarization-dependent coefficients. |
@@ -63,9 +63,11 @@ This registry records the standards, handbooks, and published books that should 
 | CCSDS search | https://ccsds.org/searchpubs/ |
 | CCSDS-231 | https://ccsds.org/publications/allpubs/entry/3203/ |
 | CCSDS-414.1 | https://ccsds.org/publications/allpubs/entry/3249/ |
+| CCSDS-414.1 PDF | https://public.ccsds.org/Pubs/414x1b3e1.pdf |
 | CCSDS-121/122/123 search | https://ccsds.org/searchpubs/ |
 | CCSDS Proximity-1 search | https://ccsds.org/searchpubs/ |
 | ITU-P525 | https://www.itu.int/rec/R-REC-P.525/en |
+| ITU-P525-5 PDF | https://www.itu.int/dms_pubrec/itu-r/rec/p/R-REC-P.525-5-202411-I!!PDF-E.pdf |
 | ITU-P618 | https://www.itu.int/rec/R-REC-P.618-14-202308-I/en |
 | ITU-P676 | https://www.itu.int/rec/R-REC-P.676/en |
 | ITU-P838 | https://www.itu.int/rec/R-REC-P.838/en |

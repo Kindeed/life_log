@@ -31,6 +31,7 @@ That is useful as a first workbench, but it is not a complete engineering formul
 - `variable_glossary.md`: shared symbol and variable definitions.
 - `coverage_matrix.md`: domain coverage map, current status, and remaining gaps.
 - `standard_extraction_matrix.md`: concrete extraction tasks from standards/books to formulas, tables, and procedures.
+- `standard_extracts.md`: extracted implementation-ready equations, parameter tables, and notes from specific standards.
 - `implementation_backlog.md`: staged plan for converting the knowledge base into app calculators.
 
 ## Source Rules
