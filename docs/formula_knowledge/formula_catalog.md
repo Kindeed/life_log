@@ -1222,6 +1222,31 @@ Notation:
 | MEAS-051 | `EbN0_BPSK_from_BER_dB = 10log10(EbN0_BPSK_from_BER)` | linear `Eb/N0` estimate | dB form of the measured-BER implied `Eb/N0`. | BOOK-SKLAR, BOOK-PROAKIS | Seeded |
 | MEAS-052 | `ImplementationLoss_dB = EbN0_measured_req_dB - EbN0_theory_req_dB` | measured and theoretical required `Eb/N0` | Difference between measured demodulator/coding performance and the theoretical reference at the same BER/FER target. | BOOK-SKLAR, BOOK-PROAKIS, CCSDS SLS | Seeded |
 | MEAS-053 | `MeasuredCodingGain_dB = EbN0_uncoded_req_dB - EbN0_coded_measured_req_dB` | uncoded and coded measured requirements | Coding gain derived from measured or table-backed required `Eb/N0` at the same target error probability. | BOOK-SKLAR, BOOK-PROAKIS, CCSDS SLS | Seeded |
+| MEAS-054 | `x_time = phi_rad/(2*pi*f0)` | phase error and nominal frequency | Converts carrier phase error to equivalent time error. | NIST-SP1065, NIST-TF-AZ | Seeded |
+| MEAS-055 | `phi_rad = 2*pi*f0*x_time` | time error and nominal frequency | Converts clock or carrier time error to phase error. | NIST-SP1065, BOOK-SKLAR | Seeded |
+| MEAS-056 | `y_frac = (f_meas - f0)/f0` | measured and nominal frequencies | Fractional frequency offset. | NIST-SP1065, NIST-TF-AZ | Seeded |
+| MEAS-057 | `ybar_k(m) = (x_time[k+m] - x_time[k])/(m*tau0)` | time-error samples and averaging factor | Average fractional frequency over averaging time `tau=m*tau0` from time-error data. | NIST-SP1065 | Seeded |
+| MEAS-058 | `Delta_f_Hz = y_frac*f0` | fractional frequency offset and nominal frequency | Absolute frequency offset corresponding to a fractional frequency offset. | NIST-SP1065, NIST-TF-AZ | Seeded |
+| MEAS-059 | `x_holdover(t) = x0 + y0*t + 0.5*D_y*t^2` | initial time offset, frequency offset, drift rate | First-order holdover time-error growth with linear fractional-frequency drift. | NIST-SP1065, BOOK-VALLADO | Seeded |
+| MEAS-060 | `HoldoverTimeMargin_s = TimeErrorLimit_s - abs(x_holdover(t))` | allowed time error and predicted holdover error | Time-transfer or command-timing holdover margin. | NIST-SP1065, DSN-810-005 | Seeded |
+| MEAS-061 | `AVAR_y(tau) = (1/(2*(M-1))) * sum_{i=1}^{M-1}(ybar_{i+1} - ybar_i)^2` | `M` adjacent fractional-frequency averages | Allan variance from adjacent frequency averages at averaging time `tau`. | NIST-SP1065 | Procedure |
+| MEAS-062 | `ADEV_y(tau) = sqrt(AVAR_y(tau))` | Allan variance | Allan deviation, the common oscillator frequency-stability statistic. | NIST-SP1065, NIST-TF-AZ | Seeded |
+| MEAS-063 | `AVAR_x(tau0) = (1/(2*tau0^2*(N-2))) * sum_{i=1}^{N-2}(x_{i+2}-2*x_{i+1}+x_i)^2` | equally spaced time-error samples | Allan variance from time-error data at basic averaging time `tau0`. | NIST-SP1065 | Procedure |
+| MEAS-064 | `OADEV_x(m*tau0) = sqrt((1/(2*m^2*tau0^2*(N-2*m))) * sum_{i=1}^{N-2*m}(x_{i+2m}-2*x_{i+m}+x_i)^2)` | time-error samples and averaging factor | Overlapping Allan deviation from time-error data for improved confidence at longer averaging times. | NIST-SP1065 | Procedure |
+| MEAS-065 | `MVAR_x(m*tau0) = (1/(2*m^2*tau^2*(N-3*m+1))) * sum_i (sum_{j=i}^{i+m-1}(x_{j+2*m}-2*x_{j+m}+x_j))^2` | time-error samples and averaging factor | Modified Allan variance structure; use reviewed helper code for indexing and confidence intervals. | NIST-SP1065 | Procedure |
+| MEAS-066 | `MDEV_y(tau) = sqrt(MVAR_x(tau))` | modified Allan variance | Modified Allan deviation, useful for separating white and flicker phase-noise processes. | NIST-SP1065, NIST-TF-AZ | Procedure |
+| MEAS-067 | `TDEV(tau) = tau*MDEV_y(tau)/sqrt(3)` | modified Allan deviation and averaging time | Time deviation statistic derived from modified Allan deviation. | NIST-SP1065, NIST-TF-AZ | Seeded |
+| MEAS-068 | `HVAR_x(tau0) = (1/(6*tau0^2*(N-3))) * sum_{i=1}^{N-3}(x_{i+3}-3*x_{i+2}+3*x_{i+1}-x_i)^2` | equally spaced time-error samples | Hadamard variance from time-error data, less sensitive to linear frequency drift than Allan variance. | NIST-SP1065 | Procedure |
+| MEAS-069 | `HDEV_y(tau) = sqrt(HVAR_y(tau))` | Hadamard variance | Hadamard deviation for oscillator stability with drift robustness. | NIST-SP1065 | Procedure |
+| MEAS-070 | `MTIE(T_obs) = max_{windows T_obs}(max(x_time)-min(x_time))` | time-error samples within each observation window | Maximum time interval error over an observation interval. | NIST-SP1065, NIST-TF-AZ | Procedure |
+| MEAS-071 | `TIE_i = x_time_i - x_ref_i` | measured time and reference time | Time interval error relative to the selected reference timescale or timing pulse. | NIST-TF-AZ | Seeded |
+| MEAS-072 | `sigma_range_oneway = c*sigma_x_time` | RMS time error | One-way range uncertainty caused by clock/time-transfer uncertainty. | DSN-810-005, NIST-SP1065 | Seeded |
+| MEAS-073 | `sigma_range_twoway = c*sigma_x_time/2` | RMS round-trip time error | Two-way range uncertainty when the measured round-trip time error is divided by two for one-way range. | DSN-810-005, NIST-SP1065 | Seeded |
+| MEAS-074 | `sigma_Doppler_clock_Hz = f_carrier*sigma_y_tau` | carrier frequency and fractional-frequency stability | Doppler frequency uncertainty contribution from oscillator fractional-frequency stability at averaging time `tau`. | DSN-810-005, NIST-SP1065 | Seeded |
+| MEAS-075 | `sigma_rangedot_clock = c*sigma_Doppler_clock_Hz/f_carrier` | Doppler frequency uncertainty and carrier frequency | One-way range-rate uncertainty equivalent of clock-driven Doppler uncertainty. | DSN-810-005, NIST-SP1065 | Seeded |
+| MEAS-076 | `sigma_phi_rad = sqrt(2*integral_{f1}^{f2} L_linear(f) df)` | single-sideband phase noise integrated over offset band | RMS phase jitter from integrated single-sideband phase-noise density. | NIST-SP1065, ADI-MT008 | Procedure |
+| MEAS-077 | `sigma_t_jitter = sigma_phi_rad/(2*pi*f0)` | RMS phase jitter and nominal frequency | RMS time jitter corresponding to integrated phase jitter. | NIST-SP1065, ADI-MT008 | Seeded |
+| MEAS-078 | `ClockStabilityMargin = y_limit_tau - sigma_y_tau` | allowed fractional-frequency stability and measured/estimated stability | Margin between a stability requirement and Allan-deviation-like measured stability at the same averaging time. | NIST-SP1065, NIST-TF-AZ | Seeded |
 
 ## Current App Coverage Summary
 

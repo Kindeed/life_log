@@ -1568,6 +1568,40 @@ This glossary defines shared symbols for the formula knowledge base. App impleme
 | `ImplementationLoss_dB` | `implementation_loss_db` | measured performance shortfall relative to theory | dB |
 | `EbN0_coded_measured_req_dB` | `measured_coded_required_ebn0_db` | measured coded-link required `Eb/N0` at target error probability | dB |
 | `MeasuredCodingGain_dB` | `measured_coding_gain_db` | coding gain derived from measured coded and uncoded requirements | dB |
+| `x_time` / `x_i` | `time_error_sample` | time error or phase-time sample relative to a reference | s |
+| `x_ref_i` | `reference_time_sample` | reference timescale or pulse timing sample | s |
+| `phi_rad` | `phase_error_rad` | phase error in radians | rad |
+| `f0` | `nominal_frequency_time_metrology` | nominal carrier, oscillator, or clock frequency for time/frequency metrology | Hz |
+| `f_meas` | `measured_frequency` | measured frequency | Hz |
+| `y_frac` | `fractional_frequency_offset` | fractional frequency offset from nominal | ratio |
+| `ybar_k` | `average_fractional_frequency` | average fractional frequency over one averaging interval | ratio |
+| `tau0` | `basic_sampling_interval` | basic sampling period for time-error data | s |
+| `tau` | `averaging_time` | averaging time used for frequency-stability statistics | s |
+| `m` | `averaging_factor` | integer averaging factor where `tau=m*tau0` | count |
+| `M` / `N` | `stability_sample_count` | number of frequency or time-error samples used by a stability estimator | count |
+| `Delta_f_Hz` | `absolute_frequency_offset` | absolute frequency offset corresponding to fractional frequency offset | Hz |
+| `x0` | `initial_time_offset` | initial clock/time offset at holdover start | s |
+| `y0` | `initial_fractional_frequency_offset` | initial fractional frequency offset at holdover start | ratio |
+| `D_y` | `fractional_frequency_drift_rate` | linear fractional-frequency drift rate | 1/s |
+| `TimeErrorLimit_s` | `time_error_limit` | allowed absolute time error | s |
+| `HoldoverTimeMargin_s` | `holdover_time_margin` | remaining time-error margin during holdover | s |
+| `AVAR_y` / `ADEV_y` | `allan_variance_deviation` | Allan variance and Allan deviation of fractional frequency | ratio^2, ratio |
+| `OADEV_x` | `overlapping_allan_deviation` | overlapping Allan deviation from time-error data | ratio |
+| `MVAR_x` / `MDEV_y` | `modified_allan_variance_deviation` | modified Allan variance and deviation | ratio^2, ratio |
+| `TDEV` | `time_deviation` | time deviation derived from modified Allan deviation | s |
+| `HVAR_x` / `HDEV_y` | `hadamard_variance_deviation` | Hadamard variance and deviation for drift-robust stability analysis | ratio^2, ratio |
+| `MTIE` | `maximum_time_interval_error` | maximum time interval error over an observation window | s |
+| `TIE_i` | `time_interval_error` | time interval error of sample `i` against reference | s |
+| `sigma_x_time` | `time_error_rms` | RMS time error or time-transfer uncertainty | s |
+| `sigma_range_oneway` / `sigma_range_twoway` | `clock_induced_range_uncertainty` | range uncertainty induced by time error | m |
+| `sigma_y_tau` | `fractional_frequency_stability_tau` | oscillator fractional-frequency stability at averaging time `tau` | ratio |
+| `sigma_Doppler_clock_Hz` | `clock_induced_doppler_uncertainty` | Doppler frequency uncertainty caused by clock stability | Hz |
+| `sigma_rangedot_clock` | `clock_induced_range_rate_uncertainty` | one-way range-rate uncertainty caused by clock stability | m/s |
+| `L_linear(f)` | `phase_noise_linear_density` | single-sideband phase-noise density in linear units | ratio/Hz |
+| `sigma_phi_rad` | `rms_phase_jitter` | RMS phase jitter over an offset-frequency integration band | rad |
+| `sigma_t_jitter` | `rms_time_jitter` | RMS time jitter from phase-noise integration | s |
+| `y_limit_tau` | `fractional_frequency_stability_limit` | allowed fractional-frequency stability at averaging time `tau` | ratio |
+| `ClockStabilityMargin` | `clock_stability_margin` | remaining stability margin versus a requirement | ratio |
 | `HeaderBits` | `header_bits` | protocol header length | bit |
 | `TrailerBits` | `trailer_bits` | protocol trailer length | bit |
 | `PLTU_Bits` | `proximity_pltu_bits` | complete Proximity-1 Link Transmission Unit size | bit |
