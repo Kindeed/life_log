@@ -142,6 +142,20 @@ Source: CCSDS 401.0-B-32, `Radio Frequency and Modulation Systems, Part 1: Earth
 | CCSDS401-005 | Section 2.4.19 | Suppressed-carrier telemetry coded-symbol-rate offset shall be within 100 ppm, with short-term stability better than `1e-6` and long-term stability better than `1e-5` | Supports right-side UI result groups for symbol-rate offset and stability margin. |
 | CCSDS401-006 | Sections 2.4.18, 2.4.20B, and 2.4.21A | High-rate modulation rows include SRRC-QPSK/OQPSK/8PSK/APSK, 4D 8PSK TCM, GMSK, and filtered OQPSK; footnotes define SRRC alpha options and `BTS`, where `B` is one-sided 3-dB filter bandwidth | Use `B_3dB=BTS*R_cs` and table-driven modulation-family options; do not infer spectral-mask compliance without the SFCG mask data. |
 | CCSDS401-007 | Section 2.4.18 and related high-rate rows | Signaling efficiency is the ratio of source data rate to channel symbol rate; in-band group-delay variation up to 10 percent of signal duration and AM/PM slope under 5 deg/dB are cited as acceptable engineering constraints in relevant high-rate rows | Add as advanced quality margins rather than primary link-budget outputs. |
+| CCSDS401-008 | RF/modulation frequency planning context | Carrier frequency error, occupied-bandwidth, and guard-band checks should be shown next to modulation and Doppler assumptions rather than buried inside the link budget | Catalog adds RF-132, RF-136, and RF-146 to RF-149 as carrier-placement and frequency-tolerance result cards. |
+| CCSDS401-009 | RF/modulation spectrum-compatibility context | Spectral-mask conformance depends on the selected mission/service mask and measured or simulated PSD, not just symbol rate | Catalog adds RF-137 and RF-138 as mask-margin procedures; service-specific mask tables remain data assets. |
+
+## ITU-R Spectrum Management and Unwanted Emissions
+
+Sources: ITU-R SM.328-12 `Spectra and bandwidth of emissions`, approved September 2025; ITU-R SM.1541-7 `Unwanted emissions in the out-of-band domain`, approved September 2024; ITU-R SM.329-13 `Unwanted emissions in the spurious domain`, approved September 2024.
+
+| Extract ID | Standard location | Equation or table | Implementation note |
+| --- | --- | --- | --- |
+| ITUSPEC-001 | SM.328-12 definitions and bandwidth discussion | Emission spectra, out-of-band spectrum/power, x dB bandwidth, and necessary-bandwidth concepts define the spectrum-analysis vocabulary | Catalog adds RF-129 to RF-133 and RF-150. Treat occupied bandwidth and necessary bandwidth as measured/procedural values with explicit percentage and emission-class assumptions. |
+| ITUSPEC-002 | SM.1541-7 definitions, conformance methods, and Annex 1 adjacent-channel method | Out-of-band checks use measurement/reference bandwidths, PSD or integrated power, adjacent/alternate adjacent power, and service-specific masks | Catalog adds RF-126, RF-127, RF-137 to RF-143. UI should group PSD density, worst mask margin, adjacent-power ratio, and integrated OOB power. |
+| ITUSPEC-003 | SM.1541-7 Annex 5 space services and Annex 13 measurement methods | SRS/SOS/EESS space links have service-specific OoB mask handling and measurement method constraints | Store mask breakpoints and reference-bandwidth choices as versioned data assets; formulas compute margins once the table row is selected. |
+| ITUSPEC-004 | SM.329-13 terminology and spurious-domain limits | Spurious-domain emissions can be expressed as conducted power or EIRP over specified reference bandwidths | Catalog adds RF-144 and RF-145. The app should show conducted and radiated spurious margins separately because source limits may use different expressions. |
+| ITUSPEC-005 | SM.328-12 and SM.1541-7 boundary/guard concepts | Frequency placement needs lower/upper guard bands and worst-side margin after occupied bandwidth, oscillator error, drift, and Doppler allowance | Catalog adds RF-134 to RF-136 and RF-149. This is a high-value right-side summary for frequency planning. |
 
 ## CCSDS 131.3-B-2 and ETSI DVB-S2 High-Rate Telemetry Framing
 

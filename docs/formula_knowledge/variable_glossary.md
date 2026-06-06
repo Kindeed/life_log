@@ -175,6 +175,27 @@ This glossary defines shared symbols for the formula knowledge base. App impleme
 | `G_AUT_dBi` | `antenna_under_test_gain` | gain of antenna under test from transfer measurement | dBi |
 | `G_ref_dBi` | `reference_antenna_gain` | calibrated reference antenna gain | dBi |
 | `P_AUT_dB` / `P_ref_dB` | `aut_reference_power_readings` | received-power readings for AUT and reference antenna under same range setup | dB |
+| `PSD_avg_dBW_Hz` | `average_power_spectral_density` | average power spectral density across a measurement band | dBW/Hz |
+| `S_PSD(f)` | `power_spectral_density_function` | measured or modeled power spectral density versus frequency | W/Hz, dBW/Hz |
+| `B_meas_Hz` | `measurement_bandwidth` | bandwidth used to integrate power or normalize spectral density | Hz |
+| `EIRP_density_dBW_Hz` | `eirp_spectral_density` | EIRP normalized per hertz or reference bandwidth | dBW/Hz |
+| `PFD_density_dBW_m2_Hz` | `pfd_spectral_density` | power flux density normalized per hertz or reference bandwidth | dBW/m^2/Hz |
+| `OBW_x` | `occupied_bandwidth_x_percent` | occupied bandwidth containing fraction `x` of total emission power | Hz |
+| `OBW_margin_Hz` | `occupied_bandwidth_margin` | allowed bandwidth minus occupied bandwidth | Hz |
+| `B_necessary_Hz` | `necessary_bandwidth` | necessary bandwidth for the emission class or selected standard row | Hz |
+| `GuardBandLower_Hz` / `GuardBandUpper_Hz` | `guard_band_lower_upper` | lower and upper frequency guard bands inside an allocation or assignment | Hz |
+| `GuardBandMargin_Hz` | `guard_band_margin` | minimum remaining guard band after frequency placement | Hz |
+| `MaskLimit_dBW_Hz(f)` | `spectral_mask_limit` | allowed PSD or EIRP density mask as a function of frequency | dBW/Hz, dBW |
+| `MaskMargin_dB(f)` | `spectral_mask_margin_curve` | measured margin to a spectral emission mask versus frequency | dB |
+| `AdjacentPowerRatio_dB` | `adjacent_power_ratio` | in-band power minus adjacent-band power | dB |
+| `P_oob` / `P_oob_dBW` | `out_of_band_power` | integrated unwanted emission power in the out-of-band domain | W, dBW |
+| `OOBPowerMargin_dB` | `out_of_band_power_margin` | out-of-band limit minus measured out-of-band power | dB |
+| `SpurPower_dBW` / `SpurEIRP_dBW` | `spurious_component_power` | conducted or radiated spurious-domain component power | dBW |
+| `SpuriousMargin_dB` / `SpuriousEIRPMargin_dB` | `spurious_emission_margin` | margin between spurious limit and measured component power or EIRP | dB |
+| `FrequencyError_Hz` | `carrier_frequency_error` | measured carrier frequency minus nominal frequency | Hz |
+| `FrequencyTolerance_ppm` | `carrier_frequency_tolerance_ppm` | carrier frequency error normalized to nominal frequency | ppm |
+| `DopplerGuardMargin_Hz` | `doppler_frequency_guard_margin` | guard band remaining after Doppler, oscillator error, and drift allowance | Hz |
+| `ChannelOccupancyRatio` | `channel_occupancy_ratio` | occupied bandwidth divided by channel spacing | ratio |
 
 ## Noise and Receiver
 
