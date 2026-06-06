@@ -85,6 +85,19 @@ Notation:
 | BB-015 | `R_coded = R_info / R_c` | `R_c`: code rate | Encoded bit stream rate. | CCSDS-131, CCSDS-231 | Implemented |
 | BB-016 | `Latency_interleaver ~= depth * block_bits / R_info` | `depth`: interleaver depth | First-order interleaver latency estimate. | CCSDS-131, BOOK-SKLAR | Implemented |
 | BB-017 | `Processing gain = 10log10(R_chip / R_data)` | spread-spectrum rates | Direct-sequence spread-spectrum processing gain. | CCSDS-415, BOOK-SKLAR | Seeded |
+| BB-018 | `ConvOutSymbols = InfoBits / r_conv` | `r_conv`: 1/2, 2/3, 3/4, 5/6, or 7/8 | CCSDS TM convolutional encoder output symbols for the selected managed rate. | CCSDS-131 | Seeded |
+| BB-019 | `ConvExpansion = 1 / r_conv` | convolutional coding rate | Physical symbol expansion before modulation. Basic CCSDS convolutional coding is rate 1/2, K=7; punctured rates are higher. | CCSDS-131 | Seeded |
+| BB-020 | `RS_n = 2^J - 1` | `J=8` bits per R-S symbol | CCSDS TM Reed-Solomon codeword length in symbols; with J=8, `RS_n=255`. | CCSDS-131 | Seeded |
+| BB-021 | `RS_k = RS_n - 2E` | `E`: 8 or 16 symbols | CCSDS TM Reed-Solomon information symbols per codeword. Gives (255,239) for E=8 and (255,223) for E=16. | CCSDS-131 | Seeded |
+| BB-022 | `RS_CheckBits = 2 * E * I * J` | `I`: interleaving depth | Reed-Solomon check-symbol length for an interleaved codeblock. | CCSDS-131 | Seeded |
+| BB-023 | `RS_CodeblockBits = RS_n * I * J` | R-S codeword length and interleaving depth | Maximum interleaved Reed-Solomon codeblock length. | CCSDS-131 | Seeded |
+| BB-024 | `RS_InfoBits = (RS_k - q_rs) * I * J` | `q_rs`: virtual fill symbols per R-S codeword | Transmitted information-space bits after shortening by virtual fill. | CCSDS-131 | Seeded |
+| BB-025 | `RS_Efficiency = RS_InfoBits / RS_CodeblockBits` | R-S information and full codeblock bits | Coding efficiency including interleaving and virtual fill. | CCSDS-131 | Seeded |
+| BB-026 | `TurboCodewordBits = (k_turbo + 4) / r_turbo` | `r_turbo`: 1/2, 1/3, 1/4, or 1/6 | CCSDS TM Turbo codeword length including four trellis-termination bit times. | CCSDS-131 | Seeded |
+| BB-027 | `TurboTrueRate = k_turbo / TurboCodewordBits` | information bits and transmitted codeword bits | True rate is slightly below nominal rate because of trellis termination. | CCSDS-131 | Seeded |
+| BB-028 | `LDPC_EffectiveRate = k_ldpc / n_ldpc` | selected LDPC table row | Effective LDPC rate from the exact CCSDS table values. Nominal labels such as 7/8 should not be used to derive `n_ldpc` by algebra alone. | CCSDS-131 | Procedure |
+| BB-029 | `LDPC_StreamCodeblockBits = m_ldpc * n_ldpc` | `m_ldpc`: codewords per LDPC codeblock | Codeblock length for LDPC coding of a stream of Sync-Marked Transfer Frames. | CCSDS-131 | Seeded |
+| BB-030 | `LDPC_StreamInfoBits = m_ldpc * k_ldpc` | slice length and codeblock size | Information bits consumed by one stream-LDPC codeblock. | CCSDS-131 | Seeded |
 
 ## Telemetry, PCM, Space Packet, and Transfer Frames
 
@@ -112,6 +125,26 @@ Notation:
 | TM-020 | `TM_SDLS_DataFieldOctets = TM_FrameOctets - 6 - SecondaryHeaderOctets - SecurityHeaderOctets - SecurityTrailerOctets - OCFOctets - FECFOctets` | SDLS security fields | TM data-field capacity when SDLS is used. | CCSDS-132, CCSDS-355 | Seeded |
 | TM-021 | `TM_FrameEfficiency = TM_DataFieldOctets / TM_FrameOctets` | useful data capacity | TM frame data-field efficiency before packet/idle effects. | CCSDS-132 | Seeded |
 | TM-022 | `FrameCountNext = (FrameCount + 1) mod 256` | master or virtual channel frame count | TM master-channel and virtual-channel frame counters are 8-bit modulo counters. | CCSDS-132 | Seeded |
+| TM-023 | `ASM_bits = 32 / r_turbo` | Turbo nominal code rate | CCSDS TM Turbo ASM length: 64, 96, 128, or 192 bits for rates 1/2, 1/3, 1/4, or 1/6. | CCSDS-131 | Seeded |
+| TM-024 | `ASM_bits = 32` | uncoded, convolutional, RS, concatenated, rate-7/8 TF-LDPC, or stream-LDPC | Common 32-bit Attached Sync Marker length. | CCSDS-131 | Seeded |
+| TM-025 | `ASM_bits = 64` | rate 1/2, 2/3, or 4/5 Transfer-Frame LDPC | Attached Sync Marker length for the lower-rate transfer-frame LDPC modes. | CCSDS-131 | Seeded |
+| TM-026 | `ASMOverhead = ASM_bits / (ASM_bits + coded_unit_bits)` | codeblock, codeword, or frame unit bits | Sync-marker overhead for the unit that ASM immediately precedes. | CCSDS-131 | Seeded |
+| TM-027 | `CADU_Bits_RS = ASM_bits + RS_CodeblockBits` | R-S codeblock plus ASM | Channel Access Data Unit size for a full R-S codeblock without virtual-fill shortening. | CCSDS-131 | Seeded |
+| TM-028 | `CADU_Bits_RS_Short = ASM_bits + (RS_n - q_rs) * I * J` | shortened R-S codeblock | CADU size when R-S virtual fill is not transmitted. | CCSDS-131 | Seeded |
+| TM-029 | `RS_TransferFrameOctets = (255 - 2E - q_rs) * I` | `E`, `q_rs`, `I` | Allowable transfer-frame length for R-S coding with octet compatibility. | CCSDS-131 | Seeded |
+| TM-030 | `RS_CodeblockOctets = (255 - q_rs) * I` | R-S virtual fill and interleaving | 32-bit compatibility requires this codeblock length to be a multiple of 4 octets. | CCSDS-131 | Procedure |
+| TM-031 | `TurboTransferFrameOctets in {223,446,892,1115}` | selected Turbo block size | CCSDS-validated transfer-frame lengths for Turbo coding. | CCSDS-131 | Seeded |
+| TM-032 | `TurboCADUBits = ASM_bits + TurboCodewordBits` | Turbo ASM plus codeword | Total transmitted synchronized Turbo unit length before modulation. | CCSDS-131 | Seeded |
+| TM-033 | `LDPC_TF_Octets in {128,512,892,2048}` | selected LDPC transfer-frame mode | Transfer-frame LDPC allows 892 octets for rate 7/8, and 128/512/2048 octets for rates 1/2, 2/3, and 4/5. | CCSDS-131 | Seeded |
+| TM-034 | `CSM_bits = 32` | stream-LDPC rate 7/8 | Code Synchronization Marker length for stream LDPC rate 7/8. | CCSDS-131 | Seeded |
+| TM-035 | `CSM_bits = 64` | stream-LDPC rates 1/2, 2/3, 4/5 | Code Synchronization Marker length for stream LDPC lower-rate modes. | CCSDS-131 | Seeded |
+| TM-036 | `StreamLDPC_UnitBits = CSM_bits + m_ldpc * n_ldpc` | stream-LDPC codeblock and CSM | Physical synchronized unit length for LDPC coding of an SMTF stream. | CCSDS-131 | Seeded |
+| TM-037 | `SMTF_Bits = ASM_bits + TransferFrameBits` | stream-LDPC Transfer Frame plus ASM | Sync-Marked Transfer Frame size before stream slicing. | CCSDS-131 | Seeded |
+| TM-038 | `RandomizerPeriodBits = 2^17 - 1 = 131071` | long pseudo-randomizer | CCSDS preferred TM pseudo-randomizer period. Randomization adds no bits. | CCSDS-131 | Seeded |
+| TM-039 | `LegacyRandomizerPeriodBits = 2^8 - 1 = 255` | short pseudo-randomizer | Backward-compatible randomizer period; standard warns about possible spectral lines. | CCSDS-131 | Seeded |
+| TM-040 | `RandomizedBit_i = DataBit_i xor PRN_i` | pseudo-random sequence | Randomizer operation for codeblock, codeword, or Transfer Frame bits after the ASM. | CCSDS-131 | Procedure |
+| TM-041 | `TM_MaxFrameOctets_StreamLDPC = 2048` | TM/AOS stream-LDPC | Maximum TM or AOS Transfer Frame length when LDPC is applied to a stream of SMTFs. | CCSDS-131 | Seeded |
+| TM-042 | `USLP_MaxFrameOctets_StreamLDPC = 65536` | USLP stream-LDPC | Maximum USLP Transfer Frame length when LDPC is applied to a stream of SMTFs. | CCSDS-131 | Seeded |
 
 ## Telecommand and Uplink Commanding
 

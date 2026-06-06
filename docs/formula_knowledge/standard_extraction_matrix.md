@@ -7,7 +7,7 @@ This file turns the source registry into concrete extraction work. The intent is
 | Source | Extract | Output artifacts | Formula catalog targets | Notes |
 | --- | --- | --- | --- | --- |
 | CCSDS 401.0-B RF and Modulation Systems | modulation families, symbol-rate assumptions, spectral occupancy, frequency/Doppler constraints | modulation table, occupied-bandwidth notes, frequency guard procedure | BB-005, BB-006, TRK-007, TRK-010, TRK-011 | Start with public table of contents and active issue; avoid restricted/regulatory interpretation until checked. |
-| CCSDS 131.0-B TM Synchronization and Channel Coding | randomizer behavior, attached sync marker, RS/convolutional/turbo/LDPC options, interleaving, coded-frame lengths | coding-mode table, sync overhead table, coded-rate procedure | BB-015, BB-016, TM-010, TM-011, TM-012, TM-013 | Need exact active issue PDF extraction. |
+| CCSDS 131.0-B TM Synchronization and Channel Coding | randomizer behavior, attached sync marker, RS/convolutional/turbo/LDPC options, interleaving, coded-frame lengths | coding-mode table, sync overhead table, coded-rate procedure | BB-015, BB-016, BB-018 to BB-030, TM-010 to TM-013, TM-023 to TM-042 | First-pass extraction completed from public Issue 5; CCSDS lists Issue 6 in April 2026, so B-6 delta verification remains required. |
 | CCSDS 131.2-B high-rate telemetry ACM | SCCC/high-rate coding modes and modulation options | ACM mode table, spectral efficiency table | BB-005, BB-006, BB-011, BB-012 | Treat MODCOD/performance tables as data, not prose. |
 | CCSDS 131.3-B DVB-S2 mapping | DVB-S2 MODCODs usable by CCSDS links, PL frame overhead, supported services | MODCOD table, frame overhead table | BB-005, BB-006, PROTO-003, SYS-003 | Cross-check ETSI DVB-S2 source if needed. |
 | CCSDS 231.0-B TC Synchronization and Channel Coding | CLTU structure, BCH/LDPC block parameters, fill/tail, repeated transfer frame rules | CLTU overhead table, BCH/LDPC rate table | TC-006 to TC-008, TC-017 to TC-025, PROTO-005 | BCH/LDPC codeword sizing, CLTU start/tail lengths, fill formulas, and managed parameters started in `standard_extracts.md`. |
@@ -48,6 +48,6 @@ This file turns the source registry into concrete extraction work. The intent is
 | --- | --- | --- |
 | Source registry | started | Every source has official/publisher URL and intended use. |
 | Formula seed catalog | started | Each domain has formula entries and variable definitions. |
-| CCSDS table extraction | started | Table entries captured with source section/page references and tests for selected examples. |
+| CCSDS table extraction | started | Table entries captured with source section/page references and tests for selected examples; CCSDS 131 B-5, 231, 132, 232, and 414.1 have first-pass extracts. |
 | ITU-R propagation procedures | not started | Procedure checklist, coefficient schema, validity ranges, and sample validation cases. |
 | App integration | not started for new knowledge base | Data model, calculators, tests, and phone UI verification. |

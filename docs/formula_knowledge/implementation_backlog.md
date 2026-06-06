@@ -22,11 +22,12 @@ Done in this seed pass:
 Each pass should produce a reviewed delta to `formula_catalog.md` and, where needed, machine-readable data later.
 
 1. CCSDS coding and synchronization pass:
-   - CCSDS 131.0-B active issue.
+   - CCSDS 131.0-B active issue; public B-5 first pass is extracted, and B-6 needs delta verification when the official PDF is accessible.
    - CCSDS 131.2-B and 131.3-B.
    - CCSDS 231.0-B-4.
    - Extract code families, code rates, sync marker sizes, randomizer behavior, CLTU/codeblock overhead, and MODCOD references.
    - Use `standard_extracts.md` CCSDS 231 rows to build BCH/LDPC CLTU sizing tests before adding telecommand UI controls.
+   - Use `standard_extracts.md` CCSDS 131 rows to build R-S, Turbo, LDPC, ASM/CSM, and randomizer sizing tests before adding telemetry coding UI controls.
 
 2. CCSDS data-link pass:
    - TM Space Data Link Protocol.

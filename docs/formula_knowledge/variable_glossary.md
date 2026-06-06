@@ -86,6 +86,19 @@ This glossary defines shared symbols for the formula knowledge base. App impleme
 | `EVM` | `evm` | error vector magnitude | ratio, percent |
 | `depth` | `interleaver_depth` | interleaver depth | unit |
 | `block_bits` | `codeblock_bits` | code block length | bit |
+| `InfoBits` | `information_bits` | uncoded information length entering a channel encoder | bit |
+| `r_conv` | `convolutional_code_rate` | CCSDS convolutional code rate | ratio |
+| `K_conv` | `constraint_length` | convolutional code constraint length; CCSDS text uses `K` | bit |
+| `J` | `rs_symbol_bits` | Reed-Solomon symbol length | bit/symbol |
+| `E` | `rs_error_correction_symbols` | Reed-Solomon symbol-error correction capability per codeword | symbol |
+| `I` | `rs_interleaving_depth` | Reed-Solomon interleaving depth | unit |
+| `RS_n` | `rs_codeword_symbols` | Reed-Solomon codeword length | symbol |
+| `RS_k` | `rs_information_symbols` | Reed-Solomon information symbols per codeword before virtual fill | symbol |
+| `q_rs` | `rs_virtual_fill_symbols_per_codeword` | virtual fill symbols per R-S codeword that are not transmitted | symbol |
+| `r_turbo` | `turbo_nominal_code_rate` | CCSDS Turbo nominal code rate | ratio |
+| `k_turbo` | `turbo_information_block_bits` | Turbo information block length | bit |
+| `r_ldpc` | `ldpc_code_rate` | CCSDS LDPC code rate | ratio |
+| `m_ldpc` | `ldpc_codewords_per_codeblock` | number of LDPC codewords aggregated in one stream-LDPC codeblock | unit |
 
 ## Telemetry and Frames
 
@@ -97,6 +110,11 @@ This glossary defines shared symbols for the formula knowledge base. App impleme
 | `minor_frames_per_major` | `minor_per_major` | minor frames in major frame | unit |
 | `sync_bits` | `sync_bits` | synchronization marker length | bit |
 | `TransferFrameBits` | `transfer_frame_bits` | complete transfer frame length | bit |
+| `coded_unit_bits` | `coded_unit_bits` | coded frame, codeblock, or codeword length immediately following an ASM | bit |
+| `ASM_bits` | `attached_sync_marker_bits` | Attached Sync Marker length | bit |
+| `CSM_bits` | `code_sync_marker_bits` | Code Synchronization Marker length for LDPC stream codeblocks | bit |
+| `RandomizerPeriodBits` | `randomizer_period_bits` | pseudo-randomizer sequence period | bit |
+| `SMTF_Bits` | `sync_marked_transfer_frame_bits` | Transfer Frame plus ASM before stream-LDPC slicing | bit |
 | `TM_FrameOctets` | `tm_frame_octets` | complete TM transfer frame length | octet |
 | `TC_FrameOctets` | `tc_frame_octets` | complete TC transfer frame length | octet |
 | `FrameLengthCount` | `frame_length_count` | TC frame length count field equal to total octets minus one | octet-count |
