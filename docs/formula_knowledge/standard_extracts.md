@@ -66,6 +66,22 @@ Sources: ITU-R P.838-3 `Specific attenuation model for rain for use in predictio
 | ITURAIN-007 | P.618-14 section 2.2.1.1, equation 8 | `A_p=A0.01*(p/0.01)^(-(0.655+0.033ln(p)-0.045ln(A0.01)-beta(1-p)sin(theta)))` | Probability extrapolation for `0.001% <= p <= 5%`; beta is branch-dependent on p, latitude, and elevation. |
 | ITURAIN-008 | P.618-14 section 2.5, equations 65 to 68 | `A_T=A_G+sqrt((A_R+A_C)^2+A_S^2)` for `0.001%<=p<=5%`; `A_T=A_G+sqrt(A_C^2+A_S^2)` for `5%<p<=50%`; use `A_C(5%)` and `A_G(5%)` below 5% | Total attenuation combines rain, gas, cloud, and scintillation. Gas/cloud/scintillation still need P.676/P.840/P.618 subprocedure extraction. |
 
+## DESCANSO Tracking, Ranging, and External Measurement Extracts
+
+Source: NASA/JPL DESCANSO `Deep Space Telecommunications Systems Engineering`, chapter 4, with radar cross-checks from ITU-R P.525-5 and Balanis.
+
+| Extract ID | Standard location | Equation or table | Implementation note |
+| --- | --- | --- | --- |
+| DSTRK-001 | DESCANSO section 4.2.1.1, equations 4.2-2 to 4.2-4 | Received frequency depends on line-of-sight velocity; low-speed one-way Doppler reduces to `f_D ~= -f_T*rho_dot/c` | Keep sign convention explicit. Two-way and three-way practical observables need spacecraft turnaround ratio and media/hardware corrections. |
+| DSTRK-002 | DESCANSO section 4.2.1.2, equations 4.2-5 to 4.2-8 | Two-station differenced range, round-trip ranging modulation delay, and cross-correlation estimate | Supports range, differenced range, code ambiguity, and range-residual calculators. |
+| DSTRK-003 | DESCANSO section 4.2.1.3, equations 4.2-9 and surrounding VLBI/DOR text | VLBI group delay is driven by baseline projection and source direction; DOR alternates spacecraft and quasar observations to reduce clock/media effects | Add Delta-DOR delay, spanned-bandwidth delay resolution, and angular-error estimates as a separate external-measurement group. |
+| DSTRK-004 | DESCANSO sections 4.3.1 to 4.3.3, equations 4.3-1 to 4.3-4 | Biased Doppler counting/resolver phase increment gives average biased frequency; subtract bias to recover average Doppler | Needs counter start/end, resolver fractions, sampling interval, and bias-frequency variables. |
+| DSTRK-005 | DESCANSO section 4.4.1.3.2, equations 4.4-23 and 4.4-24 | Ranging delay-estimate variance depends on ranging period, correlation interval, received ranging power, and noise spectral density | Current catalog includes the sine-wave/1-MHz-filtered strong-signal case; square-wave case remains to be extracted after equation-image verification. |
+| DSTRK-006 | DESCANSO section 4.4.1.4.1 to 4.4.1.4.2 | Doppler sampling-time and resolver quantization errors convert timing uncertainty to phase uncertainty | Formula entries use uniform-quantization RMS `T_clock/sqrt(12)` and sample epoch phase propagation. |
+| DSTRK-007 | DESCANSO section 4.4.1.4.5, equation 4.4-26 | `RTPT = D - BIAS_sc - BIAS_DSS - ZCORRECTION` | Turns measured two-way group delay into corrected round-trip propagation time before range conversion. |
+| DSTRK-008 | DESCANSO section 4.4.1 radiometric DCT discussion, equation 4.4-27 | Independent measurement-error terms combine by root-sum-square through sensitivities `dq/dxi` | Use for range/Doppler/angle uncertainty cards, not as a mission-specific covariance estimator. |
+| DSTRK-009 | ITU-R P.525-5 section 3 and Balanis radar-equation chapters | Radar free-space loss, monostatic/bistatic echo power, maximum range, range/Doppler resolution, and PRF ambiguity relations | These formulas support external-measurement and radar-like ground test scenarios separate from CCSDS PN ranging. |
+
 ## CCSDS 414.1-B-3 PN Ranging
 
 Source: CCSDS 414.1-B-3, `Pseudo-Noise (PN) Ranging Systems`, January 2022. The document control notes an October 2024 editorial page-size change.

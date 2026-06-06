@@ -13,7 +13,7 @@ This matrix tracks whether the knowledge base is moving toward the requested com
 | Channel coding | RS, convolutional, turbo, LDPC, BCH, interleaving | CCSDS 131, 131.2, 131.3, 231, Sklar | CCSDS 131.0-B-5 and 231.0-B-4 first-pass tables/formulas extracted; generic textbook formulas seeded | Verify CCSDS 131.0-B-6 deltas, then extract 131.2/131.3 high-rate telemetry modes and textbook BER/coding performance curves. |
 | Telemetry frames | PCM, space packet, TM/AOS/USLP frame overhead, VC throughput | IRIG practice, CCSDS 132, 133, 732, 732.1 | PCM partly implemented; TM frame field/data capacity extracts started | Extract AOS/USLP exact field lengths, packet extraction examples, insert zones, security interaction. |
 | Telecommand | TC frames, CLTU, BCH/LDPC, repeat, COP/ARQ goodput | CCSDS 231, 232, COP-1 | TC frame capacity and CLTU BCH/LDPC sizing extracts started | Extract COP/FARM timing model and PLOP timing details. |
-| Ranging/tracking | PN range, ambiguity, Doppler, guard band, Delta-DOR, radar equation | CCSDS 414.1, 415, DSN 810-005, Balanis | Partly implemented; P.525 radar loss and CCSDS 414.1 chip-rate/acquisition formulas extracted | Extract full transparent/regenerative PN mode matrices, D-DOR error model, sequential ranging if public sources permit. |
+| Ranging/tracking | PN range, ambiguity, Doppler, guard band, Delta-DOR, radar equation | CCSDS 414.1, 415, DSN 810-005, DESCANSO, Balanis | PN chip-rate/acquisition formulas extracted; DESCANSO first-pass Doppler, ranging, Doppler-counting, delay correction, RSS error, VLBI/DOR, and radar/external-measurement formulas added | Extract full transparent/regenerative PN mode matrices, sequential ranging, exact two-way/three-way turnaround ratios, covariance/OD weighting models, and DSN module 202/203 operational tables if public. |
 | Proximity links | orbiter/lander relay physical, coding, data-link efficiency | CCSDS 211.0, 211.1, 211.2 | Newly seeded as protocol formulas | Extract Proximity-1 rate/mode tables, frame overhead, coding/sync options. |
 | Data compression | lossless/image/hyperspectral compression and data-volume reduction | CCSDS 121, 122, 123, Sklar | Newly seeded | Extract packetization overhead, predictor/quantizer parameters, rate-control fields. |
 | Orbit/contact geometry | slant range, elevation, pass time, range-rate, antenna tracking rates | SMAD, Vallado, DSN 810-005 | Newly seeded | Add Earth rotation, station coordinates, ECI/ECEF transforms, minimum-elevation contact solver. |
@@ -22,7 +22,7 @@ This matrix tracks whether the knowledge base is moving toward the requested com
 
 ## Current Numeric Coverage
 
-As of this pass, `formula_catalog.md` contains over 310 formula or formula-family entries across RF, link, baseband, telemetry, telecommand, ranging/tracking, system, optical, orbit/contact, compression, protocol, and measurement domains.
+As of this pass, `formula_catalog.md` contains 353 formula or formula-family entries across RF, link, baseband, telemetry, telecommand, ranging/tracking, system, optical, orbit/contact, compression, protocol, and measurement domains.
 
 ## Not Yet Complete
 

@@ -281,6 +281,67 @@ This glossary defines shared symbols for the formula knowledge base. App impleme
 | `sigma` | `radar_cross_section` | radar target cross-section | m^2 |
 | `f_D` | `doppler_shift` | Doppler frequency shift | Hz |
 | `v_r` | `relative_velocity` | radial relative velocity | m/s, km/s |
+| `r_sc` | `spacecraft_position_vector` | spacecraft position vector in the selected frame | m, km |
+| `r_site` | `station_position_vector` | ground station position vector in the selected frame | m, km |
+| `v_sc` | `spacecraft_velocity_vector` | spacecraft velocity vector in the selected frame | m/s, km/s |
+| `v_site` | `station_velocity_vector` | ground station velocity vector in the selected frame | m/s, km/s |
+| `rho_vec` | `line_of_sight_vector` | station-to-spacecraft line-of-sight vector | m, km |
+| `rho_dot` | `range_rate` | line-of-sight range rate | m/s, km/s |
+| `f_T` | `transmitted_frequency` | transmitted carrier frequency | Hz |
+| `f_R` | `received_frequency` | received carrier frequency | Hz |
+| `f_ref` | `coherent_reference_frequency` | reference carrier frequency used for first-order two-way Doppler conversion | Hz |
+| `beta` | `velocity_over_light_speed` | radial speed normalized by light speed | ratio |
+| `sigma_f` | `doppler_frequency_uncertainty` | standard deviation of Doppler frequency estimate | Hz |
+| `DeltaPhi` | `doppler_phase_increment` | phase increment accumulated during a Doppler count interval | rad |
+| `N_start` | `doppler_counter_start` | Doppler counter value at the start of the sampling interval | cycles |
+| `N_end` | `doppler_counter_end` | Doppler counter value at the end of the sampling interval | cycles |
+| `n_start` | `resolver_count_start` | fractional resolver count at the start of the sampling interval | cycles |
+| `n_end` | `resolver_count_end` | fractional resolver count at the end of the sampling interval | cycles |
+| `T_i` | `doppler_sampling_interval` | Doppler count sampling interval | s |
+| `f_B` | `doppler_bias_frequency` | bias frequency added before Doppler counting | Hz |
+| `f_D_biased` | `biased_doppler_frequency` | biased Doppler frequency before bias removal | Hz |
+| `f_D_biased_avg` | `average_biased_doppler_frequency` | average biased Doppler frequency over a sampling interval | Hz |
+| `f_D_avg` | `average_unbiased_doppler_frequency` | average Doppler frequency after bias removal | Hz |
+| `cycles_D` | `integrated_doppler_cycles` | integrated Doppler cycles over a count interval | cycles |
+| `sigma_Ti` | `sampling_epoch_uncertainty` | timing uncertainty in Doppler sample epoch | s |
+| `T_clock` | `resolver_clock_period` | Doppler resolver quantization clock period | s |
+| `T_range` | `ranging_wave_period` | sine-wave or square-wave ranging-signal period | s |
+| `T_corr` | `ranging_correlation_interval` | ranging correlation/integration interval | s |
+| `P_ranging` | `received_ranging_power` | received ranging-signal power in the ranging channel | W |
+| `sigma_tau` | `delay_uncertainty` | standard deviation of group-delay or timing estimate | s |
+| `D_meas` | `measured_tracking_delay` | measured two-way group delay before hardware corrections | s |
+| `BIAS_sc` | `spacecraft_turnaround_delay` | spacecraft ranging turnaround delay correction | s |
+| `BIAS_dss` | `station_turnaround_delay` | station turnaround or tracking-system hardware delay correction | s |
+| `Z_correction` | `station_reference_delay_correction` | station reference-location delay correction | s |
+| `RTPT` | `round_trip_propagation_time` | corrected round-trip propagation time | s |
+| `R_corrected` | `corrected_range` | corrected one-way range from round-trip propagation time | m, km |
+| `RangeObserved` | `observed_range` | measured range observable | m, km |
+| `RangeComputed` | `computed_range` | modeled range from orbit/observation model | m, km |
+| `RangeResidual` | `range_residual` | observed range minus computed range | m, km |
+| `DopplerObserved` | `observed_doppler` | measured Doppler observable | Hz |
+| `DopplerComputed` | `computed_doppler` | modeled Doppler observable | Hz |
+| `DopplerResidual` | `doppler_residual` | observed Doppler minus computed Doppler | Hz |
+| `sigma_q` | `measurement_stddev` | standard deviation of a measured radiometric quantity | same as measured quantity |
+| `dq_dxi` | `measurement_sensitivity` | partial derivative of measurement quantity with respect to an error source | varies |
+| `sigma_xi` | `error_source_stddev` | standard deviation of an independent error source | varies |
+| `rho_1` | `station_1_range` | range from station 1 to spacecraft/source | m, km |
+| `rho_2` | `station_2_range` | range from station 2 to spacecraft/source | m, km |
+| `DeltaRange12` | `differenced_range` | range from station 1 minus range from station 2 | m, km |
+| `D_baseline` | `station_baseline_length` | station baseline length for differenced ranging or interferometry | m, km |
+| `delta` | `declination_angle` | source declination or small angular offset in differenced-ranging context | rad, deg |
+| `tau_g` | `geometric_delay` | VLBI/DOR geometric group delay | s |
+| `s_sc` | `spacecraft_direction_unit_vector` | unit vector toward spacecraft | unitless |
+| `s_qso` | `quasar_direction_unit_vector` | unit vector toward calibration quasar | unitless |
+| `DeltaTau_DOR` | `delta_dor_delay` | spacecraft-minus-quasar differential one-way ranging delay | s |
+| `B_span` | `spanned_bandwidth` | total spanned bandwidth between tones or recorded bands | Hz |
+| `b_perp` | `projected_baseline` | baseline projected perpendicular to the line of sight | m, km |
+| `sigma_DeltaTau` | `delta_dor_delay_uncertainty` | standard deviation of Delta-DOR differential delay | s |
+| `S_min` | `minimum_detectable_signal` | minimum detectable radar echo power | W |
+| `B_n` | `noise_bandwidth` | receiver noise bandwidth | Hz |
+| `tau_p` | `pulse_width` | radar pulse duration | s |
+| `B_waveform` | `waveform_bandwidth` | waveform or compressed-pulse bandwidth | Hz |
+| `PRF` | `pulse_repetition_frequency` | radar pulse repetition frequency | Hz |
+| `T_coh` | `coherent_integration_time` | coherent processing/integration time | s |
 | `Delta_f_osc` | `oscillator_error` | oscillator frequency error | Hz |
 | `GuardBand` | `protection_band` | allocated guard band | Hz |
 | `b` | `baseline_vector` | Delta-DOR baseline vector | m |

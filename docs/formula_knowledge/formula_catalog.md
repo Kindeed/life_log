@@ -284,6 +284,44 @@ Notation:
 | TRK-021 | `DelayStabilityLimit = max(1/(30 Fchip), 20 ns)` | `Fchip`: chip/s | On-board or transparent ranging-delay stability bound. | CCSDS-414.1 | Seeded |
 | TRK-022 | `DelayCalibrationLimit = max(1/(500 Fchip), 1 ns)` | `Fchip`: chip/s | Transponder delay calibration accuracy bound. | CCSDS-414.1 | Seeded |
 | TRK-023 | `JitterTotal_RSS = sqrt(sum(jitter_i^2))` | independent jitter components | End-to-end ranging jitter combination by root-sum-square. | CCSDS-414.1 | Seeded |
+| TRK-024 | `rho_vec = r_sc - r_site` | spacecraft and station position vectors | Topocentric line-of-sight vector from station to spacecraft. | DESCANSO-DSTSE, BOOK-VALLADO | Seeded |
+| TRK-025 | `rho = norm(rho_vec)` | `rho_vec` | Geometric station-to-spacecraft range before media/equipment corrections. | DESCANSO-DSTSE, BOOK-VALLADO | Seeded |
+| TRK-026 | `rho_dot = dot(rho_vec, v_sc - v_site) / rho` | relative state vectors | Line-of-sight range rate used by Doppler observables. | DESCANSO-DSTSE, BOOK-VALLADO | Seeded |
+| TRK-027 | `f_R = f_T * sqrt((1 - beta)/(1 + beta))` | `beta = v_r/c` | Relativistic one-way received frequency for pure line-of-sight motion. | DESCANSO-DSTSE | Seeded |
+| TRK-028 | `f_D_oneway ~= -f_T * rho_dot / c` | low-speed line-of-sight motion | First-order one-way Doppler observable. | DESCANSO-DSTSE | Seeded |
+| TRK-029 | `f_D_twoway ~= -2 * f_ref * rho_dot / c` | coherent round-trip approximation | First-order two-way Doppler shift for a coherent turnaround when uplink/downlink ratios are collapsed into a reference frequency. | DESCANSO-DSTSE, DSN-810-005 | Seeded |
+| TRK-030 | `rho_dot_oneway ~= -c * f_D / f_T` | one-way Doppler | Converts one-way Doppler frequency to line-of-sight velocity. | DESCANSO-DSTSE | Seeded |
+| TRK-031 | `rho_dot_twoway ~= -c * f_D / (2 f_ref)` | two-way Doppler | Converts coherent two-way Doppler to line-of-sight velocity under the same first-order approximation. | DESCANSO-DSTSE, DSN-810-005 | Seeded |
+| TRK-032 | `sigma_rhodot_oneway = c * sigma_f / f_T` | Doppler frequency standard deviation | Velocity uncertainty propagated from one-way Doppler frequency uncertainty. | DESCANSO-DSTSE | Seeded |
+| TRK-033 | `sigma_rhodot_twoway = c * sigma_f / (2 f_ref)` | Doppler frequency standard deviation | Velocity uncertainty propagated from coherent two-way Doppler uncertainty. | DESCANSO-DSTSE | Seeded |
+| TRK-034 | `DeltaPhi = 2*pi*(N_end - N_start + n_end - n_start)` | Doppler counter and resolver counts | Phase increment over a Doppler sampling interval. | DESCANSO-DSTSE | Seeded |
+| TRK-035 | `f_D_biased_avg = DeltaPhi / (2*pi*T_i)` | sampling interval `T_i` | Average biased Doppler frequency from accumulated phase count. | DESCANSO-DSTSE | Seeded |
+| TRK-036 | `f_D_avg = f_D_biased_avg - f_B` | bias frequency `f_B` | Unbiased average Doppler frequency after removing the MDA bias oscillator. | DESCANSO-DSTSE | Seeded |
+| TRK-037 | `cycles_D = f_D_avg * T_i` | Doppler average and count time | Integrated Doppler cycle count over the sampling interval. | DESCANSO-DSTSE | Seeded |
+| TRK-038 | `sigma_phase_sample = 2*pi*f_D_biased*sigma_Ti` | sample-time error | Phase error from Doppler sampling-epoch uncertainty. | DESCANSO-DSTSE | Seeded |
+| TRK-039 | `sigma_phase_quant = 2*pi*f_D_biased*T_clock/sqrt(12)` | resolver clock period | RMS phase quantization error for a uniform resolver time quantization. | DESCANSO-DSTSE | Seeded |
+| TRK-040 | `sigma_tau_sine^2 = T_range^2 * N0 / (64 * T_corr * P_ranging)` | sine-wave/filtered ranging | Strong-signal delay-estimate variance for the DSN filtered ranging case. | DESCANSO-DSTSE | Seeded |
+| TRK-041 | `sigma_R_oneway = c * sigma_tau` | one-way delay standard deviation | Converts one-way group-delay uncertainty to distance uncertainty. | DESCANSO-DSTSE | Seeded |
+| TRK-042 | `sigma_R_twoway = c * sigma_tau / 2` | two-way group-delay standard deviation | Converts round-trip group-delay uncertainty to one-way range uncertainty. | DESCANSO-DSTSE | Seeded |
+| TRK-043 | `RTPT = D_meas - BIAS_sc - BIAS_dss - Z_correction` | measured delay and hardware corrections | DSN round-trip propagation time after spacecraft and station delay corrections. | DESCANSO-DSTSE, DSN-810-005 | Seeded |
+| TRK-044 | `R_corrected = c * RTPT / 2` | corrected round-trip propagation time | Corrected one-way geometric range from DSN round-trip group delay. | DESCANSO-DSTSE | Seeded |
+| TRK-045 | `RangeResidual = RangeObserved - RangeComputed` | observed and modeled range | Orbit-determination residual for range measurements. | DESCANSO-DSTSE, BOOK-VALLADO | Seeded |
+| TRK-046 | `DopplerResidual = DopplerObserved - DopplerComputed` | observed and modeled Doppler | Orbit-determination residual for Doppler measurements. | DESCANSO-DSTSE, BOOK-VALLADO | Seeded |
+| TRK-047 | `sigma_q = sqrt(sum((dq_dxi * sigma_xi)^2))` | independent error sources | Radiometric design-control-table RSS uncertainty propagation. | DESCANSO-DSTSE | Seeded |
+| TRK-048 | `DeltaRange12 = rho_1 - rho_2` | simultaneous station ranges | Differenced range from two tracking stations. | DESCANSO-DSTSE | Seeded |
+| TRK-049 | `sin(delta) ~= DeltaRange12 / D_baseline` | small-angle geometry | Declination-like estimate from north-south differenced ranging geometry. | DESCANSO-DSTSE | Seeded |
+| TRK-050 | `tau_g = dot(b, s) / c` | baseline and source unit vector | VLBI/DOR geometric group delay. | DESCANSO-DSTSE | Seeded |
+| TRK-051 | `DeltaTau_DOR = dot(b, s_sc - s_qso) / c` | spacecraft and quasar directions | Delta-DOR differential delay after alternating spacecraft and quasar observations. | DESCANSO-DSTSE | Seeded |
+| TRK-052 | `DelayResolution_VLBI ~= 1 / (2 * B_span)` | spanned bandwidth | First-null scale for wideband group-delay resolution. | DESCANSO-DSTSE | Seeded |
+| TRK-053 | `sigma_theta_DDOR ~= c * sigma_DeltaTau / norm(b_perp)` | differential delay uncertainty | Angular uncertainty estimate from projected VLBI baseline. | DESCANSO-DSTSE | Seeded |
+| TRK-054 | `Rmax_mono = (P_t*G_t*G_r*lambda^2*sigma / ((4*pi)^3*S_min*L))^(1/4)` | radar link terms | Monostatic radar maximum range for a minimum detectable received power. | BOOK-BALANIS, ITU-P525 | Seeded |
+| TRK-055 | `SNR_radar = P_r / (k*T_sys*B_n)` | received radar echo and receiver noise | Radar echo signal-to-noise ratio. | BOOK-BALANIS | Seeded |
+| TRK-056 | `RangeResolution_pulse = c*tau_p/2` | pulse width | Basic pulse radar range resolution. | BOOK-BALANIS | Seeded |
+| TRK-057 | `RangeResolution_bw = c/(2*B_waveform)` | waveform bandwidth | Bandwidth-limited range resolution for compressed or wideband ranging waveforms. | BOOK-BALANIS, DESCANSO-DSTSE | Seeded |
+| TRK-058 | `R_unamb = c/(2*PRF)` | pulse repetition frequency | Monostatic pulsed-radar unambiguous range. | BOOK-BALANIS | Seeded |
+| TRK-059 | `DopplerResolution = 1/T_coh` | coherent integration time | Doppler-bin resolution for coherent processing. | BOOK-BALANIS, BOOK-SKLAR | Seeded |
+| TRK-060 | `VelocityResolution_mono = lambda/(2*T_coh)` | monostatic radar wavelength | Radial-velocity resolution from Doppler resolution. | BOOK-BALANIS | Seeded |
+| TRK-061 | `VelocityUnamb_mono = lambda*PRF/4` | pulse repetition frequency | First-order unambiguous radial velocity for pulsed monostatic radar. | BOOK-BALANIS | Seeded |
 
 ## System-Level Mission and Operations Budgets
 
