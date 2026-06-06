@@ -582,6 +582,22 @@ Notation:
 | OPT-002 | `E_photon = h f = h c / lambda` | Planck constant, optical frequency | Photon energy for photon-counting link budgets. | General physics, optical comm references | Seeded |
 | OPT-003 | `N_photons = P_r / E_photon` | received optical power | Photon arrival rate. | Optical communication engineering | Seeded |
 | OPT-004 | `L_point_opt ~= 4.343 * (theta_error/sigma_beam)^2` | Gaussian beam approximation | Optical pointing loss under Gaussian-beam assumptions. | DESCANSO optical references | Procedure |
+| OPT-005 | `G_opt = eta_opt*(pi*D/lambda)^2` | optical aperture diameter and efficiency | Diffraction-limited optical telescope gain in the same aperture-gain family as RF dishes. | DESCANSO-OPTICAL, BOOK-BALANIS | Seeded |
+| OPT-006 | `L_opt_ratio = G_t_opt*G_r_opt*(lambda/(4*pi*R))^2*eta_tx*eta_rx*eta_atmos*eta_point` | optical gains, range, and loss factors | First-order optical link transmission factor from transmitter optical power to collected/detected optical power. | DESCANSO-OPTICAL | Seeded |
+| OPT-007 | `P_r_opt = P_t_opt*L_opt_ratio` | transmitted optical power and optical link factor | Received optical power after telescope gains and selected optical losses. | DESCANSO-OPTICAL | Seeded |
+| OPT-008 | `K_s = eta_QE*P_r_opt*T_slot/E_photon` | quantum efficiency, received power, slot width | Mean detected signal photons or photoelectrons in a PPM signal slot. | DESCANSO-OPTICAL | Seeded |
+| OPT-009 | `K_b = eta_QE*P_bg*T_slot/E_photon + DCR*T_slot` | background optical power and dark-count rate | Mean background plus detector dark counts per slot. | DESCANSO-OPTICAL | Seeded |
+| OPT-010 | `R_b_PPM = log2(M_PPM)/(M_PPM*T_slot)` | PPM order and slot width | Uncoded M-PPM information bit rate. | DESCANSO-OPTICAL | Seeded |
+| OPT-011 | `T_slot = log2(M_PPM)/(M_PPM*R_b)` | PPM order and target bit rate | Slot width required for an uncoded M-PPM bit rate. | DESCANSO-OPTICAL | Seeded |
+| OPT-012 | `PPM_PAPR ~= M_PPM` | PPM modulation order | Peak-to-average optical power ratio for one-pulse-per-frame M-PPM. | DESCANSO-OPTICAL | Seeded |
+| OPT-013 | `rho_photon = log2(M_PPM)/K_s` | PPM order and signal photons per symbol | Photon efficiency in bits per detected signal photon for uncoded M-PPM. | DESCANSO-OPTICAL | Seeded |
+| OPT-014 | `Pav_photons_per_slot = K_s/M_PPM` | signal photons per PPM symbol and order | Average signal photons per slot for M-PPM. | DESCANSO-OPTICAL | Seeded |
+| OPT-015 | `Pr_poisson(k;K) = K^k*exp(-K)/k!` | photon-count mean and detected count | Poisson photon-count probability mass function used for direct detection. | DESCANSO-OPTICAL | Seeded |
+| OPT-016 | `f(k|0)=Pr_poisson(k;K_b); f(k|1)=Pr_poisson(k;K_s+K_b)` | background and signal photon counts | Binary slot count distributions for OOK or PPM signal/no-signal slots. | DESCANSO-OPTICAL | Seeded |
+| OPT-017 | `Pb_OOK_Kb0 = 0.5*exp(-K_s)` | mean signal photons, no background | Direct-detection OOK bit error probability on a background-free Poisson channel. | DESCANSO-OPTICAL | Seeded |
+| OPT-018 | `Ps_PPM_Kb0 = (M_PPM-1)*exp(-K_s)/M_PPM` | PPM order and signal photons | M-PPM symbol error probability on a background-free Poisson channel. | DESCANSO-OPTICAL | Seeded |
+| OPT-019 | `Pb_PPM = M_PPM/(2*(M_PPM-1))*Ps_PPM` | PPM symbol error probability | Converts equally likely M-PPM symbol errors to bit error probability. | DESCANSO-OPTICAL | Seeded |
+| OPT-020 | `P_beacon_req = (h*c/lambda)*N_pe_frame*F_frame/(G_t_opt*(lambda/(4*pi*R))^2*G_r_opt*eta_QE*eta_atmos*eta_ATP*eta_trans)` | acquisition frame requirement and optical link factors | Required uplink beacon power to deliver a target number of signal photoelectrons per tracking frame. | DESCANSO-OPTICAL | Procedure |
 
 ## Orbit, Geometry, Coverage, and Contact
 

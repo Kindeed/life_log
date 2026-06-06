@@ -178,7 +178,16 @@ Recommended implementation order:
    - VLBI synthesized bandwidth and delay/path error
    - radar/external-measurement range, resolution, PRF ambiguity, and velocity-resolution cards
 
-7. System closure workbench:
+7. Optical communications workbench:
+   - diffraction-limited telescope gain and beam divergence
+   - optical link factor and received optical power
+   - detected signal photons, background photons, and dark counts per slot
+   - M-PPM bit rate, slot width, peak-to-average power ratio, and photon efficiency
+   - Poisson OOK/PPM BER/SER seeds and background-sensitive warnings
+   - uplink beacon acquisition power for tracking photoelectron requirements
+   - remaining source work: atmospheric optical turbulence/scintillation, daytime sky background, detector-array combining, and coded SCPPM/PPM performance tables
+
+8. System closure workbench:
    - mission data volume
    - required contact time
    - net downlink rate
@@ -189,7 +198,7 @@ Recommended implementation order:
 
 The UI should not show all parameters in one two-column form. The formula library implies a new UI structure:
 
-- domain landing page: Antenna, Link, Propagation, Baseband, Coding, Frames, Command, Ranging, System.
+- domain landing page: Antenna, Link, Propagation, Baseband, Coding, Frames, Command, Ranging, Optical, System.
 - scenario page: concise primary inputs, derived variables, key outputs.
 - formula drawer: expanded derivation, variables, source references.
 - advanced parameter groups: collapsed by default.

@@ -655,6 +655,39 @@ This glossary defines shared symbols for the formula knowledge base. App impleme
 | `ScienceReturnFraction` | `science_return_fraction` | returned science fraction | ratio |
 | `Range` | `operations_range` | one-way distance for light-time planning | m, km |
 
+## Optical Communications
+
+| Symbol | Field ID suggestion | Meaning | Unit |
+| --- | --- | --- | --- |
+| `D_t` / `D_r` | `optical_tx_rx_aperture` | optical transmit or receive telescope aperture diameter | m |
+| `eta_opt` | `optical_aperture_efficiency` | optical aperture efficiency | ratio |
+| `G_t_opt` / `G_r_opt` | `optical_telescope_gain` | optical transmit or receive telescope gain | ratio, dB |
+| `theta_div` | `optical_beam_divergence` | optical beam divergence angle | rad, urad |
+| `sigma_beam` | `optical_gaussian_beam_sigma` | Gaussian beam angular standard deviation for pointing-loss approximation | rad, urad |
+| `P_t_opt` | `optical_tx_power` | transmitted optical power | W, dBW, dBm |
+| `P_r_opt` | `optical_rx_power` | received optical power | W, dBW, dBm |
+| `L_opt_ratio` | `optical_link_transmission_factor` | linear optical link transfer factor from transmit power to received optical power | ratio |
+| `eta_tx` / `eta_rx` | `optical_tx_rx_efficiency` | transmitter and receiver optical throughput efficiencies | ratio |
+| `eta_atmos` | `optical_atmospheric_transmission` | optical atmospheric transmission factor | ratio |
+| `eta_point` | `optical_pointing_efficiency` | pointing loss represented as a power efficiency | ratio |
+| `eta_QE` | `detector_quantum_efficiency` | detector quantum efficiency or photon detection efficiency | ratio |
+| `eta_ATP` | `acquisition_tracking_optical_efficiency` | acquisition/tracking optical train transmission | ratio |
+| `eta_trans` | `beacon_transmitter_efficiency` | uplink beacon transmitter optical efficiency | ratio |
+| `E_photon` | `photon_energy` | energy per photon | J |
+| `N_photons` | `photon_arrival_rate` | photon arrival rate from received optical power | photon/s |
+| `K_s` | `signal_photons_per_slot` | mean signal photon/photoelectron count in a signal slot or pulse | photon, photoelectron |
+| `K_b` | `background_photons_per_slot` | mean background plus dark-count photon/photoelectron count per slot | photon, photoelectron |
+| `P_bg` | `background_optical_power` | background optical power entering the detector channel | W |
+| `DCR` | `dark_count_rate` | detector dark count rate | count/s |
+| `M_PPM` | `ppm_order` | pulse-position modulation order | unit |
+| `T_slot` | `ppm_slot_width` | PPM slot duration | s |
+| `Pav_photons_per_slot` | `ppm_average_photons_per_slot` | average signal photons per PPM slot | photon/slot |
+| `PPM_PAPR` | `ppm_peak_to_average_power_ratio` | PPM optical peak-to-average power ratio | ratio, dB |
+| `rho_photon` | `photon_efficiency` | information bits per detected signal photon | bit/photon |
+| `Ps_PPM` | `ppm_symbol_error_probability` | PPM symbol error probability | ratio |
+| `N_pe_frame` | `tracking_photoelectrons_per_frame` | target signal photoelectrons per acquisition/tracking frame | photoelectron/frame |
+| `F_frame` | `tracking_frame_rate` | acquisition/tracking sensor frame rate | frame/s |
+
 ## Orbit, Coverage, and Contact
 
 | Symbol | Field ID suggestion | Meaning | Unit |

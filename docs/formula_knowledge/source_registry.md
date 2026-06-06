@@ -37,6 +37,7 @@ This registry records the standards, handbooks, and published books that should 
 | ITU-S580 | ITU-R S.580-6, Radiation diagrams for earth-station antenna design objectives | ITU-R | In force, approved 2004-01; provides GSO side-lobe design objective for earth-station antennas. | Side-lobe objective, GSO affected-zone checks, transition branch, and equivalent circular aperture diameter. |
 | DSN-810-005 | DSN Telecommunications Link Design Handbook | NASA/JPL DSN | Current public DSN handbook download page lists modules and recent release clearances; modules 101I, 103F, 104P, 105E, 202E, 203E, 210E, 211G, and 214C have first-pass extracts. | Deep-space link, DSN station capability, antenna gain/noise-temperature station models, Doppler tracking, sequential/PN ranging, Delta-DOR, VLBI, command/telemetry/ranging modules. |
 | DESCANSO-DSTSE | Deep Space Telecommunications Systems Engineering | NASA/JPL DESCANSO | Public deep-space communications reference; antenna/link, baseband, Doppler, ranging, VLBI/DOR, and radiometric-error extracts are started in `standard_extracts.md`. | Link equation derivations, antenna gain/effective aperture, system noise temperature, modulation/coding context, tracking/ranging observables, and external-measurement formulas. |
+| DESCANSO-OPTICAL | Hemmati, *Deep Space Optical Communications* | NASA/JPL DESCANSO | Public DESCANSO series monograph, October 2005; first-pass extracts added for optical link, photon counting, PPM, Poisson detection, and acquisition beacon sizing. | Optical link budget, photon-counting receivers, PPM timing/efficiency, Poisson BER/SER, detector background/dark-count terms, and beacon pointing/acquisition support formulas. |
 | NASA-SST-COMM | NASA SmallSat State of the Art, Communications | NASA | Small satellite RF/optical communication overview. | System-level trade examples and calculator scenario framing. |
 | NASA-BSF | NASA/JPL Basics of Space Flight | NASA/JPL | Public educational reference for orbital motion, spacecraft tracking, and light-time concepts. | Cross-check two-body orbit, range/light-time, and operations explanations. |
 | CELESTRAK | CelesTrak astrodynamics and coordinate-system references | CelesTrak | Public astrodynamics reference material maintained by T.S. Kelso; useful for ECI/ECEF/topocentric coordinate cross-checks. | Coordinate-frame, ground-track, sidereal-time, and access-calculation sanity checks. |
@@ -121,6 +122,7 @@ This registry records the standards, handbooks, and published books that should 
 | DSN-810-005 105E | https://deepspace.jpl.nasa.gov/dsndocs/810-005/105/105E.pdf |
 | DESCANSO-DSTSE | https://descanso.jpl.nasa.gov/dstse/DSTSE.pdf |
 | JPL DESCANSO monographs | https://descanso.jpl.nasa.gov/monograph/mono.html |
+| DESCANSO-OPTICAL PDF | https://descanso.jpl.nasa.gov/monograph/series7/Descanso_7_Full_Version.pdf |
 | NASA-SST-COMM | https://www.nasa.gov/smallsat-institute/sst-soa/soa-communications/ |
 | NASA-BSF | https://science.nasa.gov/learn/basics-of-space-flight/ |
 | CELESTRAK | https://celestrak.org/columns/ |

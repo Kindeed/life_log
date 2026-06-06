@@ -71,6 +71,17 @@ Sources: Sklar/Harris `Digital Communications: Fundamentals and Applications`, 3
 | DIGCOM-008 | Goldsmith and Rappaport wireless-channel chapters; Proakis fading-channel material | Baseband channel `y=h*x+n`, tapped multipath impulse response, mean excess delay, RMS delay spread, coherence bandwidth/time, and maximum Doppler shift | Use these as a channel workbench group. The approximate coherence bandwidth/time constants are model-selection outputs, not universal requirements. |
 | DIGCOM-009 | Goldsmith/Rappaport fading and path-loss material; Proakis fading-channel performance material | Log-distance shadowing, Rayleigh envelope PDF/CDF, Rician K factor, Rayleigh outage probability, Rayleigh BPSK average BER, and fading capacity definitions | Separate deterministic link budget from stochastic channel outputs: right-side UI should show average SNR, outage probability, and selected fading-model performance independently. |
 
+## DESCANSO Deep Space Optical Communications
+
+Source: Hemmati, `Deep Space Optical Communications`, NASA/JPL DESCANSO series, October 2005.
+
+| Extract ID | Standard location | Equation or table | Implementation note |
+| --- | --- | --- | --- |
+| DS-OPT-001 | Chapter 3.3.2 and table 3-7; chapter 6.1.1.6 | Optical link budget uses laser average power, optical transmitter/receiver losses, telescope aperture, range, atmospheric transmission, detector quantum efficiency, and photon flux at the detector | Catalog adds OPT-005 to OPT-009 as the practical link-budget and photon-count chain. Keep optical powers and photon counts as separate right-side result groups. |
+| DS-OPT-002 | Chapter 4.3.2, 4.4.1, and 5.2.3 | M-PPM maps `log2(M)` bits into one pulse among `M` slots; `R_b=log2(M)/(M*T_slot)`; PPM peak-to-average power ratio is approximately `M` | Catalog adds OPT-010 to OPT-014. Laser peak-power constraints should be shown alongside average power and photon efficiency. |
+| DS-OPT-003 | Chapter 4.2.2.1 and 4.5.1 to 4.5.2 | Poisson channel slot distributions use means `K_b` and `K_s+K_b`; background-free OOK has `Pb=0.5 exp(-K_s)`; background-free M-PPM has `Ps=(M-1)exp(-K_s)/M` and `Pb=M Ps/(2(M-1))` | Catalog adds OPT-015 to OPT-019. Background and dark-count terms must remain explicit because daytime sky and detector state can dominate. |
+| DS-OPT-004 | Chapter 6.1.1.6, equation 6.1-1 | Required uplink beacon power is proportional to photon energy, required signal photoelectrons per frame, and frame rate, and inversely proportional to optical gains and efficiencies | Catalog adds OPT-020. Use as an acquisition/tracking support calculator, not as a downlink data-rate formula. |
+
 ## CCSDS 401.0-B-32 RF and Modulation Systems
 
 Source: CCSDS 401.0-B-32, `Radio Frequency and Modulation Systems, Part 1: Earth Stations and Spacecraft`, October 2021.
