@@ -325,6 +325,9 @@ class UnitCatalog {
   }
 
   static double convert(double value, String fromUnitId, String toUnitId) {
+    if (fromUnitId == toUnitId) {
+      return value;
+    }
     final from = unit(fromUnitId);
     final to = unit(toUnitId);
     if (from.dimension != to.dimension) {

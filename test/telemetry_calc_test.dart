@@ -183,6 +183,52 @@ void main() {
       expect(result.outputs, isEmpty);
     });
 
+    test('validates ratio inputs after unit conversion', () {
+      final definition = TelemetryCalculatorRegistry.byId('spacecraft_power');
+      final values = TelemetryCalculatorRegistry.defaultValues(definition);
+      values['cell_efficiency'] = const TelemetryInputValue(
+        value: 30,
+        unitId: 'ratio',
+      );
+
+      final result = TelemetryCalculatorEngine.calculate(definition, values);
+
+      expect(result.errors, contains(contains('电池片效率')));
+      expect(result.outputs, isEmpty);
+    });
+
+    test('keeps negative thermal power margins finite', () {
+      final definition = TelemetryCalculatorRegistry.byId('spacecraft_thermal');
+      final values = TelemetryCalculatorRegistry.defaultValues(definition);
+      values['heat_to_reject'] = const TelemetryInputValue(
+        value: 200,
+        unitId: 'W',
+      );
+
+      final result = TelemetryCalculatorEngine.calculate(definition, values);
+
+      expect(result.errors, isEmpty);
+      final radiatorMargin = result.outputs.firstWhere(
+        (output) => output.id == 'radiator_margin',
+      );
+      expect(radiatorMargin.value.isFinite, isTrue);
+      expect(radiatorMargin.value, lessThan(0));
+    });
+
+    test('rejects non-radiating thermal temperature boundaries', () {
+      final definition = TelemetryCalculatorRegistry.byId('spacecraft_thermal');
+      final values = TelemetryCalculatorRegistry.defaultValues(definition);
+      values['radiator_temp'] = const TelemetryInputValue(
+        value: 3,
+        unitId: 'K',
+      );
+
+      final result = TelemetryCalculatorEngine.calculate(definition, values);
+
+      expect(result.errors, contains(contains('散热器温度')));
+      expect(result.outputs, isEmpty);
+    });
+
     test('evaluates custom local formula', () {
       final definition = TelemetryCalculatorRegistry.byId('custom_formula');
       final values = TelemetryCalculatorRegistry.defaultValues(definition);

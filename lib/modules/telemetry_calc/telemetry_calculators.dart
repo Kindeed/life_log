@@ -315,11 +315,17 @@ class TelemetryCalculatorEngine {
           }
           if (!input.units.contains(value!.unitId)) {
             errors.add('${input.label} 单位不兼容');
+            continue;
           }
-          if (input.min != null && number < input.min!) {
+          final comparableNumber = UnitCatalog.convert(
+            number,
+            value.unitId,
+            input.defaultUnit,
+          );
+          if (input.min != null && comparableNumber < input.min!) {
             errors.add('${input.label} 不能小于 ${input.min}');
           }
-          if (input.max != null && number > input.max!) {
+          if (input.max != null && comparableNumber > input.max!) {
             errors.add('${input.label} 不能大于 ${input.max}');
           }
         case TelemetryInputKind.select:
@@ -1913,6 +1919,9 @@ class TelemetryCalculatorRegistry {
       hotLimit - hotCase,
       coldCase - coldLimit,
     );
+    if (radiatorTemp <= spaceTemp || radiatorDenominator <= 0) {
+      throw const TelemetryCalculationException('散热器温度必须高于空间背景温度');
+    }
 
     return _withWarnings(
       [

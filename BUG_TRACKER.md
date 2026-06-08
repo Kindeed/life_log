@@ -1,6 +1,6 @@
 # LifeLog BUG Tracker
 
-**Last updated**: 2026-06-06
+**Last updated**: 2026-06-08
 **Status values**: `open`, `in_progress`, `fixed`, `deferred`, `invalidated`
 
 This is the active defect ledger. `REVIEW_REPORT.md` is historical context only. Photo sync findings from older reports are superseded by `AGENTS.md`: photos remain local-only and must not enter Supabase sync.
@@ -122,6 +122,14 @@ This is the active defect ledger. `REVIEW_REPORT.md` is historical context only.
 | U15 | Medium | fixed | `PhotoView` / `ProjectGalleryView` / `PhotoPreviewView` | Empty project media flow hides credential/expense creation, project-first guidance is unclear, and photo preview has no remark editing path. | Fixed: empty and project actions expose photos, credentials, and expenses; preview supports remark editing. |
 | U16 | Low | fixed | `PhotoPreviewView` | Delete action can pop navigation twice because both preview and controller call `Get.back()`. | Fixed: controller owns the post-delete pop. |
 | U17 | Medium | fixed | `PhotoPreviewView` | 真机日志出现 `A TextEditingController was used after being disposed`，备注编辑弹窗把控制器交给 `whenComplete`，关闭/重建时存在生命周期竞态。 | Fixed: 备注编辑改为独立 stateful sheet，自行管理 `TextEditingController` 生命周期。 |
+
+## Calculation / Formula Engine
+
+| ID | Severity | Status | Area | Finding | Fix / Acceptance |
+| --- | --- | --- | --- | --- | --- |
+| F1 | High | fixed | `TelemetryCalculatorEngine.validate` / system calculators | 数值输入的 `min` / `max` 校验直接比较用户输入的原始数值，没有按当前单位换算到规范单位；新增电源、热控等计算器允许 `percent` / `ratio` 双单位时，选择 `ratio` 后输入 `30` 仍可通过 `max: 100`，随后按 30 倍效率参与计算。 | Fixed: number validation converts values to each input's default unit before checking bounds; regression test `validates ratio inputs after unit conversion` passes. |
+| F2 | High | fixed | `spacecraft_thermal` / `UnitCatalog` power units | `radiator_margin` 是可为负的 W 余量，但 `context.output` 会通过全局 `W` 单位换算路径；当前 `W.toBase` 使用 `log(value)` 支持 dBW 换算，负余量会变成 `NaN`，导致散热不足时输出值不可读。 | Fixed: same-unit conversions return the original value, preserving finite negative linear W margins; regression test `keeps negative thermal power margins finite` passes. |
+| F3 | Medium | fixed | `spacecraft_thermal` radiator sizing | 热控计算允许 `radiator_temp <= space_temp`，`radiatorDenominator` 可为 0 或负数，进而让 `radiator_area_required` 变为 `Infinity` 或物理上无效的负面积；现有测试只覆盖默认正分母。 | Fixed: thermal calculation rejects non-radiating temperature boundaries with a controlled error; regression test `rejects non-radiating thermal temperature boundaries` passes. |
 
 ## Tooling / Validation
 
