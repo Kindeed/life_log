@@ -119,10 +119,11 @@ extension EvidenceStatusLabel on EvidenceStatus {
 
 extension ExpenseEvidenceListDomainLogic on Iterable<ExpenseEvidence> {
   Iterable<ExpenseEvidence> inMonth(DateTime monthYear) {
+    final localMonth = dateOnlyLocal(monthYear);
     return where(
       (item) =>
-          dateOnlyLocal(item.evidenceDate).year == monthYear.year &&
-          dateOnlyLocal(item.evidenceDate).month == monthYear.month,
+          dateOnlyLocal(item.evidenceDate).year == localMonth.year &&
+          dateOnlyLocal(item.evidenceDate).month == localMonth.month,
     );
   }
 

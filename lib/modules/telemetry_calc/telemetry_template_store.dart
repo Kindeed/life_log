@@ -95,6 +95,21 @@ class TelemetryTemplateStore {
     await _saveAll(templates);
   }
 
+  Future<void> renameTemplate(String templateId, String name) async {
+    final templates = _loadAll();
+    final index = templates.indexWhere((template) => template.id == templateId);
+    if (index == -1) return;
+    final template = templates[index];
+    templates[index] = TelemetryTemplate(
+      id: template.id,
+      calculatorId: template.calculatorId,
+      name: name.trim().isEmpty ? '未命名模板' : name.trim(),
+      updatedAt: DateTime.now(),
+      values: template.values,
+    );
+    await _saveAll(templates);
+  }
+
   List<TelemetryTemplate> _loadAll() {
     final raw = _storage.read<String>(_storageKey);
     if (raw == null || raw.trim().isEmpty) return [];

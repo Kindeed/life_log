@@ -31,10 +31,7 @@ enum ProjectStatus { active, archived }
 
 extension ProjectBusinessChanges on Project {
   bool hasBusinessChangesComparedTo(Project other) {
-    return name != other.name ||
-        status != other.status ||
-        createdAt != other.createdAt ||
-        updatedAt != other.updatedAt;
+    return name != other.name || status != other.status;
   }
 }
 

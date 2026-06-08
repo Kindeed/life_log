@@ -2,10 +2,12 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:get/get.dart';
+import 'dart:io';
 import 'package:life_log/common/theme/app_theme.dart';
 import 'package:life_log/modules/telemetry_calc/telemetry_calc_view.dart';
 import 'package:life_log/modules/telemetry_calc/telemetry_calculators.dart';
 import 'package:life_log/modules/telemetry_calc/telemetry_formula_engine.dart';
+import 'package:life_log/modules/telemetry_calc/telemetry_template_store.dart';
 import 'package:life_log/modules/telemetry_calc/telemetry_units.dart';
 
 void main() {
@@ -282,6 +284,65 @@ void main() {
   });
 
   group('TelemetryCalcDetailView', () {
+    test('uses design tokens instead of hard-coded compact radii', () {
+      final source = File(
+        'lib/modules/telemetry_calc/telemetry_calc_view.dart',
+      ).readAsStringSync();
+
+      expect(source, contains('AppRadius.'));
+      expect(source, isNot(contains('BorderRadius.circular(8)')));
+    });
+
+    test('keeps tiny telemetry labels below extra-bold weights', () {
+      final source = File(
+        'lib/modules/telemetry_calc/telemetry_calc_view.dart',
+      ).readAsStringSync();
+      final tinyHeavyText = RegExp(
+        r'fontSize:\s*(?:10|11)\.sp,[\s\S]{0,120}?FontWeight\.w(?:800|900)',
+      );
+
+      expect(tinyHeavyText.hasMatch(source), isFalse);
+    });
+
+    test('aligns compact input shell with app text field tokens', () {
+      final source = File(
+        'lib/modules/telemetry_calc/telemetry_calc_view.dart',
+      ).readAsStringSync();
+      final compactInputShell = RegExp(
+        r'class _CompactInputShell[\s\S]*?class _UnitMenuButton',
+      ).firstMatch(source)!.group(0)!;
+
+      expect(compactInputShell, contains('AppRadius.lg'));
+      expect(compactInputShell, contains('semantic.mutedSurface'));
+      expect(compactInputShell, contains('AppSpacing.lg'));
+      expect(compactInputShell, isNot(contains('withValues(alpha: 0.62)')));
+    });
+
+    test('uses spacing tokens for telemetry gaps and padding', () {
+      final source = File(
+        'lib/modules/telemetry_calc/telemetry_calc_view.dart',
+      ).readAsStringSync();
+      final magicSizedBoxSpacing = RegExp(
+        r'SizedBox\((?:height|width):\s*(?:2|3|4|5|6|7|8|10|12|14|16|18|24|28|30)\.(?:h|w)\)',
+      );
+      final magicEdgeInsetsSpacing = RegExp(
+        r'EdgeInsets\.(?:all|symmetric|fromLTRB)\([^;\n]*\b(?:2|3|4|5|6|7|8|9|10|11|12|14|16|18|24|28|30)\.(?:h|w)',
+      );
+
+      expect(magicSizedBoxSpacing.hasMatch(source), isFalse);
+      expect(magicEdgeInsetsSpacing.hasMatch(source), isFalse);
+    });
+
+    test('uses motion tokens for advanced inputs and result updates', () {
+      final source = File(
+        'lib/modules/telemetry_calc/telemetry_calc_view.dart',
+      ).readAsStringSync();
+
+      expect(source, contains('AppMotion.'));
+      expect(source, contains('AnimatedSize'));
+      expect(source, contains('AnimatedSwitcher'));
+    });
+
     testWidgets(
       'renders compact workbench and opens unit selector without crash',
       (tester) async {
@@ -351,10 +412,11 @@ void main() {
         );
         await tester.pumpAndSettle();
 
-        expect(find.text('依据'), findsOneWidget);
+        expect(find.byTooltip('公式与依据'), findsOneWidget);
+        expect(find.text('依据'), findsNothing);
         expect(find.text('输出'), findsOneWidget);
         expect(find.text('输入'), findsOneWidget);
-        expect(find.textContaining('Rs'), findsWidgets);
+        expect(find.textContaining('Rs'), findsNothing);
         expect(
           find.byWidgetPredicate(
             (widget) =>
@@ -364,18 +426,49 @@ void main() {
           findsNothing,
         );
 
-        final formulaTop = tester.getTopLeft(find.text('依据')).dy;
         final resultTop = tester.getTopLeft(find.text('输出')).dy;
         final inputTop = tester.getTopLeft(find.text('输入')).dy;
         final resultLeft = tester.getTopLeft(find.text('输出')).dx;
         final inputLeft = tester.getTopLeft(find.text('输入')).dx;
 
-        expect(inputLeft, lessThan(resultLeft));
-        expect(formulaTop, greaterThan(resultTop));
-        expect(formulaTop, greaterThan(inputTop));
+        expect(resultTop, lessThan(inputTop));
+        expect((resultLeft - inputLeft).abs(), lessThan(1));
+
+        await tester.tap(find.byTooltip('公式与依据'));
+        await tester.pumpAndSettle();
+        expect(find.text('依据'), findsOneWidget);
+        expect(find.textContaining('Rs'), findsWidgets);
         expect(tester.takeException(), isNull);
       },
     );
+
+    testWidgets('keeps two-column workbench on tablet width', (tester) async {
+      tester.view.physicalSize = const Size(800, 1000);
+      tester.view.devicePixelRatio = 1;
+      addTearDown(tester.view.resetPhysicalSize);
+      addTearDown(tester.view.resetDevicePixelRatio);
+
+      final definition = TelemetryCalculatorRegistry.byId('rate_bandwidth');
+      await tester.pumpWidget(
+        ScreenUtilInit(
+          designSize: const Size(375, 812),
+          builder: (context, child) => GetMaterialApp(
+            theme: AppTheme.lightWith(null),
+            home: TelemetryCalcDetailView(definition: definition),
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      final resultTop = tester.getTopLeft(find.text('输出')).dy;
+      final inputTop = tester.getTopLeft(find.text('输入')).dy;
+      final resultLeft = tester.getTopLeft(find.text('输出')).dx;
+      final inputLeft = tester.getTopLeft(find.text('输入')).dx;
+
+      expect(inputLeft, lessThan(resultLeft));
+      expect((resultTop - inputTop).abs(), lessThan(1));
+      expect(tester.takeException(), isNull);
+    });
 
     testWidgets('uses short title and linked input output workbench', (
       tester,
@@ -519,6 +612,90 @@ void main() {
       expect(tester.takeException(), isNull);
     });
 
+    testWidgets('filters calculator cards from the module search field', (
+      tester,
+    ) async {
+      tester.view.physicalSize = const Size(390, 844);
+      tester.view.devicePixelRatio = 1;
+      addTearDown(tester.view.resetPhysicalSize);
+      addTearDown(tester.view.resetDevicePixelRatio);
+
+      await tester.pumpWidget(
+        ScreenUtilInit(
+          designSize: const Size(375, 812),
+          builder: (context, child) => GetMaterialApp(
+            theme: AppTheme.lightWith(null),
+            home: const TelemetryCalcView(),
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      await tester.enterText(
+        find.byKey(const ValueKey('telemetryCalcSearchField')),
+        '热控',
+      );
+      await tester.pumpAndSettle();
+
+      expect(find.text('热控与散热器'), findsOneWidget);
+      expect(find.text('链路预算'), findsNothing);
+      expect(tester.takeException(), isNull);
+    });
+
+    testWidgets('renames and deletes recent templates from the module page', (
+      tester,
+    ) async {
+      tester.view.physicalSize = const Size(390, 844);
+      tester.view.devicePixelRatio = 1;
+      addTearDown(tester.view.resetPhysicalSize);
+      addTearDown(tester.view.resetDevicePixelRatio);
+
+      final definition = TelemetryCalculatorRegistry.byId('link_budget');
+      final store = _FakeTelemetryTemplateStore([
+        TelemetryTemplate(
+          id: 'recent-template',
+          calculatorId: definition.id,
+          name: '最近模板测试',
+          updatedAt: DateTime(2026, 6, 8, 20),
+          values: TelemetryCalculatorRegistry.defaultValues(definition),
+        ),
+      ]);
+
+      await tester.pumpWidget(
+        ScreenUtilInit(
+          designSize: const Size(375, 812),
+          builder: (context, child) => GetMaterialApp(
+            theme: AppTheme.lightWith(null),
+            home: TelemetryCalcView(templateStore: store),
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      expect(find.text('最近模板测试'), findsOneWidget);
+      await tester.longPress(find.text('最近模板测试'));
+      await tester.pumpAndSettle();
+      expect(find.text('重命名模板'), findsOneWidget);
+      expect(find.text('删除模板'), findsOneWidget);
+
+      await tester.tap(find.text('重命名模板'));
+      await tester.pumpAndSettle();
+      await tester.enterText(find.byType(TextFormField).last, '链路常用模板');
+      await tester.tap(find.text('保存'));
+      await tester.pumpAndSettle();
+
+      expect(find.text('链路常用模板'), findsOneWidget);
+      expect(find.text('最近模板测试'), findsNothing);
+
+      await tester.longPress(find.text('链路常用模板'));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('删除模板'));
+      await tester.pumpAndSettle();
+
+      expect(find.text('链路常用模板'), findsNothing);
+      expect(tester.takeException(), isNull);
+    });
+
     for (final definition in TelemetryCalculatorRegistry.definitions) {
       testWidgets('uses unified workbench layout for ${definition.id}', (
         tester,
@@ -538,22 +715,53 @@ void main() {
           ),
         );
 
-        expect(find.text('依据'), findsWidgets, reason: definition.id);
+        expect(find.byTooltip('公式与依据'), findsWidgets, reason: definition.id);
         expect(find.text('输出'), findsWidgets, reason: definition.id);
         expect(find.text('输入'), findsWidgets, reason: definition.id);
         expect(find.text('工程判断'), findsWidgets, reason: definition.id);
 
-        final formulaTop = tester.getTopLeft(find.text('依据').first).dy;
         final resultTop = tester.getTopLeft(find.text('输出').first).dy;
         final inputTop = tester.getTopLeft(find.text('输入').first).dy;
         final resultLeft = tester.getTopLeft(find.text('输出').first).dx;
         final inputLeft = tester.getTopLeft(find.text('输入').first).dx;
 
-        expect(inputLeft, lessThan(resultLeft), reason: definition.id);
-        expect(formulaTop, greaterThan(resultTop), reason: definition.id);
-        expect(formulaTop, greaterThan(inputTop), reason: definition.id);
+        expect(resultTop, lessThan(inputTop), reason: definition.id);
+        expect(
+          (resultLeft - inputLeft).abs(),
+          lessThan(1),
+          reason: definition.id,
+        );
         expect(tester.takeException(), isNull, reason: definition.id);
       });
     }
   });
+}
+
+class _FakeTelemetryTemplateStore extends TelemetryTemplateStore {
+  final List<TelemetryTemplate> templates;
+
+  _FakeTelemetryTemplateStore(this.templates);
+
+  @override
+  List<TelemetryTemplate> loadRecent({int limit = 3}) =>
+      templates.take(limit).toList(growable: false);
+
+  @override
+  Future<void> deleteTemplate(String templateId) async {
+    templates.removeWhere((template) => template.id == templateId);
+  }
+
+  @override
+  Future<void> renameTemplate(String templateId, String name) async {
+    final index = templates.indexWhere((template) => template.id == templateId);
+    if (index == -1) return;
+    final template = templates[index];
+    templates[index] = TelemetryTemplate(
+      id: template.id,
+      calculatorId: template.calculatorId,
+      name: name.trim().isEmpty ? '未命名模板' : name.trim(),
+      updatedAt: DateTime(2026, 6, 8, 21),
+      values: template.values,
+    );
+  }
 }

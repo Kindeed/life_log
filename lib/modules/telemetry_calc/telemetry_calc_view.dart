@@ -2,35 +2,67 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:get/get.dart';
+import 'package:life_log/common/layout/app_breakpoints.dart';
 import 'package:life_log/common/layout/constrained_page.dart';
+import 'package:life_log/common/theme/app_motion.dart';
+import 'package:life_log/common/theme/app_radius.dart';
 import 'package:life_log/common/theme/app_semantic_colors.dart';
+import 'package:life_log/common/theme/app_spacing.dart';
 import 'package:life_log/common/theme/theme_extensions.dart';
 import 'package:life_log/common/widgets/app_card.dart';
 import 'package:life_log/common/widgets/app_empty_state.dart';
 import 'package:life_log/common/widgets/app_filter_chip_bar.dart';
+import 'package:life_log/common/widgets/app_pill.dart';
 import 'package:life_log/common/widgets/app_section_header.dart';
+import 'package:life_log/common/widgets/app_text_field.dart';
 
 import 'telemetry_calculators.dart';
 import 'telemetry_template_store.dart';
 import 'telemetry_units.dart';
 
 class TelemetryCalcView extends StatefulWidget {
-  const TelemetryCalcView({super.key});
+  final TelemetryTemplateStore? templateStore;
+
+  const TelemetryCalcView({super.key, this.templateStore});
 
   @override
   State<TelemetryCalcView> createState() => _TelemetryCalcViewState();
 }
 
 class _TelemetryCalcViewState extends State<TelemetryCalcView> {
-  final _store = TelemetryTemplateStore();
+  late final TelemetryTemplateStore _store;
+  final _searchController = TextEditingController();
   var _category = TelemetryCalculatorCategory.link;
+  var _searchQuery = '';
+
+  @override
+  void initState() {
+    super.initState();
+    _store = widget.templateStore ?? TelemetryTemplateStore();
+  }
+
+  @override
+  void dispose() {
+    _searchController.dispose();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final semantic = theme.semanticColors;
-    final definitions = TelemetryCalculatorRegistry.definitions
-        .where((definition) => definition.category == _category)
+    final normalizedQuery = _searchQuery.trim().toLowerCase();
+    final sourceDefinitions = normalizedQuery.isEmpty
+        ? TelemetryCalculatorRegistry.definitions.where(
+            (definition) => definition.category == _category,
+          )
+        : TelemetryCalculatorRegistry.definitions;
+    final definitions = sourceDefinitions
+        .where(
+          (definition) =>
+              normalizedQuery.isEmpty ||
+              _matchesSearchQuery(definition, normalizedQuery),
+        )
         .toList(growable: false);
     final recent = _store.loadRecent();
 
@@ -42,21 +74,37 @@ class _TelemetryCalcViewState extends State<TelemetryCalcView> {
             slivers: [
               SliverToBoxAdapter(
                 child: Padding(
-                  padding: EdgeInsets.fromLTRB(16.w, 10.h, 16.w, 8.h),
+                  padding: EdgeInsets.fromLTRB(
+                    AppSpacing.lg.w,
+                    AppSpacing.md.h,
+                    AppSpacing.lg.w,
+                    AppSpacing.sm.h,
+                  ),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       _Header(semantic: semantic),
                       if (recent.isNotEmpty) ...[
-                        SizedBox(height: 18.h),
+                        SizedBox(height: AppSpacing.xl.h),
                         _RecentTemplates(
                           templates: recent,
                           onTap: _openTemplate,
+                          onLongPress: _showRecentTemplateActions,
                         ),
                       ],
-                      SizedBox(height: 18.h),
+                      SizedBox(height: AppSpacing.xl.h),
+                      AppTextField(
+                        key: const ValueKey('telemetryCalcSearchField'),
+                        controller: _searchController,
+                        hintText: '搜索计算器',
+                        prefixIcon: const Icon(Icons.search_rounded),
+                        textInputAction: TextInputAction.search,
+                        onChanged: (value) =>
+                            setState(() => _searchQuery = value),
+                      ),
+                      SizedBox(height: AppSpacing.xl.h),
                       const AppSectionHeader(title: '计算分类'),
-                      SizedBox(height: 10.h),
+                      SizedBox(height: AppSpacing.md.h),
                       AppFilterChipBar<TelemetryCalculatorCategory>(
                         value: _category,
                         onChanged: (value) => setState(() => _category = value),
@@ -70,21 +118,26 @@ class _TelemetryCalcViewState extends State<TelemetryCalcView> {
                             ),
                         ],
                       ),
-                      SizedBox(height: 14.h),
+                      SizedBox(height: AppSpacing.lg.h),
                     ],
                   ),
                 ),
               ),
               SliverPadding(
-                padding: EdgeInsets.fromLTRB(16.w, 0, 16.w, 30.h),
+                padding: EdgeInsets.fromLTRB(
+                  AppSpacing.lg.w,
+                  0,
+                  AppSpacing.lg.w,
+                  AppSpacing.xxl.h,
+                ),
                 sliver: SliverGrid.builder(
                   itemCount: definitions.length,
                   gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
                     crossAxisCount: MediaQuery.of(context).size.width >= 720
                         ? 2
                         : 1,
-                    mainAxisSpacing: 12.h,
-                    crossAxisSpacing: 12.w,
+                    mainAxisSpacing: AppSpacing.md.h,
+                    crossAxisSpacing: AppSpacing.md.w,
                     mainAxisExtent: 132.h,
                   ),
                   itemBuilder: (context, index) {
@@ -114,6 +167,79 @@ class _TelemetryCalcViewState extends State<TelemetryCalcView> {
         initialValues: template.values,
       ),
     )?.then((_) => setState(() {}));
+  }
+
+  void _showRecentTemplateActions(TelemetryTemplate template) {
+    showModalBottomSheet<void>(
+      context: context,
+      showDragHandle: true,
+      builder: (sheetContext) {
+        return SafeArea(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              ListTile(
+                leading: const Icon(Icons.edit_outlined),
+                title: const Text('重命名模板'),
+                onTap: () {
+                  Navigator.pop(sheetContext);
+                  _renameRecentTemplate(template);
+                },
+              ),
+              ListTile(
+                leading: const Icon(Icons.delete_outline_rounded),
+                title: const Text('删除模板'),
+                onTap: () async {
+                  Navigator.pop(sheetContext);
+                  await _store.deleteTemplate(template.id);
+                  if (mounted) setState(() {});
+                },
+              ),
+            ],
+          ),
+        );
+      },
+    );
+  }
+
+  Future<void> _renameRecentTemplate(TelemetryTemplate template) async {
+    var nextName = template.name;
+    final name = await showDialog<String>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('重命名模板'),
+        content: TextFormField(
+          initialValue: template.name,
+          autofocus: true,
+          onChanged: (value) => nextName = value,
+          decoration: const InputDecoration(labelText: '模板名称'),
+        ),
+        actions: [
+          TextButton(onPressed: Get.back, child: const Text('取消')),
+          FilledButton(
+            onPressed: () => Get.back(result: nextName),
+            child: const Text('保存'),
+          ),
+        ],
+      ),
+    );
+    if (name == null) return;
+    await _store.renameTemplate(template.id, name);
+    if (mounted) setState(() {});
+  }
+
+  bool _matchesSearchQuery(
+    TelemetryCalculatorDefinition definition,
+    String query,
+  ) {
+    final fields = [
+      definition.title,
+      _detailTitle(definition),
+      definition.subtitle,
+      definition.standards,
+      _categoryLabel(definition.category),
+    ];
+    return fields.any((field) => field.toLowerCase().contains(query));
   }
 }
 
@@ -181,6 +307,11 @@ class _TelemetryCalcDetailViewState extends State<TelemetryCalcDetailView> {
         title: Text(_detailTitle(widget.definition)),
         actions: [
           IconButton(
+            tooltip: '公式与依据',
+            onPressed: _showFormulaSheet,
+            icon: const Icon(Icons.menu_book_rounded),
+          ),
+          IconButton(
             tooltip: '载入模板',
             onPressed: _showTemplates,
             icon: const Icon(Icons.folder_open_rounded),
@@ -200,12 +331,17 @@ class _TelemetryCalcDetailViewState extends State<TelemetryCalcDetailView> {
       body: SafeArea(
         child: ConstrainedPage(
           child: ListView(
-            padding: EdgeInsets.fromLTRB(16.w, 10.h, 16.w, 28.h),
+            padding: EdgeInsets.fromLTRB(
+              AppSpacing.lg.w,
+              AppSpacing.md.h,
+              AppSpacing.lg.w,
+              AppSpacing.xxl.h,
+            ),
             children: [
               _DetailHeader(definition: widget.definition, color: color),
-              SizedBox(height: 12.h),
+              SizedBox(height: AppSpacing.md.h),
               AppCard(
-                padding: EdgeInsets.all(14.w),
+                padding: EdgeInsets.all(AppSpacing.lg.w),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
@@ -222,8 +358,6 @@ class _TelemetryCalcDetailViewState extends State<TelemetryCalcDetailView> {
                       onToggleAdvanced: () =>
                           setState(() => _showAdvanced = !_showAdvanced),
                     ),
-                    SizedBox(height: 12.h),
-                    _FormulaPanel(definition: widget.definition, color: color),
                   ],
                 ),
               ),
@@ -318,6 +452,35 @@ class _TelemetryCalcDetailViewState extends State<TelemetryCalcDetailView> {
     });
   }
 
+  void _showFormulaSheet() {
+    final theme = Theme.of(context);
+    final color = _categoryColor(
+      widget.definition.category,
+      theme.semanticColors,
+    );
+    showModalBottomSheet<void>(
+      context: context,
+      isScrollControlled: true,
+      useSafeArea: true,
+      builder: (context) {
+        return FractionallySizedBox(
+          heightFactor: 0.82,
+          child: SingleChildScrollView(
+            padding: EdgeInsets.fromLTRB(
+              AppSpacing.lg.w,
+              AppSpacing.lg.h,
+              AppSpacing.lg.w,
+              AppSpacing.xxl.h,
+            ),
+            child: ConstrainedPage(
+              child: _FormulaPanel(definition: widget.definition, color: color),
+            ),
+          ),
+        );
+      },
+    );
+  }
+
   void _resetDefaults() {
     setState(() {
       _values = TelemetryCalculatorRegistry.defaultValues(widget.definition);
@@ -381,7 +544,12 @@ class _TelemetryCalcDetailViewState extends State<TelemetryCalcDetailView> {
         return SafeArea(
           child: ListView.separated(
             shrinkWrap: true,
-            padding: const EdgeInsets.fromLTRB(16, 8, 16, 24),
+            padding: const EdgeInsets.fromLTRB(
+              AppSpacing.lg,
+              AppSpacing.sm,
+              AppSpacing.lg,
+              AppSpacing.xxl,
+            ),
             itemCount: templates.length,
             separatorBuilder: (_, _) => const Divider(height: 1),
             itemBuilder: (context, index) {
@@ -440,7 +608,7 @@ class _Header extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return AppCard(
-      padding: EdgeInsets.all(16.w),
+      padding: EdgeInsets.all(AppSpacing.lg.w),
       child: Row(
         children: [
           Container(
@@ -448,7 +616,7 @@ class _Header extends StatelessWidget {
             height: 52.w,
             decoration: BoxDecoration(
               color: semantic.stats.withValues(alpha: 0.12),
-              borderRadius: BorderRadius.circular(8),
+              borderRadius: BorderRadius.circular(AppRadius.sm),
             ),
             child: Icon(
               Icons.settings_input_antenna_rounded,
@@ -456,7 +624,7 @@ class _Header extends StatelessWidget {
               size: 28.sp,
             ),
           ),
-          SizedBox(width: 14.w),
+          SizedBox(width: AppSpacing.lg.w),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -464,10 +632,10 @@ class _Header extends StatelessWidget {
                 Text(
                   '工程计算工具箱',
                   style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                    fontWeight: FontWeight.w800,
+                    fontWeight: FontWeight.w700,
                   ),
                 ),
-                SizedBox(height: 4.h),
+                SizedBox(height: AppSpacing.xs.h),
                 Text(
                   '链路、码率、帧格式、测距和自定义公式均在本地计算。',
                   style: TextStyle(
@@ -488,8 +656,13 @@ class _Header extends StatelessWidget {
 class _RecentTemplates extends StatelessWidget {
   final List<TelemetryTemplate> templates;
   final ValueChanged<TelemetryTemplate> onTap;
+  final ValueChanged<TelemetryTemplate> onLongPress;
 
-  const _RecentTemplates({required this.templates, required this.onTap});
+  const _RecentTemplates({
+    required this.templates,
+    required this.onTap,
+    required this.onLongPress,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -497,13 +670,13 @@ class _RecentTemplates extends StatelessWidget {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         const AppSectionHeader(title: '最近模板'),
-        SizedBox(height: 10.h),
+        SizedBox(height: AppSpacing.md.h),
         SizedBox(
           height: 86.h,
           child: ListView.separated(
             scrollDirection: Axis.horizontal,
             itemCount: templates.length,
-            separatorBuilder: (_, _) => SizedBox(width: 10.w),
+            separatorBuilder: (_, _) => SizedBox(width: AppSpacing.md.w),
             itemBuilder: (context, index) {
               final template = templates[index];
               final definition = TelemetryCalculatorRegistry.byId(
@@ -511,42 +684,45 @@ class _RecentTemplates extends StatelessWidget {
               );
               return SizedBox(
                 width: 220.w,
-                child: AppCard(
-                  onTap: () => onTap(template),
-                  padding: EdgeInsets.all(12.w),
-                  child: Row(
-                    children: [
-                      Icon(_categoryIcon(definition.category), size: 24.sp),
-                      SizedBox(width: 10.w),
-                      Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            Text(
-                              template.name,
-                              maxLines: 1,
-                              overflow: TextOverflow.ellipsis,
-                              style: const TextStyle(
-                                fontWeight: FontWeight.w700,
+                child: GestureDetector(
+                  onLongPress: () => onLongPress(template),
+                  child: AppCard(
+                    onTap: () => onTap(template),
+                    padding: EdgeInsets.all(AppSpacing.md.w),
+                    child: Row(
+                      children: [
+                        Icon(_categoryIcon(definition.category), size: 24.sp),
+                        SizedBox(width: AppSpacing.md.w),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              Text(
+                                template.name,
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                                style: const TextStyle(
+                                  fontWeight: FontWeight.w700,
+                                ),
                               ),
-                            ),
-                            SizedBox(height: 4.h),
-                            Text(
-                              definition.title,
-                              maxLines: 1,
-                              overflow: TextOverflow.ellipsis,
-                              style: TextStyle(
-                                color: Theme.of(
-                                  context,
-                                ).colorScheme.onSurfaceVariant,
-                                fontSize: 12.sp,
+                              SizedBox(height: AppSpacing.xs.h),
+                              Text(
+                                definition.title,
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                                style: TextStyle(
+                                  color: Theme.of(
+                                    context,
+                                  ).colorScheme.onSurfaceVariant,
+                                  fontSize: 12.sp,
+                                ),
                               ),
-                            ),
-                          ],
+                            ],
+                          ),
                         ),
-                      ),
-                    ],
+                      ],
+                    ),
                   ),
                 ),
               );
@@ -573,7 +749,7 @@ class _CalculatorCard extends StatelessWidget {
   Widget build(BuildContext context) {
     return AppCard(
       onTap: onTap,
-      padding: EdgeInsets.all(14.w),
+      padding: EdgeInsets.all(AppSpacing.lg.w),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -584,18 +760,18 @@ class _CalculatorCard extends StatelessWidget {
                 height: 40.w,
                 decoration: BoxDecoration(
                   color: color.withValues(alpha: 0.12),
-                  borderRadius: BorderRadius.circular(8),
+                  borderRadius: BorderRadius.circular(AppRadius.sm),
                 ),
                 child: Icon(_categoryIcon(definition.category), color: color),
               ),
-              SizedBox(width: 12.w),
+              SizedBox(width: AppSpacing.md.w),
               Expanded(
                 child: Text(
                   definition.title,
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                   style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                    fontWeight: FontWeight.w800,
+                    fontWeight: FontWeight.w700,
                   ),
                 ),
               ),
@@ -605,7 +781,7 @@ class _CalculatorCard extends StatelessWidget {
               ),
             ],
           ),
-          SizedBox(height: 10.h),
+          SizedBox(height: AppSpacing.md.h),
           Text(
             definition.subtitle,
             maxLines: 2,
@@ -643,7 +819,12 @@ class _DetailHeader extends StatelessWidget {
   Widget build(BuildContext context) {
     final secondary = Theme.of(context).colorScheme.onSurfaceVariant;
     return Container(
-      padding: EdgeInsets.fromLTRB(2.w, 4.h, 2.w, 2.h),
+      padding: EdgeInsets.fromLTRB(
+        AppSpacing.xs.w,
+        AppSpacing.xs.h,
+        AppSpacing.xs.w,
+        AppSpacing.xs.h,
+      ),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -652,11 +833,11 @@ class _DetailHeader extends StatelessWidget {
             height: 42.w,
             decoration: BoxDecoration(
               color: color.withValues(alpha: 0.12),
-              borderRadius: BorderRadius.circular(8),
+              borderRadius: BorderRadius.circular(AppRadius.sm),
             ),
             child: Icon(_categoryIcon(definition.category), color: color),
           ),
-          SizedBox(width: 12.w),
+          SizedBox(width: AppSpacing.md.w),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -666,10 +847,10 @@ class _DetailHeader extends StatelessWidget {
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                   style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                    fontWeight: FontWeight.w900,
+                    fontWeight: FontWeight.w800,
                   ),
                 ),
-                SizedBox(height: 4.h),
+                SizedBox(height: AppSpacing.xs.h),
                 Text(
                   definition.subtitle,
                   maxLines: 2,
@@ -681,10 +862,10 @@ class _DetailHeader extends StatelessWidget {
                     fontWeight: FontWeight.w600,
                   ),
                 ),
-                SizedBox(height: 7.h),
+                SizedBox(height: AppSpacing.sm.h),
                 Wrap(
-                  spacing: 6.w,
-                  runSpacing: 6.h,
+                  spacing: AppSpacing.sm.w,
+                  runSpacing: AppSpacing.sm.h,
                   children: [
                     _InfoPill(
                       label: _categoryLabel(definition.category),
@@ -714,30 +895,16 @@ class _InfoPill extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Container(
+    return ConstrainedBox(
       constraints: BoxConstraints(maxWidth: 220.w),
-      padding: EdgeInsets.symmetric(horizontal: 8.w, vertical: 4.h),
-      decoration: BoxDecoration(
-        color: color.withValues(alpha: 0.1),
-        borderRadius: BorderRadius.circular(8),
-        border: Border.all(color: color.withValues(alpha: 0.18)),
-      ),
-      child: Text(
-        label,
-        maxLines: 1,
-        overflow: TextOverflow.ellipsis,
-        style: TextStyle(
-          color: color,
-          fontSize: 11.sp,
-          fontWeight: FontWeight.w800,
-          height: 1.1,
-        ),
-      ),
+      child: AppPill(label: label, color: color),
     );
   }
 }
 
 class _CalculationWorkbench extends StatelessWidget {
+  static const _twoColumnMinWidth = AppBreakpoints.tabletMin - 40;
+
   final TelemetryCalculationResult result;
   final Color color;
   final List<Widget> primaryInputs;
@@ -762,7 +929,26 @@ class _CalculationWorkbench extends StatelessWidget {
       icon: Icons.analytics_outlined,
       color: color,
       emphasized: true,
-      child: _CompactResultPanel(result: result, color: color),
+      child: AnimatedSwitcher(
+        duration: AppMotion.normal,
+        switchInCurve: AppMotion.standardDecelerate,
+        switchOutCurve: AppMotion.standard,
+        transitionBuilder: (child, animation) {
+          return FadeTransition(
+            opacity: animation,
+            child: SizeTransition(
+              sizeFactor: animation,
+              axisAlignment: -1,
+              child: child,
+            ),
+          );
+        },
+        child: _CompactResultPanel(
+          key: ValueKey(_resultSignature(result)),
+          result: result,
+          color: color,
+        ),
+      ),
     );
     final inputPane = _WorkbenchPane(
       title: '输入',
@@ -774,18 +960,29 @@ class _CalculationWorkbench extends StatelessWidget {
         children: [
           for (var i = 0; i < primaryInputs.length; i++) ...[
             primaryInputs[i],
-            if (i < primaryInputs.length - 1) SizedBox(height: 10.h),
+            if (i < primaryInputs.length - 1) SizedBox(height: AppSpacing.md.h),
           ],
           if (advancedInputs.isNotEmpty) ...[
-            SizedBox(height: 8.h),
+            SizedBox(height: AppSpacing.sm.h),
             _AdvancedToggle(expanded: showAdvanced, onTap: onToggleAdvanced),
-            if (showAdvanced) ...[
-              SizedBox(height: 10.h),
-              for (var i = 0; i < advancedInputs.length; i++) ...[
-                advancedInputs[i],
-                if (i < advancedInputs.length - 1) SizedBox(height: 10.h),
-              ],
-            ],
+            AnimatedSize(
+              duration: AppMotion.normal,
+              curve: AppMotion.standardDecelerate,
+              alignment: Alignment.topCenter,
+              child: showAdvanced
+                  ? Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        SizedBox(height: AppSpacing.md.h),
+                        for (var i = 0; i < advancedInputs.length; i++) ...[
+                          advancedInputs[i],
+                          if (i < advancedInputs.length - 1)
+                            SizedBox(height: AppSpacing.md.h),
+                        ],
+                      ],
+                    )
+                  : const SizedBox.shrink(),
+            ),
           ],
         ],
       ),
@@ -793,11 +990,22 @@ class _CalculationWorkbench extends StatelessWidget {
 
     return LayoutBuilder(
       builder: (context, constraints) {
+        if (constraints.maxWidth < _twoColumnMinWidth) {
+          return Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              outputPane,
+              SizedBox(height: AppSpacing.md.h),
+              inputPane,
+            ],
+          );
+        }
+
         return Row(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Expanded(flex: 11, child: inputPane),
-            SizedBox(width: 10.w),
+            SizedBox(width: AppSpacing.md.w),
             Expanded(flex: 10, child: outputPane),
           ],
         );
@@ -810,7 +1018,11 @@ class _CompactResultPanel extends StatelessWidget {
   final TelemetryCalculationResult result;
   final Color color;
 
-  const _CompactResultPanel({required this.result, required this.color});
+  const _CompactResultPanel({
+    super.key,
+    required this.result,
+    required this.color,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -835,10 +1047,10 @@ class _CompactResultPanel extends StatelessWidget {
       children: [
         Container(
           width: double.infinity,
-          padding: EdgeInsets.all(10.w),
+          padding: EdgeInsets.all(AppSpacing.md.w),
           decoration: BoxDecoration(
             color: color.withValues(alpha: 0.14),
-            borderRadius: BorderRadius.circular(8),
+            borderRadius: BorderRadius.circular(AppRadius.sm),
             border: Border.all(color: color.withValues(alpha: 0.32)),
           ),
           child: Column(
@@ -851,10 +1063,10 @@ class _CompactResultPanel extends StatelessWidget {
                 style: TextStyle(
                   color: theme.colorScheme.onSurfaceVariant,
                   fontSize: 11.sp,
-                  fontWeight: FontWeight.w800,
+                  fontWeight: FontWeight.w600,
                 ),
               ),
-              SizedBox(height: 5.h),
+              SizedBox(height: AppSpacing.xs.h),
               SizedBox(
                 width: double.infinity,
                 child: FittedBox(
@@ -865,14 +1077,14 @@ class _CompactResultPanel extends StatelessWidget {
                     maxLines: 1,
                     style: theme.textTheme.headlineSmall?.copyWith(
                       color: _outputStatusColor(context, primary, color),
-                      fontWeight: FontWeight.w900,
+                      fontWeight: FontWeight.w800,
                       fontFamily: 'Roboto',
                       height: 1,
                     ),
                   ),
                 ),
               ),
-              SizedBox(height: 2.h),
+              SizedBox(height: AppSpacing.xs.h),
               Text(
                 primary.unitLabel,
                 maxLines: 1,
@@ -884,7 +1096,7 @@ class _CompactResultPanel extends StatelessWidget {
                 ),
               ),
               if (secondary != null) ...[
-                SizedBox(height: 5.h),
+                SizedBox(height: AppSpacing.xs.h),
                 Text(
                   _compactOutputSummary(secondary),
                   maxLines: 2,
@@ -899,12 +1111,12 @@ class _CompactResultPanel extends StatelessWidget {
             ],
           ),
         ),
-        SizedBox(height: 8.h),
+        SizedBox(height: AppSpacing.sm.h),
         for (var i = 0; i < rest.length; i++) ...[
           _CompactResultRow(output: rest[i], color: color),
-          if (i < rest.length - 1) SizedBox(height: 6.h),
+          if (i < rest.length - 1) SizedBox(height: AppSpacing.sm.h),
         ],
-        if (rest.isNotEmpty) SizedBox(height: 8.h),
+        if (rest.isNotEmpty) SizedBox(height: AppSpacing.sm.h),
         _OutputInsightPanel(insight: insight),
       ],
     );
@@ -922,10 +1134,13 @@ class _CompactResultRow extends StatelessWidget {
     final theme = Theme.of(context);
     return Container(
       width: double.infinity,
-      padding: EdgeInsets.symmetric(horizontal: 8.w, vertical: 7.h),
+      padding: EdgeInsets.symmetric(
+        horizontal: AppSpacing.sm.w,
+        vertical: AppSpacing.sm.h,
+      ),
       decoration: BoxDecoration(
         color: theme.semanticColors.mutedSurface.withValues(alpha: 0.44),
-        borderRadius: BorderRadius.circular(8),
+        borderRadius: BorderRadius.circular(AppRadius.xs),
         border: Border.all(color: theme.semanticColors.border),
       ),
       child: Column(
@@ -941,14 +1156,14 @@ class _CompactResultRow extends StatelessWidget {
               fontWeight: FontWeight.w700,
             ),
           ),
-          SizedBox(height: 2.h),
+          SizedBox(height: AppSpacing.xs.h),
           Text(
             '${output.displayValue} ${output.unitLabel}',
             maxLines: 1,
             overflow: TextOverflow.ellipsis,
             style: TextStyle(
               fontSize: 13.sp,
-              fontWeight: FontWeight.w900,
+              fontWeight: FontWeight.w700,
               fontFamily: 'Roboto',
             ),
           ),
@@ -980,12 +1195,12 @@ class _WorkbenchPane extends StatelessWidget {
     final theme = Theme.of(context);
     return Container(
       width: double.infinity,
-      padding: EdgeInsets.all(12.w),
+      padding: EdgeInsets.all(AppSpacing.md.w),
       decoration: BoxDecoration(
         color: emphasized
             ? color.withValues(alpha: 0.06)
             : theme.semanticColors.mutedSurface.withValues(alpha: 0.5),
-        borderRadius: BorderRadius.circular(8),
+        borderRadius: BorderRadius.circular(AppRadius.sm),
         border: Border.all(
           color: emphasized
               ? color.withValues(alpha: 0.24)
@@ -1001,7 +1216,7 @@ class _WorkbenchPane extends StatelessWidget {
             icon: icon,
             color: color,
           ),
-          SizedBox(height: 12.h),
+          SizedBox(height: AppSpacing.md.h),
           child,
         ],
       ),
@@ -1031,11 +1246,11 @@ class _SectionTitle extends StatelessWidget {
           height: 30.w,
           decoration: BoxDecoration(
             color: color.withValues(alpha: 0.12),
-            borderRadius: BorderRadius.circular(8),
+            borderRadius: BorderRadius.circular(AppRadius.xs),
           ),
           child: Icon(icon, color: color, size: 17.sp),
         ),
-        SizedBox(width: 10.w),
+        SizedBox(width: AppSpacing.md.w),
         Expanded(
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
@@ -1043,11 +1258,12 @@ class _SectionTitle extends StatelessWidget {
               Text(
                 title,
                 style: Theme.of(context).textTheme.titleSmall?.copyWith(
-                  fontWeight: FontWeight.w800,
+                  fontWeight: FontWeight.w700,
+                  letterSpacing: 0,
                   height: 1.1,
                 ),
               ),
-              SizedBox(height: 2.h),
+              SizedBox(height: AppSpacing.xs.h),
               Text(
                 subtitle,
                 maxLines: 1,
@@ -1082,26 +1298,26 @@ class _StatusPanel extends StatelessWidget {
   Widget build(BuildContext context) {
     return Container(
       width: double.infinity,
-      padding: EdgeInsets.all(12.w),
+      padding: EdgeInsets.all(AppSpacing.md.w),
       decoration: BoxDecoration(
         color: color.withValues(alpha: 0.08),
-        borderRadius: BorderRadius.circular(8),
+        borderRadius: BorderRadius.circular(AppRadius.sm),
         border: Border.all(color: color.withValues(alpha: 0.2)),
       ),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Icon(icon, color: color, size: 20.sp),
-          SizedBox(width: 10.w),
+          SizedBox(width: AppSpacing.md.w),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
                   title,
-                  style: TextStyle(color: color, fontWeight: FontWeight.w800),
+                  style: TextStyle(color: color, fontWeight: FontWeight.w700),
                 ),
-                SizedBox(height: 3.h),
+                SizedBox(height: AppSpacing.xs.h),
                 Text(
                   message,
                   style: TextStyle(color: color, fontSize: 12.sp, height: 1.35),
@@ -1139,17 +1355,17 @@ class _OutputInsightPanel extends StatelessWidget {
     final theme = Theme.of(context);
     return Container(
       width: double.infinity,
-      padding: EdgeInsets.all(9.w),
+      padding: EdgeInsets.all(AppSpacing.sm.w),
       decoration: BoxDecoration(
         color: insight.color.withValues(alpha: 0.08),
-        borderRadius: BorderRadius.circular(8),
+        borderRadius: BorderRadius.circular(AppRadius.sm),
         border: Border.all(color: insight.color.withValues(alpha: 0.24)),
       ),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Icon(insight.icon, color: insight.color, size: 18.sp),
-          SizedBox(width: 8.w),
+          SizedBox(width: AppSpacing.sm.w),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -1161,20 +1377,20 @@ class _OutputInsightPanel extends StatelessWidget {
                   style: TextStyle(
                     color: insight.color,
                     fontSize: 11.sp,
-                    fontWeight: FontWeight.w900,
+                    fontWeight: FontWeight.w700,
                   ),
                 ),
-                SizedBox(height: 3.h),
+                SizedBox(height: AppSpacing.xs.h),
                 Text(
                   insight.title,
                   maxLines: 2,
                   overflow: TextOverflow.ellipsis,
                   style: theme.textTheme.labelLarge?.copyWith(
-                    fontWeight: FontWeight.w900,
+                    fontWeight: FontWeight.w700,
                     height: 1.15,
                   ),
                 ),
-                SizedBox(height: 3.h),
+                SizedBox(height: AppSpacing.xs.h),
                 Text(
                   insight.message,
                   maxLines: 3,
@@ -1208,6 +1424,15 @@ Color _outputStatusColor(
     return Theme.of(context).semanticColors.success;
   }
   return fallback;
+}
+
+String _resultSignature(TelemetryCalculationResult result) {
+  if (result.hasErrors) return result.errors.join('|');
+  return result.outputs
+      .map(
+        (output) => '${output.id}:${output.displayValue}:${output.unitLabel}',
+      )
+      .join('|');
 }
 
 _ResultInsight _resultInsight(
@@ -1424,7 +1649,7 @@ class _CompactNumberInput extends StatelessWidget {
             ),
             onChanged: (text) => onChanged(input.id, text),
             style: theme.textTheme.titleLarge?.copyWith(
-              fontWeight: FontWeight.w900,
+              fontWeight: FontWeight.w800,
               fontFamily: 'Roboto',
               height: 1,
             ),
@@ -1445,7 +1670,7 @@ class _CompactNumberInput extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 valueField,
-                SizedBox(height: 6.h),
+                SizedBox(height: AppSpacing.sm.h),
                 Align(alignment: Alignment.centerRight, child: unitButton),
               ],
             );
@@ -1453,7 +1678,7 @@ class _CompactNumberInput extends StatelessWidget {
           return Row(
             children: [
               Expanded(child: valueField),
-              SizedBox(width: 6.w),
+              SizedBox(width: AppSpacing.sm.w),
               unitButton,
             ],
           );
@@ -1546,15 +1771,17 @@ class _CompactInputShell extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final semantic = theme.semanticColors;
     return Container(
-      padding: EdgeInsets.fromLTRB(10.w, 8.h, 10.w, 9.h),
+      padding: EdgeInsets.symmetric(
+        horizontal: AppSpacing.lg.w,
+        vertical: AppSpacing.md.h,
+      ),
       decoration: BoxDecoration(
-        color: theme.semanticColors.mutedSurface.withValues(alpha: 0.62),
-        borderRadius: BorderRadius.circular(8),
+        color: semantic.mutedSurface,
+        borderRadius: BorderRadius.circular(AppRadius.lg),
         border: Border.all(
-          color: invalid
-              ? theme.colorScheme.error
-              : theme.semanticColors.border,
+          color: invalid ? theme.colorScheme.error : semantic.border,
         ),
       ),
       child: Column(
@@ -1569,7 +1796,7 @@ class _CompactInputShell extends StatelessWidget {
                   overflow: TextOverflow.ellipsis,
                   style: theme.textTheme.labelMedium?.copyWith(
                     color: theme.colorScheme.onSurfaceVariant,
-                    fontWeight: FontWeight.w800,
+                    fontWeight: FontWeight.w600,
                   ),
                 ),
               ),
@@ -1584,7 +1811,7 @@ class _CompactInputShell extends StatelessWidget {
                 ),
             ],
           ),
-          SizedBox(height: 5.h),
+          SizedBox(height: AppSpacing.xs.h),
           child,
         ],
       ),
@@ -1622,12 +1849,12 @@ class _UnitMenuButton extends StatelessWidget {
       child: Container(
         constraints: BoxConstraints(minWidth: compact ? 48.w : 70.w),
         padding: EdgeInsets.symmetric(
-          horizontal: compact ? 5.w : 10.w,
-          vertical: compact ? 6.h : 7.h,
+          horizontal: compact ? AppSpacing.xs.w : AppSpacing.md.w,
+          vertical: compact ? AppSpacing.sm.h : AppSpacing.sm.h,
         ),
         decoration: BoxDecoration(
           color: theme.cardColor,
-          borderRadius: BorderRadius.circular(8),
+          borderRadius: BorderRadius.circular(AppRadius.xs),
           border: Border.all(color: theme.semanticColors.border),
         ),
         child: Row(
@@ -1639,10 +1866,10 @@ class _UnitMenuButton extends StatelessWidget {
                 UnitCatalog.unit(value).label,
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
-                style: TextStyle(fontSize: 13.sp, fontWeight: FontWeight.w800),
+                style: TextStyle(fontSize: 13.sp, fontWeight: FontWeight.w700),
               ),
             ),
-            SizedBox(width: compact ? 2.w : 4.w),
+            SizedBox(width: compact ? AppSpacing.xs.w : AppSpacing.xs.w),
             Icon(Icons.expand_more_rounded, size: compact ? 14.sp : 16.sp),
           ],
         ),
@@ -1675,22 +1902,25 @@ class _OptionMenuButton extends StatelessWidget {
       ],
       child: Container(
         width: double.infinity,
-        padding: EdgeInsets.symmetric(horizontal: 9.w, vertical: 7.h),
+        padding: EdgeInsets.symmetric(
+          horizontal: AppSpacing.sm.w,
+          vertical: AppSpacing.sm.h,
+        ),
         decoration: BoxDecoration(
           color: theme.cardColor,
-          borderRadius: BorderRadius.circular(8),
+          borderRadius: BorderRadius.circular(AppRadius.xs),
           border: Border.all(color: theme.semanticColors.border),
         ),
         child: Row(
           children: [
             Icon(Icons.tune_rounded, size: 16.sp),
-            SizedBox(width: 6.w),
+            SizedBox(width: AppSpacing.sm.w),
             Expanded(
               child: Text(
                 selected.label,
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
-                style: TextStyle(fontSize: 13.sp, fontWeight: FontWeight.w900),
+                style: TextStyle(fontSize: 13.sp, fontWeight: FontWeight.w700),
               ),
             ),
             Icon(Icons.expand_more_rounded, size: 16.sp),
@@ -1711,9 +1941,9 @@ class _AdvancedToggle extends StatelessWidget {
   Widget build(BuildContext context) {
     return InkWell(
       onTap: onTap,
-      borderRadius: BorderRadius.circular(8),
+      borderRadius: BorderRadius.circular(AppRadius.xs),
       child: Padding(
-        padding: EdgeInsets.symmetric(vertical: 8.h),
+        padding: EdgeInsets.symmetric(vertical: AppSpacing.sm.h),
         child: Row(
           children: [
             const Expanded(child: AppSectionHeader(title: '高级参数')),
@@ -1739,10 +1969,10 @@ class _FormulaPanel extends StatelessWidget {
     final formulas = definition.formulas;
     return Container(
       width: double.infinity,
-      padding: EdgeInsets.all(11.w),
+      padding: EdgeInsets.all(AppSpacing.md.w),
       decoration: BoxDecoration(
         color: theme.colorScheme.surface.withValues(alpha: 0.42),
-        borderRadius: BorderRadius.circular(8),
+        borderRadius: BorderRadius.circular(AppRadius.sm),
         border: Border.all(color: color.withValues(alpha: 0.22)),
       ),
       child: Column(
@@ -1751,12 +1981,12 @@ class _FormulaPanel extends StatelessWidget {
           Row(
             children: [
               Icon(Icons.functions_rounded, color: color, size: 18.sp),
-              SizedBox(width: 8.w),
+              SizedBox(width: AppSpacing.sm.w),
               Expanded(
                 child: Text(
                   '依据',
                   style: theme.textTheme.titleSmall?.copyWith(
-                    fontWeight: FontWeight.w800,
+                    fontWeight: FontWeight.w700,
                   ),
                 ),
               ),
@@ -1770,10 +2000,10 @@ class _FormulaPanel extends StatelessWidget {
               ),
             ],
           ),
-          SizedBox(height: 8.h),
+          SizedBox(height: AppSpacing.sm.h),
           for (var i = 0; i < formulas.length; i++) ...[
             _FormulaCompactRow(formula: formulas[i], color: color),
-            if (i < formulas.length - 1) SizedBox(height: 8.h),
+            if (i < formulas.length - 1) SizedBox(height: AppSpacing.sm.h),
           ],
         ],
       ),
@@ -1792,10 +2022,10 @@ class _FormulaCompactRow extends StatelessWidget {
     final theme = Theme.of(context);
     return Container(
       width: double.infinity,
-      padding: EdgeInsets.all(10.w),
+      padding: EdgeInsets.all(AppSpacing.md.w),
       decoration: BoxDecoration(
         color: theme.semanticColors.mutedSurface.withValues(alpha: 0.42),
-        borderRadius: BorderRadius.circular(8),
+        borderRadius: BorderRadius.circular(AppRadius.sm),
         border: Border.all(color: theme.semanticColors.border),
       ),
       child: Column(
@@ -1806,7 +2036,7 @@ class _FormulaCompactRow extends StatelessWidget {
               Expanded(
                 child: Text(
                   formula.title,
-                  style: const TextStyle(fontWeight: FontWeight.w800),
+                  style: const TextStyle(fontWeight: FontWeight.w700),
                 ),
               ),
               IconButton(
@@ -1823,9 +2053,9 @@ class _FormulaCompactRow extends StatelessWidget {
               ),
             ],
           ),
-          SizedBox(height: 6.h),
+          SizedBox(height: AppSpacing.sm.h),
           _FormulaExpression(expression: formula.expression, color: color),
-          SizedBox(height: 6.h),
+          SizedBox(height: AppSpacing.sm.h),
           Text(
             formula.source,
             style: TextStyle(
@@ -1850,10 +2080,13 @@ class _FormulaExpression extends StatelessWidget {
     final theme = Theme.of(context);
     return Container(
       width: double.infinity,
-      padding: EdgeInsets.symmetric(horizontal: 10.w, vertical: 10.h),
+      padding: EdgeInsets.symmetric(
+        horizontal: AppSpacing.md.w,
+        vertical: AppSpacing.md.h,
+      ),
       decoration: BoxDecoration(
         color: theme.colorScheme.surface.withValues(alpha: 0.72),
-        borderRadius: BorderRadius.circular(8),
+        borderRadius: BorderRadius.circular(AppRadius.xs),
         border: Border.all(color: color.withValues(alpha: 0.18)),
       ),
       child: SelectableText.rich(
@@ -1889,7 +2122,7 @@ List<TextSpan> _formulaSpans(
         text: text,
         style: TextStyle(
           color: isNumber ? color : theme.colorScheme.onSurface,
-          fontWeight: isNumber ? FontWeight.w800 : FontWeight.w700,
+          fontWeight: isNumber ? FontWeight.w700 : FontWeight.w600,
           fontStyle: isNumber ? FontStyle.normal : FontStyle.italic,
         ),
       ),
@@ -1903,7 +2136,7 @@ List<TextSpan> _formulaSpans(
       spans.add(
         TextSpan(
           text: ' $char ',
-          style: TextStyle(color: color, fontWeight: FontWeight.w900),
+          style: TextStyle(color: color, fontWeight: FontWeight.w700),
         ),
       );
     } else if (char == '_') {
@@ -1967,7 +2200,10 @@ IconData _categoryIcon(TelemetryCalculatorCategory category) {
   };
 }
 
-Color _categoryColor(TelemetryCalculatorCategory category, dynamic semantic) {
+Color _categoryColor(
+  TelemetryCalculatorCategory category,
+  AppSemanticColors semantic,
+) {
   return switch (category) {
     TelemetryCalculatorCategory.link => semantic.stats,
     TelemetryCalculatorCategory.rate => semantic.work,

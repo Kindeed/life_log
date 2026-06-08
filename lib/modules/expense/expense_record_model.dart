@@ -77,10 +77,11 @@ extension ExpenseRecordBusinessChanges on ExpenseRecord {
 
 extension ExpenseRecordListDomainLogic on Iterable<ExpenseRecord> {
   Iterable<ExpenseRecord> inMonth(DateTime monthYear) {
+    final localMonth = dateOnlyLocal(monthYear);
     return where(
       (item) =>
-          dateOnlyLocal(item.expenseDate).year == monthYear.year &&
-          dateOnlyLocal(item.expenseDate).month == monthYear.month,
+          dateOnlyLocal(item.expenseDate).year == localMonth.year &&
+          dateOnlyLocal(item.expenseDate).month == localMonth.month,
     );
   }
 

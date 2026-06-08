@@ -78,10 +78,11 @@ extension WorkLogListDomainLogic on Iterable<WorkLog> {
 
   /// 获取本月的日志
   Iterable<WorkLog> inMonth(DateTime monthYear) {
+    final localMonth = dateOnlyLocal(monthYear);
     return where(
       (log) =>
-          dateOnlyLocal(log.date).year == monthYear.year &&
-          dateOnlyLocal(log.date).month == monthYear.month,
+          dateOnlyLocal(log.date).year == localMonth.year &&
+          dateOnlyLocal(log.date).month == localMonth.month,
     );
   }
 

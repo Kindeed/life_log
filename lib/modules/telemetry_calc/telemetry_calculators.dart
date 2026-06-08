@@ -1910,6 +1910,9 @@ class TelemetryCalculatorRegistry {
         radiatorEmissivity *
         sigma *
         (math.pow(radiatorTemp, 4) - math.pow(spaceTemp, 4));
+    if (radiatorTemp <= spaceTemp || radiatorDenominator <= 0) {
+      throw const TelemetryCalculationException('散热器温度必须高于空间背景温度');
+    }
     final radiatorRejected = radiatorDenominator * radiatorArea;
     final areaRequired = heatToReject / radiatorDenominator;
     final radiatorMargin = radiatorRejected - heatToReject;
@@ -1919,9 +1922,6 @@ class TelemetryCalculatorRegistry {
       hotLimit - hotCase,
       coldCase - coldLimit,
     );
-    if (radiatorTemp <= spaceTemp || radiatorDenominator <= 0) {
-      throw const TelemetryCalculationException('散热器温度必须高于空间背景温度');
-    }
 
     return _withWarnings(
       [

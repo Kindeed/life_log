@@ -133,7 +133,10 @@ void main() {
     }
 
     final original = project()..remoteVersion = 1;
-    final next = project()..remoteVersion = 2;
+    final next = project()
+      ..remoteVersion = 2
+      ..createdAt = DateTime(2026, 5, 7)
+      ..updatedAt = DateTime(2026, 5, 8);
 
     expect(next.hasBusinessChangesComparedTo(original), isFalse);
 
