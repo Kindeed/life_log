@@ -11,6 +11,7 @@ enum TelemetryCalculatorCategory {
   command,
   ranging,
   frequency,
+  system,
   custom,
 }
 
@@ -351,6 +352,9 @@ class TelemetryCalculatorRegistry {
     _telecommand,
     _ranging,
     _doppler,
+    _spacecraftPower,
+    _spacecraftThermal,
+    _missionClosure,
     _customFormula,
   ];
 
@@ -1250,6 +1254,912 @@ class TelemetryCalculatorRegistry {
         context.output('guard_margin', margin, unitId: 'kHz'),
       ],
       warnings: [if (margin < 0) '保护间隔不足，可能导致频谱/接收机捕获风险。'],
+    );
+  }
+
+  static const _spacecraftPower = TelemetryCalculatorDefinition(
+    id: 'spacecraft_power',
+    category: TelemetryCalculatorCategory.system,
+    title: '电源与蓄电池',
+    subtitle: '太阳阵 EOL、蓄电池容量、DOD 与轨道能量余量',
+    standards: 'NASA SmallSat SOTA / SMAD',
+    inputs: [
+      TelemetryInputDefinition.number(
+        id: 'solar_constant',
+        label: '设计太阳辐照度',
+        dimension: QuantityDimension.irradiance,
+        units: ['W_m2'],
+        defaultUnit: 'W_m2',
+        defaultValue: 1000,
+        min: 0.001,
+      ),
+      TelemetryInputDefinition.number(
+        id: 'array_area',
+        label: '太阳阵面积',
+        dimension: QuantityDimension.area,
+        units: ['m2'],
+        defaultUnit: 'm2',
+        defaultValue: 1,
+        min: 0.001,
+      ),
+      TelemetryInputDefinition.number(
+        id: 'cell_efficiency',
+        label: '电池片效率',
+        dimension: QuantityDimension.dimensionless,
+        units: ['percent', 'ratio'],
+        defaultUnit: 'percent',
+        defaultValue: 30,
+        min: 0,
+        max: 100,
+      ),
+      TelemetryInputDefinition.number(
+        id: 'pack_efficiency',
+        label: '封装/布板效率',
+        dimension: QuantityDimension.dimensionless,
+        units: ['percent', 'ratio'],
+        defaultUnit: 'percent',
+        defaultValue: 70,
+        min: 0,
+        max: 100,
+      ),
+      TelemetryInputDefinition.number(
+        id: 'sun_angle',
+        label: '太阳入射角',
+        dimension: QuantityDimension.angle,
+        units: ['deg', 'rad'],
+        defaultUnit: 'deg',
+        defaultValue: 0,
+        min: 0,
+        max: 90,
+        advanced: true,
+      ),
+      TelemetryInputDefinition.number(
+        id: 'pointing_factor',
+        label: '指向/姿态效率',
+        dimension: QuantityDimension.dimensionless,
+        units: ['percent', 'ratio'],
+        defaultUnit: 'percent',
+        defaultValue: 100,
+        min: 0,
+        max: 100,
+        advanced: true,
+      ),
+      TelemetryInputDefinition.number(
+        id: 'eol_degradation',
+        label: '寿命末期衰减',
+        dimension: QuantityDimension.dimensionless,
+        units: ['percent', 'ratio'],
+        defaultUnit: 'percent',
+        defaultValue: 20,
+        min: 0,
+        max: 95,
+      ),
+      TelemetryInputDefinition.number(
+        id: 'pcu_efficiency',
+        label: '电源调节效率',
+        dimension: QuantityDimension.dimensionless,
+        units: ['percent', 'ratio'],
+        defaultUnit: 'percent',
+        defaultValue: 100,
+        min: 0,
+        max: 100,
+        advanced: true,
+      ),
+      TelemetryInputDefinition.number(
+        id: 'sunlit_duration',
+        label: '光照时长',
+        dimension: QuantityDimension.time,
+        units: ['s', 'h'],
+        defaultUnit: 'h',
+        defaultValue: 0.5,
+        min: 0.001,
+      ),
+      TelemetryInputDefinition.number(
+        id: 'sunlit_load',
+        label: '光照负载功率',
+        dimension: QuantityDimension.power,
+        units: ['W'],
+        defaultUnit: 'W',
+        defaultValue: 60,
+        min: 0,
+      ),
+      TelemetryInputDefinition.number(
+        id: 'eclipse_load',
+        label: '阴影负载功率',
+        dimension: QuantityDimension.power,
+        units: ['W'],
+        defaultUnit: 'W',
+        defaultValue: 50,
+        min: 0,
+      ),
+      TelemetryInputDefinition.number(
+        id: 'eclipse_duration',
+        label: '阴影时长',
+        dimension: QuantityDimension.time,
+        units: ['s', 'h'],
+        defaultUnit: 'h',
+        defaultValue: 0.2,
+        min: 0,
+      ),
+      TelemetryInputDefinition.number(
+        id: 'contingency_energy',
+        label: '应急能量',
+        dimension: QuantityDimension.energy,
+        units: ['Wh', 'J'],
+        defaultUnit: 'Wh',
+        defaultValue: 4.9,
+        min: 0,
+        advanced: true,
+      ),
+      TelemetryInputDefinition.number(
+        id: 'reserve_energy',
+        label: '保留能量',
+        dimension: QuantityDimension.energy,
+        units: ['Wh', 'J'],
+        defaultUnit: 'Wh',
+        defaultValue: 27,
+        min: 0,
+      ),
+      TelemetryInputDefinition.number(
+        id: 'charge_efficiency',
+        label: '充电效率',
+        dimension: QuantityDimension.dimensionless,
+        units: ['percent', 'ratio'],
+        defaultUnit: 'percent',
+        defaultValue: 92,
+        min: 0.001,
+        max: 100,
+        advanced: true,
+      ),
+      TelemetryInputDefinition.number(
+        id: 'discharge_efficiency',
+        label: '放电效率',
+        dimension: QuantityDimension.dimensionless,
+        units: ['percent', 'ratio'],
+        defaultUnit: 'percent',
+        defaultValue: 95,
+        min: 0.001,
+        max: 100,
+        advanced: true,
+      ),
+      TelemetryInputDefinition.number(
+        id: 'allowed_dod',
+        label: '允许 DOD',
+        dimension: QuantityDimension.dimensionless,
+        units: ['percent', 'ratio'],
+        defaultUnit: 'percent',
+        defaultValue: 60,
+        min: 0.001,
+        max: 100,
+      ),
+      TelemetryInputDefinition.number(
+        id: 'installed_battery_energy',
+        label: '装机蓄电池能量',
+        dimension: QuantityDimension.energy,
+        units: ['Wh', 'J'],
+        defaultUnit: 'Wh',
+        defaultValue: 55,
+        min: 0.001,
+      ),
+      TelemetryInputDefinition.number(
+        id: 'bus_voltage',
+        label: '母线电压',
+        dimension: QuantityDimension.dimensionless,
+        units: ['unit'],
+        defaultUnit: 'unit',
+        defaultValue: 24,
+        min: 0.001,
+        helper: '单位 V，用于 Wh 到 Ah 的容量换算。',
+      ),
+    ],
+    outputs: [
+      TelemetryOutputDefinition(
+        id: 'array_power_bol',
+        label: 'BOL 阵功率',
+        unitId: 'W',
+      ),
+      TelemetryOutputDefinition(
+        id: 'array_power_eol',
+        label: 'EOL 阵功率',
+        unitId: 'W',
+      ),
+      TelemetryOutputDefinition(
+        id: 'sunlit_energy',
+        label: '光照发电量',
+        unitId: 'Wh',
+      ),
+      TelemetryOutputDefinition(
+        id: 'battery_required_energy',
+        label: '所需蓄电池能量',
+        unitId: 'Wh',
+      ),
+      TelemetryOutputDefinition(
+        id: 'battery_capacity_ah',
+        label: '所需容量',
+        unitId: 'Ah',
+      ),
+      TelemetryOutputDefinition(
+        id: 'charge_time_required',
+        label: '回充时间',
+        unitId: 's',
+      ),
+      TelemetryOutputDefinition(
+        id: 'orbit_energy_margin',
+        label: '轨道能量余量',
+        unitId: 'Wh',
+      ),
+      TelemetryOutputDefinition(
+        id: 'dod_margin',
+        label: 'DOD 余量',
+        unitId: 'ratio',
+      ),
+    ],
+    formulas: [
+      FormulaReference(
+        title: '太阳阵 EOL 功率',
+        expression:
+            'P_EOL=S*A*eta_cell*eta_pack*cos(theta)*eta_pointing*(1-degradation)',
+        source: 'NASA SmallSat SOTA Power / SMAD EPS sizing',
+      ),
+      FormulaReference(
+        title: '蓄电池能量',
+        expression:
+            'E_bat=(E_eclipse+E_contingency)/(eta_discharge*DOD_allowed)',
+        source: 'SMAD spacecraft power budget',
+      ),
+      FormulaReference(
+        title: '轨道能量平衡',
+        expression:
+            'Margin=P_EOL*T_sunlit*eta_pcu-E_sunlit-E_eclipse-E_reserve',
+        source: 'NASA Systems Engineering margin practice',
+      ),
+    ],
+    runner: _runSpacecraftPower,
+  );
+
+  static TelemetryCalculationResult _runSpacecraftPower(
+    TelemetryCalculationContext context,
+  ) {
+    final solar = context.number('solar_constant', 'W_m2');
+    final area = context.number('array_area', 'm2');
+    final cellEfficiency = context.number('cell_efficiency', 'ratio');
+    final packEfficiency = context.number('pack_efficiency', 'ratio');
+    final sunAngle = context.number('sun_angle', 'rad');
+    final pointing = context.number('pointing_factor', 'ratio');
+    final degradation = context.number('eol_degradation', 'ratio');
+    final pcuEfficiency = context.number('pcu_efficiency', 'ratio');
+    final sunlitHours = context.number('sunlit_duration', 'h');
+    final sunlitLoad = context.number('sunlit_load', 'W');
+    final eclipseLoad = context.number('eclipse_load', 'W');
+    final eclipseHours = context.number('eclipse_duration', 'h');
+    final contingency = context.number('contingency_energy', 'Wh');
+    final reserve = context.number('reserve_energy', 'Wh');
+    final chargeEfficiency = context.number('charge_efficiency', 'ratio');
+    final dischargeEfficiency = context.number('discharge_efficiency', 'ratio');
+    final allowedDod = context.number('allowed_dod', 'ratio');
+    final installedBattery = context.number('installed_battery_energy', 'Wh');
+    final busVoltage = context.number('bus_voltage', 'unit');
+
+    final angleFactor = math.max(0, math.cos(sunAngle));
+    final bolPower =
+        solar * area * cellEfficiency * packEfficiency * angleFactor * pointing;
+    final eolPower = bolPower * (1 - degradation);
+    final sunlitEnergy = eolPower * sunlitHours * pcuEfficiency;
+    final sunlitLoadEnergy = sunlitLoad * sunlitHours;
+    final eclipseEnergy = eclipseLoad * eclipseHours;
+    final batteryRequired =
+        (eclipseEnergy + contingency) / (dischargeEfficiency * allowedDod);
+    final batteryCapacityAh = batteryRequired / busVoltage;
+    final rechargeEnergy =
+        eclipseEnergy / (chargeEfficiency * dischargeEfficiency);
+    final excessSunlitPower = eolPower - sunlitLoad;
+    final chargeTimeHours = excessSunlitPower <= 0
+        ? double.infinity
+        : rechargeEnergy / excessSunlitPower;
+    final orbitMargin =
+        sunlitEnergy - sunlitLoadEnergy - eclipseEnergy - reserve;
+    final cycleDod = eclipseEnergy / installedBattery;
+    final dodMargin = allowedDod - cycleDod;
+
+    return _withWarnings(
+      [
+        context.output('array_power_bol', bolPower),
+        context.output('array_power_eol', eolPower),
+        context.output('sunlit_energy', sunlitEnergy),
+        context.output('battery_required_energy', batteryRequired),
+        context.output('battery_capacity_ah', batteryCapacityAh),
+        context.output(
+          'charge_time_required',
+          chargeTimeHours * 3600,
+          unitId: 'h',
+        ),
+        context.output('orbit_energy_margin', orbitMargin),
+        context.output('dod_margin', dodMargin, unitId: 'percent'),
+      ],
+      [
+        if (orbitMargin < 0) '轨道能量余量为负，需增大太阳阵、降低负载或减少保留能量。',
+        if (dodMargin < 0) '蓄电池循环 DOD 超限，需增加容量或缩短阴影负载。',
+        if (!chargeTimeHours.isFinite) '光照剩余功率不足，无法完成蓄电池回充。',
+      ],
+    );
+  }
+
+  static const _spacecraftThermal = TelemetryCalculatorDefinition(
+    id: 'spacecraft_thermal',
+    category: TelemetryCalculatorCategory.system,
+    title: '热控与散热器',
+    subtitle: '外热流、内部发热、辐射散热、加热器占空比',
+    standards: 'NASA SmallSat SOTA / SMAD',
+    inputs: [
+      TelemetryInputDefinition.number(
+        id: 'solar_constant',
+        label: '太阳辐照度',
+        dimension: QuantityDimension.irradiance,
+        units: ['W_m2'],
+        defaultUnit: 'W_m2',
+        defaultValue: 1000,
+        min: 0,
+      ),
+      TelemetryInputDefinition.number(
+        id: 'solar_absorptivity',
+        label: '太阳吸收率',
+        dimension: QuantityDimension.dimensionless,
+        units: ['percent', 'ratio'],
+        defaultUnit: 'percent',
+        defaultValue: 50,
+        min: 0,
+        max: 100,
+      ),
+      TelemetryInputDefinition.number(
+        id: 'sun_area',
+        label: '直射受照面积',
+        dimension: QuantityDimension.area,
+        units: ['m2'],
+        defaultUnit: 'm2',
+        defaultValue: 0.08,
+        min: 0,
+      ),
+      TelemetryInputDefinition.number(
+        id: 'sun_view_factor',
+        label: '太阳视因子',
+        dimension: QuantityDimension.dimensionless,
+        units: ['percent', 'ratio'],
+        defaultUnit: 'percent',
+        defaultValue: 100,
+        min: 0,
+        max: 100,
+        advanced: true,
+      ),
+      TelemetryInputDefinition.number(
+        id: 'albedo',
+        label: '反照率',
+        dimension: QuantityDimension.dimensionless,
+        units: ['percent', 'ratio'],
+        defaultUnit: 'percent',
+        defaultValue: 30,
+        min: 0,
+        max: 100,
+      ),
+      TelemetryInputDefinition.number(
+        id: 'albedo_area',
+        label: '反照受照面积',
+        dimension: QuantityDimension.area,
+        units: ['m2'],
+        defaultUnit: 'm2',
+        defaultValue: 0.05,
+        min: 0,
+        advanced: true,
+      ),
+      TelemetryInputDefinition.number(
+        id: 'albedo_view_factor',
+        label: '反照视因子',
+        dimension: QuantityDimension.dimensionless,
+        units: ['percent', 'ratio'],
+        defaultUnit: 'percent',
+        defaultValue: 90,
+        min: 0,
+        max: 100,
+        advanced: true,
+      ),
+      TelemetryInputDefinition.number(
+        id: 'planet_ir',
+        label: '行星红外通量',
+        dimension: QuantityDimension.irradiance,
+        units: ['W_m2'],
+        defaultUnit: 'W_m2',
+        defaultValue: 237,
+        min: 0,
+      ),
+      TelemetryInputDefinition.number(
+        id: 'ir_emissivity',
+        label: '红外吸收率',
+        dimension: QuantityDimension.dimensionless,
+        units: ['percent', 'ratio'],
+        defaultUnit: 'percent',
+        defaultValue: 80,
+        min: 0,
+        max: 100,
+      ),
+      TelemetryInputDefinition.number(
+        id: 'planet_area',
+        label: '红外受照面积',
+        dimension: QuantityDimension.area,
+        units: ['m2'],
+        defaultUnit: 'm2',
+        defaultValue: 0.04,
+        min: 0,
+        advanced: true,
+      ),
+      TelemetryInputDefinition.number(
+        id: 'planet_view_factor',
+        label: '行星视因子',
+        dimension: QuantityDimension.dimensionless,
+        units: ['percent', 'ratio'],
+        defaultUnit: 'percent',
+        defaultValue: 50,
+        min: 0,
+        max: 100,
+        advanced: true,
+      ),
+      TelemetryInputDefinition.number(
+        id: 'internal_heat',
+        label: '内部发热',
+        dimension: QuantityDimension.power,
+        units: ['W'],
+        defaultUnit: 'W',
+        defaultValue: 10,
+        min: 0,
+      ),
+      TelemetryInputDefinition.number(
+        id: 'radiator_emissivity',
+        label: '散热面发射率',
+        dimension: QuantityDimension.dimensionless,
+        units: ['percent', 'ratio'],
+        defaultUnit: 'percent',
+        defaultValue: 85,
+        min: 0.001,
+        max: 100,
+      ),
+      TelemetryInputDefinition.number(
+        id: 'radiator_area',
+        label: '散热器面积',
+        dimension: QuantityDimension.area,
+        units: ['m2'],
+        defaultUnit: 'm2',
+        defaultValue: 0.2384,
+        min: 0.001,
+      ),
+      TelemetryInputDefinition.number(
+        id: 'radiator_temp',
+        label: '散热器温度',
+        dimension: QuantityDimension.temperature,
+        units: ['K'],
+        defaultUnit: 'K',
+        defaultValue: 300,
+        min: 0.001,
+      ),
+      TelemetryInputDefinition.number(
+        id: 'space_temp',
+        label: '空间背景温度',
+        dimension: QuantityDimension.temperature,
+        units: ['K'],
+        defaultUnit: 'K',
+        defaultValue: 3,
+        min: 0,
+        advanced: true,
+      ),
+      TelemetryInputDefinition.number(
+        id: 'heat_to_reject',
+        label: '需排散热量',
+        dimension: QuantityDimension.power,
+        units: ['W'],
+        defaultUnit: 'W',
+        defaultValue: 65,
+        min: 0,
+      ),
+      TelemetryInputDefinition.number(
+        id: 'required_heater_heat',
+        label: '冷况所需热量',
+        dimension: QuantityDimension.power,
+        units: ['W'],
+        defaultUnit: 'W',
+        defaultValue: 20,
+        min: 0,
+        advanced: true,
+      ),
+      TelemetryInputDefinition.number(
+        id: 'heater_power',
+        label: '加热器功率',
+        dimension: QuantityDimension.power,
+        units: ['W'],
+        defaultUnit: 'W',
+        defaultValue: 40,
+        min: 0.001,
+        advanced: true,
+      ),
+      TelemetryInputDefinition.number(
+        id: 'hot_limit',
+        label: '热限温度',
+        dimension: QuantityDimension.temperature,
+        units: ['K'],
+        defaultUnit: 'K',
+        defaultValue: 320,
+        min: 0,
+      ),
+      TelemetryInputDefinition.number(
+        id: 'hot_case',
+        label: '热况温度',
+        dimension: QuantityDimension.temperature,
+        units: ['K'],
+        defaultUnit: 'K',
+        defaultValue: 300,
+        min: 0,
+      ),
+      TelemetryInputDefinition.number(
+        id: 'cold_case',
+        label: '冷况温度',
+        dimension: QuantityDimension.temperature,
+        units: ['K'],
+        defaultUnit: 'K',
+        defaultValue: 270,
+        min: 0,
+      ),
+      TelemetryInputDefinition.number(
+        id: 'cold_limit',
+        label: '冷限温度',
+        dimension: QuantityDimension.temperature,
+        units: ['K'],
+        defaultUnit: 'K',
+        defaultValue: 250,
+        min: 0,
+      ),
+    ],
+    outputs: [
+      TelemetryOutputDefinition(
+        id: 'heat_absorbed',
+        label: '外部吸热',
+        unitId: 'W',
+      ),
+      TelemetryOutputDefinition(
+        id: 'radiator_heat_rejected',
+        label: '散热能力',
+        unitId: 'W',
+      ),
+      TelemetryOutputDefinition(
+        id: 'radiator_area_required',
+        label: '所需散热面积',
+        unitId: 'm2',
+      ),
+      TelemetryOutputDefinition(
+        id: 'radiator_margin',
+        label: '散热余量',
+        unitId: 'W',
+      ),
+      TelemetryOutputDefinition(
+        id: 'heater_duty_cycle',
+        label: '加热器占空比',
+        unitId: 'ratio',
+      ),
+      TelemetryOutputDefinition(
+        id: 'thermal_limit_margin',
+        label: '热控限值余量',
+        unitId: 'K',
+      ),
+    ],
+    formulas: [
+      FormulaReference(
+        title: '外部热流',
+        expression:
+            'Q_abs=alpha*S*A_sun+alpha*Albedo*S*A_albedo+epsilon*IR*A_planet',
+        source: 'NASA SmallSat SOTA Thermal Control',
+      ),
+      FormulaReference(
+        title: '辐射散热',
+        expression: 'Q_rad=epsilon*sigma*A*(T_rad^4-T_space^4)',
+        source: 'SMAD thermal control sizing',
+      ),
+      FormulaReference(
+        title: '热控限值余量',
+        expression:
+            'Margin=min(T_hot_limit-T_hot_case,T_cold_case-T_cold_limit)',
+        source: 'NASA Systems Engineering margin practice',
+      ),
+    ],
+    runner: _runSpacecraftThermal,
+  );
+
+  static TelemetryCalculationResult _runSpacecraftThermal(
+    TelemetryCalculationContext context,
+  ) {
+    const sigma = 5.670374419e-8;
+    final solar = context.number('solar_constant', 'W_m2');
+    final alpha = context.number('solar_absorptivity', 'ratio');
+    final sunArea = context.number('sun_area', 'm2');
+    final sunView = context.number('sun_view_factor', 'ratio');
+    final albedo = context.number('albedo', 'ratio');
+    final albedoArea = context.number('albedo_area', 'm2');
+    final albedoView = context.number('albedo_view_factor', 'ratio');
+    final planetIr = context.number('planet_ir', 'W_m2');
+    final irEmissivity = context.number('ir_emissivity', 'ratio');
+    final planetArea = context.number('planet_area', 'm2');
+    final planetView = context.number('planet_view_factor', 'ratio');
+    final internalHeat = context.number('internal_heat', 'W');
+    final radiatorEmissivity = context.number('radiator_emissivity', 'ratio');
+    final radiatorArea = context.number('radiator_area', 'm2');
+    final radiatorTemp = context.number('radiator_temp', 'K');
+    final spaceTemp = context.number('space_temp', 'K');
+    final heatToReject = context.number('heat_to_reject', 'W');
+    final requiredHeaterHeat = context.number('required_heater_heat', 'W');
+    final heaterPower = context.number('heater_power', 'W');
+    final hotLimit = context.number('hot_limit', 'K');
+    final hotCase = context.number('hot_case', 'K');
+    final coldCase = context.number('cold_case', 'K');
+    final coldLimit = context.number('cold_limit', 'K');
+
+    final solarHeat = alpha * solar * sunArea * sunView;
+    final albedoHeat = alpha * albedo * solar * albedoArea * albedoView;
+    final planetHeat = irEmissivity * planetIr * planetArea * planetView;
+    final heatAbsorbed = solarHeat + albedoHeat + planetHeat;
+    final radiatorDenominator =
+        radiatorEmissivity *
+        sigma *
+        (math.pow(radiatorTemp, 4) - math.pow(spaceTemp, 4));
+    final radiatorRejected = radiatorDenominator * radiatorArea;
+    final areaRequired = heatToReject / radiatorDenominator;
+    final radiatorMargin = radiatorRejected - heatToReject;
+    final heaterDuty = ((requiredHeaterHeat - internalHeat) / heaterPower)
+        .clamp(0.0, 1.0);
+    final thermalLimitMargin = math.min(
+      hotLimit - hotCase,
+      coldCase - coldLimit,
+    );
+
+    return _withWarnings(
+      [
+        context.output('heat_absorbed', heatAbsorbed),
+        context.output('radiator_heat_rejected', radiatorRejected),
+        context.output('radiator_area_required', areaRequired),
+        context.output('radiator_margin', radiatorMargin),
+        context.output('heater_duty_cycle', heaterDuty, unitId: 'percent'),
+        context.output('thermal_limit_margin', thermalLimitMargin),
+      ],
+      [
+        if (radiatorMargin < 0) '散热器能力不足，需增加面积、提高允许温度或降低热耗。',
+        if (thermalLimitMargin < 0) '热控限值余量为负，热况或冷况超出允许温度。',
+      ],
+    );
+  }
+
+  static const _missionClosure = TelemetryCalculatorDefinition(
+    id: 'mission_closure',
+    category: TelemetryCalculatorCategory.system,
+    title: '任务资源闭合',
+    subtitle: '数据、接触窗口、存储、功率与延迟的综合闭合',
+    standards: 'NASA SE Handbook / SMAD',
+    inputs: [
+      TelemetryInputDefinition.number(
+        id: 'source_rate',
+        label: '源数据率',
+        dimension: QuantityDimension.dataRate,
+        units: _commonRateUnits,
+        defaultUnit: 'Mbps',
+        defaultValue: 2,
+        min: 0,
+      ),
+      TelemetryInputDefinition.number(
+        id: 'generation_duration',
+        label: '产数时长',
+        dimension: QuantityDimension.time,
+        units: ['s', 'h'],
+        defaultUnit: 'h',
+        defaultValue: 1,
+        min: 0,
+      ),
+      TelemetryInputDefinition.number(
+        id: 'net_downlink_rate',
+        label: '净下行率',
+        dimension: QuantityDimension.dataRate,
+        units: _commonRateUnits,
+        defaultUnit: 'Mbps',
+        defaultValue: 5,
+        min: 0.001,
+      ),
+      TelemetryInputDefinition.number(
+        id: 'scheduled_contact',
+        label: '计划接触时长',
+        dimension: QuantityDimension.time,
+        units: ['s', 'h'],
+        defaultUnit: 'h',
+        defaultValue: 1,
+        min: 0,
+      ),
+      TelemetryInputDefinition.number(
+        id: 'contact_overhead',
+        label: '建链/切换开销',
+        dimension: QuantityDimension.time,
+        units: ['s', 'h'],
+        defaultUnit: 's',
+        defaultValue: 360,
+        min: 0,
+      ),
+      TelemetryInputDefinition.number(
+        id: 'storage_start',
+        label: '初始存储占用',
+        dimension: QuantityDimension.dataVolume,
+        units: ['bit', 'Mbit', 'Gbit'],
+        defaultUnit: 'Gbit',
+        defaultValue: 48.8,
+        min: 0,
+      ),
+      TelemetryInputDefinition.number(
+        id: 'storage_capacity',
+        label: '存储容量',
+        dimension: QuantityDimension.dataVolume,
+        units: ['bit', 'Mbit', 'Gbit'],
+        defaultUnit: 'Gbit',
+        defaultValue: 200,
+        min: 0.001,
+      ),
+      TelemetryInputDefinition.number(
+        id: 'power_available',
+        label: '可用功率',
+        dimension: QuantityDimension.power,
+        units: ['W'],
+        defaultUnit: 'W',
+        defaultValue: 151.5,
+        min: 0,
+      ),
+      TelemetryInputDefinition.number(
+        id: 'power_required',
+        label: '需求功率',
+        dimension: QuantityDimension.power,
+        units: ['W'],
+        defaultUnit: 'W',
+        defaultValue: 120,
+        min: 0.001,
+      ),
+      TelemetryInputDefinition.number(
+        id: 'latency_requirement',
+        label: '延迟要求',
+        dimension: QuantityDimension.time,
+        units: ['s', 'h'],
+        defaultUnit: 'h',
+        defaultValue: 24,
+        min: 0.001,
+        advanced: true,
+      ),
+      TelemetryInputDefinition.number(
+        id: 'max_latency',
+        label: '最大数据延迟',
+        dimension: QuantityDimension.time,
+        units: ['s', 'h'],
+        defaultUnit: 'h',
+        defaultValue: 8,
+        min: 0,
+        advanced: true,
+      ),
+    ],
+    outputs: [
+      TelemetryOutputDefinition(
+        id: 'generated_bits',
+        label: '生成数据量',
+        unitId: 'bit',
+      ),
+      TelemetryOutputDefinition(
+        id: 'usable_contact_time',
+        label: '可用接触时长',
+        unitId: 's',
+      ),
+      TelemetryOutputDefinition(
+        id: 'pass_capacity_bits',
+        label: '单次下行容量',
+        unitId: 'bit',
+      ),
+      TelemetryOutputDefinition(
+        id: 'storage_end_bits',
+        label: '期末存储占用',
+        unitId: 'bit',
+      ),
+      TelemetryOutputDefinition(
+        id: 'storage_margin',
+        label: '存储余量',
+        unitId: 'bit',
+      ),
+      TelemetryOutputDefinition(
+        id: 'power_margin_percent',
+        label: '功率余量',
+        unitId: 'ratio',
+      ),
+      TelemetryOutputDefinition(
+        id: 'latency_margin_percent',
+        label: '延迟余量',
+        unitId: 'ratio',
+      ),
+      TelemetryOutputDefinition(
+        id: 'closure_score',
+        label: '闭合短板',
+        unitId: 'ratio',
+      ),
+    ],
+    formulas: [
+      FormulaReference(
+        title: '生成数据量',
+        expression: 'GeneratedBits=SourceRate*Duration',
+        source: 'SMAD operations budget',
+      ),
+      FormulaReference(
+        title: '接触容量',
+        expression:
+            'PassCapacity=NetDownlinkRate*max(0,ScheduledContact-Overhead)',
+        source: 'NASA SmallSat communications operations',
+      ),
+      FormulaReference(
+        title: '闭合短板',
+        expression:
+            'Score=min(storage_margin/storage_capacity,power_margin/power_required,latency_margin/latency_requirement)',
+        source: 'NASA Systems Engineering margin practice',
+      ),
+    ],
+    runner: _runMissionClosure,
+  );
+
+  static TelemetryCalculationResult _runMissionClosure(
+    TelemetryCalculationContext context,
+  ) {
+    final sourceRate = context.number('source_rate', 'bps');
+    final generationDuration = context.number('generation_duration', 's');
+    final netDownlinkRate = context.number('net_downlink_rate', 'bps');
+    final scheduledContact = context.number('scheduled_contact', 's');
+    final contactOverhead = context.number('contact_overhead', 's');
+    final storageStart = context.number('storage_start', 'bit');
+    final storageCapacity = context.number('storage_capacity', 'bit');
+    final powerAvailable = context.number('power_available', 'W');
+    final powerRequired = context.number('power_required', 'W');
+    final latencyRequirement = context.number('latency_requirement', 's');
+    final maxLatency = context.number('max_latency', 's');
+
+    final generated = sourceRate * generationDuration;
+    final usableContact = math
+        .max(0, scheduledContact - contactOverhead)
+        .toDouble();
+    final passCapacity = netDownlinkRate * usableContact;
+    final storageEnd = math
+        .max(0, storageStart + generated - passCapacity)
+        .toDouble();
+    final storageMargin = storageCapacity - storageEnd;
+    final powerMarginPercent = (powerAvailable - powerRequired) / powerRequired;
+    final latencyMarginPercent =
+        (latencyRequirement - maxLatency) / latencyRequirement;
+    final closureScore = [
+      storageMargin / storageCapacity,
+      powerMarginPercent,
+      latencyMarginPercent,
+    ].reduce(math.min);
+
+    return _withWarnings(
+      [
+        context.output('generated_bits', generated, unitId: 'Gbit'),
+        context.output('usable_contact_time', usableContact, unitId: 'h'),
+        context.output('pass_capacity_bits', passCapacity, unitId: 'Gbit'),
+        context.output('storage_end_bits', storageEnd, unitId: 'Gbit'),
+        context.output('storage_margin', storageMargin, unitId: 'Gbit'),
+        context.output(
+          'power_margin_percent',
+          powerMarginPercent,
+          unitId: 'percent',
+        ),
+        context.output(
+          'latency_margin_percent',
+          latencyMarginPercent,
+          unitId: 'percent',
+        ),
+        context.output('closure_score', closureScore, unitId: 'percent'),
+      ],
+      [
+        if (storageMargin < 0) '存储余量为负，需增加下行容量或降低产数。',
+        if (powerMarginPercent < 0) '功率余量为负，需调整负载或电源配置。',
+        if (latencyMarginPercent < 0) '延迟余量为负，需缩短数据回传周期。',
+      ],
     );
   }
 

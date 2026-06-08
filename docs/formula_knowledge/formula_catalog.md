@@ -939,6 +939,31 @@ Notation:
 | SYS-058 | `CommandResponseLatency = CommandRoundTripLightTime + OnboardCommandProcessingTime + GroundProcessingTime` | light time and processing delays | Expected time from command transmission to observable response availability. | DSN-810-005, BOOK-SMAD | Seeded |
 | SYS-059 | `AutonomyCoverageTime = StoredCommandDuration + SafeModeHoldTime` | stored command timeline and safe-mode hold | Time the spacecraft can continue planned/safe operations without new ground commands. | NASA-SE-HANDBOOK, BOOK-SMAD | Seeded |
 | SYS-060 | `OperationsClosureScore = min(StoragePeakMarginBits/StorageCapacityBits, PowerMargin/PowerRequired, LatencyMargin/LatencyRequirement)` | normalized storage, power, and latency margins | Conservative scalar summary of system closure bottleneck; UI should also show each contributing margin separately. | NASA-SE-HANDBOOK, BOOK-SMAD | Procedure |
+| SYS-061 | `SolarArrayPower_BOL = SolarConstant_W_m2 * A_array * eta_cell * eta_pack * cos(theta_sun) * eta_pointing` | solar flux, array area, cell/pack efficiencies, sun angle, pointing factor | Beginning-of-life solar-array output for a first-order mission power budget. | NASA-SST-SOA, BOOK-SMAD | Seeded |
+| SYS-062 | `SolarArrayPower_EOL = SolarArrayPower_BOL * (1 - DegradationFraction_EOL)` | beginning-of-life power and end-of-life degradation | End-of-life solar-array power after mission degradation allowance. | NASA-SST-SOA, BOOK-SMAD | Seeded |
+| SYS-063 | `SunlitEnergyGenerated = SolarArrayPower_EOL * T_sunlit * eta_pcu` | end-of-life solar-array power, sunlit duration, power-conditioning efficiency | Generated electrical energy during the sunlit part of an orbit or planning interval. | NASA-SST-SOA, BOOK-SMAD | Seeded |
+| SYS-064 | `EclipseLoadEnergy = P_eclipse_load * T_eclipse` | eclipse load power and eclipse duration | Energy that must be supplied by storage during eclipse. | NASA-SST-SOA, BOOK-SMAD | Seeded |
+| SYS-065 | `BatteryRequiredEnergy = (EclipseLoadEnergy + ContingencyEnergy) / (eta_discharge * DOD_allowed)` | eclipse energy, contingency, discharge efficiency, allowed depth of discharge | Required battery stored energy capacity for eclipse plus contingency without exceeding the allowed DOD. | NASA-SST-SOA, BOOK-SMAD | Seeded |
+| SYS-066 | `BatteryCapacity_Ah = BatteryRequiredEnergy_Wh / BusVoltage_V` | required battery energy and bus voltage | Ampere-hour battery capacity corresponding to the energy requirement at the selected bus voltage. | NASA-SST-SOA, BOOK-SMAD | Seeded |
+| SYS-067 | `BatteryRechargeEnergy = EclipseLoadEnergy / (eta_charge * eta_discharge)` | eclipse energy and charge/discharge efficiencies | Sunlit recharge energy needed to restore eclipse discharge after battery round-trip losses. | NASA-SST-SOA, BOOK-SMAD | Seeded |
+| SYS-068 | `ChargeTimeRequired = BatteryRechargeEnergy / max(SolarArrayPower_EOL - P_sunlit_load, epsilon_power)` | recharge energy, end-of-life solar power, sunlit load | Time needed to recharge the battery using excess sunlit array power; denominator must be positive in a valid design. | NASA-SST-SOA, BOOK-SMAD | Procedure |
+| SYS-069 | `OrbitEnergyBalance = SunlitEnergyGenerated - SunlitLoadEnergy - EclipseLoadEnergy - BatteryReserveEnergy` | generated, sunlit load, eclipse load, reserve energy | Orbit-level energy closure after preserving the required storage reserve. | NASA-SST-SOA, BOOK-SMAD | Seeded |
+| SYS-070 | `ArrayAreaRequired = P_required_EOL / (SolarConstant_W_m2 * eta_cell * eta_pack * cos(theta_sun) * eta_pointing * (1 - DegradationFraction_EOL))` | required EOL power and solar-array performance terms | Solar-array area needed to deliver an end-of-life power requirement. | NASA-SST-SOA, BOOK-SMAD | Seeded |
+| SYS-071 | `LoadAveragePower = sum_i(P_load_i * DutyCycle_i)` | load powers and duty cycles | Average spacecraft load power across mission modes or scheduled states. | NASA-SST-SOA, BOOK-SMAD | Seeded |
+| SYS-072 | `PeakPowerMargin = PowerAvailablePeak - sum_i(P_peak_i)` | peak available power and simultaneous peak loads | Peak-power margin for worst-case simultaneous loads. | NASA-SE-HANDBOOK, BOOK-SMAD | Seeded |
+| SYS-073 | `BatteryCycleDOD = EclipseLoadEnergy / BatteryCapacityEnergy` | eclipse energy and battery energy capacity | Per-cycle depth of discharge imposed by one eclipse or high-load interval. | NASA-SST-SOA, BOOK-SMAD | Seeded |
+| SYS-074 | `BatteryDODMargin = DOD_allowed - BatteryCycleDOD` | allowed and achieved depth of discharge | Remaining DOD margin for cycle-life and storage-health checks. | NASA-SST-SOA, BOOK-SMAD | Seeded |
+| SYS-075 | `RadiatorHeatRejected = epsilon_rad * sigma_SB * A_rad * (T_rad_K^4 - T_space_K^4)` | emissivity, Stefan-Boltzmann constant, radiator area, radiator and space temperatures | Radiative heat rejection from a radiator surface to space. | NASA-SST-SOA, BOOK-SMAD | Seeded |
+| SYS-076 | `RadiatorAreaRequired = Q_reject / (epsilon_rad * sigma_SB * (T_rad_K^4 - T_space_K^4))` | heat to reject, emissivity, radiator temperature, space background | Radiator area required for a specified heat-rejection load. | NASA-SST-SOA, BOOK-SMAD | Seeded |
+| SYS-077 | `RadiatorMargin = RadiatorHeatRejected - Q_dissipated` | heat rejection capacity and dissipated heat | Thermal rejection margin for the selected radiator and operating case. | NASA-SST-SOA, NASA-SE-HANDBOOK | Seeded |
+| SYS-078 | `EquilibriumTemperature_K = ((Q_absorbed + Q_internal)/(epsilon_rad * sigma_SB * A_rad) + T_space_K^4)^(1/4)` | absorbed heat, internal heat, radiator properties, space background | First-order radiative equilibrium temperature for a spacecraft surface or lumped node. | NASA-SST-SOA, BOOK-SMAD | Seeded |
+| SYS-079 | `SolarHeatAbsorbed = alpha_solar * SolarConstant_W_m2 * A_sun_view * F_sun` | solar absorptivity, solar flux, sun-facing area, view factor | Absorbed direct solar heat load. | NASA-SST-SOA, BOOK-SMAD | Seeded |
+| SYS-080 | `PlanetIRHeatAbsorbed = epsilon_IR * IR_planet_W_m2 * A_planet_view * F_planet` | infrared emissivity/absorptivity, planet IR flux, viewed area, view factor | Absorbed planetary infrared heat load. | NASA-SST-SOA, BOOK-SMAD | Seeded |
+| SYS-081 | `AlbedoHeatAbsorbed = alpha_solar * Albedo * SolarConstant_W_m2 * A_albedo_view * F_albedo` | solar absorptivity, albedo, solar flux, albedo-viewed area, view factor | Absorbed reflected solar heat load from a planet. | NASA-SST-SOA, BOOK-SMAD | Seeded |
+| SYS-082 | `ThermalCapacitance = m_component * c_p` | component mass and specific heat | Lumped thermal capacitance for transient temperature estimates. | NASA-SST-SOA, BOOK-SMAD | Seeded |
+| SYS-083 | `TemperatureRate = (Q_in - Q_out) / (m_component * c_p)` | net heat rate, mass, specific heat | First-order transient temperature rate for a lumped component. | NASA-SST-SOA, BOOK-SMAD | Seeded |
+| SYS-084 | `HeaterDutyCycle = clamp((Q_required_heat - Q_internal)/P_heater_available, 0, 1)` | required heat, internal heat, available heater power | Heater duty cycle required to maintain a cold-case thermal target. | NASA-SST-SOA, BOOK-SMAD | Procedure |
+| SYS-085 | `ThermalLimitMargin = min(T_hot_limit_K - T_hot_case_K, T_cold_case_K - T_cold_limit_K)` | hot/cold predicted temperatures and allowable limits | Worst-side temperature margin across hot and cold thermal cases. | NASA-SST-SOA, NASA-SE-HANDBOOK | Seeded |
 
 ## Optical / Laser Communication Extensions
 
@@ -1258,6 +1283,7 @@ Implemented formulas are concentrated in:
 - TM-001 to TM-005
 - TC-001 to TC-005
 - TRK-001, TRK-002, TRK-004 to TRK-011
+- SYS-011 to SYS-018, SYS-041 to SYS-050, and SYS-061 to SYS-085 are partly implemented through the categorized system calculators for mission closure, spacecraft power/battery, and spacecraft thermal/radiator budgets.
 
 High-value missing groups:
 
@@ -1266,5 +1292,5 @@ High-value missing groups:
 3. TM/TC/AOS/USLP frame overhead from CCSDS tables.
 4. CCSDS coding modes and MODCOD tables.
 5. External measurement: Delta-DOR, radar-style range equation, angular error.
-6. System-level mission data/contact/storage closure.
+6. Remaining system-level depth: detailed battery life/degradation data, hot/cold thermal-case libraries, schedule import/export, and contact/station validation examples.
 7. Compression, Proximity-1 relay links, contact geometry, and RF measurement conversions.

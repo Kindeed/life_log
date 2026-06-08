@@ -1220,6 +1220,83 @@ This glossary defines shared symbols for the formula knowledge base. App impleme
 | `SafeModeHoldTime` | `safe_mode_hold_time` | time spacecraft can hold safe operations without new commands | s |
 | `AutonomyCoverageTime` | `autonomy_coverage_time` | planned plus safe autonomous operations coverage time | s |
 | `OperationsClosureScore` | `operations_closure_score` | conservative scalar summary of normalized storage/power/latency margins | ratio |
+| `SolarConstant_W_m2` | `solar_constant_w_m2` | solar flux at the selected mission distance or design case | W/m^2 |
+| `A_array` | `solar_array_area` | active or effective solar-array area | m^2 |
+| `eta_cell` | `solar_cell_efficiency` | solar cell conversion efficiency | ratio |
+| `eta_pack` | `array_packaging_efficiency` | packing, coverglass, wiring, and panel-level efficiency factor | ratio |
+| `theta_sun` | `sun_incidence_angle` | angle between array normal and Sun direction | rad, deg |
+| `eta_pointing` | `array_pointing_factor` | array pointing or articulation efficiency factor | ratio |
+| `SolarArrayPower_BOL` | `solar_array_power_bol` | beginning-of-life solar-array output power | W |
+| `DegradationFraction_EOL` | `solar_array_eol_degradation_fraction` | fractional power degradation by end of life | ratio |
+| `SolarArrayPower_EOL` | `solar_array_power_eol` | end-of-life solar-array output power | W |
+| `T_sunlit` | `sunlit_duration` | duration of the sunlit interval | s |
+| `eta_pcu` | `power_conditioning_efficiency` | power-conditioning and distribution efficiency | ratio |
+| `SunlitEnergyGenerated` | `sunlit_energy_generated` | generated electrical energy during sunlit interval | J, Wh |
+| `P_eclipse_load` | `eclipse_load_power` | load power during eclipse | W |
+| `T_eclipse` | `eclipse_duration` | duration of eclipse or storage-powered interval | s |
+| `EclipseLoadEnergy` | `eclipse_load_energy` | energy consumed during eclipse | J, Wh |
+| `ContingencyEnergy` | `contingency_energy` | reserved energy for contingency or design allowance | J, Wh |
+| `eta_discharge` | `battery_discharge_efficiency` | battery discharge efficiency | ratio |
+| `eta_charge` | `battery_charge_efficiency` | battery charge efficiency | ratio |
+| `DOD_allowed` | `allowed_depth_of_discharge` | maximum allowed battery depth of discharge | ratio |
+| `BatteryRequiredEnergy` | `battery_required_energy` | battery stored energy needed for eclipse and contingency | J, Wh |
+| `BatteryCapacity_Ah` | `battery_capacity_ah` | battery capacity at bus voltage | A*h |
+| `BusVoltage_V` | `bus_voltage_v` | spacecraft electrical bus voltage | V |
+| `BatteryRechargeEnergy` | `battery_recharge_energy` | energy needed to recharge battery after discharge | J, Wh |
+| `P_sunlit_load` | `sunlit_load_power` | load power during sunlit charging interval | W |
+| `ChargeTimeRequired` | `charge_time_required` | time required to restore battery energy | s |
+| `SunlitLoadEnergy` | `sunlit_load_energy` | energy consumed by loads during sunlit interval | J, Wh |
+| `BatteryReserveEnergy` | `battery_reserve_energy` | required battery reserve energy | J, Wh |
+| `OrbitEnergyBalance` | `orbit_energy_balance` | orbital energy closure after load and reserve terms | J, Wh |
+| `P_required_EOL` | `required_eol_power` | required end-of-life array output power | W |
+| `ArrayAreaRequired` | `array_area_required` | solar-array area required for EOL power | m^2 |
+| `P_load_i` | `load_power` | power of load or mode i | W |
+| `LoadAveragePower` | `load_average_power` | duty-cycle weighted average load power | W |
+| `PowerAvailablePeak` | `power_available_peak` | available peak power | W |
+| `P_peak_i` | `peak_load_power` | simultaneous peak load power for item i | W |
+| `PeakPowerMargin` | `peak_power_margin` | available peak power minus simultaneous peak loads | W |
+| `BatteryCycleDOD` | `battery_cycle_depth_of_discharge` | per-cycle battery depth of discharge | ratio |
+| `BatteryDODMargin` | `battery_dod_margin` | allowed DOD minus achieved cycle DOD | ratio |
+| `epsilon_rad` | `radiator_emissivity` | radiator infrared emissivity | ratio |
+| `sigma_SB` | `stefan_boltzmann_constant` | Stefan-Boltzmann constant | W/(m^2*K^4) |
+| `A_rad` | `radiator_area` | effective radiator area | m^2 |
+| `T_rad_K` | `radiator_temperature_k` | radiator absolute temperature | K |
+| `T_space_K` | `space_background_temperature_k` | effective space background temperature | K |
+| `RadiatorHeatRejected` | `radiator_heat_rejected` | heat radiated to space | W |
+| `Q_reject` | `heat_to_reject` | required thermal load to reject | W |
+| `RadiatorAreaRequired` | `radiator_area_required` | radiator area required for heat rejection | m^2 |
+| `Q_dissipated` | `heat_dissipated` | dissipated heat in the thermal case | W |
+| `RadiatorMargin` | `radiator_margin` | radiative heat rejection minus dissipated heat | W |
+| `Q_absorbed` | `absorbed_heat` | externally absorbed heat load | W |
+| `Q_internal` | `internal_heat` | heat generated by internal power dissipation | W |
+| `EquilibriumTemperature_K` | `equilibrium_temperature_k` | first-order radiative equilibrium temperature | K |
+| `alpha_solar` | `solar_absorptivity` | surface solar absorptivity | ratio |
+| `A_sun_view` | `sun_view_area` | area viewing direct solar flux | m^2 |
+| `F_sun` | `sun_view_factor` | view factor to direct solar source | ratio |
+| `SolarHeatAbsorbed` | `solar_heat_absorbed` | direct solar heat absorbed by spacecraft surface | W |
+| `epsilon_IR` | `infrared_absorptivity` | infrared absorptivity or emissivity for planet IR loading | ratio |
+| `IR_planet_W_m2` | `planet_ir_flux_w_m2` | planetary infrared heat flux | W/m^2 |
+| `A_planet_view` | `planet_view_area` | area viewing planetary IR source | m^2 |
+| `F_planet` | `planet_view_factor` | view factor to planetary IR source | ratio |
+| `PlanetIRHeatAbsorbed` | `planet_ir_heat_absorbed` | absorbed planetary infrared heat load | W |
+| `Albedo` | `planet_albedo` | reflected solar fraction for the design case | ratio |
+| `A_albedo_view` | `albedo_view_area` | area viewing reflected solar source | m^2 |
+| `F_albedo` | `albedo_view_factor` | view factor to reflected solar source | ratio |
+| `AlbedoHeatAbsorbed` | `albedo_heat_absorbed` | absorbed reflected solar heat load | W |
+| `m_component` | `component_mass` | thermal node or component mass | kg |
+| `c_p` | `specific_heat_capacity` | specific heat capacity | J/(kg*K) |
+| `ThermalCapacitance` | `thermal_capacitance` | lumped heat capacity | J/K |
+| `Q_in` | `thermal_heat_in` | incoming heat rate | W |
+| `Q_out` | `thermal_heat_out` | outgoing heat rate | W |
+| `TemperatureRate` | `temperature_rate` | transient temperature rate | K/s |
+| `Q_required_heat` | `required_heater_heat` | heat needed to maintain cold-case target | W |
+| `P_heater_available` | `heater_available_power` | installed or available heater power | W |
+| `HeaterDutyCycle` | `heater_duty_cycle` | required heater on-fraction | ratio |
+| `T_hot_limit_K` | `hot_temperature_limit_k` | maximum allowable component temperature | K |
+| `T_hot_case_K` | `hot_case_temperature_k` | predicted hot-case component temperature | K |
+| `T_cold_case_K` | `cold_case_temperature_k` | predicted cold-case component temperature | K |
+| `T_cold_limit_K` | `cold_temperature_limit_k` | minimum allowable component temperature | K |
+| `ThermalLimitMargin` | `thermal_limit_margin` | worst hot/cold temperature margin | K |
 
 ## Optical Communications
 

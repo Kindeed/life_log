@@ -118,6 +118,60 @@ void main() {
       expect(outputs['guard_margin'], closeTo(42.762, 0.001));
     });
 
+    test('computes spacecraft power budget outputs', () {
+      final definition = TelemetryCalculatorRegistry.byId('spacecraft_power');
+      final result = TelemetryCalculatorEngine.calculate(
+        definition,
+        TelemetryCalculatorRegistry.defaultValues(definition),
+      );
+
+      expect(result.errors, isEmpty);
+      final outputs = {
+        for (final output in result.outputs) output.id: output.value,
+      };
+      expect(outputs['array_power_eol'], closeTo(168.0, 0.01));
+      expect(outputs['battery_required_energy'], closeTo(26.14, 0.01));
+      expect(outputs['battery_capacity_ah'], closeTo(1.09, 0.01));
+      expect(outputs['orbit_energy_margin'], closeTo(17.0, 0.01));
+      expect(outputs['dod_margin'], closeTo(41.82, 0.01));
+    });
+
+    test('computes spacecraft thermal budget outputs', () {
+      final definition = TelemetryCalculatorRegistry.byId('spacecraft_thermal');
+      final result = TelemetryCalculatorEngine.calculate(
+        definition,
+        TelemetryCalculatorRegistry.defaultValues(definition),
+      );
+
+      expect(result.errors, isEmpty);
+      final outputs = {
+        for (final output in result.outputs) output.id: output.value,
+      };
+      expect(outputs['heat_absorbed'], closeTo(50.54, 0.01));
+      expect(outputs['radiator_heat_rejected'], closeTo(93.07, 0.01));
+      expect(outputs['radiator_area_required'], closeTo(0.17, 0.01));
+      expect(outputs['heater_duty_cycle'], closeTo(25.0, 0.01));
+      expect(outputs['thermal_limit_margin'], closeTo(20.0, 0.01));
+    });
+
+    test('computes mission resource closure outputs', () {
+      final definition = TelemetryCalculatorRegistry.byId('mission_closure');
+      final result = TelemetryCalculatorEngine.calculate(
+        definition,
+        TelemetryCalculatorRegistry.defaultValues(definition),
+      );
+
+      expect(result.errors, isEmpty);
+      final outputs = {
+        for (final output in result.outputs) output.id: output.value,
+      };
+      expect(outputs['generated_bits'], closeTo(7.2, 0.01));
+      expect(outputs['pass_capacity_bits'], closeTo(16.2, 0.01));
+      expect(outputs['storage_end_bits'], closeTo(39.8, 0.01));
+      expect(outputs['storage_margin'], closeTo(160.2, 0.01));
+      expect(outputs['closure_score'], closeTo(26.25, 0.01));
+    });
+
     test('validates invalid numeric input before running formulas', () {
       final definition = TelemetryCalculatorRegistry.byId('link_budget');
       final values = TelemetryCalculatorRegistry.defaultValues(definition);
@@ -141,6 +195,28 @@ void main() {
 
       expect(result.errors, isEmpty);
       expect(result.outputs.single.value, 7);
+    });
+
+    test('registers gathered formulas as categorized system calculators', () {
+      final systemCalculators = TelemetryCalculatorRegistry.definitions
+          .where(
+            (definition) =>
+                definition.category == TelemetryCalculatorCategory.system,
+          )
+          .toList();
+
+      expect(
+        systemCalculators.map((definition) => definition.id),
+        containsAll([
+          'spacecraft_power',
+          'spacecraft_thermal',
+          'mission_closure',
+        ]),
+      );
+      for (final definition in systemCalculators) {
+        expect(definition.formulas.length, greaterThanOrEqualTo(3));
+        expect(definition.standards, contains('NASA'));
+      }
     });
 
     test('all default calculators produce finite outputs', () {
@@ -365,6 +441,35 @@ void main() {
       expect(find.text('42.762'), findsWidgets);
       expect(find.textContaining('2.200e+6'), findsNothing);
       expect(find.textContaining('保护带覆盖误差'), findsWidgets);
+      expect(tester.takeException(), isNull);
+    });
+
+    testWidgets('lists categorized system calculators on the module page', (
+      tester,
+    ) async {
+      tester.view.physicalSize = const Size(390, 844);
+      tester.view.devicePixelRatio = 1;
+      addTearDown(tester.view.resetPhysicalSize);
+      addTearDown(tester.view.resetDevicePixelRatio);
+
+      await tester.pumpWidget(
+        ScreenUtilInit(
+          designSize: const Size(375, 812),
+          builder: (context, child) => GetMaterialApp(
+            theme: AppTheme.lightWith(null),
+            home: const TelemetryCalcView(),
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      await tester.tap(find.text('系统'));
+      await tester.pumpAndSettle();
+
+      expect(find.text('电源与蓄电池'), findsOneWidget);
+      expect(find.text('热控与散热器'), findsOneWidget);
+      expect(find.text('任务资源闭合'), findsOneWidget);
+      expect(find.text('系统'), findsWidgets);
       expect(tester.takeException(), isNull);
     });
 

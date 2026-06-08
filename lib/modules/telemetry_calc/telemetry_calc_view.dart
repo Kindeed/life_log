@@ -1241,6 +1241,42 @@ _ResultInsight _resultInsight(
     );
   }
 
+  final orbitEnergyMargin = _findOutput(outputs, 'orbit_energy_margin');
+  if (orbitEnergyMargin != null) {
+    return _marginInsight(
+      orbitEnergyMargin,
+      passTitle: '轨道能量闭合',
+      failTitle: '轨道能量不足',
+      passColor: theme.semanticColors.success,
+      failColor: theme.colorScheme.error,
+    );
+  }
+
+  final thermalLimitMargin = _findOutput(outputs, 'thermal_limit_margin');
+  if (thermalLimitMargin != null) {
+    return _marginInsight(
+      thermalLimitMargin,
+      passTitle: '热控限值满足',
+      failTitle: '热控限值超差',
+      passColor: theme.semanticColors.success,
+      failColor: theme.colorScheme.error,
+    );
+  }
+
+  final closureScore = _findOutput(outputs, 'closure_score');
+  if (closureScore != null) {
+    final passed = closureScore.value >= 0;
+    final value = _outputValueLabel(closureScore, absolute: !passed);
+    return _ResultInsight(
+      icon: passed
+          ? Icons.check_circle_outline_rounded
+          : Icons.warning_amber_rounded,
+      color: passed ? theme.semanticColors.success : theme.colorScheme.error,
+      title: passed ? '资源闭合可用' : '资源闭合不足',
+      message: passed ? '短板 $value，继续看分项。' : '缺口 $value，需调预算。',
+    );
+  }
+
   return _ResultInsight(
     icon: Icons.check_circle_outline_rounded,
     color: theme.semanticColors.success,
@@ -1895,6 +1931,7 @@ String _categoryLabel(TelemetryCalculatorCategory category) {
     TelemetryCalculatorCategory.command => '遥控',
     TelemetryCalculatorCategory.ranging => '测距',
     TelemetryCalculatorCategory.frequency => '频率',
+    TelemetryCalculatorCategory.system => '系统',
     TelemetryCalculatorCategory.custom => '公式',
   };
 }
@@ -1908,6 +1945,9 @@ String _detailTitle(TelemetryCalculatorDefinition definition) {
     'telecommand' => '遥控吞吐',
     'ranging' => '测距时延',
     'doppler' => '频率校核',
+    'spacecraft_power' => '电源计算',
+    'spacecraft_thermal' => '热控计算',
+    'mission_closure' => '资源闭合',
     'custom_formula' => '自定义公式',
     _ => definition.title,
   };
@@ -1922,6 +1962,7 @@ IconData _categoryIcon(TelemetryCalculatorCategory category) {
     TelemetryCalculatorCategory.command => Icons.keyboard_command_key_rounded,
     TelemetryCalculatorCategory.ranging => Icons.social_distance_rounded,
     TelemetryCalculatorCategory.frequency => Icons.graphic_eq_rounded,
+    TelemetryCalculatorCategory.system => Icons.account_tree_rounded,
     TelemetryCalculatorCategory.custom => Icons.functions_rounded,
   };
 }
@@ -1935,6 +1976,7 @@ Color _categoryColor(TelemetryCalculatorCategory category, dynamic semantic) {
     TelemetryCalculatorCategory.command => semantic.warning,
     TelemetryCalculatorCategory.ranging => semantic.success,
     TelemetryCalculatorCategory.frequency => semantic.stats,
+    TelemetryCalculatorCategory.system => semantic.work,
     TelemetryCalculatorCategory.custom => semantic.project,
   };
 }
