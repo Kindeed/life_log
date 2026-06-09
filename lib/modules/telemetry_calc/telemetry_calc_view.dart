@@ -1451,6 +1451,7 @@ class _CalculationWorkbench extends StatelessWidget {
       subtitle: '实时刷新输出',
       icon: Icons.tune_rounded,
       color: color,
+      emphasized: true,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -1513,7 +1514,8 @@ class _CompactInputGrid extends StatelessWidget {
     return LayoutBuilder(
       builder: (context, constraints) {
         final gap = AppSpacing.sm.w;
-        final canUseTwoColumns = constraints.maxWidth >= 560.w;
+        final halfTileWidth = (constraints.maxWidth - gap) / 2;
+        final canUseTwoColumns = halfTileWidth >= 240;
         return Wrap(
           key: const ValueKey('compactInputTileWrap'),
           spacing: gap,
@@ -1522,7 +1524,7 @@ class _CompactInputGrid extends StatelessWidget {
             for (final item in items)
               SizedBox(
                 width: canUseTwoColumns && item.isShort
-                    ? (constraints.maxWidth - gap) / 2
+                    ? halfTileWidth
                     : constraints.maxWidth,
                 child: item.child,
               ),
@@ -1608,7 +1610,6 @@ class _AdaptiveResultTile extends StatelessWidget {
     );
     return LayoutBuilder(
       builder: (context, constraints) {
-        final narrow = constraints.maxWidth < 170.w;
         return Container(
           key: const ValueKey('adaptiveResultTile'),
           padding: EdgeInsets.symmetric(
@@ -1620,28 +1621,16 @@ class _AdaptiveResultTile extends StatelessWidget {
             borderRadius: BorderRadius.circular(AppRadius.lg),
             border: Border.all(color: theme.semanticColors.border),
           ),
-          child: narrow
-              ? FittedBox(
-                  fit: BoxFit.scaleDown,
-                  alignment: Alignment.centerLeft,
-                  child: Row(
-                    key: const ValueKey('adaptiveResultTileInlineRow'),
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      _ResultLabel(output: output),
-                      SizedBox(width: AppSpacing.md.w),
-                      _ResultValue(output: output, color: statusColor),
-                    ],
-                  ),
-                )
-              : Row(
-                  key: const ValueKey('adaptiveResultTileInlineRow'),
-                  children: [
-                    Expanded(child: _ResultLabel(output: output)),
-                    SizedBox(width: AppSpacing.md.w),
-                    _ResultValue(output: output, color: statusColor),
-                  ],
-                ),
+          child: Row(
+            key: const ValueKey('adaptiveResultTileInlineRow'),
+            children: [
+              Expanded(child: _ResultLabel(output: output)),
+              SizedBox(width: AppSpacing.sm.w),
+              Flexible(
+                child: _ResultValue(output: output, color: statusColor),
+              ),
+            ],
+          ),
         );
       },
     );
@@ -1696,50 +1685,54 @@ class _ResultValue extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     return Row(
-      mainAxisSize: MainAxisSize.min,
+      mainAxisAlignment: MainAxisAlignment.end,
       children: [
-        ConstrainedBox(
-          constraints: BoxConstraints(maxWidth: 88.w),
-          child: FittedBox(
-            fit: BoxFit.scaleDown,
-            alignment: Alignment.centerRight,
-            child: Text(
-              output.displayValue,
-              maxLines: 1,
-              style: TextStyle(
-                color: color,
-                fontSize: 15.sp,
-                fontWeight: FontWeight.w800,
-                fontFamily: 'Roboto',
-                height: 1,
+        Flexible(
+          child: ConstrainedBox(
+            constraints: BoxConstraints(maxWidth: 88.w),
+            child: FittedBox(
+              fit: BoxFit.scaleDown,
+              alignment: Alignment.centerRight,
+              child: Text(
+                output.displayValue,
+                maxLines: 1,
+                style: TextStyle(
+                  color: color,
+                  fontSize: 15.sp,
+                  fontWeight: FontWeight.w800,
+                  fontFamily: 'Roboto',
+                  height: 1,
+                ),
               ),
             ),
           ),
         ),
         if (output.unitLabel.isNotEmpty) ...[
           SizedBox(width: AppSpacing.xs.w),
-          Container(
-            constraints: BoxConstraints(maxWidth: 58.w),
-            padding: EdgeInsets.symmetric(
-              horizontal: AppSpacing.xs.w,
-              vertical: AppSpacing.xs.h,
-            ),
-            decoration: BoxDecoration(
-              color: theme.cardColor.withValues(alpha: 0.72),
-              borderRadius: BorderRadius.circular(AppRadius.xs),
-              border: Border.all(color: theme.semanticColors.border),
-            ),
-            child: Text(
-              output.unitLabel,
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
-              textAlign: TextAlign.center,
-              style: TextStyle(
-                color: theme.colorScheme.onSurface,
-                fontSize: 11.sp,
-                fontWeight: FontWeight.w700,
-                fontFamily: 'Roboto',
-                height: 1,
+          Flexible(
+            child: Container(
+              constraints: BoxConstraints(maxWidth: 58.w),
+              padding: EdgeInsets.symmetric(
+                horizontal: AppSpacing.xs.w,
+                vertical: AppSpacing.xs.h,
+              ),
+              decoration: BoxDecoration(
+                color: theme.cardColor.withValues(alpha: 0.72),
+                borderRadius: BorderRadius.circular(AppRadius.xs),
+                border: Border.all(color: theme.semanticColors.border),
+              ),
+              child: Text(
+                output.unitLabel,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                textAlign: TextAlign.center,
+                style: TextStyle(
+                  color: theme.colorScheme.onSurface,
+                  fontSize: 11.sp,
+                  fontWeight: FontWeight.w700,
+                  fontFamily: 'Roboto',
+                  height: 1,
+                ),
               ),
             ),
           ),
@@ -2198,26 +2191,29 @@ class _CompactNumberInputState extends State<_CompactNumberInput> {
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          SizedBox(
-            width: 62,
-            child: TextField(
-              controller: widget.controller,
-              focusNode: _focusNode,
-              textAlign: TextAlign.end,
-              keyboardType: const TextInputType.numberWithOptions(
-                decimal: true,
-                signed: true,
-              ),
-              onChanged: (text) => widget.onChanged(widget.input.id, text),
-              style: theme.textTheme.titleMedium?.copyWith(
-                fontWeight: FontWeight.w700,
-                fontFamily: 'Roboto',
-                height: 1,
-              ),
-              decoration: const InputDecoration(
-                isDense: true,
-                border: InputBorder.none,
-                contentPadding: EdgeInsets.zero,
+          Flexible(
+            child: SizedBox(
+              width: 62,
+              child: TextField(
+                controller: widget.controller,
+                focusNode: _focusNode,
+                textAlign: TextAlign.end,
+                keyboardType: const TextInputType.numberWithOptions(
+                  decimal: true,
+                  signed: true,
+                ),
+                onChanged: (text) => widget.onChanged(widget.input.id, text),
+                style: theme.textTheme.titleMedium?.copyWith(
+                  color: theme.colorScheme.onSurface,
+                  fontWeight: FontWeight.w700,
+                  fontFamily: 'Roboto',
+                  height: 1,
+                ),
+                decoration: const InputDecoration(
+                  isDense: true,
+                  border: InputBorder.none,
+                  contentPadding: EdgeInsets.zero,
+                ),
               ),
             ),
           ),
@@ -2306,6 +2302,7 @@ class _CompactExpressionInputState extends State<_CompactExpressionInput> {
           textAlign: TextAlign.end,
           onChanged: (text) => widget.onChanged(widget.input.id, text),
           style: theme.textTheme.bodyMedium?.copyWith(
+            color: theme.colorScheme.onSurface,
             fontFamily: 'Roboto',
             height: 1.25,
             fontWeight: FontWeight.w700,
@@ -2394,7 +2391,6 @@ class _CompactInputShellState extends State<_CompactInputShell> {
       child: Row(
         children: [
           Expanded(
-            flex: 2,
             child: Row(
               mainAxisSize: MainAxisSize.min,
               children: [
@@ -2424,8 +2420,7 @@ class _CompactInputShellState extends State<_CompactInputShell> {
             ),
           ),
           SizedBox(width: AppSpacing.md.w),
-          Expanded(
-            flex: 7,
+          Flexible(
             child: Align(alignment: Alignment.centerRight, child: widget.child),
           ),
         ],
@@ -2519,7 +2514,7 @@ class _OptionMenuButton extends StatelessWidget {
           PopupMenuItem(value: option.id, child: Text(option.label)),
       ],
       child: Container(
-        width: double.infinity,
+        constraints: const BoxConstraints(minWidth: 88, maxWidth: 144),
         padding: EdgeInsets.symmetric(
           horizontal: AppSpacing.sm.w,
           vertical: AppSpacing.sm.h,
@@ -2531,8 +2526,6 @@ class _OptionMenuButton extends StatelessWidget {
         ),
         child: Row(
           children: [
-            Icon(Icons.tune_rounded, size: 16.sp),
-            SizedBox(width: AppSpacing.sm.w),
             Expanded(
               child: Text(
                 selected.label,

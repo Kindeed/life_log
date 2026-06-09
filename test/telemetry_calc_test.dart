@@ -484,7 +484,6 @@ void main() {
 
       expect(adaptiveResultTile, contains('AppRadius.lg'));
       expect(adaptiveResultTile, contains('theme.semanticColors.mutedSurface'));
-      expect(adaptiveResultTile, contains('AppSpacing.md'));
       expect(adaptiveResultTile, contains('AppSpacing.sm'));
       expect(adaptiveResultTile, contains('FittedBox'));
     });
@@ -516,6 +515,17 @@ void main() {
       expect(adaptiveResultTile, contains('Tooltip('));
       expect(adaptiveResultTile, contains('child: Row('));
       expect(adaptiveResultTile, isNot(contains('child: Column(')));
+    });
+
+    test('keeps compact telemetry input pane visually aligned', () {
+      final source = File(
+        'lib/modules/telemetry_calc/telemetry_calc_view.dart',
+      ).readAsStringSync();
+      final workbench = RegExp(
+        r"final inputPane = _WorkbenchPane\([\s\S]*?child: Column",
+      ).firstMatch(source)!.group(0)!;
+
+      expect(workbench, contains('emphasized: true'));
     });
 
     test('uses spacing tokens for telemetry gaps and padding', () {
@@ -773,6 +783,16 @@ void main() {
             )
             .first,
       );
+      final eirpTileFinder = find
+          .ancestor(
+            of: find.text('EIRP'),
+            matching: find.byKey(const ValueKey('adaptiveResultTile')),
+          )
+          .first;
+      final eirpTileRect = tester.getRect(eirpTileFinder);
+      final eirpUnitRect = tester.getRect(
+        find.descendant(of: eirpTileFinder, matching: find.text('dBW')).first,
+      );
       final fsplTile = tester.getSize(
         find
             .ancestor(
@@ -782,6 +802,44 @@ void main() {
             .first,
       );
       expect(fsplTile.width, greaterThan(eirpTile.width * 1.4));
+      expect((eirpTileRect.right - eirpUnitRect.right).abs(), lessThan(16));
+      expect(tester.takeException(), isNull);
+    });
+
+    testWidgets('keeps input labels readable on mobile', (tester) async {
+      tester.view.physicalSize = const Size(390, 844);
+      tester.view.devicePixelRatio = 1;
+      addTearDown(tester.view.resetPhysicalSize);
+      addTearDown(tester.view.resetDevicePixelRatio);
+
+      final definition = TelemetryCalculatorRegistry.byId('link_budget');
+      await tester.pumpWidget(
+        ScreenUtilInit(
+          designSize: const Size(375, 812),
+          builder: (context, child) => GetMaterialApp(
+            theme: AppTheme.lightWith(null),
+            home: TelemetryCalcDetailView(definition: definition),
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      final scrollable = find
+          .byWidgetPredicate(
+            (widget) =>
+                widget is Scrollable &&
+                widget.axisDirection == AxisDirection.down,
+          )
+          .first;
+      await tester.scrollUntilVisible(
+        find.text('发射机输出功率'),
+        120,
+        scrollable: scrollable,
+        maxScrolls: 8,
+      );
+      await tester.pumpAndSettle();
+
+      expect(tester.getSize(find.text('发射机输出功率')).width, greaterThan(90));
       expect(tester.takeException(), isNull);
     });
 
