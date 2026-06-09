@@ -18,10 +18,13 @@ void main() {
       expect(UnitCatalog.convert(30, 'dBm', 'dBW'), 0);
       expect(UnitCatalog.convert(0.875, 'ratio', 'percent'), 87.5);
       expect(UnitCatalog.convert(100, 'percent', 'ratio'), 1);
+      expect(UnitCatalog.convert(500, 'K', 'dBK'), closeTo(26.9897, 1e-4));
+      expect(UnitCatalog.convert(26.9897, 'dBK', 'K'), closeTo(500, 0.02));
     });
 
     test('rejects incompatible dimensions', () {
       expect(() => UnitCatalog.convert(1, 'km', 'MHz'), throwsArgumentError);
+      expect(() => UnitCatalog.convert(1, 'dBK', 'dBW'), throwsArgumentError);
     });
   });
 
@@ -292,6 +295,34 @@ void main() {
       );
     });
 
+    test('offers dBK only for absolute temperature inputs', () {
+      final linkBudget = TelemetryCalculatorRegistry.byId('link_budget');
+      final systemTemp = linkBudget.inputs.firstWhere(
+        (input) => input.id == 'system_temp',
+      );
+      expect(systemTemp.units, containsAll(['K', 'dBK']));
+
+      final thermal = TelemetryCalculatorRegistry.byId('spacecraft_thermal');
+      for (final id in [
+        'radiator_temp',
+        'space_temp',
+        'hot_limit',
+        'hot_case',
+        'cold_case',
+        'cold_limit',
+      ]) {
+        expect(
+          thermal.inputs.firstWhere((input) => input.id == id).units,
+          containsAll(['K', 'dBK']),
+          reason: id,
+        );
+      }
+      final thermalMargin = thermal.outputs.firstWhere(
+        (output) => output.id == 'thermal_limit_margin',
+      );
+      expect(thermalMargin.unitId, 'K');
+    });
+
     test('all default calculators produce finite outputs', () {
       for (final definition in TelemetryCalculatorRegistry.definitions) {
         final result = TelemetryCalculatorEngine.calculate(
@@ -358,6 +389,36 @@ void main() {
         ),
         isEmpty,
       );
+    });
+
+    test('keeps formula explanations and variable concepts Chinese-only', () {
+      final repository = FormulaLibraryRepository();
+      final latinWord = RegExp(r'[A-Za-z]{2,}');
+
+      final entriesWithEnglish = repository.loadAll().where(
+        (entry) => latinWord.hasMatch(entry.explanation),
+      );
+      final variablesWithEnglish = [
+        for (final entry in repository.loadAll())
+          for (final variable in entry.variables)
+            if (latinWord.hasMatch(variable.meaning) ||
+                latinWord.hasMatch(variable.concept))
+              '${entry.id}:${variable.symbol}:${variable.meaning}:${variable.concept}',
+      ];
+
+      expect(entriesWithEnglish, isEmpty);
+      expect(variablesWithEnglish, isEmpty);
+
+      final rf022 = repository.byId('RF-022')!;
+      expect(rf022.explanation, contains('表面'));
+      expect(rf022.explanation, contains('误差'));
+      expect(rf022.explanation, isNot(contains('Ruze-style')));
+      final sigmaSurface = rf022.variables.firstWhere(
+        (variable) => variable.symbol == 'sigma_surface',
+      );
+      expect(sigmaSurface.meaning, '表面均方根误差');
+      expect(sigmaSurface.concept, contains('表面均方根误差'));
+      expect(sigmaSurface.concept, isNot(contains('reflector')));
     });
 
     test('searches formulas and filters by domain', () {
@@ -621,9 +682,7 @@ void main() {
       expect(tester.takeException(), isNull);
     });
 
-    testWidgets('uses compact link budget result chips on mobile', (
-      tester,
-    ) async {
+    testWidgets('uses unified adaptive result tiles on mobile', (tester) async {
       tester.view.physicalSize = const Size(390, 844);
       tester.view.devicePixelRatio = 1;
       addTearDown(tester.view.resetPhysicalSize);
@@ -643,14 +702,16 @@ void main() {
 
       expect(
         find.byKey(const ValueKey('compactPrimaryResultBar')),
-        findsOneWidget,
+        findsNothing,
       );
+      expect(find.byKey(const ValueKey('compactResultChipWrap')), findsNothing);
+      expect(find.byKey(const ValueKey('adaptiveResultTile')), findsWidgets);
       expect(
-        find.byKey(const ValueKey('compactResultChipWrap')),
-        findsOneWidget,
+        find.byKey(const ValueKey('adaptiveResultTileInlineRow')),
+        findsWidgets,
       );
       expect(find.byKey(const ValueKey('compactInsightBar')), findsOneWidget);
-      expect(find.text('Eb/N0 41.31 dB'), findsWidgets);
+      expect(find.textContaining('Eb/N0'), findsWidgets);
       expect(tester.takeException(), isNull);
     });
 
@@ -676,10 +737,7 @@ void main() {
 
       final valueFinder = find.text('10.000000');
       expect(valueFinder, findsWidgets);
-      expect(
-        find.ancestor(of: valueFinder.first, matching: find.byType(FittedBox)),
-        findsOneWidget,
-      );
+      expect(find.byKey(const ValueKey('adaptiveResultTile')), findsWidgets);
       expect(find.text('结果已更新，可继续调参。'), findsWidgets);
       expect(tester.takeException(), isNull);
     });
@@ -966,6 +1024,9 @@ void main() {
       await tester.pumpAndSettle();
       expect(find.text('RF-001'), findsOneWidget);
       expect(find.text('RF / 天线 / 接收机'), findsWidgets);
+      expect(find.byKey(const ValueKey('formulaDirectoryCard')), findsWidgets);
+      expect(find.textContaining('lambda = c / f'), findsNothing);
+      expect(find.textContaining('A = pi D^2 / 4'), findsNothing);
 
       await tester.tap(find.text('RF-001'));
       await tester.pumpAndSettle();

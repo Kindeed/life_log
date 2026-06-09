@@ -306,7 +306,7 @@ String localizedVariableMeaning({
   final translated = _translateCommonEngineeringPhrase(rawMeaning);
   if (_isUsableChineseMeaning(translated)) return translated;
 
-  return '${formulaDisplaySymbol(symbol)} 公式参数';
+  return '公式参数';
 }
 
 String localizedVariableConcept({
@@ -334,11 +334,31 @@ String localizedFormulaExplanation({
   if (exact != null) return exact;
   final translated = _translateCommonEngineeringPhrase(rawExplanation);
   if (_isUsableChineseMeaning(translated)) return translated;
-  return '用于${domain.label}相关工程计算。';
+  return '用于${_formulaDomainChineseName(domain)}工程计算，变量按下方参数说明取值。';
+}
+
+String _formulaDomainChineseName(FormulaDomain domain) {
+  return switch (domain) {
+    FormulaDomain.rfAntennaReceiver => '射频天线接收',
+    FormulaDomain.propagationLink => '传播链路',
+    FormulaDomain.baseband => '调制基带',
+    FormulaDomain.telemetryFrames => '遥测帧协议',
+    FormulaDomain.telecommand => '遥控上行',
+    FormulaDomain.rangingTracking => '测距跟踪',
+    FormulaDomain.system => '系统工程',
+    FormulaDomain.optical => '光链路',
+    FormulaDomain.orbitContact => '轨道接触',
+    FormulaDomain.compression => '数据压缩',
+    FormulaDomain.protocol => '协议安全',
+    FormulaDomain.measurement => '测量单位',
+  };
 }
 
 String? _exactFormulaExplanation(String id) {
-  const exact = {'RF-001': '将射频载波频率换算为波长，供天线增益、孔径和自由空间损耗计算使用。'};
+  const exact = {
+    'RF-001': '将射频载波频率换算为波长，供天线增益、孔径和自由空间损耗计算使用。',
+    'RF-022': '按表面误差关系估算反射面均方根误差造成的孔径效率损失，适用于反射面精度评估。',
+  };
   return exact[id];
 }
 
@@ -377,6 +397,8 @@ String? _exactVariableMeaning(String symbol) {
     'R_b': '信息比特率',
     'C/N0': '载噪密度比',
     'Eb/N0': '比特能量噪声密度比',
+    'K_surf': '表面误差几何系数',
+    'sigma_surface': '表面均方根误差',
   };
   return exact[symbol];
 }
@@ -472,10 +494,7 @@ String _translateCommonEngineeringPhrase(String raw) {
 
 bool _isUsableChineseMeaning(String value) {
   if (!RegExp(r'[\u4e00-\u9fff]').hasMatch(value)) return false;
-  return !RegExp(
-    r'\b(speed|light|wavelength|frequency|gain|temperature|power|range|ratio|length|angle|error|number|time|rate)\b',
-    caseSensitive: false,
-  ).hasMatch(value);
+  return !RegExp(r'[A-Za-z]{2,}').hasMatch(value);
 }
 
 const _identifierTokenZh = {

@@ -1109,55 +1109,76 @@ class _FormulaLibraryCard extends StatelessWidget {
     final theme = Theme.of(context);
     final semantic = theme.semanticColors;
     return AppCard(
+      key: const ValueKey('formulaDirectoryCard'),
       onTap: onTap,
       padding: EdgeInsets.all(AppSpacing.lg.w),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.center,
         children: [
-          Row(
-            children: [
-              AppPill(
-                label: entry.id,
-                icon: _formulaDomainIcon(entry.domain),
-                color: semantic.stats,
-              ),
-              SizedBox(width: AppSpacing.sm.w),
-              AppPill(
-                label: entry.status.label,
-                color: entry.status == FormulaStatus.implemented
-                    ? semantic.success
-                    : semantic.warning,
-              ),
-            ],
-          ),
-          SizedBox(height: AppSpacing.sm.h),
-          Text(
-            entry.expression,
-            maxLines: 2,
-            overflow: TextOverflow.ellipsis,
-            style: theme.textTheme.titleSmall?.copyWith(
-              fontWeight: FontWeight.w700,
+          Container(
+            width: 40.w,
+            height: 40.w,
+            decoration: BoxDecoration(
+              color: semantic.stats.withValues(alpha: 0.12),
+              borderRadius: BorderRadius.circular(AppRadius.xs),
+            ),
+            child: Icon(
+              _formulaDomainIcon(entry.domain),
+              color: semantic.stats,
+              size: 22.sp,
             ),
           ),
-          SizedBox(height: AppSpacing.xs.h),
-          Text(
-            entry.explanation,
-            maxLines: 2,
-            overflow: TextOverflow.ellipsis,
-            style: TextStyle(
-              color: theme.colorScheme.onSurfaceVariant,
-              fontSize: 12.sp,
-              height: 1.35,
+          SizedBox(width: AppSpacing.md.w),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Wrap(
+                  spacing: AppSpacing.sm.w,
+                  runSpacing: AppSpacing.xs.h,
+                  children: [
+                    AppPill(
+                      label: entry.id,
+                      icon: Icons.article_outlined,
+                      color: semantic.stats,
+                    ),
+                    AppPill(
+                      label: entry.status.label,
+                      color: entry.status == FormulaStatus.implemented
+                          ? semantic.success
+                          : semantic.warning,
+                    ),
+                  ],
+                ),
+                SizedBox(height: AppSpacing.sm.h),
+                Text(
+                  entry.explanation,
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
+                  style: theme.textTheme.titleSmall?.copyWith(
+                    fontWeight: FontWeight.w700,
+                    height: 1.25,
+                  ),
+                ),
+                SizedBox(height: AppSpacing.xs.h),
+                Text(
+                  entry.domain.label,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: TextStyle(
+                    color: theme.colorScheme.onSurfaceVariant,
+                    fontSize: 11.sp,
+                    fontWeight: FontWeight.w700,
+                  ),
+                ),
+              ],
             ),
           ),
-          SizedBox(height: AppSpacing.sm.h),
-          Text(
-            entry.domain.label,
-            style: TextStyle(
-              color: theme.colorScheme.onSurfaceVariant,
-              fontSize: 11.sp,
-              fontWeight: FontWeight.w700,
-            ),
+          SizedBox(width: AppSpacing.sm.w),
+          Icon(
+            Icons.chevron_right_rounded,
+            color: theme.colorScheme.onSurfaceVariant,
+            size: 22.sp,
           ),
         ],
       ),
@@ -1466,92 +1487,30 @@ class _CompactResultPanel extends StatelessWidget {
         message: result.errors.join('\n'),
       );
     }
-    final primary = _primaryOutput(result.outputs);
-    final secondary = _secondaryOutput(result.outputs, primary);
-    final chips = result.outputs
-        .where((output) => output.id != primary.id)
-        .take(5)
-        .toList(growable: false);
-    final insight = _resultInsight(context, result.outputs, primary);
+    final insight = _resultInsight(context, result.outputs);
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Container(
-          key: const ValueKey('compactPrimaryResultBar'),
-          width: double.infinity,
-          padding: EdgeInsets.symmetric(
-            horizontal: AppSpacing.md.w,
-            vertical: AppSpacing.sm.h,
-          ),
-          decoration: BoxDecoration(
-            color: color.withValues(alpha: 0.14),
-            borderRadius: BorderRadius.circular(AppRadius.sm),
-            border: Border.all(color: color.withValues(alpha: 0.32)),
-          ),
-          child: Row(
-            children: [
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      primary.label,
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                      style: TextStyle(
-                        color: theme.colorScheme.onSurfaceVariant,
-                        fontSize: 11.sp,
-                        fontWeight: FontWeight.w700,
-                      ),
-                    ),
-                    SizedBox(height: AppSpacing.xs.h),
-                    FittedBox(
-                      fit: BoxFit.scaleDown,
-                      alignment: Alignment.centerLeft,
-                      child: Text(
-                        primary.displayValue,
-                        maxLines: 1,
-                        style: theme.textTheme.headlineSmall?.copyWith(
-                          color: _outputStatusColor(context, primary, color),
-                          fontWeight: FontWeight.w800,
-                          fontFamily: 'Roboto',
-                          height: 1,
-                        ),
-                      ),
-                    ),
-                    SizedBox(height: AppSpacing.xs.h),
-                    Text(
-                      primary.unitLabel,
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                      style: TextStyle(
-                        color: theme.colorScheme.onSurfaceVariant,
-                        fontSize: 11.sp,
-                        fontWeight: FontWeight.w700,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-              if (secondary != null) ...[
-                SizedBox(width: AppSpacing.sm.w),
-                _OutputValuePill(output: secondary, color: color),
+        LayoutBuilder(
+          builder: (context, constraints) {
+            final gap = AppSpacing.sm.w;
+            final canUseTwoColumns = constraints.maxWidth >= 260.w;
+            return Wrap(
+              key: const ValueKey('adaptiveResultTileWrap'),
+              spacing: gap,
+              runSpacing: AppSpacing.sm.h,
+              children: [
+                for (final output in result.outputs)
+                  SizedBox(
+                    width: canUseTwoColumns && !_usesFullResultRow(output)
+                        ? (constraints.maxWidth - gap) / 2
+                        : constraints.maxWidth,
+                    child: _AdaptiveResultTile(output: output, color: color),
+                  ),
               ],
-            ],
-          ),
+            );
+          },
         ),
-        if (chips.isNotEmpty) ...[
-          SizedBox(height: AppSpacing.sm.h),
-          Wrap(
-            key: const ValueKey('compactResultChipWrap'),
-            spacing: AppSpacing.sm.w,
-            runSpacing: AppSpacing.sm.h,
-            children: [
-              for (final output in chips)
-                _CompactResultChip(output: output, color: color),
-            ],
-          ),
-        ],
         SizedBox(height: AppSpacing.sm.h),
         _OutputInsightPanel(insight: insight),
       ],
@@ -1559,53 +1518,19 @@ class _CompactResultPanel extends StatelessWidget {
   }
 }
 
-class _OutputValuePill extends StatelessWidget {
+class _AdaptiveResultTile extends StatelessWidget {
   final TelemetryCalculationOutput output;
   final Color color;
 
-  const _OutputValuePill({required this.output, required this.color});
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      constraints: const BoxConstraints(maxWidth: 128),
-      padding: EdgeInsets.symmetric(
-        horizontal: AppSpacing.sm.w,
-        vertical: AppSpacing.xs.h,
-      ),
-      decoration: BoxDecoration(
-        color: color.withValues(alpha: 0.12),
-        borderRadius: BorderRadius.circular(AppRadius.xs),
-        border: Border.all(color: color.withValues(alpha: 0.22)),
-      ),
-      child: Text(
-        _compactOutputSummary(output),
-        maxLines: 2,
-        overflow: TextOverflow.ellipsis,
-        textAlign: TextAlign.center,
-        style: TextStyle(
-          color: Theme.of(context).colorScheme.onSurface,
-          fontSize: 11.sp,
-          fontWeight: FontWeight.w700,
-          fontFamily: 'Roboto',
-          height: 1.15,
-        ),
-      ),
-    );
-  }
-}
-
-class _CompactResultChip extends StatelessWidget {
-  final TelemetryCalculationOutput output;
-  final Color color;
-
-  const _CompactResultChip({required this.output, required this.color});
+  const _AdaptiveResultTile({required this.output, required this.color});
 
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final statusColor = _outputStatusColor(context, output, color);
     return Container(
-      constraints: const BoxConstraints(minWidth: 104, maxWidth: 148),
+      key: const ValueKey('adaptiveResultTile'),
+      constraints: BoxConstraints(minHeight: 52.h),
       padding: EdgeInsets.symmetric(
         horizontal: AppSpacing.sm.w,
         vertical: AppSpacing.sm.h,
@@ -1616,40 +1541,76 @@ class _CompactResultChip extends StatelessWidget {
         border: Border.all(color: theme.semanticColors.border),
       ),
       child: Row(
-        mainAxisSize: MainAxisSize.min,
+        key: const ValueKey('adaptiveResultTileInlineRow'),
         children: [
+          Expanded(
+            child: Text(
+              output.label,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: TextStyle(
+                color: theme.colorScheme.onSurfaceVariant,
+                fontSize: 11.sp,
+                fontWeight: FontWeight.w700,
+              ),
+            ),
+          ),
+          SizedBox(width: AppSpacing.sm.w),
           Flexible(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  output.label,
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  style: TextStyle(
-                    color: theme.colorScheme.onSurfaceVariant,
-                    fontSize: 10.sp,
-                    fontWeight: FontWeight.w700,
+            child: Align(
+              alignment: Alignment.centerRight,
+              child: Row(
+                mainAxisSize: MainAxisSize.max,
+                mainAxisAlignment: MainAxisAlignment.end,
+                children: [
+                  Expanded(
+                    child: Text(
+                      output.displayValue,
+                      textAlign: TextAlign.right,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: TextStyle(
+                        color: statusColor,
+                        fontSize: 15.sp,
+                        fontWeight: FontWeight.w800,
+                        fontFamily: 'Roboto',
+                        height: 1,
+                      ),
+                    ),
                   ),
-                ),
-                SizedBox(height: AppSpacing.xs.h),
-                Text(
-                  '${output.displayValue} ${output.unitLabel}',
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  style: TextStyle(
-                    fontSize: 12.sp,
-                    fontWeight: FontWeight.w700,
-                    fontFamily: 'Roboto',
-                  ),
-                ),
-              ],
+                  if (output.unitLabel.isNotEmpty) ...[
+                    SizedBox(width: AppSpacing.xs.w),
+                    Flexible(
+                      child: Text(
+                        output.unitLabel,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: TextStyle(
+                          color: theme.colorScheme.onSurface,
+                          fontSize: 12.sp,
+                          fontWeight: FontWeight.w700,
+                          fontFamily: 'Roboto',
+                          height: 1,
+                        ),
+                      ),
+                    ),
+                  ],
+                ],
+              ),
             ),
           ),
         ],
       ),
     );
   }
+}
+
+bool _usesFullResultRow(TelemetryCalculationOutput output) {
+  final length =
+      output.label.length +
+      output.displayValue.length +
+      output.unitLabel.length;
+  return length > 17 || output.label.length > 6 || output.unitLabel.length > 6;
 }
 
 class _WorkbenchPane extends StatelessWidget {
@@ -1918,7 +1879,6 @@ String _resultSignature(TelemetryCalculationResult result) {
 _ResultInsight _resultInsight(
   BuildContext context,
   List<TelemetryCalculationOutput> outputs,
-  TelemetryCalculationOutput primary,
 ) {
   final theme = Theme.of(context);
   final margin = _findOutput(outputs, 'margin');
@@ -1990,16 +1950,6 @@ _ResultInsight _resultInsight(
   );
 }
 
-String _compactOutputSummary(TelemetryCalculationOutput output) {
-  final label = switch (output.id) {
-    'total_error' => '总频偏',
-    'oscillator_error' => '频源误差',
-    'guard_margin' => '保护余量',
-    _ => output.label,
-  };
-  return '$label ${_outputValueLabel(output)}';
-}
-
 _ResultInsight _marginInsight(
   TelemetryCalculationOutput output, {
   required String passTitle,
@@ -2044,54 +1994,6 @@ TelemetryCalculationOutput? _findOutput(
     if (output.id == id) return output;
   }
   return null;
-}
-
-TelemetryCalculationOutput _primaryOutput(
-  List<TelemetryCalculationOutput> outputs,
-) {
-  const priority = [
-    'margin',
-    'guard_margin',
-    'occupied_bandwidth',
-    'bit_rate',
-    'coded_rate',
-    'range_resolution',
-    'total_time',
-    'effective_rate',
-    'doppler_shift',
-    'result',
-    'ebn0',
-    'cn0',
-  ];
-  for (final id in priority) {
-    final matched = outputs.where((output) => output.id == id);
-    if (matched.isNotEmpty) return matched.first;
-  }
-  return outputs.first;
-}
-
-TelemetryCalculationOutput? _secondaryOutput(
-  List<TelemetryCalculationOutput> outputs,
-  TelemetryCalculationOutput primary,
-) {
-  const priority = [
-    'ebn0',
-    'cn0',
-    'symbol_rate',
-    'frame_efficiency',
-    'total_error',
-    'effective_rate',
-    'round_trip_delay',
-    'occupied_bandwidth',
-  ];
-  for (final id in priority) {
-    final matched = outputs.where(
-      (output) => output.id == id && output.id != primary.id,
-    );
-    if (matched.isNotEmpty) return matched.first;
-  }
-  final rest = outputs.where((output) => output.id != primary.id);
-  return rest.isEmpty ? null : rest.first;
 }
 
 class _CompactNumberInput extends StatelessWidget {

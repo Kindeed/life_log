@@ -279,6 +279,13 @@ class UnitCatalog {
       toBase: _identity,
       fromBase: _identity,
     ),
+    'dBK': EngineeringUnit(
+      id: 'dBK',
+      label: 'dBK',
+      dimension: QuantityDimension.temperature,
+      toBase: (value) => math.pow(10, value / 10).toDouble(),
+      fromBase: (value) => 10 * math.log(value) / math.ln10,
+    ),
     'deg': EngineeringUnit(
       id: 'deg',
       label: 'deg',
