@@ -327,11 +327,36 @@ void main() {
         rf001.variables
             .firstWhere((variable) => variable.symbol == 'c')
             .meaning,
-        contains('speed of light'),
+        contains('真空光速'),
       );
       expect(
         rf001.variables.firstWhere((variable) => variable.symbol == 'c').units,
         contains('m/s'),
+      );
+    });
+
+    test('localizes every formula variable explanation for display', () {
+      final repository = FormulaLibraryRepository();
+      final variables = [
+        for (final entry in repository.loadAll())
+          for (final variable in entry.variables) variable,
+      ];
+
+      expect(variables, isNotEmpty);
+      expect(
+        variables.where(
+          (variable) => !RegExp(r'[\u4e00-\u9fff]').hasMatch(variable.meaning),
+        ),
+        isEmpty,
+      );
+      expect(
+        variables.where(
+          (variable) => RegExp(
+            r'\b(speed|light|wavelength|frequency|gain|temperature|power|range|ratio|length|angle|error|number|time|rate)\b',
+            caseSensitive: false,
+          ).hasMatch(variable.meaning),
+        ),
+        isEmpty,
       );
     });
 
@@ -506,7 +531,7 @@ void main() {
         await tester.tap(find.byTooltip('公式与依据'));
         await tester.pumpAndSettle();
         expect(find.text('依据'), findsOneWidget);
-        expect(find.textContaining('Rs'), findsWidgets);
+        expect(find.text('符号率'), findsWidgets);
         expect(tester.takeException(), isNull);
       },
     );
@@ -593,6 +618,39 @@ void main() {
       expect(find.textContaining('配置可用'), findsWidgets);
       final inputLabel = tester.widget<Text>(find.text('发射机输出功率'));
       expect(inputLabel.maxLines, greaterThanOrEqualTo(2));
+      expect(tester.takeException(), isNull);
+    });
+
+    testWidgets('uses compact link budget result chips on mobile', (
+      tester,
+    ) async {
+      tester.view.physicalSize = const Size(390, 844);
+      tester.view.devicePixelRatio = 1;
+      addTearDown(tester.view.resetPhysicalSize);
+      addTearDown(tester.view.resetDevicePixelRatio);
+
+      final definition = TelemetryCalculatorRegistry.byId('link_budget');
+      await tester.pumpWidget(
+        ScreenUtilInit(
+          designSize: const Size(375, 812),
+          builder: (context, child) => GetMaterialApp(
+            theme: AppTheme.lightWith(null),
+            home: TelemetryCalcDetailView(definition: definition),
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      expect(
+        find.byKey(const ValueKey('compactPrimaryResultBar')),
+        findsOneWidget,
+      );
+      expect(
+        find.byKey(const ValueKey('compactResultChipWrap')),
+        findsOneWidget,
+      );
+      expect(find.byKey(const ValueKey('compactInsightBar')), findsOneWidget);
+      expect(find.text('Eb/N0 41.31 dB'), findsWidgets);
       expect(tester.takeException(), isNull);
     });
 
@@ -714,9 +772,18 @@ void main() {
       );
       await tester.pumpAndSettle();
 
-      expect(find.text('公式目录 1205'), findsOneWidget);
-      expect(find.text('系统公式 85'), findsOneWidget);
-      expect(find.text('可运行 11'), findsOneWidget);
+      expect(find.text('1205 条公式 / 11 个工作台'), findsOneWidget);
+      expect(find.text('公式目录 1205'), findsNothing);
+      expect(find.text('系统公式 85'), findsNothing);
+      expect(find.text('可运行 11'), findsNothing);
+      expect(
+        find.byKey(const ValueKey('telemetryModeSwitcherCenter')),
+        findsOneWidget,
+      );
+      expect(
+        find.byKey(const ValueKey('telemetryCategoryFilterCenter')),
+        findsOneWidget,
+      );
       expect(find.text('链路 1'), findsOneWidget);
 
       await tester.tap(find.text('系统 3'));
@@ -904,7 +971,11 @@ void main() {
       await tester.pumpAndSettle();
       expect(find.text('参数说明'), findsOneWidget);
       expect(find.text('c'), findsWidgets);
-      expect(find.textContaining('speed of light'), findsWidgets);
+      expect(find.textContaining('真空光速'), findsWidgets);
+      expect(find.textContaining('波长'), findsWidgets);
+      expect(find.textContaining('载波频率'), findsWidgets);
+      expect(find.textContaining('speed of light'), findsNothing);
+      expect(find.textContaining('wavelength'), findsNothing);
       expect(find.textContaining('m/s'), findsWidgets);
       expect(tester.takeException(), isNull);
     });

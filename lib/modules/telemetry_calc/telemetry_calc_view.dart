@@ -116,22 +116,25 @@ class _TelemetryCalcViewState extends State<TelemetryCalcView> {
                             setState(() => _searchQuery = value),
                       ),
                       SizedBox(height: AppSpacing.xl.h),
-                      SegmentedButton<_TelemetryCalcHomeMode>(
-                        segments: const [
-                          ButtonSegment(
-                            value: _TelemetryCalcHomeMode.workbench,
-                            icon: Icon(Icons.calculate_rounded),
-                            label: Text('工作台'),
-                          ),
-                          ButtonSegment(
-                            value: _TelemetryCalcHomeMode.library,
-                            icon: Icon(Icons.library_books_rounded),
-                            label: Text('公式库'),
-                          ),
-                        ],
-                        selected: {_mode},
-                        onSelectionChanged: (values) =>
-                            setState(() => _mode = values.single),
+                      Center(
+                        key: const ValueKey('telemetryModeSwitcherCenter'),
+                        child: SegmentedButton<_TelemetryCalcHomeMode>(
+                          segments: const [
+                            ButtonSegment(
+                              value: _TelemetryCalcHomeMode.workbench,
+                              icon: Icon(Icons.calculate_rounded),
+                              label: Text('工作台'),
+                            ),
+                            ButtonSegment(
+                              value: _TelemetryCalcHomeMode.library,
+                              icon: Icon(Icons.library_books_rounded),
+                              label: Text('公式库'),
+                            ),
+                          ],
+                          selected: {_mode},
+                          onSelectionChanged: (values) =>
+                              setState(() => _mode = values.single),
+                        ),
                       ),
                       SizedBox(height: AppSpacing.xl.h),
                       AppSectionHeader(
@@ -140,28 +143,30 @@ class _TelemetryCalcViewState extends State<TelemetryCalcView> {
                             : '公式分类',
                       ),
                       SizedBox(height: AppSpacing.md.h),
-                      if (_mode == _TelemetryCalcHomeMode.workbench)
-                        AppFilterChipBar<TelemetryCalculatorCategory>(
-                          value: _category,
-                          onChanged: (value) =>
-                              setState(() => _category = value),
-                          items: [
-                            for (final category
-                                in TelemetryCalculatorCategory.values)
-                              AppFilterChipItem(
-                                value: category,
-                                label: _categoryFilterLabel(category),
-                                icon: _categoryIcon(category),
+                      Center(
+                        key: const ValueKey('telemetryCategoryFilterCenter'),
+                        child: _mode == _TelemetryCalcHomeMode.workbench
+                            ? AppFilterChipBar<TelemetryCalculatorCategory>(
+                                value: _category,
+                                onChanged: (value) =>
+                                    setState(() => _category = value),
+                                items: [
+                                  for (final category
+                                      in TelemetryCalculatorCategory.values)
+                                    AppFilterChipItem(
+                                      value: category,
+                                      label: _categoryFilterLabel(category),
+                                      icon: _categoryIcon(category),
+                                    ),
+                                ],
+                              )
+                            : _FormulaDomainChips(
+                                summaries: _formulaLibrary.domainSummaries,
+                                value: _formulaDomain,
+                                onChanged: (value) =>
+                                    setState(() => _formulaDomain = value),
                               ),
-                          ],
-                        )
-                      else
-                        _FormulaDomainChips(
-                          summaries: _formulaLibrary.domainSummaries,
-                          value: _formulaDomain,
-                          onChanged: (value) =>
-                              setState(() => _formulaDomain = value),
-                        ),
+                      ),
                       SizedBox(height: AppSpacing.lg.h),
                     ],
                   ),
@@ -841,7 +846,7 @@ class _FormulaVariableCard extends StatelessWidget {
               borderRadius: BorderRadius.circular(AppRadius.sm),
             ),
             child: Text(
-              variable.symbol,
+              variable.displaySymbol,
               textAlign: TextAlign.center,
               style: TextStyle(
                 color: color,
@@ -959,37 +964,13 @@ class _Header extends StatelessWidget {
                 ),
                 SizedBox(height: AppSpacing.xs.h),
                 Text(
-                  '链路、码率、PCM、遥控、测距、频率、系统与自定义公式均在本地计算。',
+                  '${TelemetryCalculatorRegistry.formulaCatalogEntryCount} 条公式 / ${TelemetryCalculatorRegistry.definitions.length} 个工作台',
                   style: TextStyle(
                     color: Theme.of(context).colorScheme.onSurfaceVariant,
-                    fontSize: 12.sp,
-                    height: 1.35,
+                    fontSize: 13.sp,
+                    height: 1.25,
+                    fontWeight: FontWeight.w700,
                   ),
-                ),
-                SizedBox(height: AppSpacing.sm.h),
-                Wrap(
-                  spacing: AppSpacing.sm.w,
-                  runSpacing: AppSpacing.xs.h,
-                  children: [
-                    AppPill(
-                      label:
-                          '公式目录 ${TelemetryCalculatorRegistry.formulaCatalogEntryCount}',
-                      icon: Icons.library_books_rounded,
-                      color: semantic.stats,
-                    ),
-                    AppPill(
-                      label:
-                          '系统公式 ${TelemetryCalculatorRegistry.integratedSystemFormulaCount}',
-                      icon: Icons.account_tree_rounded,
-                      color: semantic.work,
-                    ),
-                    AppPill(
-                      label:
-                          '可运行 ${TelemetryCalculatorRegistry.definitions.length}',
-                      icon: Icons.calculate_rounded,
-                      color: semantic.success,
-                    ),
-                  ],
                 ),
               ],
             ),
@@ -1487,103 +1468,144 @@ class _CompactResultPanel extends StatelessWidget {
     }
     final primary = _primaryOutput(result.outputs);
     final secondary = _secondaryOutput(result.outputs, primary);
-    final rest = result.outputs
+    final chips = result.outputs
         .where((output) => output.id != primary.id)
-        .take(4)
+        .take(5)
         .toList(growable: false);
     final insight = _resultInsight(context, result.outputs, primary);
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Container(
+          key: const ValueKey('compactPrimaryResultBar'),
           width: double.infinity,
-          padding: EdgeInsets.all(AppSpacing.md.w),
+          padding: EdgeInsets.symmetric(
+            horizontal: AppSpacing.md.w,
+            vertical: AppSpacing.sm.h,
+          ),
           decoration: BoxDecoration(
             color: color.withValues(alpha: 0.14),
             borderRadius: BorderRadius.circular(AppRadius.sm),
             border: Border.all(color: color.withValues(alpha: 0.32)),
           ),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
+          child: Row(
             children: [
-              Text(
-                primary.label,
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
-                style: TextStyle(
-                  color: theme.colorScheme.onSurfaceVariant,
-                  fontSize: 11.sp,
-                  fontWeight: FontWeight.w600,
-                ),
-              ),
-              SizedBox(height: AppSpacing.xs.h),
-              SizedBox(
-                width: double.infinity,
-                child: FittedBox(
-                  fit: BoxFit.scaleDown,
-                  alignment: Alignment.centerLeft,
-                  child: Text(
-                    primary.displayValue,
-                    maxLines: 1,
-                    style: theme.textTheme.headlineSmall?.copyWith(
-                      color: _outputStatusColor(context, primary, color),
-                      fontWeight: FontWeight.w800,
-                      fontFamily: 'Roboto',
-                      height: 1,
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      primary.label,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: TextStyle(
+                        color: theme.colorScheme.onSurfaceVariant,
+                        fontSize: 11.sp,
+                        fontWeight: FontWeight.w700,
+                      ),
                     ),
-                  ),
-                ),
-              ),
-              SizedBox(height: AppSpacing.xs.h),
-              Text(
-                primary.unitLabel,
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
-                style: TextStyle(
-                  color: theme.colorScheme.onSurfaceVariant,
-                  fontSize: 11.sp,
-                  fontWeight: FontWeight.w700,
+                    SizedBox(height: AppSpacing.xs.h),
+                    FittedBox(
+                      fit: BoxFit.scaleDown,
+                      alignment: Alignment.centerLeft,
+                      child: Text(
+                        primary.displayValue,
+                        maxLines: 1,
+                        style: theme.textTheme.headlineSmall?.copyWith(
+                          color: _outputStatusColor(context, primary, color),
+                          fontWeight: FontWeight.w800,
+                          fontFamily: 'Roboto',
+                          height: 1,
+                        ),
+                      ),
+                    ),
+                    SizedBox(height: AppSpacing.xs.h),
+                    Text(
+                      primary.unitLabel,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: TextStyle(
+                        color: theme.colorScheme.onSurfaceVariant,
+                        fontSize: 11.sp,
+                        fontWeight: FontWeight.w700,
+                      ),
+                    ),
+                  ],
                 ),
               ),
               if (secondary != null) ...[
-                SizedBox(height: AppSpacing.xs.h),
-                Text(
-                  _compactOutputSummary(secondary),
-                  maxLines: 2,
-                  overflow: TextOverflow.ellipsis,
-                  style: TextStyle(
-                    color: theme.colorScheme.onSurfaceVariant,
-                    fontSize: 11.sp,
-                    fontWeight: FontWeight.w700,
-                  ),
-                ),
+                SizedBox(width: AppSpacing.sm.w),
+                _OutputValuePill(output: secondary, color: color),
               ],
             ],
           ),
         ),
-        SizedBox(height: AppSpacing.sm.h),
-        for (var i = 0; i < rest.length; i++) ...[
-          _CompactResultRow(output: rest[i], color: color),
-          if (i < rest.length - 1) SizedBox(height: AppSpacing.sm.h),
+        if (chips.isNotEmpty) ...[
+          SizedBox(height: AppSpacing.sm.h),
+          Wrap(
+            key: const ValueKey('compactResultChipWrap'),
+            spacing: AppSpacing.sm.w,
+            runSpacing: AppSpacing.sm.h,
+            children: [
+              for (final output in chips)
+                _CompactResultChip(output: output, color: color),
+            ],
+          ),
         ],
-        if (rest.isNotEmpty) SizedBox(height: AppSpacing.sm.h),
+        SizedBox(height: AppSpacing.sm.h),
         _OutputInsightPanel(insight: insight),
       ],
     );
   }
 }
 
-class _CompactResultRow extends StatelessWidget {
+class _OutputValuePill extends StatelessWidget {
   final TelemetryCalculationOutput output;
   final Color color;
 
-  const _CompactResultRow({required this.output, required this.color});
+  const _OutputValuePill({required this.output, required this.color});
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      constraints: const BoxConstraints(maxWidth: 128),
+      padding: EdgeInsets.symmetric(
+        horizontal: AppSpacing.sm.w,
+        vertical: AppSpacing.xs.h,
+      ),
+      decoration: BoxDecoration(
+        color: color.withValues(alpha: 0.12),
+        borderRadius: BorderRadius.circular(AppRadius.xs),
+        border: Border.all(color: color.withValues(alpha: 0.22)),
+      ),
+      child: Text(
+        _compactOutputSummary(output),
+        maxLines: 2,
+        overflow: TextOverflow.ellipsis,
+        textAlign: TextAlign.center,
+        style: TextStyle(
+          color: Theme.of(context).colorScheme.onSurface,
+          fontSize: 11.sp,
+          fontWeight: FontWeight.w700,
+          fontFamily: 'Roboto',
+          height: 1.15,
+        ),
+      ),
+    );
+  }
+}
+
+class _CompactResultChip extends StatelessWidget {
+  final TelemetryCalculationOutput output;
+  final Color color;
+
+  const _CompactResultChip({required this.output, required this.color});
 
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     return Container(
-      width: double.infinity,
+      constraints: const BoxConstraints(minWidth: 104, maxWidth: 148),
       padding: EdgeInsets.symmetric(
         horizontal: AppSpacing.sm.w,
         vertical: AppSpacing.sm.h,
@@ -1593,28 +1615,35 @@ class _CompactResultRow extends StatelessWidget {
         borderRadius: BorderRadius.circular(AppRadius.xs),
         border: Border.all(color: theme.semanticColors.border),
       ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
         children: [
-          Text(
-            output.label,
-            maxLines: 1,
-            overflow: TextOverflow.ellipsis,
-            style: TextStyle(
-              color: theme.colorScheme.onSurfaceVariant,
-              fontSize: 10.sp,
-              fontWeight: FontWeight.w700,
-            ),
-          ),
-          SizedBox(height: AppSpacing.xs.h),
-          Text(
-            '${output.displayValue} ${output.unitLabel}',
-            maxLines: 1,
-            overflow: TextOverflow.ellipsis,
-            style: TextStyle(
-              fontSize: 13.sp,
-              fontWeight: FontWeight.w700,
-              fontFamily: 'Roboto',
+          Flexible(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  output.label,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: TextStyle(
+                    color: theme.colorScheme.onSurfaceVariant,
+                    fontSize: 10.sp,
+                    fontWeight: FontWeight.w700,
+                  ),
+                ),
+                SizedBox(height: AppSpacing.xs.h),
+                Text(
+                  '${output.displayValue} ${output.unitLabel}',
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: TextStyle(
+                    fontSize: 12.sp,
+                    fontWeight: FontWeight.w700,
+                    fontFamily: 'Roboto',
+                  ),
+                ),
+              ],
             ),
           ),
         ],
@@ -1804,6 +1833,7 @@ class _OutputInsightPanel extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     return Container(
+      key: const ValueKey('compactInsightBar'),
       width: double.infinity,
       padding: EdgeInsets.all(AppSpacing.sm.w),
       decoration: BoxDecoration(
@@ -2563,33 +2593,26 @@ class _FormulaMathBlock extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          SingleChildScrollView(
-            scrollDirection: Axis.horizontal,
-            child: Math.tex(
-              texExpression,
-              textStyle: TextStyle(
-                color: theme.colorScheme.onSurface,
-                fontSize: 17.sp,
-              ),
-              onErrorFallback: (_) => Text(
-                expression,
-                style: TextStyle(
-                  fontFamily: 'Roboto',
-                  fontSize: 13.sp,
-                  height: 1.35,
+          Align(
+            alignment: Alignment.centerLeft,
+            child: SingleChildScrollView(
+              scrollDirection: Axis.horizontal,
+              child: Math.tex(
+                texExpression,
+                textStyle: TextStyle(
                   color: theme.colorScheme.onSurface,
+                  fontSize: 17.sp,
+                ),
+                onErrorFallback: (_) => Text(
+                  _readableFormulaExpression(expression),
+                  style: TextStyle(
+                    fontFamily: 'Roboto',
+                    fontSize: 13.sp,
+                    height: 1.35,
+                    color: theme.colorScheme.onSurface,
+                  ),
                 ),
               ),
-            ),
-          ),
-          SizedBox(height: AppSpacing.sm.h),
-          SelectableText.rich(
-            TextSpan(children: _formulaSpans(context, expression, color)),
-            style: TextStyle(
-              fontFamily: 'Roboto',
-              fontSize: 12.sp,
-              height: 1.35,
-              color: theme.colorScheme.onSurfaceVariant,
             ),
           ),
         ],
@@ -2598,57 +2621,27 @@ class _FormulaMathBlock extends StatelessWidget {
   }
 }
 
-List<TextSpan> _formulaSpans(
-  BuildContext context,
-  String expression,
-  Color color,
-) {
-  final theme = Theme.of(context);
-  final secondary = theme.colorScheme.onSurfaceVariant;
-  final spans = <TextSpan>[];
-  final buffer = StringBuffer();
-
-  void flushBuffer() {
-    if (buffer.isEmpty) return;
-    final text = buffer.toString();
-    buffer.clear();
-    final isNumber = double.tryParse(text) != null;
-    spans.add(
-      TextSpan(
-        text: text,
-        style: TextStyle(
-          color: isNumber ? color : theme.colorScheme.onSurface,
-          fontWeight: isNumber ? FontWeight.w700 : FontWeight.w600,
-          fontStyle: isNumber ? FontStyle.normal : FontStyle.italic,
-        ),
-      ),
+String _readableFormulaExpression(String expression) {
+  var readable = expression;
+  const replacements = {
+    'lambda': 'λ',
+    'pi': 'π',
+    'theta': 'θ',
+    'phi': 'φ',
+    'eta': 'η',
+    'sigma': 'σ',
+    'gamma': 'γ',
+    'rho': 'ρ',
+    'alpha': 'α',
+    'beta': 'β',
+  };
+  for (final entry in replacements.entries) {
+    readable = readable.replaceAllMapped(
+      RegExp('(^|[^A-Za-z])${RegExp.escape(entry.key)}([^A-Za-z]|\$)'),
+      (match) => '${match.group(1)}${entry.value}${match.group(2)}',
     );
   }
-
-  for (final rune in expression.runes) {
-    final char = String.fromCharCode(rune);
-    if ('+-*/=^(),'.contains(char)) {
-      flushBuffer();
-      spans.add(
-        TextSpan(
-          text: ' $char ',
-          style: TextStyle(color: color, fontWeight: FontWeight.w700),
-        ),
-      );
-    } else if (char == '_') {
-      flushBuffer();
-      spans.add(
-        TextSpan(
-          text: '_',
-          style: TextStyle(color: secondary, fontWeight: FontWeight.w600),
-        ),
-      );
-    } else {
-      buffer.write(char);
-    }
-  }
-  flushBuffer();
-  return spans;
+  return readable;
 }
 
 String _categoryLabel(TelemetryCalculatorCategory category) {
