@@ -1530,74 +1530,80 @@ class _AdaptiveResultTile extends StatelessWidget {
     final statusColor = _outputStatusColor(context, output, color);
     return Container(
       key: const ValueKey('adaptiveResultTile'),
-      constraints: BoxConstraints(minHeight: 52.h),
+      constraints: BoxConstraints(minHeight: 76.h),
       padding: EdgeInsets.symmetric(
-        horizontal: AppSpacing.sm.w,
-        vertical: AppSpacing.sm.h,
+        horizontal: AppSpacing.lg.w,
+        vertical: AppSpacing.md.h,
       ),
       decoration: BoxDecoration(
-        color: theme.semanticColors.mutedSurface.withValues(alpha: 0.44),
-        borderRadius: BorderRadius.circular(AppRadius.xs),
+        color: theme.semanticColors.mutedSurface,
+        borderRadius: BorderRadius.circular(AppRadius.lg),
         border: Border.all(color: theme.semanticColors.border),
       ),
-      child: Row(
-        key: const ValueKey('adaptiveResultTileInlineRow'),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Expanded(
-            child: Text(
-              output.label,
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
-              style: TextStyle(
-                color: theme.colorScheme.onSurfaceVariant,
-                fontSize: 11.sp,
-                fontWeight: FontWeight.w700,
-              ),
+          Text(
+            output.label,
+            maxLines: 2,
+            overflow: TextOverflow.ellipsis,
+            style: theme.textTheme.labelMedium?.copyWith(
+              color: theme.colorScheme.onSurfaceVariant,
+              fontWeight: FontWeight.w600,
             ),
           ),
-          SizedBox(width: AppSpacing.sm.w),
-          Flexible(
-            child: Align(
-              alignment: Alignment.centerRight,
-              child: Row(
-                mainAxisSize: MainAxisSize.max,
-                mainAxisAlignment: MainAxisAlignment.end,
-                children: [
-                  Expanded(
+          SizedBox(height: AppSpacing.xs.h),
+          Row(
+            key: const ValueKey('adaptiveResultTileInlineRow'),
+            children: [
+              Expanded(
+                child: FittedBox(
+                  fit: BoxFit.scaleDown,
+                  alignment: Alignment.centerLeft,
+                  child: Text(
+                    output.displayValue,
+                    maxLines: 1,
+                    style: TextStyle(
+                      color: statusColor,
+                      fontSize: 20.sp,
+                      fontWeight: FontWeight.w800,
+                      fontFamily: 'Roboto',
+                      height: 1,
+                    ),
+                  ),
+                ),
+              ),
+              if (output.unitLabel.isNotEmpty) ...[
+                SizedBox(width: AppSpacing.sm.w),
+                Flexible(
+                  child: Container(
+                    constraints: const BoxConstraints(maxWidth: 72),
+                    padding: EdgeInsets.symmetric(
+                      horizontal: AppSpacing.sm.w,
+                      vertical: AppSpacing.xs.h,
+                    ),
+                    decoration: BoxDecoration(
+                      color: theme.cardColor,
+                      borderRadius: BorderRadius.circular(AppRadius.xs),
+                      border: Border.all(color: theme.semanticColors.border),
+                    ),
                     child: Text(
-                      output.displayValue,
-                      textAlign: TextAlign.right,
+                      output.unitLabel,
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
+                      textAlign: TextAlign.center,
                       style: TextStyle(
-                        color: statusColor,
-                        fontSize: 15.sp,
-                        fontWeight: FontWeight.w800,
+                        color: theme.colorScheme.onSurface,
+                        fontSize: 12.sp,
+                        fontWeight: FontWeight.w700,
                         fontFamily: 'Roboto',
                         height: 1,
                       ),
                     ),
                   ),
-                  if (output.unitLabel.isNotEmpty) ...[
-                    SizedBox(width: AppSpacing.xs.w),
-                    Flexible(
-                      child: Text(
-                        output.unitLabel,
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                        style: TextStyle(
-                          color: theme.colorScheme.onSurface,
-                          fontSize: 12.sp,
-                          fontWeight: FontWeight.w700,
-                          fontFamily: 'Roboto',
-                          height: 1,
-                        ),
-                      ),
-                    ),
-                  ],
-                ],
-              ),
-            ),
+                ),
+              ],
+            ],
           ),
         ],
       ),
@@ -1606,11 +1612,19 @@ class _AdaptiveResultTile extends StatelessWidget {
 }
 
 bool _usesFullResultRow(TelemetryCalculationOutput output) {
-  final length =
-      output.label.length +
-      output.displayValue.length +
-      output.unitLabel.length;
-  return length > 17 || output.label.length > 6 || output.unitLabel.length > 6;
+  final lengthScore =
+      _displayLengthScore(output.label) +
+      _displayLengthScore(output.displayValue) +
+      _displayLengthScore(output.unitLabel);
+  return lengthScore > 15 || output.unitLabel.length > 4;
+}
+
+int _displayLengthScore(String value) {
+  var score = 0;
+  for (final codeUnit in value.codeUnits) {
+    score += codeUnit > 255 ? 2 : 1;
+  }
+  return score;
 }
 
 class _WorkbenchPane extends StatelessWidget {

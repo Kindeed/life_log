@@ -473,6 +473,20 @@ void main() {
       expect(compactInputShell, isNot(contains('withValues(alpha: 0.62)')));
     });
 
+    test('aligns adaptive output tiles with compact input shell tokens', () {
+      final source = File(
+        'lib/modules/telemetry_calc/telemetry_calc_view.dart',
+      ).readAsStringSync();
+      final adaptiveResultTile = RegExp(
+        r'class _AdaptiveResultTile[\s\S]*?bool _usesFullResultRow',
+      ).firstMatch(source)!.group(0)!;
+
+      expect(adaptiveResultTile, contains('AppRadius.lg'));
+      expect(adaptiveResultTile, contains('theme.semanticColors.mutedSurface'));
+      expect(adaptiveResultTile, contains('AppSpacing.lg'));
+      expect(adaptiveResultTile, contains('FittedBox'));
+    });
+
     test('uses spacing tokens for telemetry gaps and padding', () {
       final source = File(
         'lib/modules/telemetry_calc/telemetry_calc_view.dart',
@@ -710,8 +724,30 @@ void main() {
         find.byKey(const ValueKey('adaptiveResultTileInlineRow')),
         findsWidgets,
       );
+      expect(find.text('29.00'), findsWidgets);
+      expect(find.text('159.30'), findsWidgets);
+      expect(find.text('-100.30'), findsWidgets);
+      expect(find.text('37.31'), findsWidgets);
       expect(find.byKey(const ValueKey('compactInsightBar')), findsOneWidget);
       expect(find.textContaining('Eb/N0'), findsWidgets);
+
+      final eirpTile = tester.getSize(
+        find
+            .ancestor(
+              of: find.text('EIRP'),
+              matching: find.byKey(const ValueKey('adaptiveResultTile')),
+            )
+            .first,
+      );
+      final fsplTile = tester.getSize(
+        find
+            .ancestor(
+              of: find.text('自由空间损耗'),
+              matching: find.byKey(const ValueKey('adaptiveResultTile')),
+            )
+            .first,
+      );
+      expect(fsplTile.width, greaterThan(eirpTile.width * 1.4));
       expect(tester.takeException(), isNull);
     });
 
