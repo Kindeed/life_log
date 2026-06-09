@@ -346,6 +346,8 @@ class TelemetryCalculatorEngine {
 }
 
 class TelemetryCalculatorRegistry {
+  static const int formulaCatalogEntryCount = 1205;
+  static const int integratedSystemFormulaCount = 85;
   static const _commonFrequencyUnits = ['Hz', 'kHz', 'MHz', 'GHz'];
   static const _commonRateUnits = ['bps', 'kbps', 'Mbps', 'Gbps'];
   static const _commonDistanceUnits = ['m', 'km'];
@@ -366,6 +368,12 @@ class TelemetryCalculatorRegistry {
 
   static TelemetryCalculatorDefinition byId(String id) {
     return definitions.firstWhere((definition) => definition.id == id);
+  }
+
+  static int countByCategory(TelemetryCalculatorCategory category) {
+    return definitions
+        .where((definition) => definition.category == category)
+        .length;
   }
 
   static Map<String, TelemetryInputValue> defaultValues(

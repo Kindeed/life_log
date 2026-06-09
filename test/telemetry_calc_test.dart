@@ -7,6 +7,7 @@ import 'package:life_log/common/theme/app_theme.dart';
 import 'package:life_log/modules/telemetry_calc/telemetry_calc_view.dart';
 import 'package:life_log/modules/telemetry_calc/telemetry_calculators.dart';
 import 'package:life_log/modules/telemetry_calc/telemetry_formula_engine.dart';
+import 'package:life_log/modules/telemetry_calc/formula_library.dart';
 import 'package:life_log/modules/telemetry_calc/telemetry_template_store.dart';
 import 'package:life_log/modules/telemetry_calc/telemetry_units.dart';
 
@@ -246,6 +247,9 @@ void main() {
     });
 
     test('registers gathered formulas as categorized system calculators', () {
+      expect(TelemetryCalculatorRegistry.formulaCatalogEntryCount, 1205);
+      expect(TelemetryCalculatorRegistry.integratedSystemFormulaCount, 85);
+
       final systemCalculators = TelemetryCalculatorRegistry.definitions
           .where(
             (definition) =>
@@ -267,6 +271,27 @@ void main() {
       }
     });
 
+    test('counts runnable calculators by category', () {
+      expect(
+        TelemetryCalculatorRegistry.countByCategory(
+          TelemetryCalculatorCategory.link,
+        ),
+        1,
+      );
+      expect(
+        TelemetryCalculatorRegistry.countByCategory(
+          TelemetryCalculatorCategory.system,
+        ),
+        3,
+      );
+      expect(
+        TelemetryCalculatorRegistry.countByCategory(
+          TelemetryCalculatorCategory.custom,
+        ),
+        1,
+      );
+    });
+
     test('all default calculators produce finite outputs', () {
       for (final definition in TelemetryCalculatorRegistry.definitions) {
         final result = TelemetryCalculatorEngine.calculate(
@@ -280,6 +305,50 @@ void main() {
           expect(output.value.isFinite, isTrue, reason: definition.id);
         }
       }
+    });
+  });
+
+  group('FormulaLibraryRepository', () {
+    test('loads the full structured formula catalog', () {
+      final repository = FormulaLibraryRepository();
+      final entries = repository.loadAll();
+
+      expect(entries, hasLength(1205));
+      expect(entries.map((entry) => entry.id).toSet(), hasLength(1205));
+      expect(repository.domainSummaries, isNotEmpty);
+      expect(repository.domainSummaries.first.count, greaterThan(100));
+
+      final rf001 = repository.byId('RF-001');
+      expect(rf001, isNotNull);
+      expect(rf001!.domain.label, 'RF / 天线 / 接收机');
+      expect(rf001.texExpression, contains(r'\lambda'));
+      expect(rf001.variables.map((variable) => variable.symbol), contains('c'));
+      expect(
+        rf001.variables
+            .firstWhere((variable) => variable.symbol == 'c')
+            .meaning,
+        contains('speed of light'),
+      );
+      expect(
+        rf001.variables.firstWhere((variable) => variable.symbol == 'c').units,
+        contains('m/s'),
+      );
+    });
+
+    test('searches formulas and filters by domain', () {
+      final repository = FormulaLibraryRepository();
+
+      expect(
+        repository.search('wavelength').map((entry) => entry.id),
+        contains('RF-001'),
+      );
+      expect(
+        repository
+            .byDomain(FormulaDomain.system)
+            .map((entry) => entry.id)
+            .toSet(),
+        containsAll(['SYS-001', 'SYS-083']),
+      );
     });
   });
 
@@ -602,13 +671,75 @@ void main() {
       );
       await tester.pumpAndSettle();
 
-      await tester.tap(find.text('系统'));
+      await tester.tap(find.text('系统 3'));
+      await tester.pumpAndSettle();
+      final scrollable = find
+          .byWidgetPredicate(
+            (widget) =>
+                widget is Scrollable &&
+                widget.axisDirection == AxisDirection.down,
+          )
+          .first;
+      await tester.scrollUntilVisible(
+        find.text('任务资源闭合'),
+        120,
+        scrollable: scrollable,
+        maxScrolls: 8,
+      );
       await tester.pumpAndSettle();
 
       expect(find.text('电源与蓄电池'), findsOneWidget);
       expect(find.text('热控与散热器'), findsOneWidget);
       expect(find.text('任务资源闭合'), findsOneWidget);
-      expect(find.text('系统'), findsWidgets);
+      expect(find.text('系统 3'), findsWidgets);
+      expect(tester.takeException(), isNull);
+    });
+
+    testWidgets('separates formula catalog coverage from runnable cards', (
+      tester,
+    ) async {
+      tester.view.physicalSize = const Size(390, 844);
+      tester.view.devicePixelRatio = 1;
+      addTearDown(tester.view.resetPhysicalSize);
+      addTearDown(tester.view.resetDevicePixelRatio);
+
+      await tester.pumpWidget(
+        ScreenUtilInit(
+          designSize: const Size(375, 812),
+          builder: (context, child) => GetMaterialApp(
+            theme: AppTheme.lightWith(null),
+            home: const TelemetryCalcView(),
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      expect(find.text('公式目录 1205'), findsOneWidget);
+      expect(find.text('系统公式 85'), findsOneWidget);
+      expect(find.text('可运行 11'), findsOneWidget);
+      expect(find.text('链路 1'), findsOneWidget);
+
+      await tester.tap(find.text('系统 3'));
+      await tester.pumpAndSettle();
+      final scrollable = find
+          .byWidgetPredicate(
+            (widget) =>
+                widget is Scrollable &&
+                widget.axisDirection == AxisDirection.down,
+          )
+          .first;
+      await tester.scrollUntilVisible(
+        find.text('任务资源闭合'),
+        120,
+        scrollable: scrollable,
+        maxScrolls: 8,
+      );
+      await tester.pumpAndSettle();
+
+      expect(find.text('系统 3'), findsOneWidget);
+      expect(find.text('电源与蓄电池'), findsOneWidget);
+      expect(find.text('热控与散热器'), findsOneWidget);
+      expect(find.text('任务资源闭合'), findsOneWidget);
       expect(tester.takeException(), isNull);
     });
 
@@ -696,6 +827,88 @@ void main() {
       expect(tester.takeException(), isNull);
     });
 
+    testWidgets('saves templates with a local dialog lifecycle', (
+      tester,
+    ) async {
+      tester.view.physicalSize = const Size(390, 844);
+      tester.view.devicePixelRatio = 1;
+      addTearDown(tester.view.resetPhysicalSize);
+      addTearDown(tester.view.resetDevicePixelRatio);
+
+      final store = _FakeTelemetryTemplateStore([]);
+      final definition = TelemetryCalculatorRegistry.byId('link_budget');
+      await tester.pumpWidget(
+        ScreenUtilInit(
+          designSize: const Size(375, 812),
+          builder: (context, child) => GetMaterialApp(
+            theme: AppTheme.lightWith(null),
+            home: TelemetryCalcDetailView(
+              definition: definition,
+              templateStore: store,
+            ),
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      await tester.tap(find.byTooltip('保存模板'));
+      await tester.pumpAndSettle();
+      await tester.enterText(find.byType(TextField).last, '链路常用参数');
+      await tester.tap(find.text('保存').last);
+      await tester.pumpAndSettle();
+
+      expect(store.templates.single.name, '链路常用参数');
+      expect(find.textContaining('模板已保存'), findsOneWidget);
+      expect(tester.takeException(), isNull);
+    });
+
+    testWidgets('renders formula library entries with variable explanations', (
+      tester,
+    ) async {
+      tester.view.physicalSize = const Size(390, 844);
+      tester.view.devicePixelRatio = 1;
+      addTearDown(tester.view.resetPhysicalSize);
+      addTearDown(tester.view.resetDevicePixelRatio);
+
+      await tester.pumpWidget(
+        ScreenUtilInit(
+          designSize: const Size(375, 812),
+          builder: (context, child) => GetMaterialApp(
+            theme: AppTheme.lightWith(null),
+            home: const TelemetryCalcView(),
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      await tester.tap(find.text('公式库'));
+      await tester.pumpAndSettle();
+      final scrollable = find
+          .byWidgetPredicate(
+            (widget) =>
+                widget is Scrollable &&
+                widget.axisDirection == AxisDirection.down,
+          )
+          .first;
+      await tester.scrollUntilVisible(
+        find.text('RF-001'),
+        120,
+        scrollable: scrollable,
+        maxScrolls: 8,
+      );
+      await tester.pumpAndSettle();
+      expect(find.text('RF-001'), findsOneWidget);
+      expect(find.text('RF / 天线 / 接收机'), findsWidgets);
+
+      await tester.tap(find.text('RF-001'));
+      await tester.pumpAndSettle();
+      expect(find.text('参数说明'), findsOneWidget);
+      expect(find.text('c'), findsWidgets);
+      expect(find.textContaining('speed of light'), findsWidgets);
+      expect(find.textContaining('m/s'), findsWidgets);
+      expect(tester.takeException(), isNull);
+    });
+
     for (final definition in TelemetryCalculatorRegistry.definitions) {
       testWidgets('uses unified workbench layout for ${definition.id}', (
         tester,
@@ -749,6 +962,28 @@ class _FakeTelemetryTemplateStore extends TelemetryTemplateStore {
   @override
   Future<void> deleteTemplate(String templateId) async {
     templates.removeWhere((template) => template.id == templateId);
+  }
+
+  @override
+  Future<void> saveTemplate(
+    String calculatorId,
+    String name,
+    Map<String, TelemetryInputValue> values,
+  ) async {
+    templates.removeWhere(
+      (template) =>
+          template.calculatorId == calculatorId &&
+          template.name.trim() == name.trim(),
+    );
+    templates.add(
+      TelemetryTemplate(
+        id: '${calculatorId}_${templates.length + 1}',
+        calculatorId: calculatorId,
+        name: name.trim().isEmpty ? '未命名模板' : name.trim(),
+        updatedAt: DateTime(2026, 6, 9, 14),
+        values: Map.of(values),
+      ),
+    );
   }
 
   @override

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:flutter_math_fork/flutter_math.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:get/get.dart';
 import 'package:life_log/common/layout/app_breakpoints.dart';
@@ -17,8 +18,11 @@ import 'package:life_log/common/widgets/app_section_header.dart';
 import 'package:life_log/common/widgets/app_text_field.dart';
 
 import 'telemetry_calculators.dart';
+import 'formula_library.dart';
 import 'telemetry_template_store.dart';
 import 'telemetry_units.dart';
+
+enum _TelemetryCalcHomeMode { workbench, library }
 
 class TelemetryCalcView extends StatefulWidget {
   final TelemetryTemplateStore? templateStore;
@@ -31,8 +35,11 @@ class TelemetryCalcView extends StatefulWidget {
 
 class _TelemetryCalcViewState extends State<TelemetryCalcView> {
   late final TelemetryTemplateStore _store;
+  final _formulaLibrary = FormulaLibraryRepository();
   final _searchController = TextEditingController();
+  var _mode = _TelemetryCalcHomeMode.workbench;
   var _category = TelemetryCalculatorCategory.link;
+  var _formulaDomain = FormulaDomain.rfAntennaReceiver;
   var _searchQuery = '';
 
   @override
@@ -64,6 +71,9 @@ class _TelemetryCalcViewState extends State<TelemetryCalcView> {
               _matchesSearchQuery(definition, normalizedQuery),
         )
         .toList(growable: false);
+    final formulaEntries = normalizedQuery.isEmpty
+        ? _formulaLibrary.byDomain(_formulaDomain)
+        : _formulaLibrary.search(normalizedQuery);
     final recent = _store.loadRecent();
 
     return Scaffold(
@@ -71,6 +81,7 @@ class _TelemetryCalcViewState extends State<TelemetryCalcView> {
       body: SafeArea(
         child: ConstrainedPage(
           child: CustomScrollView(
+            cacheExtent: 900,
             slivers: [
               SliverToBoxAdapter(
                 child: Padding(
@@ -96,62 +107,119 @@ class _TelemetryCalcViewState extends State<TelemetryCalcView> {
                       AppTextField(
                         key: const ValueKey('telemetryCalcSearchField'),
                         controller: _searchController,
-                        hintText: '搜索计算器',
+                        hintText: _mode == _TelemetryCalcHomeMode.workbench
+                            ? '搜索计算器'
+                            : '搜索公式、参数、来源',
                         prefixIcon: const Icon(Icons.search_rounded),
                         textInputAction: TextInputAction.search,
                         onChanged: (value) =>
                             setState(() => _searchQuery = value),
                       ),
                       SizedBox(height: AppSpacing.xl.h),
-                      const AppSectionHeader(title: '计算分类'),
-                      SizedBox(height: AppSpacing.md.h),
-                      AppFilterChipBar<TelemetryCalculatorCategory>(
-                        value: _category,
-                        onChanged: (value) => setState(() => _category = value),
-                        items: [
-                          for (final category
-                              in TelemetryCalculatorCategory.values)
-                            AppFilterChipItem(
-                              value: category,
-                              label: _categoryLabel(category),
-                              icon: _categoryIcon(category),
-                            ),
+                      SegmentedButton<_TelemetryCalcHomeMode>(
+                        segments: const [
+                          ButtonSegment(
+                            value: _TelemetryCalcHomeMode.workbench,
+                            icon: Icon(Icons.calculate_rounded),
+                            label: Text('工作台'),
+                          ),
+                          ButtonSegment(
+                            value: _TelemetryCalcHomeMode.library,
+                            icon: Icon(Icons.library_books_rounded),
+                            label: Text('公式库'),
+                          ),
                         ],
+                        selected: {_mode},
+                        onSelectionChanged: (values) =>
+                            setState(() => _mode = values.single),
                       ),
+                      SizedBox(height: AppSpacing.xl.h),
+                      AppSectionHeader(
+                        title: _mode == _TelemetryCalcHomeMode.workbench
+                            ? '计算分类'
+                            : '公式分类',
+                      ),
+                      SizedBox(height: AppSpacing.md.h),
+                      if (_mode == _TelemetryCalcHomeMode.workbench)
+                        AppFilterChipBar<TelemetryCalculatorCategory>(
+                          value: _category,
+                          onChanged: (value) =>
+                              setState(() => _category = value),
+                          items: [
+                            for (final category
+                                in TelemetryCalculatorCategory.values)
+                              AppFilterChipItem(
+                                value: category,
+                                label: _categoryFilterLabel(category),
+                                icon: _categoryIcon(category),
+                              ),
+                          ],
+                        )
+                      else
+                        _FormulaDomainChips(
+                          summaries: _formulaLibrary.domainSummaries,
+                          value: _formulaDomain,
+                          onChanged: (value) =>
+                              setState(() => _formulaDomain = value),
+                        ),
                       SizedBox(height: AppSpacing.lg.h),
                     ],
                   ),
                 ),
               ),
-              SliverPadding(
-                padding: EdgeInsets.fromLTRB(
-                  AppSpacing.lg.w,
-                  0,
-                  AppSpacing.lg.w,
-                  AppSpacing.xxl.h,
-                ),
-                sliver: SliverGrid.builder(
-                  itemCount: definitions.length,
-                  gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-                    crossAxisCount: MediaQuery.of(context).size.width >= 720
-                        ? 2
-                        : 1,
-                    mainAxisSpacing: AppSpacing.md.h,
-                    crossAxisSpacing: AppSpacing.md.w,
-                    mainAxisExtent: 132.h,
+              if (_mode == _TelemetryCalcHomeMode.workbench)
+                SliverPadding(
+                  padding: EdgeInsets.fromLTRB(
+                    AppSpacing.lg.w,
+                    0,
+                    AppSpacing.lg.w,
+                    AppSpacing.xxl.h,
                   ),
-                  itemBuilder: (context, index) {
-                    final definition = definitions[index];
-                    return _CalculatorCard(
-                      definition: definition,
-                      color: _categoryColor(definition.category, semantic),
-                      onTap: () => Get.to(
-                        () => TelemetryCalcDetailView(definition: definition),
-                      )?.then((_) => setState(() {})),
-                    );
-                  },
+                  sliver: SliverGrid.builder(
+                    itemCount: definitions.length,
+                    gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+                      crossAxisCount: MediaQuery.of(context).size.width >= 720
+                          ? 2
+                          : 1,
+                      mainAxisSpacing: AppSpacing.md.h,
+                      crossAxisSpacing: AppSpacing.md.w,
+                      mainAxisExtent: 132.h,
+                    ),
+                    itemBuilder: (context, index) {
+                      final definition = definitions[index];
+                      return _CalculatorCard(
+                        definition: definition,
+                        color: _categoryColor(definition.category, semantic),
+                        onTap: () => Get.to(
+                          () => TelemetryCalcDetailView(definition: definition),
+                        )?.then((_) => setState(() {})),
+                      );
+                    },
+                  ),
+                )
+              else
+                SliverPadding(
+                  padding: EdgeInsets.fromLTRB(
+                    AppSpacing.lg.w,
+                    0,
+                    AppSpacing.lg.w,
+                    AppSpacing.xxl.h,
+                  ),
+                  sliver: SliverList.separated(
+                    itemCount: formulaEntries.length,
+                    separatorBuilder: (_, _) =>
+                        SizedBox(height: AppSpacing.md.h),
+                    itemBuilder: (context, index) {
+                      final entry = formulaEntries[index];
+                      return _FormulaLibraryCard(
+                        entry: entry,
+                        onTap: () => Get.to(
+                          () => FormulaLibraryDetailView(entry: entry),
+                        ),
+                      );
+                    },
+                  ),
                 ),
-              ),
             ],
           ),
         ),
@@ -203,25 +271,10 @@ class _TelemetryCalcViewState extends State<TelemetryCalcView> {
   }
 
   Future<void> _renameRecentTemplate(TelemetryTemplate template) async {
-    var nextName = template.name;
     final name = await showDialog<String>(
       context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('重命名模板'),
-        content: TextFormField(
-          initialValue: template.name,
-          autofocus: true,
-          onChanged: (value) => nextName = value,
-          decoration: const InputDecoration(labelText: '模板名称'),
-        ),
-        actions: [
-          TextButton(onPressed: Get.back, child: const Text('取消')),
-          FilledButton(
-            onPressed: () => Get.back(result: nextName),
-            child: const Text('保存'),
-          ),
-        ],
-      ),
+      builder: (dialogContext) =>
+          _TemplateNameDialog(title: '重命名模板', initialName: template.name),
     );
     if (name == null) return;
     await _store.renameTemplate(template.id, name);
@@ -246,11 +299,13 @@ class _TelemetryCalcViewState extends State<TelemetryCalcView> {
 class TelemetryCalcDetailView extends StatefulWidget {
   final TelemetryCalculatorDefinition definition;
   final Map<String, TelemetryInputValue>? initialValues;
+  final TelemetryTemplateStore? templateStore;
 
   const TelemetryCalcDetailView({
     super.key,
     required this.definition,
     this.initialValues,
+    this.templateStore,
   });
 
   @override
@@ -259,15 +314,17 @@ class TelemetryCalcDetailView extends StatefulWidget {
 }
 
 class _TelemetryCalcDetailViewState extends State<TelemetryCalcDetailView> {
-  final _store = TelemetryTemplateStore();
+  late final TelemetryTemplateStore _store;
   final _controllers = <String, TextEditingController>{};
   late Map<String, TelemetryInputValue> _values;
   late TelemetryCalculationResult _result;
   var _showAdvanced = false;
+  String? _templateSaveNotice;
 
   @override
   void initState() {
     super.initState();
+    _store = widget.templateStore ?? TelemetryTemplateStore();
     _values = {
       ...TelemetryCalculatorRegistry.defaultValues(widget.definition),
       ...?widget.initialValues,
@@ -339,6 +396,10 @@ class _TelemetryCalcDetailViewState extends State<TelemetryCalcDetailView> {
             ),
             children: [
               _DetailHeader(definition: widget.definition, color: color),
+              if (_templateSaveNotice != null) ...[
+                SizedBox(height: AppSpacing.md.h),
+                _InlineNotice(message: _templateSaveNotice!, color: color),
+              ],
               SizedBox(height: AppSpacing.md.h),
               AppCard(
                 padding: EdgeInsets.all(AppSpacing.lg.w),
@@ -496,32 +557,20 @@ class _TelemetryCalcDetailViewState extends State<TelemetryCalcDetailView> {
   }
 
   Future<void> _saveTemplate() async {
-    final controller = TextEditingController(
-      text: '${widget.definition.title}模板',
-    );
     final name = await showDialog<String>(
       context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('保存模板'),
-        content: TextField(
-          controller: controller,
-          autofocus: true,
-          decoration: const InputDecoration(labelText: '模板名称'),
-        ),
-        actions: [
-          TextButton(onPressed: Get.back, child: const Text('取消')),
-          FilledButton(
-            onPressed: () => Get.back(result: controller.text),
-            child: const Text('保存'),
-          ),
-        ],
+      builder: (dialogContext) => _TemplateNameDialog(
+        title: '保存模板',
+        initialName: '${widget.definition.title}模板',
       ),
     );
-    controller.dispose();
     if (name == null) return;
     await _store.saveTemplate(widget.definition.id, name, _values);
     if (mounted) {
-      Get.snackbar('模板已保存', name.trim().isEmpty ? '未命名模板' : name.trim());
+      setState(() {
+        final label = name.trim().isEmpty ? '未命名模板' : name.trim();
+        _templateSaveNotice = '模板已保存：$label';
+      });
     }
   }
 
@@ -600,6 +649,279 @@ class _TelemetryCalcDetailViewState extends State<TelemetryCalcDetailView> {
   }
 }
 
+class _TemplateNameDialog extends StatefulWidget {
+  final String title;
+  final String initialName;
+
+  const _TemplateNameDialog({required this.title, required this.initialName});
+
+  @override
+  State<_TemplateNameDialog> createState() => _TemplateNameDialogState();
+}
+
+class _TemplateNameDialogState extends State<_TemplateNameDialog> {
+  late final TextEditingController _controller;
+
+  @override
+  void initState() {
+    super.initState();
+    _controller = TextEditingController(text: widget.initialName);
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return AlertDialog(
+      title: Text(widget.title),
+      content: TextFormField(
+        controller: _controller,
+        autofocus: true,
+        decoration: const InputDecoration(labelText: '模板名称'),
+        textInputAction: TextInputAction.done,
+        onFieldSubmitted: (value) => Navigator.of(context).pop(value),
+      ),
+      actions: [
+        TextButton(
+          onPressed: () => Navigator.of(context).pop(),
+          child: const Text('取消'),
+        ),
+        FilledButton(
+          onPressed: () => Navigator.of(context).pop(_controller.text),
+          child: const Text('保存'),
+        ),
+      ],
+    );
+  }
+}
+
+class _InlineNotice extends StatelessWidget {
+  final String message;
+  final Color color;
+
+  const _InlineNotice({required this.message, required this.color});
+
+  @override
+  Widget build(BuildContext context) {
+    return AppCard(
+      padding: EdgeInsets.symmetric(
+        horizontal: AppSpacing.lg.w,
+        vertical: AppSpacing.md.h,
+      ),
+      child: Row(
+        children: [
+          Icon(Icons.check_circle_rounded, color: color, size: 18.sp),
+          SizedBox(width: AppSpacing.sm.w),
+          Expanded(
+            child: Text(
+              message,
+              style: const TextStyle(fontWeight: FontWeight.w700),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class FormulaLibraryDetailView extends StatelessWidget {
+  final FormulaLibraryEntry entry;
+
+  const FormulaLibraryDetailView({super.key, required this.entry});
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final semantic = theme.semanticColors;
+    final color = _formulaDomainColor(entry.domain, semantic);
+    return Scaffold(
+      appBar: AppBar(
+        title: Text(entry.id),
+        actions: [
+          IconButton(
+            tooltip: '复制公式',
+            onPressed: () {
+              Clipboard.setData(ClipboardData(text: entry.expression));
+              Get.snackbar('已复制', entry.id);
+            },
+            icon: const Icon(Icons.copy_rounded),
+          ),
+        ],
+      ),
+      body: SafeArea(
+        child: ConstrainedPage(
+          child: ListView(
+            padding: EdgeInsets.all(AppSpacing.lg.w),
+            children: [
+              AppCard(
+                padding: EdgeInsets.all(AppSpacing.lg.w),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Wrap(
+                      spacing: AppSpacing.sm.w,
+                      runSpacing: AppSpacing.xs.h,
+                      children: [
+                        AppPill(
+                          label: entry.domain.label,
+                          icon: _formulaDomainIcon(entry.domain),
+                          color: color,
+                        ),
+                        AppPill(label: entry.status.label, color: color),
+                      ],
+                    ),
+                    SizedBox(height: AppSpacing.lg.h),
+                    _FormulaMathBlock(
+                      expression: entry.expression,
+                      texExpression: entry.texExpression,
+                      color: color,
+                    ),
+                    SizedBox(height: AppSpacing.lg.h),
+                    Text(
+                      entry.explanation,
+                      style: theme.textTheme.bodyMedium?.copyWith(height: 1.45),
+                    ),
+                    SizedBox(height: AppSpacing.sm.h),
+                    Text(
+                      entry.sourceFamily,
+                      style: TextStyle(
+                        color: theme.colorScheme.onSurfaceVariant,
+                        fontSize: 12.sp,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              SizedBox(height: AppSpacing.lg.h),
+              const AppSectionHeader(title: '参数说明'),
+              SizedBox(height: AppSpacing.md.h),
+              for (final variable in entry.variables) ...[
+                _FormulaVariableCard(variable: variable, color: color),
+                SizedBox(height: AppSpacing.sm.h),
+              ],
+              if (entry.relatedCalculatorIds.isNotEmpty) ...[
+                SizedBox(height: AppSpacing.lg.h),
+                const AppSectionHeader(title: '关联工作台'),
+                SizedBox(height: AppSpacing.md.h),
+                for (final calculatorId in entry.relatedCalculatorIds)
+                  _RelatedCalculatorTile(calculatorId: calculatorId),
+              ],
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _FormulaVariableCard extends StatelessWidget {
+  final FormulaVariableInfo variable;
+  final Color color;
+
+  const _FormulaVariableCard({required this.variable, required this.color});
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    return AppCard(
+      padding: EdgeInsets.all(AppSpacing.md.w),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Container(
+            width: 44.w,
+            height: 44.w,
+            alignment: Alignment.center,
+            decoration: BoxDecoration(
+              color: color.withValues(alpha: 0.12),
+              borderRadius: BorderRadius.circular(AppRadius.sm),
+            ),
+            child: Text(
+              variable.symbol,
+              textAlign: TextAlign.center,
+              style: TextStyle(
+                color: color,
+                fontWeight: FontWeight.w800,
+                fontSize: 13.sp,
+              ),
+            ),
+          ),
+          SizedBox(width: AppSpacing.md.w),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  variable.meaning,
+                  style: const TextStyle(fontWeight: FontWeight.w700),
+                ),
+                if (variable.concept.isNotEmpty) ...[
+                  SizedBox(height: AppSpacing.xs.h),
+                  Text(
+                    variable.concept,
+                    style: TextStyle(
+                      color: theme.colorScheme.onSurfaceVariant,
+                      fontSize: 12.sp,
+                      height: 1.35,
+                    ),
+                  ),
+                ],
+                SizedBox(height: AppSpacing.xs.h),
+                Text(
+                  variable.units.isEmpty
+                      ? '单位：按公式上下文确定'
+                      : '单位：${variable.units}',
+                  style: TextStyle(
+                    color: theme.colorScheme.onSurfaceVariant,
+                    fontSize: 12.sp,
+                    fontWeight: FontWeight.w700,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _RelatedCalculatorTile extends StatelessWidget {
+  final String calculatorId;
+
+  const _RelatedCalculatorTile({required this.calculatorId});
+
+  @override
+  Widget build(BuildContext context) {
+    final definition = TelemetryCalculatorRegistry.byId(calculatorId);
+    return Padding(
+      padding: EdgeInsets.only(bottom: AppSpacing.sm.h),
+      child: AppCard(
+        onTap: () =>
+            Get.to(() => TelemetryCalcDetailView(definition: definition)),
+        padding: EdgeInsets.all(AppSpacing.md.w),
+        child: Row(
+          children: [
+            Icon(_categoryIcon(definition.category), size: 22.sp),
+            SizedBox(width: AppSpacing.md.w),
+            Expanded(
+              child: Text(
+                definition.title,
+                style: const TextStyle(fontWeight: FontWeight.w700),
+              ),
+            ),
+            const Icon(Icons.chevron_right_rounded),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
 class _Header extends StatelessWidget {
   final AppSemanticColors semantic;
 
@@ -637,12 +959,37 @@ class _Header extends StatelessWidget {
                 ),
                 SizedBox(height: AppSpacing.xs.h),
                 Text(
-                  '链路、码率、帧格式、测距和自定义公式均在本地计算。',
+                  '链路、码率、PCM、遥控、测距、频率、系统与自定义公式均在本地计算。',
                   style: TextStyle(
                     color: Theme.of(context).colorScheme.onSurfaceVariant,
                     fontSize: 12.sp,
                     height: 1.35,
                   ),
+                ),
+                SizedBox(height: AppSpacing.sm.h),
+                Wrap(
+                  spacing: AppSpacing.sm.w,
+                  runSpacing: AppSpacing.xs.h,
+                  children: [
+                    AppPill(
+                      label:
+                          '公式目录 ${TelemetryCalculatorRegistry.formulaCatalogEntryCount}',
+                      icon: Icons.library_books_rounded,
+                      color: semantic.stats,
+                    ),
+                    AppPill(
+                      label:
+                          '系统公式 ${TelemetryCalculatorRegistry.integratedSystemFormulaCount}',
+                      icon: Icons.account_tree_rounded,
+                      color: semantic.work,
+                    ),
+                    AppPill(
+                      label:
+                          '可运行 ${TelemetryCalculatorRegistry.definitions.length}',
+                      icon: Icons.calculate_rounded,
+                      color: semantic.success,
+                    ),
+                  ],
                 ),
               ],
             ),
@@ -730,6 +1077,109 @@ class _RecentTemplates extends StatelessWidget {
           ),
         ),
       ],
+    );
+  }
+}
+
+class _FormulaDomainChips extends StatelessWidget {
+  final List<FormulaDomainSummary> summaries;
+  final FormulaDomain value;
+  final ValueChanged<FormulaDomain> onChanged;
+
+  const _FormulaDomainChips({
+    required this.summaries,
+    required this.value,
+    required this.onChanged,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    return Wrap(
+      spacing: AppSpacing.sm.w,
+      runSpacing: AppSpacing.sm.h,
+      children: [
+        for (final summary in summaries)
+          ChoiceChip(
+            selected: summary.domain == value,
+            label: Text('${summary.domain.label} ${summary.count}'),
+            avatar: Icon(
+              _formulaDomainIcon(summary.domain),
+              size: 16.sp,
+              color: summary.domain == value
+                  ? theme.colorScheme.primary
+                  : theme.colorScheme.onSurfaceVariant,
+            ),
+            onSelected: (_) => onChanged(summary.domain),
+          ),
+      ],
+    );
+  }
+}
+
+class _FormulaLibraryCard extends StatelessWidget {
+  final FormulaLibraryEntry entry;
+  final VoidCallback onTap;
+
+  const _FormulaLibraryCard({required this.entry, required this.onTap});
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final semantic = theme.semanticColors;
+    return AppCard(
+      onTap: onTap,
+      padding: EdgeInsets.all(AppSpacing.lg.w),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              AppPill(
+                label: entry.id,
+                icon: _formulaDomainIcon(entry.domain),
+                color: semantic.stats,
+              ),
+              SizedBox(width: AppSpacing.sm.w),
+              AppPill(
+                label: entry.status.label,
+                color: entry.status == FormulaStatus.implemented
+                    ? semantic.success
+                    : semantic.warning,
+              ),
+            ],
+          ),
+          SizedBox(height: AppSpacing.sm.h),
+          Text(
+            entry.expression,
+            maxLines: 2,
+            overflow: TextOverflow.ellipsis,
+            style: theme.textTheme.titleSmall?.copyWith(
+              fontWeight: FontWeight.w700,
+            ),
+          ),
+          SizedBox(height: AppSpacing.xs.h),
+          Text(
+            entry.explanation,
+            maxLines: 2,
+            overflow: TextOverflow.ellipsis,
+            style: TextStyle(
+              color: theme.colorScheme.onSurfaceVariant,
+              fontSize: 12.sp,
+              height: 1.35,
+            ),
+          ),
+          SizedBox(height: AppSpacing.sm.h),
+          Text(
+            entry.domain.label,
+            style: TextStyle(
+              color: theme.colorScheme.onSurfaceVariant,
+              fontSize: 11.sp,
+              fontWeight: FontWeight.w700,
+            ),
+          ),
+        ],
+      ),
     );
   }
 }
@@ -2077,6 +2527,27 @@ class _FormulaExpression extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    return _FormulaMathBlock(
+      expression: expression,
+      texExpression: expression,
+      color: color,
+    );
+  }
+}
+
+class _FormulaMathBlock extends StatelessWidget {
+  final String expression;
+  final String texExpression;
+  final Color color;
+
+  const _FormulaMathBlock({
+    required this.expression,
+    required this.texExpression,
+    required this.color,
+  });
+
+  @override
+  Widget build(BuildContext context) {
     final theme = Theme.of(context);
     return Container(
       width: double.infinity,
@@ -2089,14 +2560,39 @@ class _FormulaExpression extends StatelessWidget {
         borderRadius: BorderRadius.circular(AppRadius.xs),
         border: Border.all(color: color.withValues(alpha: 0.18)),
       ),
-      child: SelectableText.rich(
-        TextSpan(children: _formulaSpans(context, expression, color)),
-        style: TextStyle(
-          fontFamily: 'Roboto',
-          fontSize: 13.sp,
-          height: 1.35,
-          color: theme.colorScheme.onSurface,
-        ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          SingleChildScrollView(
+            scrollDirection: Axis.horizontal,
+            child: Math.tex(
+              texExpression,
+              textStyle: TextStyle(
+                color: theme.colorScheme.onSurface,
+                fontSize: 17.sp,
+              ),
+              onErrorFallback: (_) => Text(
+                expression,
+                style: TextStyle(
+                  fontFamily: 'Roboto',
+                  fontSize: 13.sp,
+                  height: 1.35,
+                  color: theme.colorScheme.onSurface,
+                ),
+              ),
+            ),
+          ),
+          SizedBox(height: AppSpacing.sm.h),
+          SelectableText.rich(
+            TextSpan(children: _formulaSpans(context, expression, color)),
+            style: TextStyle(
+              fontFamily: 'Roboto',
+              fontSize: 12.sp,
+              height: 1.35,
+              color: theme.colorScheme.onSurfaceVariant,
+            ),
+          ),
+        ],
       ),
     );
   }
@@ -2169,6 +2665,10 @@ String _categoryLabel(TelemetryCalculatorCategory category) {
   };
 }
 
+String _categoryFilterLabel(TelemetryCalculatorCategory category) {
+  return '${_categoryLabel(category)} ${TelemetryCalculatorRegistry.countByCategory(category)}';
+}
+
 String _detailTitle(TelemetryCalculatorDefinition definition) {
   return switch (definition.id) {
     'link_budget' => '链路预算',
@@ -2200,6 +2700,23 @@ IconData _categoryIcon(TelemetryCalculatorCategory category) {
   };
 }
 
+IconData _formulaDomainIcon(FormulaDomain domain) {
+  return switch (domain) {
+    FormulaDomain.rfAntennaReceiver => Icons.settings_input_antenna_rounded,
+    FormulaDomain.propagationLink => Icons.public_rounded,
+    FormulaDomain.baseband => Icons.graphic_eq_rounded,
+    FormulaDomain.telemetryFrames => Icons.view_timeline_rounded,
+    FormulaDomain.telecommand => Icons.keyboard_command_key_rounded,
+    FormulaDomain.rangingTracking => Icons.social_distance_rounded,
+    FormulaDomain.system => Icons.account_tree_rounded,
+    FormulaDomain.optical => Icons.light_mode_rounded,
+    FormulaDomain.orbitContact => Icons.travel_explore_rounded,
+    FormulaDomain.compression => Icons.compress_rounded,
+    FormulaDomain.protocol => Icons.security_rounded,
+    FormulaDomain.measurement => Icons.straighten_rounded,
+  };
+}
+
 Color _categoryColor(
   TelemetryCalculatorCategory category,
   AppSemanticColors semantic,
@@ -2214,6 +2731,23 @@ Color _categoryColor(
     TelemetryCalculatorCategory.frequency => semantic.stats,
     TelemetryCalculatorCategory.system => semantic.work,
     TelemetryCalculatorCategory.custom => semantic.project,
+  };
+}
+
+Color _formulaDomainColor(FormulaDomain domain, AppSemanticColors semantic) {
+  return switch (domain) {
+    FormulaDomain.rfAntennaReceiver => semantic.stats,
+    FormulaDomain.propagationLink => semantic.success,
+    FormulaDomain.baseband => semantic.stats,
+    FormulaDomain.telemetryFrames => semantic.project,
+    FormulaDomain.telecommand => semantic.warning,
+    FormulaDomain.rangingTracking => semantic.success,
+    FormulaDomain.system => semantic.work,
+    FormulaDomain.optical => semantic.project,
+    FormulaDomain.orbitContact => semantic.stats,
+    FormulaDomain.compression => semantic.expense,
+    FormulaDomain.protocol => semantic.warning,
+    FormulaDomain.measurement => semantic.success,
   };
 }
 
