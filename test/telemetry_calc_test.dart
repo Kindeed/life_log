@@ -469,7 +469,8 @@ void main() {
 
       expect(compactInputShell, contains('AppRadius.lg'));
       expect(compactInputShell, contains('semantic.mutedSurface'));
-      expect(compactInputShell, contains('AppSpacing.lg'));
+      expect(compactInputShell, contains('AppSpacing.md'));
+      expect(compactInputShell, contains('AppSpacing.sm'));
       expect(compactInputShell, isNot(contains('withValues(alpha: 0.62)')));
     });
 
@@ -478,13 +479,43 @@ void main() {
         'lib/modules/telemetry_calc/telemetry_calc_view.dart',
       ).readAsStringSync();
       final adaptiveResultTile = RegExp(
-        r'class _AdaptiveResultTile[\s\S]*?bool _usesFullResultRow',
+        r'class _AdaptiveResultTile[\s\S]*?bool _isShortOutput',
       ).firstMatch(source)!.group(0)!;
 
       expect(adaptiveResultTile, contains('AppRadius.lg'));
       expect(adaptiveResultTile, contains('theme.semanticColors.mutedSurface'));
-      expect(adaptiveResultTile, contains('AppSpacing.lg'));
+      expect(adaptiveResultTile, contains('AppSpacing.md'));
+      expect(adaptiveResultTile, contains('AppSpacing.sm'));
       expect(adaptiveResultTile, contains('FittedBox'));
+    });
+
+    test('uses compact inline adaptive input and output ordering helpers', () {
+      final source = File(
+        'lib/modules/telemetry_calc/telemetry_calc_view.dart',
+      ).readAsStringSync();
+      final compactInputShell = RegExp(
+        r'class _CompactInputShell[\s\S]*?class _UnitMenuButton',
+      ).firstMatch(source)!.group(0)!;
+      final adaptiveResultTile = RegExp(
+        r'class _AdaptiveResultTile[\s\S]*?int _calculateTextWidthScore',
+      ).firstMatch(source)!.group(0)!;
+
+      expect(source, contains('_calculateTextWidthScore'));
+      expect(source, contains('bool _isShortInput'));
+      expect(source, contains('bool _isShortOutput'));
+      expect(source, contains('final orderedPrimaryInputs'));
+      expect(source, contains('final orderedOutputs'));
+      expect(source, contains('shortPrimaryInputs'));
+      expect(source, contains('shortOutputs'));
+      expect(source, contains('showDragHandle: true'));
+      expect(source, contains("ValueKey('telemetryCalcSearchClear')"));
+      expect(compactInputShell, contains('focusNode'));
+      expect(compactInputShell, contains('hasFocus'));
+      expect(compactInputShell, contains('child: Row('));
+      expect(compactInputShell, isNot(contains('child: Column(')));
+      expect(adaptiveResultTile, contains('Tooltip('));
+      expect(adaptiveResultTile, contains('child: Row('));
+      expect(adaptiveResultTile, isNot(contains('child: Column(')));
     });
 
     test('uses spacing tokens for telemetry gaps and padding', () {
@@ -553,9 +584,12 @@ void main() {
 
         await tester.tap(unitButton);
         await tester.pumpAndSettle();
-        expect(find.text('dBm'), findsWidgets);
+        final popupItem = find.byWidgetPredicate(
+          (widget) => widget is PopupMenuItem<String>,
+        );
+        expect(popupItem, findsWidgets);
 
-        await tester.tap(find.text('dBm').last);
+        await tester.tap(popupItem.last);
         await tester.pumpAndSettle();
         expect(tester.takeException(), isNull);
       },
@@ -687,12 +721,12 @@ void main() {
       await tester.pumpAndSettle();
 
       final judgementTitle = tester.widget<Text>(find.text('链路余量满足要求'));
-      expect(judgementTitle.maxLines, greaterThanOrEqualTo(2));
+      expect(judgementTitle.maxLines, greaterThanOrEqualTo(1));
       expect(find.text('含工程判断'), findsWidgets);
       expect(find.text('实时刷新输出'), findsWidgets);
       expect(find.textContaining('配置可用'), findsWidgets);
       final inputLabel = tester.widget<Text>(find.text('发射机输出功率'));
-      expect(inputLabel.maxLines, greaterThanOrEqualTo(2));
+      expect(inputLabel.maxLines, 1);
       expect(tester.takeException(), isNull);
     });
 
@@ -931,6 +965,19 @@ void main() {
 
       expect(find.text('热控与散热器'), findsOneWidget);
       expect(find.text('链路预算'), findsNothing);
+      expect(
+        find.byKey(const ValueKey('telemetryCalcSearchClear')),
+        findsOneWidget,
+      );
+
+      await tester.tap(find.byKey(const ValueKey('telemetryCalcSearchClear')));
+      await tester.pumpAndSettle();
+
+      expect(find.text('链路预算'), findsOneWidget);
+      expect(
+        find.byKey(const ValueKey('telemetryCalcSearchClear')),
+        findsNothing,
+      );
       expect(tester.takeException(), isNull);
     });
 
