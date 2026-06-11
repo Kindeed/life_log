@@ -178,6 +178,34 @@ void main() {
       expect(outputs['closure_score'], closeTo(26.25, 0.01));
     });
 
+    test('computes antenna receiver front-end outputs', () {
+      expect(
+        TelemetryCalculatorRegistry.definitions.map(
+          (definition) => definition.id,
+        ),
+        contains('antenna_receiver'),
+      );
+      final definition = TelemetryCalculatorRegistry.byId('antenna_receiver');
+      final result = TelemetryCalculatorEngine.calculate(
+        definition,
+        TelemetryCalculatorRegistry.defaultValues(definition),
+      );
+
+      expect(result.errors, isEmpty);
+      expect(result.warnings, isEmpty);
+      final outputs = {
+        for (final output in result.outputs) output.id: output.value,
+      };
+      expect(outputs['wavelength'], closeTo(0.03569, 0.00001));
+      expect(outputs['aperture_area'], closeTo(1.13097, 0.00001));
+      expect(outputs['antenna_gain'], closeTo(38.60, 0.02));
+      expect(outputs['effective_aperture'], closeTo(0.73513, 0.00001));
+      expect(outputs['g_over_t'], closeTo(16.84, 0.02));
+      expect(outputs['receiver_noise_temp'], closeTo(169.62, 0.02));
+      expect(outputs['far_field_distance'], closeTo(80.70, 0.02));
+      expect(outputs['far_field_margin'], closeTo(919.30, 0.02));
+    });
+
     test('validates invalid numeric input before running formulas', () {
       final definition = TelemetryCalculatorRegistry.byId('link_budget');
       final values = TelemetryCalculatorRegistry.defaultValues(definition);
@@ -275,6 +303,10 @@ void main() {
     });
 
     test('counts runnable calculators by category', () {
+      final antennaCategory = TelemetryCalculatorCategory.values.singleWhere(
+        (category) => category.name == 'antenna',
+      );
+      expect(TelemetryCalculatorRegistry.countByCategory(antennaCategory), 1);
       expect(
         TelemetryCalculatorRegistry.countByCategory(
           TelemetryCalculatorCategory.link,
@@ -958,10 +990,10 @@ void main() {
       );
       await tester.pumpAndSettle();
 
-      expect(find.text('1205 条公式 / 11 个工作台'), findsOneWidget);
+      expect(find.text('1205 条公式 / 12 个工作台'), findsOneWidget);
       expect(find.text('公式目录 1205'), findsNothing);
       expect(find.text('系统公式 85'), findsNothing);
-      expect(find.text('可运行 11'), findsNothing);
+      expect(find.text('可运行 12'), findsNothing);
       expect(
         find.byKey(const ValueKey('telemetryModeSwitcherCenter')),
         findsOneWidget,
@@ -971,6 +1003,7 @@ void main() {
         findsOneWidget,
       );
       expect(find.text('链路 1'), findsOneWidget);
+      expect(find.text('天线 1'), findsOneWidget);
 
       await tester.tap(find.text('系统 3'));
       await tester.pumpAndSettle();
@@ -995,6 +1028,34 @@ void main() {
       expect(find.text('任务资源闭合'), findsOneWidget);
       expect(tester.takeException(), isNull);
     });
+
+    testWidgets(
+      'surfaces antenna receiver workbench from the category filter',
+      (tester) async {
+        tester.view.physicalSize = const Size(390, 844);
+        tester.view.devicePixelRatio = 1;
+        addTearDown(tester.view.resetPhysicalSize);
+        addTearDown(tester.view.resetDevicePixelRatio);
+
+        await tester.pumpWidget(
+          ScreenUtilInit(
+            designSize: const Size(375, 812),
+            builder: (context, child) => GetMaterialApp(
+              theme: AppTheme.lightWith(null),
+              home: const TelemetryCalcView(),
+            ),
+          ),
+        );
+        await tester.pumpAndSettle();
+
+        await tester.tap(find.text('天线 1'));
+        await tester.pumpAndSettle();
+
+        expect(find.text('天线与接收机'), findsOneWidget);
+        expect(find.text('抛物面增益、有效孔径、G/T、远场与噪声温度'), findsOneWidget);
+        expect(tester.takeException(), isNull);
+      },
+    );
 
     testWidgets('filters calculator cards from the module search field', (
       tester,

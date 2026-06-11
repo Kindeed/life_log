@@ -110,13 +110,11 @@ The current `TelemetryCalculatorDefinition` can remain for UI execution, but sce
 Recommended implementation order:
 
 1. Antenna and receiver workbench:
-   - parabolic gain
-   - effective aperture
-   - G/T
+   - Done in first app batch: parabolic gain, circular aperture area, effective aperture, G/T, Fraunhofer far-field distance, and receiver noise-figure to equivalent-noise-temperature conversion.
    - directivity and beam solid angle
    - ITU off-axis reference-pattern and side-lobe objective checks
-   - far-field distance and array-factor sanity checks
-   - noise figure/noise temperature
+   - array-factor sanity checks
+   - cascaded receiver noise
    - cascaded noise
    - pointing and polarization loss
    - aperture efficiency decomposition and surface-error efficiency

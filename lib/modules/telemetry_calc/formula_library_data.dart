@@ -16611,7 +16611,7 @@ const formulaLibraryRows = <Map<String, Object?>>[
     'explanation':
         'Converts RF frequency to wavelength. Used by antenna gain, aperture, and FSPL.',
     'sourceFamily': 'ITU-P525, BOOK-BALANIS',
-    'status': 'seeded',
+    'status': 'implemented',
   },
   {
     'id': 'RF-002',
@@ -16623,7 +16623,7 @@ const formulaLibraryRows = <Map<String, Object?>>[
     'variableSymbols': <String>['A', 'D'],
     'explanation': 'Physical area of a circular dish aperture.',
     'sourceFamily': 'BOOK-BALANIS',
-    'status': 'seeded',
+    'status': 'implemented',
   },
   {
     'id': 'RF-003',
@@ -16636,7 +16636,7 @@ const formulaLibraryRows = <Map<String, Object?>>[
     'variableSymbols': <String>['G', 'eta', 'D', 'lambda'],
     'explanation': 'Parabolic aperture gain. Convert to dBi with 10 log10(G).',
     'sourceFamily': 'BOOK-BALANIS, DESCANSO-DSTSE',
-    'status': 'seeded',
+    'status': 'implemented',
   },
   {
     'id': 'RF-004',
@@ -16648,7 +16648,7 @@ const formulaLibraryRows = <Map<String, Object?>>[
     'variableSymbols': <String>['A_e', 'G'],
     'explanation': 'Relates antenna gain to receiving effective aperture.',
     'sourceFamily': 'BOOK-BALANIS, DESCANSO-DSTSE',
-    'status': 'seeded',
+    'status': 'implemented',
   },
   {
     'id': 'RF-005',
@@ -16660,7 +16660,7 @@ const formulaLibraryRows = <Map<String, Object?>>[
     'variableSymbols': <String>['G'],
     'explanation': 'Converts linear gain to dBi.',
     'sourceFamily': 'General RF engineering',
-    'status': 'seeded',
+    'status': 'implemented',
   },
   {
     'id': 'RF-006',
@@ -16735,7 +16735,7 @@ const formulaLibraryRows = <Map<String, Object?>>[
     'variableSymbols': <String>['T_e', 'T0', 'NF'],
     'explanation': 'Converts receiver noise figure to equivalent temperature.',
     'sourceFamily': 'BOOK-MARAL, BOOK-SKLAR',
-    'status': 'seeded',
+    'status': 'implemented',
   },
   {
     'id': 'RF-012',
@@ -16889,7 +16889,7 @@ const formulaLibraryRows = <Map<String, Object?>>[
     'explanation':
         'Aperture antenna gain in dBi; equivalent to eta_ap*(pi*D/lambda)^2 for a circular aperture.',
     'sourceFamily': 'DESCANSO-DSTSE, BOOK-BALANIS',
-    'status': 'seeded',
+    'status': 'implemented',
   },
   {
     'id': 'RF-024',
@@ -16902,7 +16902,7 @@ const formulaLibraryRows = <Map<String, Object?>>[
     'explanation':
         'Geometrical aperture area for circular dish antennas; kept as an explicit antenna-design output even though RF-002 already covers area.',
     'sourceFamily': 'DESCANSO-DSTSE, BOOK-BALANIS',
-    'status': 'seeded',
+    'status': 'implemented',
   },
   {
     'id': 'RF-025',
@@ -17210,7 +17210,7 @@ const formulaLibraryRows = <Map<String, Object?>>[
     'explanation':
         'Fraunhofer far-field distance criterion for antenna pattern/link measurements.',
     'sourceFamily': 'BOOK-BALANIS',
-    'status': 'seeded',
+    'status': 'implemented',
   },
   {
     'id': 'RF-048',

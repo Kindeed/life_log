@@ -2778,6 +2778,7 @@ String _readableFormulaExpression(String expression) {
 String _categoryLabel(TelemetryCalculatorCategory category) {
   return switch (category) {
     TelemetryCalculatorCategory.link => '链路',
+    TelemetryCalculatorCategory.antenna => '天线',
     TelemetryCalculatorCategory.rate => '码率',
     TelemetryCalculatorCategory.frame => 'PCM',
     TelemetryCalculatorCategory.coding => '编码',
@@ -2796,6 +2797,7 @@ String _categoryFilterLabel(TelemetryCalculatorCategory category) {
 String _detailTitle(TelemetryCalculatorDefinition definition) {
   return switch (definition.id) {
     'link_budget' => '链路预算',
+    'antenna_receiver' => '天线接收',
     'rate_bandwidth' => '带宽计算',
     'pcm_frame' => 'PCM 计算',
     'channel_coding' => '编码开销',
@@ -2812,7 +2814,8 @@ String _detailTitle(TelemetryCalculatorDefinition definition) {
 
 IconData _categoryIcon(TelemetryCalculatorCategory category) {
   return switch (category) {
-    TelemetryCalculatorCategory.link => Icons.settings_input_antenna_rounded,
+    TelemetryCalculatorCategory.link => Icons.public_rounded,
+    TelemetryCalculatorCategory.antenna => Icons.settings_input_antenna_rounded,
     TelemetryCalculatorCategory.rate => Icons.speed_rounded,
     TelemetryCalculatorCategory.frame => Icons.view_timeline_rounded,
     TelemetryCalculatorCategory.coding => Icons.memory_rounded,
@@ -2847,6 +2850,7 @@ Color _categoryColor(
 ) {
   return switch (category) {
     TelemetryCalculatorCategory.link => semantic.stats,
+    TelemetryCalculatorCategory.antenna => semantic.stats,
     TelemetryCalculatorCategory.rate => semantic.work,
     TelemetryCalculatorCategory.frame => semantic.project,
     TelemetryCalculatorCategory.coding => semantic.expense,

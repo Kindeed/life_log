@@ -12,17 +12,17 @@ Notation:
 
 | ID | Formula | Variables | Explanation | Source family | Status |
 | --- | --- | --- | --- | --- | --- |
-| RF-001 | `lambda = c / f` | `lambda`: wavelength m; `c`: speed of light m/s; `f`: frequency Hz | Converts RF frequency to wavelength. Used by antenna gain, aperture, and FSPL. | ITU-P525, BOOK-BALANIS | Seeded |
-| RF-002 | `A = pi D^2 / 4` | `A`: circular aperture area m^2; `D`: antenna diameter m | Physical area of a circular dish aperture. | BOOK-BALANIS | Seeded |
-| RF-003 | `G = eta (pi D / lambda)^2` | `G`: linear antenna gain; `eta`: aperture efficiency; `D`: diameter; `lambda`: wavelength | Parabolic aperture gain. Convert to dBi with `10 log10(G)`. | BOOK-BALANIS, DESCANSO-DSTSE | Seeded |
-| RF-004 | `A_e = G lambda^2 / (4 pi)` | `A_e`: effective aperture m^2; `G`: linear gain | Relates antenna gain to receiving effective aperture. | BOOK-BALANIS, DESCANSO-DSTSE | Seeded |
-| RF-005 | `G_dBi = 10 log10(G)` | `G`: linear gain | Converts linear gain to dBi. | General RF engineering | Seeded |
+| RF-001 | `lambda = c / f` | `lambda`: wavelength m; `c`: speed of light m/s; `f`: frequency Hz | Converts RF frequency to wavelength. Used by antenna gain, aperture, and FSPL. | ITU-P525, BOOK-BALANIS | Implemented |
+| RF-002 | `A = pi D^2 / 4` | `A`: circular aperture area m^2; `D`: antenna diameter m | Physical area of a circular dish aperture. | BOOK-BALANIS | Implemented |
+| RF-003 | `G = eta (pi D / lambda)^2` | `G`: linear antenna gain; `eta`: aperture efficiency; `D`: diameter; `lambda`: wavelength | Parabolic aperture gain. Convert to dBi with `10 log10(G)`. | BOOK-BALANIS, DESCANSO-DSTSE | Implemented |
+| RF-004 | `A_e = G lambda^2 / (4 pi)` | `A_e`: effective aperture m^2; `G`: linear gain | Relates antenna gain to receiving effective aperture. | BOOK-BALANIS, DESCANSO-DSTSE | Implemented |
+| RF-005 | `G_dBi = 10 log10(G)` | `G`: linear gain | Converts linear gain to dBi. | General RF engineering | Implemented |
 | RF-006 | `G = 10^(G_dBi/10)` | `G_dBi`: antenna gain in dBi | Converts dBi gain to linear gain. | General RF engineering | Seeded |
 | RF-007 | `theta_3dB ~= K lambda / D` | `theta_3dB`: beamwidth rad; `K`: aperture-dependent constant | Approximate half-power beamwidth. Use source-specific constants for reflector/taper type. | BOOK-BALANIS | Procedure |
 | RF-008 | `EIRP_dBW = P_tx_dBW - L_tx_dB + G_tx_dBi` | `P_tx`: transmitter output; `L_tx`: feed/network loss; `G_tx`: antenna gain | Effective isotropic radiated power. | DSN-810-005, BOOK-MARAL | Implemented |
 | RF-009 | `ERP_dBW = EIRP_dBW - 2.15` | `ERP`: referenced to half-wave dipole | Converts EIRP to ERP. | General RF engineering | Seeded |
 | RF-010 | `G/T_dB/K = G_rx_dBi - 10 log10(T_sys_K)` | `T_sys`: system noise temperature | Receiver merit figure used directly in link budgets. | DSN-810-005, DESCANSO-DSTSE | Implemented |
-| RF-011 | `T_e = T0 (10^(NF_dB/10) - 1)` | `T_e`: equivalent noise temperature; `T0`: 290 K; `NF`: noise figure | Converts receiver noise figure to equivalent temperature. | BOOK-MARAL, BOOK-SKLAR | Seeded |
+| RF-011 | `T_e = T0 (10^(NF_dB/10) - 1)` | `T_e`: equivalent noise temperature; `T0`: 290 K; `NF`: noise figure | Converts receiver noise figure to equivalent temperature. | BOOK-MARAL, BOOK-SKLAR | Implemented |
 | RF-012 | `T_cascade = T1 + T2/G1 + T3/(G1 G2) + ...` | `Tn`: stage equivalent noise temp; `Gn`: linear stage gain | Friis noise cascade in temperature form. | BOOK-MARAL, BOOK-SKLAR | Seeded |
 | RF-013 | `F = F1 + (F2-1)/G1 + (F3-1)/(G1 G2) + ...` | `F`: noise factor; `G`: linear gain | Friis noise cascade in noise-factor form. | BOOK-SKLAR | Seeded |
 | RF-014 | `T_sys = T_ant + T_feed + T_rx + T_sky + T_misc` | component temperatures K | System noise temperature budget. Terms depend on reference plane. | DSN-810-005, DESCANSO-DSTSE | Seeded |
@@ -34,8 +34,8 @@ Notation:
 | RF-020 | `N0_dBW/Hz = 10 log10(k T_sys)` | `k`: Boltzmann constant; `T_sys`: K | Noise spectral density. Equivalent dB form uses `-228.6 + 10log10(T)`. | BOOK-SKLAR, DSN-810-005 | Seeded |
 | RF-021 | `eta_ap = eta_rad * eta_taper * eta_spillover * eta_surface * eta_blockage * eta_strut * eta_squint * eta_astigmatism` | aperture efficiency factors | Aperture efficiency budget for reflector antennas. Terms can be omitted when unavailable but must not be double-counted. | DESCANSO-DSTSE, BOOK-BALANIS | Seeded |
 | RF-022 | `eta_surface = exp(-(4*pi*K_surf*sigma_surface/lambda)^2)` | `sigma_surface`: reflector surface rms error | Ruze-style surface-error efficiency term as given in DESCANSO reflector discussion. `K_surf` depends on reflector geometry such as f/D. | DESCANSO-DSTSE, BOOK-BALANIS | Seeded |
-| RF-023 | `G_ap_dBi = 10log10(eta_ap * 4*pi*A_p/lambda^2)` | aperture area and total aperture efficiency | Aperture antenna gain in dBi; equivalent to `eta_ap*(pi*D/lambda)^2` for a circular aperture. | DESCANSO-DSTSE, BOOK-BALANIS | Seeded |
-| RF-024 | `A_p = pi*D^2/4` | circular reflector diameter | Geometrical aperture area for circular dish antennas; kept as an explicit antenna-design output even though RF-002 already covers area. | DESCANSO-DSTSE, BOOK-BALANIS | Seeded |
+| RF-023 | `G_ap_dBi = 10log10(eta_ap * 4*pi*A_p/lambda^2)` | aperture area and total aperture efficiency | Aperture antenna gain in dBi; equivalent to `eta_ap*(pi*D/lambda)^2` for a circular aperture. | DESCANSO-DSTSE, BOOK-BALANIS | Implemented |
+| RF-024 | `A_p = pi*D^2/4` | circular reflector diameter | Geometrical aperture area for circular dish antennas; kept as an explicit antenna-design output even though RF-002 already covers area. | DESCANSO-DSTSE, BOOK-BALANIS | Implemented |
 | RF-025 | `PointingLoss_dB(theta,phi) = G_m_dBi - G(theta,phi)_dBi` | antenna gain pattern and boresight gain | Pattern-based pointing loss from off-boresight target location. | DESCANSO-DSTSE | Procedure |
 | RF-026 | `MeanPointingLoss = integral(PointingLoss(theta,phi) * p_e(theta,phi) dtheta dphi)` | pointing-error probability density | Statistical pointing loss for design-control tables. | DESCANSO-DSTSE | Procedure |
 | RF-027 | `VarPointingLoss = integral((PointingLoss-MeanPointingLoss)^2 * p_e(theta,phi) dtheta dphi)` | pointing-loss distribution | Variance of pointing loss for tolerance/statistical link budgets. | DESCANSO-DSTSE | Procedure |
@@ -58,7 +58,7 @@ Notation:
 | RF-044 | `D_0 ~= 41253/(theta_HP_deg*phi_HP_deg)` | half-power beamwidths in degrees | Common pencil-beam directivity estimate from orthogonal HPBWs. | BOOK-BALANIS | Seeded |
 | RF-045 | `theta_FNBW_uniform_circular ~= 2.44*lambda/D` | circular aperture diameter | First-null beamwidth approximation for a uniformly illuminated circular aperture. | BOOK-BALANIS | Seeded |
 | RF-046 | `theta_HPBW_uniform_circular ~= 1.02*lambda/D` | circular aperture diameter | Half-power beamwidth approximation for a uniformly illuminated circular aperture. | BOOK-BALANIS | Seeded |
-| RF-047 | `R_ff >= 2*D_max^2/lambda` | largest antenna dimension | Fraunhofer far-field distance criterion for antenna pattern/link measurements. | BOOK-BALANIS | Seeded |
+| RF-047 | `R_ff >= 2*D_max^2/lambda` | largest antenna dimension | Fraunhofer far-field distance criterion for antenna pattern/link measurements. | BOOK-BALANIS | Implemented |
 | RF-048 | `PLF = |rho_wave dot rho_ant|^2` | wave and antenna polarization unit vectors | Polarization loss factor in linear power ratio. | BOOK-BALANIS | Seeded |
 | RF-049 | `AF(theta) = sum_{n=0}^{N_elem-1} w_n*exp(j*n*(k0*d_elem*cos(theta)+beta_phase))` | element weights, spacing, phase progression | Uniform-line array-factor structure before normalization. | BOOK-BALANIS | Procedure |
 | RF-050 | `AF_norm = |sin(N_elem*psi/2)/(N_elem*sin(psi/2))|`, `psi=k0*d_elem*cos(theta)+beta_phase` | array size and phase variable | Closed-form normalized array factor for equal-amplitude linear arrays. | BOOK-BALANIS | Seeded |

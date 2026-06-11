@@ -5,6 +5,7 @@ import 'telemetry_units.dart';
 
 enum TelemetryCalculatorCategory {
   link,
+  antenna,
   rate,
   frame,
   coding,
@@ -348,12 +349,14 @@ class TelemetryCalculatorEngine {
 class TelemetryCalculatorRegistry {
   static const int formulaCatalogEntryCount = 1205;
   static const int integratedSystemFormulaCount = 85;
+  static const double _speedOfLight = 299792458;
   static const _commonFrequencyUnits = ['Hz', 'kHz', 'MHz', 'GHz'];
   static const _commonRateUnits = ['bps', 'kbps', 'Mbps', 'Gbps'];
   static const _commonDistanceUnits = ['m', 'km'];
 
   static final List<TelemetryCalculatorDefinition> definitions = [
     _linkBudget,
+    _antennaReceiver,
     _rateBandwidth,
     _pcmFrame,
     _channelCoding,
@@ -395,6 +398,206 @@ class TelemetryCalculatorRegistry {
     List<String> warnings,
   ) {
     return TelemetryCalculationResult(outputs: outputs, warnings: warnings);
+  }
+
+  static const _antennaReceiver = TelemetryCalculatorDefinition(
+    id: 'antenna_receiver',
+    category: TelemetryCalculatorCategory.antenna,
+    title: '天线与接收机',
+    subtitle: '抛物面增益、有效孔径、G/T、远场与噪声温度',
+    standards: 'Balanis / DESCANSO / DSN 810-005 / Maral',
+    inputs: [
+      TelemetryInputDefinition.number(
+        id: 'frequency',
+        label: '载波频率',
+        dimension: QuantityDimension.frequency,
+        units: _commonFrequencyUnits,
+        defaultUnit: 'GHz',
+        defaultValue: 8.4,
+        min: 0.001,
+        helper: '用于波长、口径增益和有效孔径计算的射频中心频率。',
+      ),
+      TelemetryInputDefinition.number(
+        id: 'reflector_diameter',
+        label: '口径直径',
+        dimension: QuantityDimension.distance,
+        units: ['m'],
+        defaultUnit: 'm',
+        defaultValue: 1.2,
+        min: 0.001,
+        helper: '圆形抛物面或等效圆口径的物理直径。',
+      ),
+      TelemetryInputDefinition.number(
+        id: 'aperture_efficiency',
+        label: '口径效率',
+        dimension: QuantityDimension.dimensionless,
+        units: ['percent', 'ratio'],
+        defaultUnit: 'percent',
+        defaultValue: 65,
+        min: 0.001,
+        max: 100,
+        helper: '综合照明、溢出、表面、阻挡等损失后的总口径效率。',
+      ),
+      TelemetryInputDefinition.number(
+        id: 'system_temp',
+        label: '系统噪声温度',
+        dimension: QuantityDimension.temperature,
+        units: ['K', 'dBK'],
+        defaultUnit: 'K',
+        defaultValue: 150,
+        min: 0.001,
+        helper: '馈源、接收机、天空和环境噪声折算到接收参考面的系统温度。',
+      ),
+      TelemetryInputDefinition.number(
+        id: 'measurement_range',
+        label: '测量距离',
+        dimension: QuantityDimension.distance,
+        units: _commonDistanceUnits,
+        defaultUnit: 'm',
+        defaultValue: 1000,
+        min: 0.001,
+        helper: '用于判断测量或链路几何是否超过 Fraunhofer 远场距离。',
+      ),
+      TelemetryInputDefinition.number(
+        id: 'noise_figure',
+        label: '接收机噪声系数',
+        dimension: QuantityDimension.gain,
+        units: ['dB'],
+        defaultUnit: 'dB',
+        defaultValue: 2,
+        min: 0,
+        advanced: true,
+        helper: '按 T0=290 K 折算为接收机等效噪声温度。',
+      ),
+    ],
+    outputs: [
+      TelemetryOutputDefinition(
+        id: 'wavelength',
+        label: '波长',
+        unitId: 'm',
+        precision: 5,
+        helper: '光速除以载波频率得到的射频波长。',
+      ),
+      TelemetryOutputDefinition(
+        id: 'aperture_area',
+        label: '口径面积',
+        unitId: 'm2',
+        precision: 4,
+        helper: '圆口径物理面积，用于增益和有效孔径核算。',
+      ),
+      TelemetryOutputDefinition(
+        id: 'antenna_gain',
+        label: '天线增益',
+        unitId: 'dBi',
+        helper: '由口径、波长和口径效率估算的抛物面天线增益。',
+      ),
+      TelemetryOutputDefinition(
+        id: 'effective_aperture',
+        label: '有效孔径',
+        unitId: 'm2',
+        precision: 4,
+        helper: '天线接收等效面积，等价于增益与波长平方的关系。',
+      ),
+      TelemetryOutputDefinition(
+        id: 'g_over_t',
+        label: 'G/T',
+        unitId: 'dB_K',
+        helper: '接收增益与系统噪声温度的品质因数。',
+      ),
+      TelemetryOutputDefinition(
+        id: 'receiver_noise_temp',
+        label: '接收机等效噪温',
+        unitId: 'K',
+        helper: '由噪声系数折算的接收机等效输入噪声温度。',
+      ),
+      TelemetryOutputDefinition(
+        id: 'far_field_distance',
+        label: '远场距离',
+        unitId: 'm',
+        helper: 'Fraunhofer 远场距离，天线方向图测量和链路假设的基本边界。',
+      ),
+      TelemetryOutputDefinition(
+        id: 'far_field_margin',
+        label: '远场余量',
+        unitId: 'm',
+        helper: '测量距离减去远场距离；负值表示仍处于近场。',
+      ),
+    ],
+    formulas: [
+      FormulaReference(
+        title: '波长',
+        expression: 'lambda = c / f',
+        source: 'ITU-R P.525 / Balanis',
+      ),
+      FormulaReference(
+        title: '抛物面口径增益',
+        expression: 'G = eta (pi D / lambda)^2',
+        source: 'Balanis / DESCANSO',
+      ),
+      FormulaReference(
+        title: '有效孔径',
+        expression: 'A_e = G lambda^2 / (4 pi)',
+        source: 'Balanis / DESCANSO',
+      ),
+      FormulaReference(
+        title: '接收品质因数',
+        expression: 'G/T = G_dBi - 10log10(T_sys)',
+        source: 'DSN 810-005 / Maral',
+      ),
+      FormulaReference(
+        title: '接收机等效噪温',
+        expression: 'T_e = T0 (10^(NF_dB/10) - 1)',
+        source: 'Maral / Sklar',
+      ),
+      FormulaReference(
+        title: 'Fraunhofer 远场距离',
+        expression: 'R_ff >= 2D^2 / lambda',
+        source: 'Balanis',
+      ),
+    ],
+    runner: _runAntennaReceiver,
+  );
+
+  static TelemetryCalculationResult _runAntennaReceiver(
+    TelemetryCalculationContext context,
+  ) {
+    final frequencyHz = context.number('frequency', 'Hz');
+    final diameter = context.number('reflector_diameter', 'm');
+    final efficiency = context.number('aperture_efficiency', 'ratio');
+    final systemTemp = context.number('system_temp', 'K');
+    final measurementRange = context.number('measurement_range', 'm');
+    final noiseFigure = context.number('noise_figure', 'dB');
+
+    final wavelength = _speedOfLight / frequencyHz;
+    final diameterSquared = diameter * diameter;
+    final apertureArea = math.pi * diameterSquared / 4;
+    final apertureRatio = math.pi * diameter / wavelength;
+    final gainLinear = efficiency * apertureRatio * apertureRatio;
+    final gainDbi = 10 * math.log(gainLinear) / math.ln10;
+    final effectiveAperture =
+        gainLinear * wavelength * wavelength / (4 * math.pi);
+    final gOverT = gainDbi - 10 * math.log(systemTemp) / math.ln10;
+    final receiverNoiseTemp =
+        290 * (math.pow(10, noiseFigure / 10).toDouble() - 1);
+    final farFieldDistance = 2 * diameterSquared / wavelength;
+    final farFieldMargin = measurementRange - farFieldDistance;
+
+    return _withWarnings(
+      [
+        context.output('wavelength', wavelength),
+        context.output('aperture_area', apertureArea),
+        context.output('antenna_gain', gainDbi),
+        context.output('effective_aperture', effectiveAperture),
+        context.output('g_over_t', gOverT),
+        context.output('receiver_noise_temp', receiverNoiseTemp),
+        context.output('far_field_distance', farFieldDistance),
+        context.output('far_field_margin', farFieldMargin),
+      ],
+      [
+        if (farFieldMargin < 0) '测量距离未达到 Fraunhofer 远场边界，方向图或链路假设可能不成立。',
+        if (gOverT < 0) 'G/T 为负，需检查天线增益、噪声温度或接收机前端假设。',
+      ],
+    );
   }
 
   static const _linkBudget = TelemetryCalculatorDefinition(

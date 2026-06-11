@@ -272,6 +272,13 @@ class UnitCatalog {
       toBase: _identity,
       fromBase: _identity,
     ),
+    'dB_K': const EngineeringUnit(
+      id: 'dB_K',
+      label: 'dB/K',
+      dimension: QuantityDimension.gain,
+      toBase: _identity,
+      fromBase: _identity,
+    ),
     'K': const EngineeringUnit(
       id: 'K',
       label: 'K',
