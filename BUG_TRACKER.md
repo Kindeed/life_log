@@ -1,6 +1,6 @@
 # LifeLog BUG Tracker
 
-**Last updated**: 2026-06-09
+**Last updated**: 2026-06-11
 **Status values**: `open`, `in_progress`, `fixed`, `deferred`, `invalidated`
 
 This is the active defect ledger. `REVIEW_REPORT.md` is historical context only. Photo sync findings from older reports are superseded by `AGENTS.md`: photos remain local-only and must not enter Supabase sync.
@@ -305,3 +305,6 @@ This is the active defect ledger. `REVIEW_REPORT.md` is historical context only.
 | U107 | Medium | fixed | UI layout | 真机反馈发现短输出瓦片中的单位胶囊没有贴近瓦片最右侧，原因是窄瓦片内容按自身宽度收缩，值/单位组没有占满剩余空间。 | Fixed: `_AdaptiveResultTile` now gives the value/unit group the remaining row space and keeps the group right-aligned while allowing the value text to scale down before overflow. |
 | U108 | Medium | fixed | UI style | 真机反馈发现输入面板仍是中性灰，与输出面板的主题强调背景不统一，导致同一工作台左右层级不一致。 | Fixed: input workbench panes now use the same emphasized category-tinted pane treatment as output panes. |
 | U109 | Medium | fixed | UI layout | 真机反馈发现输入行标签被右侧控件挤压，只能显示“发射...”等省略文本，参数含义不可读。 | Fixed: compact input rows now avoid half-width tiles until the half tile is wide enough, right controls are bounded, and numeric/expression input text uses the foreground color for clearer contrast. |
+| U110 | Medium | fixed | telemetry output layout | 真机反馈发现短输出瓦片中的单位胶囊被压空或显示不全，例如 `EIRP` 右侧 `dBW` 在窄屏两列布局中不可读。 | Fixed: output unit pills now reserve a minimum readable width, no longer ellipsize unit labels, and short-output classification is more conservative so value and unit do not fight for too little width. |
+| U111 | Medium | fixed | telemetry input style | 真机反馈发现输入瓦片背景颜色仍与输出瓦片不一致，输入区在强调面板内显得偏灰/偏红，和输出结果瓦片的类别色层级不统一。 | Fixed: compact input shells now receive the calculator category color and use the same `Color.alphaBlend(color.withValues(alpha: 0.06), semantic.mutedSurface)` treatment as output tiles. |
+| U112 | High | fixed | telemetry unit conversion | 真机反馈发现切换输入单位时只替换单位标签，不会把原数值等值换算到新单位，例如 `10 dBW` 切到 `dBm` 后应显示 `40 dBm`。 | Fixed: `_updateUnit` now converts the current numeric value through `UnitCatalog.convert`, writes the converted text back to the active controller, and recalculates from the converted value. |

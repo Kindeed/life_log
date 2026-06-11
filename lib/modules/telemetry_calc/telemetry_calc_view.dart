@@ -445,14 +445,14 @@ class _TelemetryCalcDetailViewState extends State<TelemetryCalcDetailView> {
                       primaryInputs: [
                         for (final input in orderedPrimaryInputs)
                           _CompactInputItem(
-                            child: _buildCompactInput(input),
+                            child: _buildCompactInput(input, color),
                             isShort: _isShortInput(input),
                           ),
                       ],
                       advancedInputs: [
                         for (final input in orderedAdvancedInputs)
                           _CompactInputItem(
-                            child: _buildCompactInput(input),
+                            child: _buildCompactInput(input, color),
                             isShort: _isShortInput(input),
                           ),
                       ],
@@ -470,23 +470,26 @@ class _TelemetryCalcDetailViewState extends State<TelemetryCalcDetailView> {
     );
   }
 
-  Widget _buildCompactInput(TelemetryInputDefinition input) {
+  Widget _buildCompactInput(TelemetryInputDefinition input, Color color) {
     return switch (input.kind) {
       TelemetryInputKind.number => _CompactNumberInput(
         input: input,
         value: _values[input.id]!,
         controller: _controllers[input.id]!,
+        color: color,
         onChanged: _updateNumber,
         onUnitChanged: _updateUnit,
       ),
       TelemetryInputKind.select => _CompactSelectInput(
         input: input,
         selectedId: _values[input.id]!.optionId ?? input.defaultOptionId ?? '',
+        color: color,
         onChanged: _updateOption,
       ),
       TelemetryInputKind.expression => _CompactExpressionInput(
         input: input,
         controller: _controllers[input.id]!,
+        color: color,
         onChanged: _updateExpression,
       ),
     };
@@ -508,10 +511,16 @@ class _TelemetryCalcDetailViewState extends State<TelemetryCalcDetailView> {
 
   void _updateUnit(String id, String unitId) {
     final old = _values[id]!;
+    final convertedValue = old.value == null
+        ? null
+        : UnitCatalog.convert(old.value!, old.unitId, unitId);
+    if (convertedValue != null) {
+      _controllers[id]?.text = _formatInputNumber(convertedValue);
+    }
     _values = {
       ..._values,
       id: TelemetryInputValue(
-        value: old.value,
+        value: convertedValue,
         unitId: unitId,
         optionId: old.optionId,
         text: old.text,
@@ -1563,7 +1572,8 @@ class _CompactResultPanel extends StatelessWidget {
         LayoutBuilder(
           builder: (context, constraints) {
             final gap = AppSpacing.sm.w;
-            final canUseTwoColumns = constraints.maxWidth >= 260.w;
+            final halfTileWidth = (constraints.maxWidth - gap) / 2;
+            final canUseTwoColumns = halfTileWidth >= 220;
             final shortOutputs = result.outputs
                 .where(_isShortOutput)
                 .toList(growable: false);
@@ -1579,7 +1589,7 @@ class _CompactResultPanel extends StatelessWidget {
                 for (final output in orderedOutputs)
                   SizedBox(
                     width: canUseTwoColumns && _isShortOutput(output)
-                        ? (constraints.maxWidth - gap) / 2
+                        ? halfTileWidth
                         : constraints.maxWidth,
                     child: _AdaptiveResultTile(output: output, color: color),
                   ),
@@ -1626,9 +1636,7 @@ class _AdaptiveResultTile extends StatelessWidget {
             children: [
               Expanded(child: _ResultLabel(output: output)),
               SizedBox(width: AppSpacing.sm.w),
-              Flexible(
-                child: _ResultValue(output: output, color: statusColor),
-              ),
+              _ResultValue(output: output, color: statusColor),
             ],
           ),
         );
@@ -1685,33 +1693,31 @@ class _ResultValue extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     return Row(
-      mainAxisAlignment: MainAxisAlignment.end,
+      mainAxisSize: MainAxisSize.min,
       children: [
-        Flexible(
-          child: ConstrainedBox(
-            constraints: BoxConstraints(maxWidth: 88.w),
-            child: FittedBox(
-              fit: BoxFit.scaleDown,
-              alignment: Alignment.centerRight,
-              child: Text(
-                output.displayValue,
-                maxLines: 1,
+        ConstrainedBox(
+          constraints: const BoxConstraints(maxWidth: 88),
+          child: FittedBox(
+            fit: BoxFit.scaleDown,
+            alignment: Alignment.centerRight,
+            child: Text(
+              output.displayValue,
+              maxLines: 1,
                 style: TextStyle(
                   color: color,
-                  fontSize: 15.sp,
+                  fontSize: 15,
                   fontWeight: FontWeight.w800,
                   fontFamily: 'Roboto',
                   height: 1,
-                ),
               ),
             ),
           ),
         ),
         if (output.unitLabel.isNotEmpty) ...[
           SizedBox(width: AppSpacing.xs.w),
-          Flexible(
+          IntrinsicWidth(
             child: Container(
-              constraints: BoxConstraints(maxWidth: 58.w),
+              constraints: const BoxConstraints(minWidth: 34),
               padding: EdgeInsets.symmetric(
                 horizontal: AppSpacing.xs.w,
                 vertical: AppSpacing.xs.h,
@@ -1724,11 +1730,10 @@ class _ResultValue extends StatelessWidget {
               child: Text(
                 output.unitLabel,
                 maxLines: 1,
-                overflow: TextOverflow.ellipsis,
                 textAlign: TextAlign.center,
                 style: TextStyle(
                   color: theme.colorScheme.onSurface,
-                  fontSize: 11.sp,
+                  fontSize: 11,
                   fontWeight: FontWeight.w700,
                   fontFamily: 'Roboto',
                   height: 1,
@@ -1747,7 +1752,7 @@ bool _isShortOutput(TelemetryCalculationOutput output) {
       _calculateTextWidthScore(output.label) +
       _calculateTextWidthScore(output.displayValue) +
       _calculateTextWidthScore(output.unitLabel);
-  return lengthScore < 16 && output.unitLabel.length <= 4;
+  return lengthScore < 12 && output.unitLabel.length <= 4;
 }
 
 bool _isShortInput(TelemetryInputDefinition input) {
@@ -2153,6 +2158,7 @@ class _CompactNumberInput extends StatefulWidget {
   final TelemetryInputDefinition input;
   final TelemetryInputValue value;
   final TextEditingController controller;
+  final Color color;
   final void Function(String id, String text) onChanged;
   final void Function(String id, String unitId) onUnitChanged;
 
@@ -2160,6 +2166,7 @@ class _CompactNumberInput extends StatefulWidget {
     required this.input,
     required this.value,
     required this.controller,
+    required this.color,
     required this.onChanged,
     required this.onUnitChanged,
   });
@@ -2188,6 +2195,7 @@ class _CompactNumberInputState extends State<_CompactNumberInput> {
       helper: widget.input.helper,
       invalid: invalid,
       focusNode: _focusNode,
+      color: widget.color,
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
@@ -2234,11 +2242,13 @@ class _CompactNumberInputState extends State<_CompactNumberInput> {
 class _CompactSelectInput extends StatelessWidget {
   final TelemetryInputDefinition input;
   final String selectedId;
+  final Color color;
   final void Function(String id, String optionId) onChanged;
 
   const _CompactSelectInput({
     required this.input,
     required this.selectedId,
+    required this.color,
     required this.onChanged,
   });
 
@@ -2251,6 +2261,7 @@ class _CompactSelectInput extends StatelessWidget {
     return _CompactInputShell(
       label: input.label,
       helper: input.helper,
+      color: color,
       child: _OptionMenuButton(
         selected: selected,
         options: input.options,
@@ -2263,11 +2274,13 @@ class _CompactSelectInput extends StatelessWidget {
 class _CompactExpressionInput extends StatefulWidget {
   final TelemetryInputDefinition input;
   final TextEditingController controller;
+  final Color color;
   final void Function(String id, String text) onChanged;
 
   const _CompactExpressionInput({
     required this.input,
     required this.controller,
+    required this.color,
     required this.onChanged,
   });
 
@@ -2292,6 +2305,7 @@ class _CompactExpressionInputState extends State<_CompactExpressionInput> {
       label: widget.input.label,
       helper: widget.input.helper,
       focusNode: _focusNode,
+      color: widget.color,
       child: SizedBox(
         width: 120,
         child: TextField(
@@ -2324,11 +2338,13 @@ class _CompactInputShell extends StatefulWidget {
   final bool invalid;
   final FocusNode? focusNode;
   final Widget child;
+  final Color color;
 
   const _CompactInputShell({
     required this.label,
     required this.helper,
     required this.child,
+    required this.color,
     this.invalid = false,
     this.focusNode,
   });
@@ -2378,13 +2394,17 @@ class _CompactInputShellState extends State<_CompactInputShell> {
         : _focused
         ? theme.colorScheme.primary
         : semantic.border;
+    final tileColor = Color.alphaBlend(
+      widget.color.withValues(alpha: 0.06),
+      semantic.mutedSurface,
+    );
     return Container(
       padding: EdgeInsets.symmetric(
         horizontal: AppSpacing.md.w,
         vertical: AppSpacing.sm.h,
       ),
       decoration: BoxDecoration(
-        color: semantic.mutedSurface,
+        color: tileColor,
         borderRadius: BorderRadius.circular(AppRadius.lg),
         border: Border.all(color: borderColor, width: _focused ? 1.5 : 1),
       ),

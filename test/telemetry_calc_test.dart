@@ -520,6 +520,33 @@ void main() {
       expect(adaptiveResultTile, contains('FittedBox'));
     });
 
+    test('keeps compact result unit labels readable', () {
+      final source = File(
+        'lib/modules/telemetry_calc/telemetry_calc_view.dart',
+      ).readAsStringSync();
+      final resultValue = RegExp(
+        r'class _ResultValue[\s\S]*?bool _isShortOutput',
+      ).firstMatch(source)!.group(0)!;
+
+      expect(resultValue, contains('minWidth'));
+      expect(resultValue, contains('IntrinsicWidth'));
+      expect(resultValue, isNot(contains('maxWidth: 58.w')));
+      expect(resultValue, isNot(contains('overflow: TextOverflow.ellipsis')));
+    });
+
+    test('tints compact input shells like result tiles', () {
+      final source = File(
+        'lib/modules/telemetry_calc/telemetry_calc_view.dart',
+      ).readAsStringSync();
+      final compactInputShell = RegExp(
+        r'class _CompactInputShell[\s\S]*?class _UnitMenuButton',
+      ).firstMatch(source)!.group(0)!;
+
+      expect(compactInputShell, contains('final Color color'));
+      expect(compactInputShell, contains('Color.alphaBlend'));
+      expect(compactInputShell, contains('color.withValues(alpha: 0.06)'));
+    });
+
     test('uses compact inline adaptive input and output ordering helpers', () {
       final source = File(
         'lib/modules/telemetry_calc/telemetry_calc_view.dart',
@@ -636,6 +663,65 @@ void main() {
         expect(tester.takeException(), isNull);
       },
     );
+
+    testWidgets('converts current numeric value when switching units', (
+      tester,
+    ) async {
+      tester.view.physicalSize = const Size(390, 844);
+      tester.view.devicePixelRatio = 1;
+      addTearDown(tester.view.resetPhysicalSize);
+      addTearDown(tester.view.resetDevicePixelRatio);
+
+      final definition = TelemetryCalculatorRegistry.byId('link_budget');
+      await tester.pumpWidget(
+        ScreenUtilInit(
+          designSize: const Size(375, 812),
+          builder: (context, child) => GetMaterialApp(
+            theme: AppTheme.lightWith(null),
+            home: TelemetryCalcDetailView(definition: definition),
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      final scrollable = find
+          .byWidgetPredicate(
+            (widget) =>
+                widget is Scrollable && widget.axisDirection == AxisDirection.down,
+          )
+          .first;
+      await tester.scrollUntilVisible(
+        find.text('发射机输出功率'),
+        120,
+        scrollable: scrollable,
+        maxScrolls: 8,
+      );
+      await tester.pumpAndSettle();
+
+      expect(
+        find.byWidgetPredicate(
+          (widget) =>
+              widget is EditableText &&
+              double.tryParse(widget.controller.text) == 10,
+        ),
+        findsOneWidget,
+      );
+
+      await tester.tap(find.text('dBW').last);
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('dBm').last);
+      await tester.pumpAndSettle();
+
+      expect(
+        find.byWidgetPredicate(
+          (widget) =>
+              widget is EditableText &&
+              double.tryParse(widget.controller.text) == 40,
+        ),
+        findsOneWidget,
+      );
+      expect(tester.takeException(), isNull);
+    });
 
     testWidgets(
       'renders linked input output workbench before formula support',
@@ -807,14 +893,6 @@ void main() {
       expect(find.byKey(const ValueKey('compactInsightBar')), findsOneWidget);
       expect(find.textContaining('Eb/N0'), findsWidgets);
 
-      final eirpTile = tester.getSize(
-        find
-            .ancestor(
-              of: find.text('EIRP'),
-              matching: find.byKey(const ValueKey('adaptiveResultTile')),
-            )
-            .first,
-      );
       final eirpTileFinder = find
           .ancestor(
             of: find.text('EIRP'),
@@ -825,15 +903,10 @@ void main() {
       final eirpUnitRect = tester.getRect(
         find.descendant(of: eirpTileFinder, matching: find.text('dBW')).first,
       );
-      final fsplTile = tester.getSize(
-        find
-            .ancestor(
-              of: find.text('自由空间损耗'),
-              matching: find.byKey(const ValueKey('adaptiveResultTile')),
-            )
-            .first,
+      final eirpUnitSize = tester.getSize(
+        find.descendant(of: eirpTileFinder, matching: find.text('dBW')).first,
       );
-      expect(fsplTile.width, greaterThan(eirpTile.width * 1.4));
+      expect(eirpUnitSize.width, greaterThan(20));
       expect((eirpTileRect.right - eirpUnitRect.right).abs(), lessThan(16));
       expect(tester.takeException(), isNull);
     });
