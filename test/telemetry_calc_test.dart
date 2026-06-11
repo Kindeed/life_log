@@ -547,6 +547,24 @@ void main() {
       expect(compactInputShell, contains('color.withValues(alpha: 0.06)'));
     });
 
+    test('uses one compact tile width rule for input and output grids', () {
+      final source = File(
+        'lib/modules/telemetry_calc/telemetry_calc_view.dart',
+      ).readAsStringSync();
+      final inputGrid = RegExp(
+        r'class _CompactInputGrid[\s\S]*?class _CompactResultPanel',
+      ).firstMatch(source)!.group(0)!;
+      final resultPanel = RegExp(
+        r'class _CompactResultPanel[\s\S]*?class _AdaptiveResultTile',
+      ).firstMatch(source)!.group(0)!;
+
+      expect(source, contains('_compactTileWidth'));
+      expect(source, contains('_compactTileTwoColumnMinWidth'));
+      expect(inputGrid, contains('_compactTileWidth('));
+      expect(resultPanel, contains('_compactTileWidth('));
+      expect(source, isNot(contains('halfTileWidth >= 220')));
+    });
+
     test('uses compact inline adaptive input and output ordering helpers', () {
       final source = File(
         'lib/modules/telemetry_calc/telemetry_calc_view.dart',

@@ -1407,6 +1407,19 @@ class _CompactInputItem {
   const _CompactInputItem({required this.child, required this.isShort});
 }
 
+const double _compactTileTwoColumnMinWidth = 240;
+
+double _compactTileWidth({
+  required double maxWidth,
+  required double gap,
+  required bool isShort,
+}) {
+  final halfTileWidth = (maxWidth - gap) / 2;
+  return isShort && halfTileWidth >= _compactTileTwoColumnMinWidth
+      ? halfTileWidth
+      : maxWidth;
+}
+
 class _CalculationWorkbench extends StatelessWidget {
   static const _twoColumnMinWidth = AppBreakpoints.tabletMin - 40;
 
@@ -1523,8 +1536,6 @@ class _CompactInputGrid extends StatelessWidget {
     return LayoutBuilder(
       builder: (context, constraints) {
         final gap = AppSpacing.sm.w;
-        final halfTileWidth = (constraints.maxWidth - gap) / 2;
-        final canUseTwoColumns = halfTileWidth >= 240;
         return Wrap(
           key: const ValueKey('compactInputTileWrap'),
           spacing: gap,
@@ -1532,9 +1543,11 @@ class _CompactInputGrid extends StatelessWidget {
           children: [
             for (final item in items)
               SizedBox(
-                width: canUseTwoColumns && item.isShort
-                    ? halfTileWidth
-                    : constraints.maxWidth,
+                width: _compactTileWidth(
+                  maxWidth: constraints.maxWidth,
+                  gap: gap,
+                  isShort: item.isShort,
+                ),
                 child: item.child,
               ),
           ],
@@ -1572,8 +1585,6 @@ class _CompactResultPanel extends StatelessWidget {
         LayoutBuilder(
           builder: (context, constraints) {
             final gap = AppSpacing.sm.w;
-            final halfTileWidth = (constraints.maxWidth - gap) / 2;
-            final canUseTwoColumns = halfTileWidth >= 220;
             final shortOutputs = result.outputs
                 .where(_isShortOutput)
                 .toList(growable: false);
@@ -1588,9 +1599,11 @@ class _CompactResultPanel extends StatelessWidget {
               children: [
                 for (final output in orderedOutputs)
                   SizedBox(
-                    width: canUseTwoColumns && _isShortOutput(output)
-                        ? halfTileWidth
-                        : constraints.maxWidth,
+                    width: _compactTileWidth(
+                      maxWidth: constraints.maxWidth,
+                      gap: gap,
+                      isShort: _isShortOutput(output),
+                    ),
                     child: _AdaptiveResultTile(output: output, color: color),
                   ),
               ],
