@@ -1102,6 +1102,58 @@ void main() {
       },
     );
 
+    testWidgets(
+      'keeps input and output parameter tiles the same height on mobile',
+      (tester) async {
+        tester.view.physicalSize = const Size(390, 844);
+        tester.view.devicePixelRatio = 1;
+        addTearDown(tester.view.resetPhysicalSize);
+        addTearDown(tester.view.resetDevicePixelRatio);
+
+        final definition = TelemetryCalculatorRegistry.byId('link_budget');
+        await tester.pumpWidget(
+          ScreenUtilInit(
+            designSize: const Size(375, 812),
+            builder: (context, child) => GetMaterialApp(
+              theme: AppTheme.lightWith(null),
+              home: TelemetryCalcDetailView(definition: definition),
+            ),
+          ),
+        );
+        await tester.pumpAndSettle();
+
+        final marginTile = find
+            .ancestor(
+              of: find.text('链路余量'),
+              matching: find.byKey(const ValueKey('adaptiveResultTile')),
+            )
+            .first;
+        final marginRect = tester.getRect(marginTile);
+
+        final scrollable = find
+            .byWidgetPredicate(
+              (widget) =>
+                  widget is Scrollable &&
+                  widget.axisDirection == AxisDirection.down,
+            )
+            .first;
+        await tester.scrollUntilVisible(
+          find.byKey(const ValueKey('compactInputShell:发射馈线损耗')),
+          120,
+          scrollable: scrollable,
+          maxScrolls: 8,
+        );
+        await tester.pumpAndSettle();
+
+        final feedLossRect = tester.getRect(
+          find.byKey(const ValueKey('compactInputShell:发射馈线损耗')),
+        );
+
+        expect((marginRect.height - feedLossRect.height).abs(), lessThan(1));
+        expect(tester.takeException(), isNull);
+      },
+    );
+
     testWidgets('keeps input and output value unit controls the same width', (
       tester,
     ) async {

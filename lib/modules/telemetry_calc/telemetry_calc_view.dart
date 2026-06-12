@@ -1390,6 +1390,7 @@ class _CompactInputItem {
 const double _compactValueUnitControlMaxWidth = 176;
 const double _compactValueUnitControlMinWidth = 112;
 const double _compactNumericFieldMaxWidth = 96;
+const double _compactParameterTileMinHeight = 46;
 
 double _compactValueUnitControlWidthFor(double availableWidth) {
   if (!availableWidth.isFinite || availableWidth <= 0) {
@@ -1594,6 +1595,9 @@ class _AdaptiveResultTile extends StatelessWidget {
         );
         return Container(
           key: const ValueKey('adaptiveResultTile'),
+          constraints: const BoxConstraints(
+            minHeight: _compactParameterTileMinHeight,
+          ),
           padding: EdgeInsets.symmetric(
             horizontal: horizontalPadding,
             vertical: AppSpacing.sm.h,
@@ -1993,6 +1997,7 @@ class _CompactNumberInputState extends State<_CompactNumberInput> {
                   ),
                   decoration: const InputDecoration(
                     isDense: true,
+                    isCollapsed: true,
                     border: InputBorder.none,
                     contentPadding: EdgeInsets.zero,
                   ),
@@ -2191,6 +2196,9 @@ class _CompactInputShellState extends State<_CompactInputShell> {
               );
         return Container(
           key: ValueKey('compactInputShell:${widget.label}'),
+          constraints: const BoxConstraints(
+            minHeight: _compactParameterTileMinHeight,
+          ),
           padding: EdgeInsets.symmetric(
             horizontal: horizontalPadding,
             vertical: AppSpacing.sm.h,
@@ -2276,7 +2284,7 @@ class _UnitMenuButton extends StatelessWidget {
         ),
         padding: EdgeInsets.symmetric(
           horizontal: compact ? AppSpacing.xs.w : AppSpacing.md.w,
-          vertical: compact ? AppSpacing.sm.h : AppSpacing.sm.h,
+          vertical: compact ? AppSpacing.xs.h : AppSpacing.sm.h,
         ),
         decoration: BoxDecoration(
           color: theme.cardColor,
