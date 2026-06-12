@@ -374,23 +374,6 @@ class _TelemetryCalcDetailViewState extends State<TelemetryCalcDetailView> {
     final advancedInputs = widget.definition.inputs
         .where((input) => input.advanced)
         .toList(growable: false);
-    final shortPrimaryInputs = primaryInputs
-        .where(_isShortInput)
-        .toList(growable: false);
-    final longPrimaryInputs = primaryInputs
-        .where((input) => !_isShortInput(input))
-        .toList(growable: false);
-    final orderedPrimaryInputs = [...shortPrimaryInputs, ...longPrimaryInputs];
-    final shortAdvancedInputs = advancedInputs
-        .where(_isShortInput)
-        .toList(growable: false);
-    final longAdvancedInputs = advancedInputs
-        .where((input) => !_isShortInput(input))
-        .toList(growable: false);
-    final orderedAdvancedInputs = [
-      ...shortAdvancedInputs,
-      ...longAdvancedInputs,
-    ];
 
     return Scaffold(
       appBar: AppBar(
@@ -443,17 +426,15 @@ class _TelemetryCalcDetailViewState extends State<TelemetryCalcDetailView> {
                       result: _result,
                       color: color,
                       primaryInputs: [
-                        for (final input in orderedPrimaryInputs)
+                        for (final input in primaryInputs)
                           _CompactInputItem(
                             child: _buildCompactInput(input, color),
-                            isShort: _isShortInput(input),
                           ),
                       ],
                       advancedInputs: [
-                        for (final input in orderedAdvancedInputs)
+                        for (final input in advancedInputs)
                           _CompactInputItem(
                             child: _buildCompactInput(input, color),
-                            isShort: _isShortInput(input),
                           ),
                       ],
                       showAdvanced: _showAdvanced,
@@ -1402,22 +1383,8 @@ class _InfoPill extends StatelessWidget {
 
 class _CompactInputItem {
   final Widget child;
-  final bool isShort;
 
-  const _CompactInputItem({required this.child, required this.isShort});
-}
-
-const double _compactTileTwoColumnMinWidth = 120;
-
-double _compactTileWidth({
-  required double maxWidth,
-  required double gap,
-  required bool isShort,
-}) {
-  final halfTileWidth = (maxWidth - gap) / 2;
-  return isShort && halfTileWidth >= _compactTileTwoColumnMinWidth
-      ? halfTileWidth
-      : maxWidth;
+  const _CompactInputItem({required this.child});
 }
 
 class _CalculationWorkbench extends StatelessWidget {
@@ -1542,14 +1509,7 @@ class _CompactInputGrid extends StatelessWidget {
           runSpacing: AppSpacing.sm.h,
           children: [
             for (final item in items)
-              SizedBox(
-                width: _compactTileWidth(
-                  maxWidth: constraints.maxWidth,
-                  gap: gap,
-                  isShort: item.isShort,
-                ),
-                child: item.child,
-              ),
+              SizedBox(width: constraints.maxWidth, child: item.child),
           ],
         );
       },
@@ -1581,25 +1541,14 @@ class _CompactResultPanel extends StatelessWidget {
     return LayoutBuilder(
       builder: (context, constraints) {
         final gap = AppSpacing.sm.w;
-        final shortOutputs = result.outputs
-            .where(_isShortOutput)
-            .toList(growable: false);
-        final longOutputs = result.outputs
-            .where((output) => !_isShortOutput(output))
-            .toList(growable: false);
-        final orderedOutputs = [...shortOutputs, ...longOutputs];
         return Wrap(
           key: const ValueKey('adaptiveResultTileWrap'),
           spacing: gap,
           runSpacing: AppSpacing.sm.h,
           children: [
-            for (final output in orderedOutputs)
+            for (final output in result.outputs)
               SizedBox(
-                width: _compactTileWidth(
-                  maxWidth: constraints.maxWidth,
-                  gap: gap,
-                  isShort: _isShortOutput(output),
-                ),
+                width: constraints.maxWidth,
                 child: _AdaptiveResultTile(output: output, color: color),
               ),
           ],
@@ -1750,30 +1699,6 @@ class _ResultValue extends StatelessWidget {
       ],
     );
   }
-}
-
-bool _isShortOutput(TelemetryCalculationOutput output) {
-  final lengthScore =
-      _calculateTextWidthScore(output.label) +
-      _calculateTextWidthScore(output.displayValue) +
-      _calculateTextWidthScore(output.unitLabel);
-  return lengthScore < 12 && output.unitLabel.length <= 4;
-}
-
-bool _isShortInput(TelemetryInputDefinition input) {
-  if (input.kind == TelemetryInputKind.select) return false;
-  final lengthScore =
-      _calculateTextWidthScore(input.label) +
-      _calculateTextWidthScore(input.units.isEmpty ? '' : input.units.first);
-  return lengthScore < 16;
-}
-
-int _calculateTextWidthScore(String value) {
-  var score = 0;
-  for (final rune in value.runes) {
-    score += rune > 255 ? 2 : 1;
-  }
-  return score;
 }
 
 class _WorkbenchPane extends StatelessWidget {
@@ -2005,7 +1930,7 @@ class _CompactNumberInputState extends State<_CompactNumberInput> {
         children: [
           Flexible(
             child: SizedBox(
-              width: 48,
+              width: 96,
               child: TextField(
                 controller: widget.controller,
                 focusNode: _focusNode,
@@ -2206,6 +2131,7 @@ class _CompactInputShellState extends State<_CompactInputShell> {
       builder: (context, constraints) {
         final isTight = constraints.maxWidth < 180;
         return Container(
+          key: ValueKey('compactInputShell:${widget.label}'),
           padding: EdgeInsets.symmetric(
             horizontal: (isTight ? AppSpacing.xs : AppSpacing.md).w,
             vertical: AppSpacing.sm.h,

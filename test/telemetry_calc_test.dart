@@ -511,7 +511,7 @@ void main() {
         'lib/modules/telemetry_calc/telemetry_calc_view.dart',
       ).readAsStringSync();
       final adaptiveResultTile = RegExp(
-        r'class _AdaptiveResultTile[\s\S]*?bool _isShortOutput',
+        r'class _AdaptiveResultTile[\s\S]*?class _WorkbenchPane',
       ).firstMatch(source)!.group(0)!;
 
       expect(adaptiveResultTile, contains('AppRadius.lg'));
@@ -525,7 +525,7 @@ void main() {
         'lib/modules/telemetry_calc/telemetry_calc_view.dart',
       ).readAsStringSync();
       final resultValue = RegExp(
-        r'class _ResultValue[\s\S]*?bool _isShortOutput',
+        r'class _ResultValue[\s\S]*?class _WorkbenchPane',
       ).firstMatch(source)!.group(0)!;
 
       expect(resultValue, contains('minWidth'));
@@ -547,7 +547,7 @@ void main() {
       expect(compactInputShell, contains('color.withValues(alpha: 0.06)'));
     });
 
-    test('uses one compact tile width rule for input and output grids', () {
+    test('uses full-width compact tiles for input and output grids', () {
       final source = File(
         'lib/modules/telemetry_calc/telemetry_calc_view.dart',
       ).readAsStringSync();
@@ -558,41 +558,42 @@ void main() {
         r'class _CompactResultPanel[\s\S]*?class _AdaptiveResultTile',
       ).firstMatch(source)!.group(0)!;
 
-      expect(source, contains('_compactTileWidth'));
-      expect(source, contains('_compactTileTwoColumnMinWidth'));
-      expect(inputGrid, contains('_compactTileWidth('));
-      expect(resultPanel, contains('_compactTileWidth('));
-      expect(source, isNot(contains('halfTileWidth >= 220')));
+      expect(source, isNot(contains('_compactTileWidth')));
+      expect(source, isNot(contains('_compactTileTwoColumnMinWidth')));
+      expect(inputGrid, contains('width: constraints.maxWidth'));
+      expect(resultPanel, contains('width: constraints.maxWidth'));
     });
 
-    test('uses compact inline adaptive input and output ordering helpers', () {
-      final source = File(
-        'lib/modules/telemetry_calc/telemetry_calc_view.dart',
-      ).readAsStringSync();
-      final compactInputShell = RegExp(
-        r'class _CompactInputShell[\s\S]*?class _UnitMenuButton',
-      ).firstMatch(source)!.group(0)!;
-      final adaptiveResultTile = RegExp(
-        r'class _AdaptiveResultTile[\s\S]*?int _calculateTextWidthScore',
-      ).firstMatch(source)!.group(0)!;
+    test(
+      'keeps compact inline input and output helpers without width sorting',
+      () {
+        final source = File(
+          'lib/modules/telemetry_calc/telemetry_calc_view.dart',
+        ).readAsStringSync();
+        final compactInputShell = RegExp(
+          r'class _CompactInputShell[\s\S]*?class _UnitMenuButton',
+        ).firstMatch(source)!.group(0)!;
+        final adaptiveResultTile = RegExp(
+          r'class _AdaptiveResultTile[\s\S]*?class _WorkbenchPane',
+        ).firstMatch(source)!.group(0)!;
 
-      expect(source, contains('_calculateTextWidthScore'));
-      expect(source, contains('bool _isShortInput'));
-      expect(source, contains('bool _isShortOutput'));
-      expect(source, contains('final orderedPrimaryInputs'));
-      expect(source, contains('final orderedOutputs'));
-      expect(source, contains('shortPrimaryInputs'));
-      expect(source, contains('shortOutputs'));
-      expect(source, contains('showDragHandle: true'));
-      expect(source, contains("ValueKey('telemetryCalcSearchClear')"));
-      expect(compactInputShell, contains('focusNode'));
-      expect(compactInputShell, contains('hasFocus'));
-      expect(compactInputShell, contains('child: Row('));
-      expect(compactInputShell, isNot(contains('child: Column(')));
-      expect(adaptiveResultTile, contains('Tooltip('));
-      expect(adaptiveResultTile, contains('child: Row('));
-      expect(adaptiveResultTile, isNot(contains('child: Column(')));
-    });
+        expect(source, isNot(contains('_calculateTextWidthScore')));
+        expect(source, isNot(contains('bool _isShortInput')));
+        expect(source, isNot(contains('bool _isShortOutput')));
+        expect(source, isNot(contains('shortPrimaryInputs')));
+        expect(source, isNot(contains('shortOutputs')));
+        expect(source, contains('showDragHandle: true'));
+        expect(source, contains("ValueKey('telemetryCalcSearchClear')"));
+        expect(compactInputShell, contains('focusNode'));
+        expect(compactInputShell, contains('hasFocus'));
+        expect(compactInputShell, contains("ValueKey('compactInputShell:"));
+        expect(compactInputShell, contains('child: Row('));
+        expect(compactInputShell, isNot(contains('child: Column(')));
+        expect(adaptiveResultTile, contains('Tooltip('));
+        expect(adaptiveResultTile, contains('child: Row('));
+        expect(adaptiveResultTile, isNot(contains('child: Column(')));
+      },
+    );
 
     test('keeps compact telemetry input pane visually aligned', () {
       final source = File(
@@ -911,19 +912,37 @@ void main() {
       expect(find.byKey(const ValueKey('compactInsightBar')), findsNothing);
       expect(find.textContaining('Eb/N0'), findsWidgets);
 
+      final gtTileFinder = find
+          .ancestor(
+            of: find.text('G/T'),
+            matching: find.byKey(const ValueKey('adaptiveResultTile')),
+          )
+          .first;
       final eirpTileFinder = find
           .ancestor(
             of: find.text('EIRP'),
             matching: find.byKey(const ValueKey('adaptiveResultTile')),
           )
           .first;
+      final fsplTileFinder = find
+          .ancestor(
+            of: find.text('自由空间损耗'),
+            matching: find.byKey(const ValueKey('adaptiveResultTile')),
+          )
+          .first;
+      final gtTileRect = tester.getRect(gtTileFinder);
       final eirpTileRect = tester.getRect(eirpTileFinder);
+      final fsplTileRect = tester.getRect(fsplTileFinder);
       final eirpUnitRect = tester.getRect(
         find.descendant(of: eirpTileFinder, matching: find.text('dBW')).first,
       );
       final eirpUnitSize = tester.getSize(
         find.descendant(of: eirpTileFinder, matching: find.text('dBW')).first,
       );
+      expect((gtTileRect.left - eirpTileRect.left).abs(), lessThan(1));
+      expect((gtTileRect.right - eirpTileRect.right).abs(), lessThan(1));
+      expect((fsplTileRect.left - eirpTileRect.left).abs(), lessThan(1));
+      expect((fsplTileRect.right - eirpTileRect.right).abs(), lessThan(1));
       expect(eirpUnitSize.width, greaterThan(20));
       expect((eirpTileRect.right - eirpUnitRect.right).abs(), lessThan(16));
       expect(tester.takeException(), isNull);
@@ -966,7 +985,9 @@ void main() {
       expect(tester.takeException(), isNull);
     });
 
-    testWidgets('pairs short link-budget inputs on mobile', (tester) async {
+    testWidgets('keeps all link-budget input tiles full-width on mobile', (
+      tester,
+    ) async {
       tester.view.physicalSize = const Size(360, 780);
       tester.view.devicePixelRatio = 1;
       addTearDown(tester.view.resetPhysicalSize);
@@ -999,10 +1020,65 @@ void main() {
       );
       await tester.pumpAndSettle();
 
-      final txFeedLossRect = tester.getRect(find.text('发射馈线损耗'));
-      final txAntennaGainRect = tester.getRect(find.text('发射天线增益'));
-      expect((txFeedLossRect.top - txAntennaGainRect.top).abs(), lessThan(8));
-      expect(txAntennaGainRect.left, greaterThan(txFeedLossRect.left + 80));
+      final feedLossTile = find.byKey(
+        const ValueKey('compactInputShell:发射馈线损耗'),
+      );
+      final antennaGainTile = find.byKey(
+        const ValueKey('compactInputShell:发射天线增益'),
+      );
+      final distanceTile = find.byKey(const ValueKey('compactInputShell:链路距离'));
+      final feedLossRect = tester.getRect(feedLossTile);
+      final antennaGainRect = tester.getRect(antennaGainTile);
+      final distanceRect = tester.getRect(distanceTile);
+      expect((feedLossRect.left - antennaGainRect.left).abs(), lessThan(1));
+      expect((feedLossRect.right - antennaGainRect.right).abs(), lessThan(1));
+      expect((feedLossRect.left - distanceRect.left).abs(), lessThan(1));
+      expect((feedLossRect.right - distanceRect.right).abs(), lessThan(1));
+      expect(tester.takeException(), isNull);
+    });
+
+    testWidgets('keeps converted long frequency values editable on mobile', (
+      tester,
+    ) async {
+      tester.view.physicalSize = const Size(360, 780);
+      tester.view.devicePixelRatio = 1;
+      addTearDown(tester.view.resetPhysicalSize);
+      addTearDown(tester.view.resetDevicePixelRatio);
+
+      final definition = TelemetryCalculatorRegistry.byId('link_budget');
+      await tester.pumpWidget(
+        ScreenUtilInit(
+          designSize: const Size(375, 812),
+          builder: (context, child) => GetMaterialApp(
+            theme: AppTheme.lightWith(null),
+            home: TelemetryCalcDetailView(definition: definition),
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      final scrollable = find
+          .byWidgetPredicate(
+            (widget) =>
+                widget is Scrollable &&
+                widget.axisDirection == AxisDirection.down,
+          )
+          .first;
+      await tester.scrollUntilVisible(
+        find.text('载波频率'),
+        120,
+        scrollable: scrollable,
+        maxScrolls: 8,
+      );
+      await tester.pumpAndSettle();
+
+      await tester.tap(find.text('GHz').last);
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('kHz').last);
+      await tester.pumpAndSettle();
+
+      expect(find.text('2200000'), findsOneWidget);
+      expect(find.text('kHz'), findsWidgets);
       expect(tester.takeException(), isNull);
     });
 
