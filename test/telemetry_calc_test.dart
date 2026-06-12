@@ -501,7 +501,7 @@ void main() {
 
       expect(compactInputShell, contains('AppRadius.lg'));
       expect(compactInputShell, contains('semantic.mutedSurface'));
-      expect(compactInputShell, contains('AppSpacing.md'));
+      expect(compactInputShell, contains('AppSpacing.xs'));
       expect(compactInputShell, contains('AppSpacing.sm'));
       expect(compactInputShell, isNot(contains('withValues(alpha: 0.62)')));
     });
@@ -981,7 +981,15 @@ void main() {
       );
       await tester.pumpAndSettle();
 
-      expect(tester.getSize(find.text('发射机输出功率')).width, greaterThan(90));
+      final shellRect = tester.getRect(
+        find.byKey(const ValueKey('compactInputShell:发射机输出功率')),
+      );
+      final controlRect = tester.getRect(
+        find.byKey(const ValueKey('compactValueUnitControl:发射机输出功率')),
+      );
+      expect(controlRect.width, greaterThan(150));
+      expect(controlRect.right, lessThanOrEqualTo(shellRect.right));
+      expect(controlRect.left - shellRect.left, greaterThan(120));
       expect(tester.takeException(), isNull);
     });
 
@@ -1034,6 +1042,121 @@ void main() {
       expect((feedLossRect.right - antennaGainRect.right).abs(), lessThan(1));
       expect((feedLossRect.left - distanceRect.left).abs(), lessThan(1));
       expect((feedLossRect.right - distanceRect.right).abs(), lessThan(1));
+      expect(tester.takeException(), isNull);
+    });
+
+    testWidgets(
+      'keeps input and output parameter tiles the same width on mobile',
+      (tester) async {
+        tester.view.devicePixelRatio = 1;
+        addTearDown(tester.view.resetPhysicalSize);
+        addTearDown(tester.view.resetDevicePixelRatio);
+
+        Future<void> expectTileWidthsMatch(Size viewportSize) async {
+          tester.view.physicalSize = viewportSize;
+          final definition = TelemetryCalculatorRegistry.byId('link_budget');
+          await tester.pumpWidget(
+            ScreenUtilInit(
+              designSize: const Size(375, 812),
+              builder: (context, child) => GetMaterialApp(
+                theme: AppTheme.lightWith(null),
+                home: TelemetryCalcDetailView(definition: definition),
+              ),
+            ),
+          );
+          await tester.pumpAndSettle();
+
+          final outputTile = find
+              .ancestor(
+                of: find.text('EIRP'),
+                matching: find.byKey(const ValueKey('adaptiveResultTile')),
+              )
+              .first;
+          final outputRect = tester.getRect(outputTile);
+          final scrollable = find
+              .byWidgetPredicate(
+                (widget) =>
+                    widget is Scrollable &&
+                    widget.axisDirection == AxisDirection.down,
+              )
+              .first;
+          await tester.scrollUntilVisible(
+            find.byKey(const ValueKey('compactInputShell:发射机输出功率')),
+            120,
+            scrollable: scrollable,
+            maxScrolls: 8,
+          );
+          await tester.pumpAndSettle();
+
+          final inputRect = tester.getRect(
+            find.byKey(const ValueKey('compactInputShell:发射机输出功率')),
+          );
+          expect((outputRect.left - inputRect.left).abs(), lessThan(1));
+          expect((outputRect.right - inputRect.right).abs(), lessThan(1));
+          expect((outputRect.width - inputRect.width).abs(), lessThan(1));
+        }
+
+        await expectTileWidthsMatch(const Size(390, 844));
+        await expectTileWidthsMatch(const Size(360, 780));
+        expect(tester.takeException(), isNull);
+      },
+    );
+
+    testWidgets('keeps input and output value unit controls the same width', (
+      tester,
+    ) async {
+      tester.view.physicalSize = const Size(390, 844);
+      tester.view.devicePixelRatio = 1;
+      addTearDown(tester.view.resetPhysicalSize);
+      addTearDown(tester.view.resetDevicePixelRatio);
+
+      final definition = TelemetryCalculatorRegistry.byId('link_budget');
+      await tester.pumpWidget(
+        ScreenUtilInit(
+          designSize: const Size(375, 812),
+          builder: (context, child) => GetMaterialApp(
+            theme: AppTheme.lightWith(null),
+            home: TelemetryCalcDetailView(definition: definition),
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      final outputControlRect = tester.getRect(
+        find.byKey(const ValueKey('compactValueUnitControl:EIRP')),
+      );
+
+      final scrollable = find
+          .byWidgetPredicate(
+            (widget) =>
+                widget is Scrollable &&
+                widget.axisDirection == AxisDirection.down,
+          )
+          .first;
+      await tester.scrollUntilVisible(
+        find.byKey(const ValueKey('compactInputShell:发射机输出功率')),
+        120,
+        scrollable: scrollable,
+        maxScrolls: 8,
+      );
+      await tester.pumpAndSettle();
+
+      final inputControlRect = tester.getRect(
+        find.byKey(const ValueKey('compactValueUnitControl:发射机输出功率')),
+      );
+
+      expect(
+        (outputControlRect.left - inputControlRect.left).abs(),
+        lessThan(1),
+      );
+      expect(
+        (outputControlRect.right - inputControlRect.right).abs(),
+        lessThan(1),
+      );
+      expect(
+        (outputControlRect.width - inputControlRect.width).abs(),
+        lessThan(1),
+      );
       expect(tester.takeException(), isNull);
     });
 

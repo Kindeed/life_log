@@ -1387,6 +1387,20 @@ class _CompactInputItem {
   const _CompactInputItem({required this.child});
 }
 
+const double _compactValueUnitControlMaxWidth = 176;
+const double _compactValueUnitControlMinWidth = 112;
+const double _compactNumericFieldMaxWidth = 96;
+
+double _compactValueUnitControlWidthFor(double availableWidth) {
+  if (!availableWidth.isFinite || availableWidth <= 0) {
+    return _compactValueUnitControlMaxWidth;
+  }
+  return (availableWidth * 0.54).clamp(
+    _compactValueUnitControlMinWidth,
+    _compactValueUnitControlMaxWidth,
+  );
+}
+
 class _CalculationWorkbench extends StatelessWidget {
   static const _twoColumnMinWidth = AppBreakpoints.tabletMin - 40;
 
@@ -1442,7 +1456,7 @@ class _CalculationWorkbench extends StatelessWidget {
       color: color,
       emphasized: true,
       child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
+        crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
           _CompactInputGrid(items: primaryInputs),
           if (advancedInputs.isNotEmpty) ...[
@@ -1454,7 +1468,7 @@ class _CalculationWorkbench extends StatelessWidget {
               alignment: Alignment.topCenter,
               child: showAdvanced
                   ? Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
+                      crossAxisAlignment: CrossAxisAlignment.stretch,
                       children: [
                         SizedBox(height: AppSpacing.md.h),
                         _CompactInputGrid(items: advancedInputs),
@@ -1471,7 +1485,7 @@ class _CalculationWorkbench extends StatelessWidget {
       builder: (context, constraints) {
         if (constraints.maxWidth < _twoColumnMinWidth) {
           return Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
+            crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
               outputPane,
               SizedBox(height: AppSpacing.md.h),
@@ -1574,10 +1588,14 @@ class _AdaptiveResultTile extends StatelessWidget {
     );
     return LayoutBuilder(
       builder: (context, constraints) {
+        final horizontalPadding = AppSpacing.sm.w;
+        final valueUnitControlWidth = _compactValueUnitControlWidthFor(
+          constraints.maxWidth - horizontalPadding * 2,
+        );
         return Container(
           key: const ValueKey('adaptiveResultTile'),
           padding: EdgeInsets.symmetric(
-            horizontal: AppSpacing.sm.w,
+            horizontal: horizontalPadding,
             vertical: AppSpacing.sm.h,
           ),
           decoration: BoxDecoration(
@@ -1590,7 +1608,11 @@ class _AdaptiveResultTile extends StatelessWidget {
             children: [
               Expanded(child: _ResultLabel(output: output)),
               SizedBox(width: AppSpacing.sm.w),
-              _ResultValue(output: output, color: statusColor),
+              _ResultValue(
+                output: output,
+                color: statusColor,
+                width: valueUnitControlWidth,
+              ),
             ],
           ),
         );
@@ -1640,63 +1662,79 @@ class _ResultLabel extends StatelessWidget {
 class _ResultValue extends StatelessWidget {
   final TelemetryCalculationOutput output;
   final Color color;
+  final double width;
 
-  const _ResultValue({required this.output, required this.color});
+  const _ResultValue({
+    required this.output,
+    required this.color,
+    required this.width,
+  });
 
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    return Row(
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        ConstrainedBox(
-          constraints: const BoxConstraints(maxWidth: 88),
-          child: FittedBox(
-            fit: BoxFit.scaleDown,
-            alignment: Alignment.centerRight,
-            child: Text(
-              output.displayValue,
-              maxLines: 1,
-              style: TextStyle(
-                color: color,
-                fontSize: 15,
-                fontWeight: FontWeight.w800,
-                fontFamily: 'Roboto',
-                height: 1,
-              ),
-            ),
-          ),
-        ),
-        if (output.unitLabel.isNotEmpty) ...[
-          SizedBox(width: AppSpacing.xs.w),
-          IntrinsicWidth(
-            child: Container(
-              constraints: const BoxConstraints(minWidth: 34),
-              padding: EdgeInsets.symmetric(
-                horizontal: AppSpacing.xs.w,
-                vertical: AppSpacing.xs.h,
-              ),
-              decoration: BoxDecoration(
-                color: theme.cardColor.withValues(alpha: 0.72),
-                borderRadius: BorderRadius.circular(AppRadius.xs),
-                border: Border.all(color: theme.semanticColors.border),
-              ),
-              child: Text(
-                output.unitLabel,
-                maxLines: 1,
-                textAlign: TextAlign.center,
-                style: TextStyle(
-                  color: theme.colorScheme.onSurface,
-                  fontSize: 11,
-                  fontWeight: FontWeight.w700,
-                  fontFamily: 'Roboto',
-                  height: 1,
+    return SizedBox(
+      key: ValueKey('compactValueUnitControl:${output.label}'),
+      width: width,
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.end,
+        children: [
+          Expanded(
+            child: Align(
+              alignment: Alignment.centerRight,
+              child: ConstrainedBox(
+                constraints: const BoxConstraints(
+                  maxWidth: _compactNumericFieldMaxWidth,
+                ),
+                child: FittedBox(
+                  fit: BoxFit.scaleDown,
+                  alignment: Alignment.centerRight,
+                  child: Text(
+                    output.displayValue,
+                    maxLines: 1,
+                    style: TextStyle(
+                      color: color,
+                      fontSize: 15,
+                      fontWeight: FontWeight.w800,
+                      fontFamily: 'Roboto',
+                      height: 1,
+                    ),
+                  ),
                 ),
               ),
             ),
           ),
+          if (output.unitLabel.isNotEmpty) ...[
+            SizedBox(width: AppSpacing.xs.w),
+            IntrinsicWidth(
+              child: Container(
+                constraints: const BoxConstraints(minWidth: 34),
+                padding: EdgeInsets.symmetric(
+                  horizontal: AppSpacing.xs.w,
+                  vertical: AppSpacing.xs.h,
+                ),
+                decoration: BoxDecoration(
+                  color: theme.cardColor.withValues(alpha: 0.72),
+                  borderRadius: BorderRadius.circular(AppRadius.xs),
+                  border: Border.all(color: theme.semanticColors.border),
+                ),
+                child: Text(
+                  output.unitLabel,
+                  maxLines: 1,
+                  textAlign: TextAlign.center,
+                  style: TextStyle(
+                    color: theme.colorScheme.onSurface,
+                    fontSize: 11,
+                    fontWeight: FontWeight.w700,
+                    fontFamily: 'Roboto',
+                    height: 1,
+                  ),
+                ),
+              ),
+            ),
+          ],
         ],
-      ],
+      ),
     );
   }
 }
@@ -1736,7 +1774,7 @@ class _WorkbenchPane extends StatelessWidget {
         ),
       ),
       child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
+        crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
           _SectionTitle(
             title: title,
@@ -1745,7 +1783,7 @@ class _WorkbenchPane extends StatelessWidget {
             color: color,
           ),
           SizedBox(height: AppSpacing.md.h),
-          child,
+          SizedBox(width: double.infinity, child: child),
         ],
       ),
     );
@@ -1925,31 +1963,39 @@ class _CompactNumberInputState extends State<_CompactNumberInput> {
       invalid: invalid,
       focusNode: _focusNode,
       color: widget.color,
+      valueControlKey: ValueKey(
+        'compactValueUnitControl:${widget.input.label}',
+      ),
       child: Row(
-        mainAxisSize: MainAxisSize.min,
+        mainAxisAlignment: MainAxisAlignment.end,
         children: [
-          Flexible(
-            child: SizedBox(
-              width: 96,
-              child: TextField(
-                controller: widget.controller,
-                focusNode: _focusNode,
-                textAlign: TextAlign.end,
-                keyboardType: const TextInputType.numberWithOptions(
-                  decimal: true,
-                  signed: true,
+          Expanded(
+            child: Align(
+              alignment: Alignment.centerRight,
+              child: ConstrainedBox(
+                constraints: const BoxConstraints(
+                  maxWidth: _compactNumericFieldMaxWidth,
                 ),
-                onChanged: (text) => widget.onChanged(widget.input.id, text),
-                style: theme.textTheme.titleMedium?.copyWith(
-                  color: theme.colorScheme.onSurface,
-                  fontWeight: FontWeight.w700,
-                  fontFamily: 'Roboto',
-                  height: 1,
-                ),
-                decoration: const InputDecoration(
-                  isDense: true,
-                  border: InputBorder.none,
-                  contentPadding: EdgeInsets.zero,
+                child: TextField(
+                  controller: widget.controller,
+                  focusNode: _focusNode,
+                  textAlign: TextAlign.end,
+                  keyboardType: const TextInputType.numberWithOptions(
+                    decimal: true,
+                    signed: true,
+                  ),
+                  onChanged: (text) => widget.onChanged(widget.input.id, text),
+                  style: theme.textTheme.titleMedium?.copyWith(
+                    color: theme.colorScheme.onSurface,
+                    fontWeight: FontWeight.w700,
+                    fontFamily: 'Roboto',
+                    height: 1,
+                  ),
+                  decoration: const InputDecoration(
+                    isDense: true,
+                    border: InputBorder.none,
+                    contentPadding: EdgeInsets.zero,
+                  ),
                 ),
               ),
             ),
@@ -2068,6 +2114,7 @@ class _CompactInputShell extends StatefulWidget {
   final FocusNode? focusNode;
   final Widget child;
   final Color color;
+  final Key? valueControlKey;
 
   const _CompactInputShell({
     required this.label,
@@ -2076,6 +2123,7 @@ class _CompactInputShell extends StatefulWidget {
     required this.color,
     this.invalid = false,
     this.focusNode,
+    this.valueControlKey,
   });
 
   @override
@@ -2130,10 +2178,21 @@ class _CompactInputShellState extends State<_CompactInputShell> {
     return LayoutBuilder(
       builder: (context, constraints) {
         final isTight = constraints.maxWidth < 180;
+        final horizontalPadding = (isTight ? AppSpacing.xs : AppSpacing.sm).w;
+        final valueUnitControlWidth = _compactValueUnitControlWidthFor(
+          constraints.maxWidth - horizontalPadding * 2,
+        );
+        final control = widget.valueControlKey == null
+            ? widget.child
+            : SizedBox(
+                key: widget.valueControlKey,
+                width: valueUnitControlWidth,
+                child: widget.child,
+              );
         return Container(
           key: ValueKey('compactInputShell:${widget.label}'),
           padding: EdgeInsets.symmetric(
-            horizontal: (isTight ? AppSpacing.xs : AppSpacing.md).w,
+            horizontal: horizontalPadding,
             vertical: AppSpacing.sm.h,
           ),
           decoration: BoxDecoration(
@@ -2173,13 +2232,8 @@ class _CompactInputShellState extends State<_CompactInputShell> {
                   ],
                 ),
               ),
-              SizedBox(width: (isTight ? AppSpacing.xs : AppSpacing.md).w),
-              Flexible(
-                child: Align(
-                  alignment: Alignment.centerRight,
-                  child: widget.child,
-                ),
-              ),
+              SizedBox(width: (isTight ? AppSpacing.xs : AppSpacing.sm).w),
+              Align(alignment: Alignment.centerRight, child: control),
             ],
           ),
         );
