@@ -1407,7 +1407,7 @@ class _CompactInputItem {
   const _CompactInputItem({required this.child, required this.isShort});
 }
 
-const double _compactTileTwoColumnMinWidth = 140;
+const double _compactTileTwoColumnMinWidth = 120;
 
 double _compactTileWidth({
   required double maxWidth,
@@ -1443,7 +1443,7 @@ class _CalculationWorkbench extends StatelessWidget {
   Widget build(BuildContext context) {
     final outputPane = _WorkbenchPane(
       title: '输出',
-      subtitle: '含工程判断',
+      subtitle: '实时刷新',
       icon: Icons.analytics_outlined,
       color: color,
       emphasized: true,
@@ -1578,41 +1578,33 @@ class _CompactResultPanel extends StatelessWidget {
         message: result.errors.join('\n'),
       );
     }
-    final insight = _resultInsight(context, result.outputs);
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        LayoutBuilder(
-          builder: (context, constraints) {
-            final gap = AppSpacing.sm.w;
-            final shortOutputs = result.outputs
-                .where(_isShortOutput)
-                .toList(growable: false);
-            final longOutputs = result.outputs
-                .where((output) => !_isShortOutput(output))
-                .toList(growable: false);
-            final orderedOutputs = [...shortOutputs, ...longOutputs];
-            return Wrap(
-              key: const ValueKey('adaptiveResultTileWrap'),
-              spacing: gap,
-              runSpacing: AppSpacing.sm.h,
-              children: [
-                for (final output in orderedOutputs)
-                  SizedBox(
-                    width: _compactTileWidth(
-                      maxWidth: constraints.maxWidth,
-                      gap: gap,
-                      isShort: _isShortOutput(output),
-                    ),
-                    child: _AdaptiveResultTile(output: output, color: color),
-                  ),
-              ],
-            );
-          },
-        ),
-        SizedBox(height: AppSpacing.sm.h),
-        _OutputInsightPanel(insight: insight),
-      ],
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final gap = AppSpacing.sm.w;
+        final shortOutputs = result.outputs
+            .where(_isShortOutput)
+            .toList(growable: false);
+        final longOutputs = result.outputs
+            .where((output) => !_isShortOutput(output))
+            .toList(growable: false);
+        final orderedOutputs = [...shortOutputs, ...longOutputs];
+        return Wrap(
+          key: const ValueKey('adaptiveResultTileWrap'),
+          spacing: gap,
+          runSpacing: AppSpacing.sm.h,
+          children: [
+            for (final output in orderedOutputs)
+              SizedBox(
+                width: _compactTileWidth(
+                  maxWidth: constraints.maxWidth,
+                  gap: gap,
+                  isShort: _isShortOutput(output),
+                ),
+                child: _AdaptiveResultTile(output: output, color: color),
+              ),
+          ],
+        );
+      },
     );
   }
 }
@@ -1942,87 +1934,6 @@ class _StatusPanel extends StatelessWidget {
   }
 }
 
-class _ResultInsight {
-  final IconData icon;
-  final Color color;
-  final String title;
-  final String message;
-
-  const _ResultInsight({
-    required this.icon,
-    required this.color,
-    required this.title,
-    required this.message,
-  });
-}
-
-class _OutputInsightPanel extends StatelessWidget {
-  final _ResultInsight insight;
-
-  const _OutputInsightPanel({required this.insight});
-
-  @override
-  Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    return Container(
-      key: const ValueKey('compactInsightBar'),
-      width: double.infinity,
-      padding: EdgeInsets.all(AppSpacing.sm.w),
-      decoration: BoxDecoration(
-        color: insight.color.withValues(alpha: 0.08),
-        borderRadius: BorderRadius.circular(AppRadius.sm),
-        border: Border.all(color: insight.color.withValues(alpha: 0.24)),
-      ),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Icon(insight.icon, color: insight.color, size: 18.sp),
-          SizedBox(width: AppSpacing.sm.w),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  '工程判断',
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  style: TextStyle(
-                    color: insight.color,
-                    fontSize: 11.sp,
-                    fontWeight: FontWeight.w700,
-                  ),
-                ),
-                SizedBox(height: AppSpacing.xs.h),
-                Text(
-                  insight.title,
-                  maxLines: 2,
-                  overflow: TextOverflow.ellipsis,
-                  style: theme.textTheme.labelLarge?.copyWith(
-                    fontWeight: FontWeight.w700,
-                    height: 1.15,
-                  ),
-                ),
-                SizedBox(height: AppSpacing.xs.h),
-                Text(
-                  insight.message,
-                  maxLines: 3,
-                  overflow: TextOverflow.ellipsis,
-                  style: TextStyle(
-                    color: theme.colorScheme.onSurfaceVariant,
-                    fontSize: 11.sp,
-                    height: 1.3,
-                    fontWeight: FontWeight.w600,
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
 Color _outputStatusColor(
   BuildContext context,
   TelemetryCalculationOutput output,
@@ -2045,126 +1956,6 @@ String _resultSignature(TelemetryCalculationResult result) {
         (output) => '${output.id}:${output.displayValue}:${output.unitLabel}',
       )
       .join('|');
-}
-
-_ResultInsight _resultInsight(
-  BuildContext context,
-  List<TelemetryCalculationOutput> outputs,
-) {
-  final theme = Theme.of(context);
-  final margin = _findOutput(outputs, 'margin');
-  if (margin != null) {
-    return _marginInsight(
-      margin,
-      passTitle: '链路余量满足要求',
-      failTitle: '链路余量不足',
-      passColor: theme.semanticColors.success,
-      failColor: theme.colorScheme.error,
-    );
-  }
-
-  final guardMargin = _findOutput(outputs, 'guard_margin');
-  if (guardMargin != null) {
-    final passed = guardMargin.value >= 0;
-    final value = _outputValueLabel(guardMargin, absolute: !passed);
-    return _ResultInsight(
-      icon: passed
-          ? Icons.check_circle_outline_rounded
-          : Icons.warning_amber_rounded,
-      color: passed ? theme.semanticColors.success : theme.colorScheme.error,
-      title: passed ? '保护带覆盖误差' : '保护带不足',
-      message: passed ? '余量 $value，覆盖误差。' : '缺口 $value，需加保护带。',
-    );
-  }
-
-  final orbitEnergyMargin = _findOutput(outputs, 'orbit_energy_margin');
-  if (orbitEnergyMargin != null) {
-    return _marginInsight(
-      orbitEnergyMargin,
-      passTitle: '轨道能量闭合',
-      failTitle: '轨道能量不足',
-      passColor: theme.semanticColors.success,
-      failColor: theme.colorScheme.error,
-    );
-  }
-
-  final thermalLimitMargin = _findOutput(outputs, 'thermal_limit_margin');
-  if (thermalLimitMargin != null) {
-    return _marginInsight(
-      thermalLimitMargin,
-      passTitle: '热控限值满足',
-      failTitle: '热控限值超差',
-      passColor: theme.semanticColors.success,
-      failColor: theme.colorScheme.error,
-    );
-  }
-
-  final closureScore = _findOutput(outputs, 'closure_score');
-  if (closureScore != null) {
-    final passed = closureScore.value >= 0;
-    final value = _outputValueLabel(closureScore, absolute: !passed);
-    return _ResultInsight(
-      icon: passed
-          ? Icons.check_circle_outline_rounded
-          : Icons.warning_amber_rounded,
-      color: passed ? theme.semanticColors.success : theme.colorScheme.error,
-      title: passed ? '资源闭合可用' : '资源闭合不足',
-      message: passed ? '短板 $value，继续看分项。' : '缺口 $value，需调预算。',
-    );
-  }
-
-  return _ResultInsight(
-    icon: Icons.check_circle_outline_rounded,
-    color: theme.semanticColors.success,
-    title: '实时计算完成',
-    message: '结果已更新，可继续调参。',
-  );
-}
-
-_ResultInsight _marginInsight(
-  TelemetryCalculationOutput output, {
-  required String passTitle,
-  required String failTitle,
-  required Color passColor,
-  required Color failColor,
-}) {
-  final passed = output.value >= 0;
-  final value = _outputValueLabel(output);
-  final message = passed ? '余量 $value，配置可用。' : '余量 $value，需调整预算。';
-  return _ResultInsight(
-    icon: passed
-        ? Icons.check_circle_outline_rounded
-        : Icons.warning_amber_rounded,
-    color: passed ? passColor : failColor,
-    title: passed ? passTitle : failTitle,
-    message: message,
-  );
-}
-
-String _outputValueLabel(
-  TelemetryCalculationOutput output, {
-  bool absolute = false,
-}) {
-  final value = absolute ? output.value.abs() : output.value;
-  final displayValue = _formatOutputValue(value, output.precision);
-  return '$displayValue ${output.unitLabel}'.trim();
-}
-
-String _formatOutputValue(double value, int precision) {
-  if (value.abs() >= 100000 || value.abs() < 0.001 && value != 0) {
-    return value.toStringAsExponential(precision);
-  }
-  return value.toStringAsFixed(precision);
-}
-
-TelemetryCalculationOutput? _findOutput(
-  List<TelemetryCalculationOutput> outputs,
-  String id,
-) {
-  for (final output in outputs) {
-    if (output.id == id) return output;
-  }
-  return null;
 }
 
 class _CompactNumberInput extends StatefulWidget {

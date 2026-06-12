@@ -847,7 +847,7 @@ void main() {
       expect(tester.takeException(), isNull);
     });
 
-    testWidgets('allows judgement title to wrap in narrow output pane', (
+    testWidgets('omits engineering judgement from the output pane', (
       tester,
     ) async {
       tester.view.physicalSize = const Size(390, 844);
@@ -867,11 +867,10 @@ void main() {
       );
       await tester.pumpAndSettle();
 
-      final judgementTitle = tester.widget<Text>(find.text('链路余量满足要求'));
-      expect(judgementTitle.maxLines, greaterThanOrEqualTo(1));
-      expect(find.text('含工程判断'), findsWidgets);
+      expect(find.text('工程判断'), findsNothing);
+      expect(find.text('含工程判断'), findsNothing);
+      expect(find.byKey(const ValueKey('compactInsightBar')), findsNothing);
       expect(find.text('实时刷新输出'), findsWidgets);
-      expect(find.textContaining('配置可用'), findsWidgets);
       final inputLabel = tester.widget<Text>(find.text('发射机输出功率'));
       expect(inputLabel.maxLines, 1);
       expect(tester.takeException(), isNull);
@@ -909,7 +908,7 @@ void main() {
       expect(find.text('159.30'), findsWidgets);
       expect(find.text('-100.30'), findsWidgets);
       expect(find.text('37.31'), findsWidgets);
-      expect(find.byKey(const ValueKey('compactInsightBar')), findsOneWidget);
+      expect(find.byKey(const ValueKey('compactInsightBar')), findsNothing);
       expect(find.textContaining('Eb/N0'), findsWidgets);
 
       final eirpTileFinder = find
@@ -968,7 +967,7 @@ void main() {
     });
 
     testWidgets('pairs short link-budget inputs on mobile', (tester) async {
-      tester.view.physicalSize = const Size(390, 844);
+      tester.view.physicalSize = const Size(360, 780);
       tester.view.devicePixelRatio = 1;
       addTearDown(tester.view.resetPhysicalSize);
       addTearDown(tester.view.resetDevicePixelRatio);
@@ -1030,7 +1029,7 @@ void main() {
       final valueFinder = find.text('10.000000');
       expect(valueFinder, findsWidgets);
       expect(find.byKey(const ValueKey('adaptiveResultTile')), findsWidgets);
-      expect(find.text('结果已更新，可继续调参。'), findsWidgets);
+      expect(find.text('结果已更新，可继续调参。'), findsNothing);
       expect(tester.takeException(), isNull);
     });
 
@@ -1056,7 +1055,7 @@ void main() {
 
       expect(find.text('42.762'), findsWidgets);
       expect(find.textContaining('2.200e+6'), findsNothing);
-      expect(find.textContaining('保护带覆盖误差'), findsWidgets);
+      expect(find.textContaining('保护带覆盖误差'), findsNothing);
       expect(tester.takeException(), isNull);
     });
 
@@ -1397,7 +1396,7 @@ void main() {
         expect(find.byTooltip('公式与依据'), findsWidgets, reason: definition.id);
         expect(find.text('输出'), findsWidgets, reason: definition.id);
         expect(find.text('输入'), findsWidgets, reason: definition.id);
-        expect(find.text('工程判断'), findsWidgets, reason: definition.id);
+        expect(find.text('工程判断'), findsNothing, reason: definition.id);
 
         final resultTop = tester.getTopLeft(find.text('输出').first).dy;
         final inputTop = tester.getTopLeft(find.text('输入').first).dy;
