@@ -1407,7 +1407,7 @@ class _CompactInputItem {
   const _CompactInputItem({required this.child, required this.isShort});
 }
 
-const double _compactTileTwoColumnMinWidth = 240;
+const double _compactTileTwoColumnMinWidth = 140;
 
 double _compactTileWidth({
   required double maxWidth,
@@ -1716,12 +1716,12 @@ class _ResultValue extends StatelessWidget {
             child: Text(
               output.displayValue,
               maxLines: 1,
-                style: TextStyle(
-                  color: color,
-                  fontSize: 15,
-                  fontWeight: FontWeight.w800,
-                  fontFamily: 'Roboto',
-                  height: 1,
+              style: TextStyle(
+                color: color,
+                fontSize: 15,
+                fontWeight: FontWeight.w800,
+                fontFamily: 'Roboto',
+                height: 1,
               ),
             ),
           ),
@@ -2214,7 +2214,7 @@ class _CompactNumberInputState extends State<_CompactNumberInput> {
         children: [
           Flexible(
             child: SizedBox(
-              width: 62,
+              width: 48,
               child: TextField(
                 controller: widget.controller,
                 focusNode: _focusNode,
@@ -2411,53 +2411,62 @@ class _CompactInputShellState extends State<_CompactInputShell> {
       widget.color.withValues(alpha: 0.06),
       semantic.mutedSurface,
     );
-    return Container(
-      padding: EdgeInsets.symmetric(
-        horizontal: AppSpacing.md.w,
-        vertical: AppSpacing.sm.h,
-      ),
-      decoration: BoxDecoration(
-        color: tileColor,
-        borderRadius: BorderRadius.circular(AppRadius.lg),
-        border: Border.all(color: borderColor, width: _focused ? 1.5 : 1),
-      ),
-      child: Row(
-        children: [
-          Expanded(
-            child: Row(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Flexible(
-                  child: Text(
-                    widget.label,
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                    style: theme.textTheme.labelMedium?.copyWith(
-                      color: theme.colorScheme.onSurfaceVariant,
-                      fontWeight: FontWeight.w600,
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final isTight = constraints.maxWidth < 180;
+        return Container(
+          padding: EdgeInsets.symmetric(
+            horizontal: (isTight ? AppSpacing.xs : AppSpacing.md).w,
+            vertical: AppSpacing.sm.h,
+          ),
+          decoration: BoxDecoration(
+            color: tileColor,
+            borderRadius: BorderRadius.circular(AppRadius.lg),
+            border: Border.all(color: borderColor, width: _focused ? 1.5 : 1),
+          ),
+          child: Row(
+            children: [
+              Expanded(
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Flexible(
+                      child: Text(
+                        widget.label,
+                        maxLines: isTight ? 2 : 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: theme.textTheme.labelMedium?.copyWith(
+                          color: theme.colorScheme.onSurfaceVariant,
+                          fontWeight: FontWeight.w600,
+                          height: 1.1,
+                        ),
+                      ),
                     ),
-                  ),
+                    if (widget.helper.isNotEmpty) ...[
+                      SizedBox(width: AppSpacing.xs.w),
+                      Tooltip(
+                        message: widget.helper,
+                        child: Icon(
+                          Icons.info_outline_rounded,
+                          size: 13.sp,
+                          color: theme.colorScheme.onSurfaceVariant,
+                        ),
+                      ),
+                    ],
+                  ],
                 ),
-                if (widget.helper.isNotEmpty) ...[
-                  SizedBox(width: AppSpacing.xs.w),
-                  Tooltip(
-                    message: widget.helper,
-                    child: Icon(
-                      Icons.info_outline_rounded,
-                      size: 13.sp,
-                      color: theme.colorScheme.onSurfaceVariant,
-                    ),
-                  ),
-                ],
-              ],
-            ),
+              ),
+              SizedBox(width: (isTight ? AppSpacing.xs : AppSpacing.md).w),
+              Flexible(
+                child: Align(
+                  alignment: Alignment.centerRight,
+                  child: widget.child,
+                ),
+              ),
+            ],
           ),
-          SizedBox(width: AppSpacing.md.w),
-          Flexible(
-            child: Align(alignment: Alignment.centerRight, child: widget.child),
-          ),
-        ],
-      ),
+        );
+      },
     );
   }
 }

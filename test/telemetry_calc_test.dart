@@ -705,7 +705,8 @@ void main() {
       final scrollable = find
           .byWidgetPredicate(
             (widget) =>
-                widget is Scrollable && widget.axisDirection == AxisDirection.down,
+                widget is Scrollable &&
+                widget.axisDirection == AxisDirection.down,
           )
           .first;
       await tester.scrollUntilVisible(
@@ -963,6 +964,46 @@ void main() {
       await tester.pumpAndSettle();
 
       expect(tester.getSize(find.text('发射机输出功率')).width, greaterThan(90));
+      expect(tester.takeException(), isNull);
+    });
+
+    testWidgets('pairs short link-budget inputs on mobile', (tester) async {
+      tester.view.physicalSize = const Size(390, 844);
+      tester.view.devicePixelRatio = 1;
+      addTearDown(tester.view.resetPhysicalSize);
+      addTearDown(tester.view.resetDevicePixelRatio);
+
+      final definition = TelemetryCalculatorRegistry.byId('link_budget');
+      await tester.pumpWidget(
+        ScreenUtilInit(
+          designSize: const Size(375, 812),
+          builder: (context, child) => GetMaterialApp(
+            theme: AppTheme.lightWith(null),
+            home: TelemetryCalcDetailView(definition: definition),
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      final scrollable = find
+          .byWidgetPredicate(
+            (widget) =>
+                widget is Scrollable &&
+                widget.axisDirection == AxisDirection.down,
+          )
+          .first;
+      await tester.scrollUntilVisible(
+        find.text('发射馈线损耗'),
+        120,
+        scrollable: scrollable,
+        maxScrolls: 8,
+      );
+      await tester.pumpAndSettle();
+
+      final txFeedLossRect = tester.getRect(find.text('发射馈线损耗'));
+      final txAntennaGainRect = tester.getRect(find.text('发射天线增益'));
+      expect((txFeedLossRect.top - txAntennaGainRect.top).abs(), lessThan(8));
+      expect(txAntennaGainRect.left, greaterThan(txFeedLossRect.left + 80));
       expect(tester.takeException(), isNull);
     });
 
