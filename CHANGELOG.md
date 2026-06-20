@@ -1,18 +1,20 @@
 # Changelog
 
-## [1.4.12] - 2026-06-20
+## [1.4.13] - 2026-06-20
 
 ### 架构迁移与诊断增强
 
 #### 变更 (Changed)
-- 应用版本升级到 `1.4.12+18`。
+- 应用版本升级到 `1.4.13+19`。
 - 生产入口迁移到 GoRouter / GetIt / Cubit / ChangeNotifier 组合，移除旧 GetX 运行时入口。
 - 主导航新增“今天”入口，让日常总览页成为第一主入口。
 - 新增本地质量门禁脚本 `tool/quality_gate.ps1`，统一执行 analyze、全量测试、架构扫描、照片 local-only 扫描、debug APK 构建和设备检查，并保存日志。
+- 调整 Android/CI 仓库解析顺序，优先使用 Flutter artifact 仓库，Aliyun 仅作为 fallback，避免正式 release 构建因镜像 502 失败。
 
 #### 修复 (Fixed)
 - 修复迁移后 About 页面和部分生产符号仍显示旧 GetX 栈的问题。
 - 修复诊断导出缺少日志级别统计和最近操作上下文的问题。
+- 修复 `v1.4.12` tag release 构建中 Aliyun Maven 502 导致 `x86_64_release` Flutter artifact 无法解析的问题。
 - 加固照片 local-only 约束，继续禁止 `PhotoItem` 进入云同步字段和 Supabase 同步路径。
 
 #### 验证 (Validation)
