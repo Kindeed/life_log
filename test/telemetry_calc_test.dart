@@ -1,15 +1,14 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
-import 'package:get/get.dart';
 import 'dart:io';
 import 'package:life_log/common/theme/app_theme.dart';
-import 'package:life_log/modules/telemetry_calc/telemetry_calc_view.dart';
-import 'package:life_log/modules/telemetry_calc/telemetry_calculators.dart';
-import 'package:life_log/modules/telemetry_calc/telemetry_formula_engine.dart';
-import 'package:life_log/modules/telemetry_calc/formula_library.dart';
-import 'package:life_log/modules/telemetry_calc/telemetry_template_store.dart';
-import 'package:life_log/modules/telemetry_calc/telemetry_units.dart';
+import 'package:life_log/features/telemetry_calc/presentation/telemetry_calc_view.dart';
+import 'package:life_log/features/telemetry_calc/domain/telemetry_calculators.dart';
+import 'package:life_log/features/telemetry_calc/domain/telemetry_formula_engine.dart';
+import 'package:life_log/features/telemetry_calc/domain/formula_library.dart';
+import 'package:life_log/features/telemetry_calc/data/telemetry_template_store.dart';
+import 'package:life_log/features/telemetry_calc/domain/telemetry_units.dart';
 
 void main() {
   group('UnitCatalog', () {
@@ -473,7 +472,7 @@ void main() {
   group('TelemetryCalcDetailView', () {
     test('uses design tokens instead of hard-coded compact radii', () {
       final source = File(
-        'lib/modules/telemetry_calc/telemetry_calc_view.dart',
+        'lib/features/telemetry_calc/presentation/telemetry_calc_view.dart',
       ).readAsStringSync();
 
       expect(source, contains('AppRadius.'));
@@ -482,7 +481,7 @@ void main() {
 
     test('keeps tiny telemetry labels below extra-bold weights', () {
       final source = File(
-        'lib/modules/telemetry_calc/telemetry_calc_view.dart',
+        'lib/features/telemetry_calc/presentation/telemetry_calc_view.dart',
       ).readAsStringSync();
       final tinyHeavyText = RegExp(
         r'fontSize:\s*(?:10|11)\.sp,[\s\S]{0,120}?FontWeight\.w(?:800|900)',
@@ -493,7 +492,7 @@ void main() {
 
     test('aligns compact input shell with app text field tokens', () {
       final source = File(
-        'lib/modules/telemetry_calc/telemetry_calc_view.dart',
+        'lib/features/telemetry_calc/presentation/telemetry_calc_view.dart',
       ).readAsStringSync();
       final compactInputShell = RegExp(
         r'class _CompactInputShell[\s\S]*?class _UnitMenuButton',
@@ -508,7 +507,7 @@ void main() {
 
     test('aligns adaptive output tiles with compact input shell tokens', () {
       final source = File(
-        'lib/modules/telemetry_calc/telemetry_calc_view.dart',
+        'lib/features/telemetry_calc/presentation/telemetry_calc_view.dart',
       ).readAsStringSync();
       final adaptiveResultTile = RegExp(
         r'class _AdaptiveResultTile[\s\S]*?class _WorkbenchPane',
@@ -522,7 +521,7 @@ void main() {
 
     test('keeps compact result unit labels readable', () {
       final source = File(
-        'lib/modules/telemetry_calc/telemetry_calc_view.dart',
+        'lib/features/telemetry_calc/presentation/telemetry_calc_view.dart',
       ).readAsStringSync();
       final resultValue = RegExp(
         r'class _ResultValue[\s\S]*?class _WorkbenchPane',
@@ -536,7 +535,7 @@ void main() {
 
     test('tints compact input shells like result tiles', () {
       final source = File(
-        'lib/modules/telemetry_calc/telemetry_calc_view.dart',
+        'lib/features/telemetry_calc/presentation/telemetry_calc_view.dart',
       ).readAsStringSync();
       final compactInputShell = RegExp(
         r'class _CompactInputShell[\s\S]*?class _UnitMenuButton',
@@ -549,7 +548,7 @@ void main() {
 
     test('uses full-width compact tiles for input and output grids', () {
       final source = File(
-        'lib/modules/telemetry_calc/telemetry_calc_view.dart',
+        'lib/features/telemetry_calc/presentation/telemetry_calc_view.dart',
       ).readAsStringSync();
       final inputGrid = RegExp(
         r'class _CompactInputGrid[\s\S]*?class _CompactResultPanel',
@@ -568,7 +567,7 @@ void main() {
       'keeps compact inline input and output helpers without width sorting',
       () {
         final source = File(
-          'lib/modules/telemetry_calc/telemetry_calc_view.dart',
+          'lib/features/telemetry_calc/presentation/telemetry_calc_view.dart',
         ).readAsStringSync();
         final compactInputShell = RegExp(
           r'class _CompactInputShell[\s\S]*?class _UnitMenuButton',
@@ -597,7 +596,7 @@ void main() {
 
     test('keeps compact telemetry input pane visually aligned', () {
       final source = File(
-        'lib/modules/telemetry_calc/telemetry_calc_view.dart',
+        'lib/features/telemetry_calc/presentation/telemetry_calc_view.dart',
       ).readAsStringSync();
       final workbench = RegExp(
         r"final inputPane = _WorkbenchPane\([\s\S]*?child: Column",
@@ -608,7 +607,7 @@ void main() {
 
     test('uses spacing tokens for telemetry gaps and padding', () {
       final source = File(
-        'lib/modules/telemetry_calc/telemetry_calc_view.dart',
+        'lib/features/telemetry_calc/presentation/telemetry_calc_view.dart',
       ).readAsStringSync();
       final magicSizedBoxSpacing = RegExp(
         r'SizedBox\((?:height|width):\s*(?:2|3|4|5|6|7|8|10|12|14|16|18|24|28|30)\.(?:h|w)\)',
@@ -623,12 +622,31 @@ void main() {
 
     test('uses motion tokens for advanced inputs and result updates', () {
       final source = File(
-        'lib/modules/telemetry_calc/telemetry_calc_view.dart',
+        'lib/features/telemetry_calc/presentation/telemetry_calc_view.dart',
       ).readAsStringSync();
 
       expect(source, contains('AppMotion.'));
       expect(source, contains('AnimatedSize'));
       expect(source, contains('AnimatedSwitcher'));
+    });
+
+    test('uses local telemetry navigation and feedback lifecycles', () {
+      final sources = [
+        File(
+          'lib/features/telemetry_calc/presentation/telemetry_calc_view.dart',
+        ).readAsStringSync(),
+        File(
+          'lib/features/telemetry_calc/presentation/telemetry_formula_widgets.dart',
+        ).readAsStringSync(),
+      ].join('\n');
+
+      expect(sources, isNot(contains("package:get/get.dart")));
+      expect(sources, isNot(contains('Get.to(')));
+      expect(sources, isNot(contains('Get.back')));
+      expect(sources, isNot(contains('Get.snackbar')));
+      expect(sources, contains('Navigator.of('));
+      expect(sources, contains('.push<T>'));
+      expect(sources, contains('ScaffoldMessenger.of(context)'));
     });
 
     testWidgets(
@@ -643,7 +661,7 @@ void main() {
         await tester.pumpWidget(
           ScreenUtilInit(
             designSize: const Size(375, 812),
-            builder: (context, child) => GetMaterialApp(
+            builder: (context, child) => MaterialApp(
               theme: AppTheme.lightWith(null),
               home: TelemetryCalcDetailView(definition: definition),
             ),
@@ -695,7 +713,7 @@ void main() {
       await tester.pumpWidget(
         ScreenUtilInit(
           designSize: const Size(375, 812),
-          builder: (context, child) => GetMaterialApp(
+          builder: (context, child) => MaterialApp(
             theme: AppTheme.lightWith(null),
             home: TelemetryCalcDetailView(definition: definition),
           ),
@@ -755,7 +773,7 @@ void main() {
         await tester.pumpWidget(
           ScreenUtilInit(
             designSize: const Size(375, 812),
-            builder: (context, child) => GetMaterialApp(
+            builder: (context, child) => MaterialApp(
               theme: AppTheme.lightWith(null),
               home: TelemetryCalcDetailView(definition: definition),
             ),
@@ -803,7 +821,7 @@ void main() {
       await tester.pumpWidget(
         ScreenUtilInit(
           designSize: const Size(375, 812),
-          builder: (context, child) => GetMaterialApp(
+          builder: (context, child) => MaterialApp(
             theme: AppTheme.lightWith(null),
             home: TelemetryCalcDetailView(definition: definition),
           ),
@@ -833,7 +851,7 @@ void main() {
       await tester.pumpWidget(
         ScreenUtilInit(
           designSize: const Size(375, 812),
-          builder: (context, child) => GetMaterialApp(
+          builder: (context, child) => MaterialApp(
             theme: AppTheme.lightWith(null),
             home: TelemetryCalcDetailView(definition: definition),
           ),
@@ -860,7 +878,7 @@ void main() {
       await tester.pumpWidget(
         ScreenUtilInit(
           designSize: const Size(375, 812),
-          builder: (context, child) => GetMaterialApp(
+          builder: (context, child) => MaterialApp(
             theme: AppTheme.lightWith(null),
             home: TelemetryCalcDetailView(definition: definition),
           ),
@@ -887,7 +905,7 @@ void main() {
       await tester.pumpWidget(
         ScreenUtilInit(
           designSize: const Size(375, 812),
-          builder: (context, child) => GetMaterialApp(
+          builder: (context, child) => MaterialApp(
             theme: AppTheme.lightWith(null),
             home: TelemetryCalcDetailView(definition: definition),
           ),
@@ -958,7 +976,7 @@ void main() {
       await tester.pumpWidget(
         ScreenUtilInit(
           designSize: const Size(375, 812),
-          builder: (context, child) => GetMaterialApp(
+          builder: (context, child) => MaterialApp(
             theme: AppTheme.lightWith(null),
             home: TelemetryCalcDetailView(definition: definition),
           ),
@@ -1005,7 +1023,7 @@ void main() {
       await tester.pumpWidget(
         ScreenUtilInit(
           designSize: const Size(375, 812),
-          builder: (context, child) => GetMaterialApp(
+          builder: (context, child) => MaterialApp(
             theme: AppTheme.lightWith(null),
             home: TelemetryCalcDetailView(definition: definition),
           ),
@@ -1058,7 +1076,7 @@ void main() {
           await tester.pumpWidget(
             ScreenUtilInit(
               designSize: const Size(375, 812),
-              builder: (context, child) => GetMaterialApp(
+              builder: (context, child) => MaterialApp(
                 theme: AppTheme.lightWith(null),
                 home: TelemetryCalcDetailView(definition: definition),
               ),
@@ -1114,7 +1132,7 @@ void main() {
         await tester.pumpWidget(
           ScreenUtilInit(
             designSize: const Size(375, 812),
-            builder: (context, child) => GetMaterialApp(
+            builder: (context, child) => MaterialApp(
               theme: AppTheme.lightWith(null),
               home: TelemetryCalcDetailView(definition: definition),
             ),
@@ -1166,7 +1184,7 @@ void main() {
       await tester.pumpWidget(
         ScreenUtilInit(
           designSize: const Size(375, 812),
-          builder: (context, child) => GetMaterialApp(
+          builder: (context, child) => MaterialApp(
             theme: AppTheme.lightWith(null),
             home: TelemetryCalcDetailView(definition: definition),
           ),
@@ -1224,7 +1242,7 @@ void main() {
       await tester.pumpWidget(
         ScreenUtilInit(
           designSize: const Size(375, 812),
-          builder: (context, child) => GetMaterialApp(
+          builder: (context, child) => MaterialApp(
             theme: AppTheme.lightWith(null),
             home: TelemetryCalcDetailView(definition: definition),
           ),
@@ -1269,7 +1287,7 @@ void main() {
       await tester.pumpWidget(
         ScreenUtilInit(
           designSize: const Size(375, 812),
-          builder: (context, child) => GetMaterialApp(
+          builder: (context, child) => MaterialApp(
             theme: AppTheme.lightWith(null),
             home: TelemetryCalcDetailView(definition: definition),
           ),
@@ -1296,7 +1314,7 @@ void main() {
       await tester.pumpWidget(
         ScreenUtilInit(
           designSize: const Size(375, 812),
-          builder: (context, child) => GetMaterialApp(
+          builder: (context, child) => MaterialApp(
             theme: AppTheme.lightWith(null),
             home: TelemetryCalcDetailView(definition: definition),
           ),
@@ -1321,7 +1339,7 @@ void main() {
       await tester.pumpWidget(
         ScreenUtilInit(
           designSize: const Size(375, 812),
-          builder: (context, child) => GetMaterialApp(
+          builder: (context, child) => MaterialApp(
             theme: AppTheme.lightWith(null),
             home: const TelemetryCalcView(),
           ),
@@ -1364,7 +1382,7 @@ void main() {
       await tester.pumpWidget(
         ScreenUtilInit(
           designSize: const Size(375, 812),
-          builder: (context, child) => GetMaterialApp(
+          builder: (context, child) => MaterialApp(
             theme: AppTheme.lightWith(null),
             home: const TelemetryCalcView(),
           ),
@@ -1422,7 +1440,7 @@ void main() {
         await tester.pumpWidget(
           ScreenUtilInit(
             designSize: const Size(375, 812),
-            builder: (context, child) => GetMaterialApp(
+            builder: (context, child) => MaterialApp(
               theme: AppTheme.lightWith(null),
               home: const TelemetryCalcView(),
             ),
@@ -1450,7 +1468,7 @@ void main() {
       await tester.pumpWidget(
         ScreenUtilInit(
           designSize: const Size(375, 812),
-          builder: (context, child) => GetMaterialApp(
+          builder: (context, child) => MaterialApp(
             theme: AppTheme.lightWith(null),
             home: const TelemetryCalcView(),
           ),
@@ -1504,7 +1522,7 @@ void main() {
       await tester.pumpWidget(
         ScreenUtilInit(
           designSize: const Size(375, 812),
-          builder: (context, child) => GetMaterialApp(
+          builder: (context, child) => MaterialApp(
             theme: AppTheme.lightWith(null),
             home: TelemetryCalcView(templateStore: store),
           ),
@@ -1549,7 +1567,7 @@ void main() {
       await tester.pumpWidget(
         ScreenUtilInit(
           designSize: const Size(375, 812),
-          builder: (context, child) => GetMaterialApp(
+          builder: (context, child) => MaterialApp(
             theme: AppTheme.lightWith(null),
             home: TelemetryCalcDetailView(
               definition: definition,
@@ -1582,7 +1600,7 @@ void main() {
       await tester.pumpWidget(
         ScreenUtilInit(
           designSize: const Size(375, 812),
-          builder: (context, child) => GetMaterialApp(
+          builder: (context, child) => MaterialApp(
             theme: AppTheme.lightWith(null),
             home: const TelemetryCalcView(),
           ),
@@ -1637,7 +1655,7 @@ void main() {
         await tester.pumpWidget(
           ScreenUtilInit(
             designSize: const Size(375, 812),
-            builder: (context, child) => GetMaterialApp(
+            builder: (context, child) => MaterialApp(
               theme: AppTheme.lightWith(null),
               home: TelemetryCalcDetailView(definition: definition),
             ),

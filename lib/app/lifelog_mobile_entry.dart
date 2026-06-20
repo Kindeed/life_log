@@ -5,11 +5,8 @@ import 'package:dynamic_color/dynamic_color.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
-import 'package:get/get.dart';
 import 'package:get_storage/get_storage.dart';
 import 'package:intl/date_symbol_data_local.dart';
-import 'package:life_log/common/bindings/app_binding.dart';
-import 'package:life_log/common/bindings/login_binding.dart';
 import 'package:life_log/common/bindings/tabs_binding.dart';
 import 'package:life_log/common/db/db_service.dart';
 import 'package:life_log/common/services/auth_service.dart';
@@ -18,13 +15,24 @@ import 'package:life_log/common/services/log_service.dart';
 import 'package:life_log/common/services/sync_service.dart';
 import 'package:life_log/common/theme/app_theme.dart';
 import 'package:life_log/common/theme/theme_controller.dart';
-import 'package:life_log/modules/profile/views/login_view.dart';
-import 'package:life_log/modules/tabs/tabs_view.dart';
+import 'package:life_log/core/di/service_locator.dart';
+import 'package:life_log/core/routing/app_router.dart';
+import 'package:life_log/core/routing/app_routes.dart';
+import 'package:life_log/features/evidence/evidence_feature_di.dart';
+import 'package:life_log/features/expense/expense_feature_di.dart';
+import 'package:life_log/features/photo/photo_feature_di.dart';
+import 'package:life_log/features/profile/presentation/views/login_view.dart';
+import 'package:life_log/features/profile/profile_feature_di.dart';
+import 'package:life_log/features/project/project_feature_di.dart';
+import 'package:life_log/features/shell/presentation/tabs_view.dart';
+import 'package:life_log/features/subscription/subscription_feature_di.dart';
+import 'package:life_log/features/work_log/work_log_feature_di.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 bool _appStarted = false;
 String? _cloudStartupWarning;
 bool _cloudStartupWarningShown = false;
+final GlobalKey<NavigatorState> _rootNavigatorKey = GlobalKey<NavigatorState>();
 
 void main() {
   runZonedGuarded(
@@ -41,10 +49,11 @@ void main() {
 Future<void> _bootstrap() async {
   await GetStorage.init();
 
-  final cloudConfig = Get.put(CloudConfigService().init(), permanent: true);
-  final logService = await Get.putAsync(
-    () => LogService().init(),
-    permanent: true,
+  final cloudConfig = CloudConfigService().init();
+  final logService = await LogService().init();
+  _registerCoreRuntimeServices(
+    cloudConfig: cloudConfig,
+    logService: logService,
   );
   _installGlobalErrorHandlers(logService);
 
@@ -54,21 +63,75 @@ Future<void> _bootstrap() async {
   await initializeDateFormatting('zh_CN', null);
   logService.info('Startup', '日期格式已初始化');
 
-  await Get.putAsync(() => DbService().init(), permanent: true);
+  final dbService = await DbService().init();
+  _registerCoreRuntimeServices(
+    cloudConfig: cloudConfig,
+    logService: logService,
+    dbService: dbService,
+  );
   logService.info('Startup', '本地数据库已初始化');
 
-  Get.put(ThemeController(), permanent: true);
+  final themeController = ThemeController();
   logService.info('Startup', '主题服务已注册');
 
-  if (cloudConfig.isConfigured.value) {
+  if (cloudConfig.isConfigured) {
     await _initializeCloudServices(cloudConfig, logService);
   } else {
     logService.warning('Startup', '云同步未配置，已进入本地模式');
   }
 
+  await configureCoreDependencies();
+  _registerCoreRuntimeServices(
+    cloudConfig: cloudConfig,
+    logService: logService,
+    themeController: themeController,
+  );
+  _configureFeatureDependencies();
+  configurePresentationDependencies();
+  logService.info('Startup', '应用依赖已配置');
+
   logService.info('Startup', '启动应用');
   _appStarted = true;
   runApp(const MyApp());
+}
+
+void _configureFeatureDependencies() {
+  configureWorkLogFeatureDependencies();
+  configureSubscriptionFeatureDependencies();
+  configureProjectFeatureDependencies();
+  configureExpenseFeatureDependencies();
+  configurePhotoFeatureDependencies();
+  configureEvidenceFeatureDependencies();
+  configureProfileFeatureDependencies();
+}
+
+void _registerCoreRuntimeServices({
+  required CloudConfigService cloudConfig,
+  required LogService logService,
+  ThemeController? themeController,
+  DbService? dbService,
+  AuthService? authService,
+  SyncService? syncService,
+}) {
+  if (!serviceLocator.isRegistered<CloudConfigService>()) {
+    serviceLocator.registerSingleton<CloudConfigService>(cloudConfig);
+  }
+  if (!serviceLocator.isRegistered<LogService>()) {
+    serviceLocator.registerSingleton<LogService>(logService);
+  }
+  if (themeController != null &&
+      !serviceLocator.isRegistered<ThemeController>()) {
+    serviceLocator.registerSingleton<ThemeController>(themeController);
+  }
+  if (dbService != null && !serviceLocator.isRegistered<DbService>()) {
+    serviceLocator.registerSingleton<DbService>(dbService);
+  }
+  if (authService != null && !serviceLocator.isRegistered<AuthService>()) {
+    serviceLocator.registerSingleton<AuthService>(authService);
+  }
+  if (syncService != null && !serviceLocator.isRegistered<SyncService>()) {
+    serviceLocator.registerSingleton<SyncService>(syncService);
+  }
 }
 
 Future<void> _initializeCloudServices(
@@ -80,9 +143,23 @@ Future<void> _initializeCloudServices(
       url: cloudConfig.supabaseUrl,
       anonKey: cloudConfig.supabaseAnonKey,
     );
-    logService.info('Startup', 'Supabase 初始化成功: ${cloudConfig.supabaseUrl}');
-    Get.put(AuthService(), permanent: true);
-    Get.put(SyncService(), permanent: true);
+    logService.info(
+      'Startup',
+      'Supabase 初始化成功: ${cloudConfig.maskedSupabaseUrl}',
+    );
+    final authService = AuthService().start();
+    _registerCoreRuntimeServices(
+      cloudConfig: cloudConfig,
+      logService: logService,
+      authService: authService,
+    );
+    final syncService = SyncService();
+    _registerCoreRuntimeServices(
+      cloudConfig: cloudConfig,
+      logService: logService,
+      syncService: syncService,
+    );
+    syncService.start();
     logService.info('Startup', '云服务已注册');
   } catch (error, stackTrace) {
     _cloudStartupWarning = '云同步初始化失败，当前已进入本地模式';
@@ -107,7 +184,7 @@ void _installGlobalErrorHandlers(LogService logService) {
 }
 
 void _logUnhandled(String tag, Object error, StackTrace stackTrace) {
-  if (Get.isRegistered<LogService>()) {
+  if (serviceLocator.isRegistered<LogService>()) {
     LogService.to.error(tag, error.toString(), stackTrace);
   } else if (kDebugMode) {
     debugPrint('[$tag] $error\n$stackTrace');
@@ -157,11 +234,43 @@ class StartupFailureApp extends StatelessWidget {
   }
 }
 
-class MyApp extends StatelessWidget {
+class MyApp extends StatefulWidget {
   const MyApp({super.key});
 
   @override
+  State<MyApp> createState() => _MyAppState();
+}
+
+class _MyAppState extends State<MyApp> {
+  late final _router = buildCoreRouter(
+    navigatorKey: _rootNavigatorKey,
+    rootBuilder: (context, state) => const TabsView(),
+    loginBuilder: (context, state) => const LoginView(),
+  );
+
+  @override
+  void initState() {
+    super.initState();
+    if (serviceLocator.isRegistered<AuthService>()) {
+      serviceLocator<AuthService>().setSessionExpiredHandler(() {
+        _router.go(AppRoutes.login);
+      });
+    }
+  }
+
+  @override
+  void dispose() {
+    if (serviceLocator.isRegistered<AuthService>()) {
+      serviceLocator<AuthService>().setSessionExpiredHandler(null);
+    }
+    _router.dispose();
+    super.dispose();
+  }
+
+  @override
   Widget build(BuildContext context) {
+    final themeController = serviceLocator<ThemeController>();
+
     return ScreenUtilInit(
       designSize: const Size(375, 812),
       minTextAdapt: true,
@@ -169,40 +278,30 @@ class MyApp extends StatelessWidget {
       builder: (context, child) {
         return DynamicColorBuilder(
           builder: (lightDynamic, darkDynamic) {
-            return GetBuilder<ThemeController>(
-              id: ThemeController.appThemeBuilderId,
-              builder: (themeController) {
-                final useDynamic = themeController.dynamicColorEnabled.value;
-                return GetMaterialApp(
+            return AnimatedBuilder(
+              animation: themeController,
+              builder: (context, _) {
+                final useDynamic = themeController.dynamicColorEnabled;
+                return MaterialApp.router(
                   debugShowCheckedModeBanner: false,
                   title: 'LifeLog',
                   theme: AppTheme.lightWith(useDynamic ? lightDynamic : null),
                   darkTheme: AppTheme.darkWith(useDynamic ? darkDynamic : null),
                   themeMode: themeController.flutterThemeMode,
-                  initialBinding: AppBinding(),
-                  initialRoute: '/',
+                  routerConfig: _router,
                   builder: (context, child) {
                     final warning = _cloudStartupWarning;
                     if (warning != null && !_cloudStartupWarningShown) {
                       _cloudStartupWarningShown = true;
                       WidgetsBinding.instance.addPostFrameCallback((_) {
-                        Get.snackbar('本地模式', warning);
+                        if (!context.mounted) return;
+                        ScaffoldMessenger.maybeOf(
+                          context,
+                        )?.showSnackBar(SnackBar(content: Text(warning)));
                       });
                     }
                     return child ?? const SizedBox.shrink();
                   },
-                  getPages: [
-                    GetPage(
-                      name: '/',
-                      page: () => const TabsView(),
-                      binding: TabsBinding(),
-                    ),
-                    GetPage(
-                      name: '/login',
-                      page: () => const LoginView(),
-                      binding: LoginBinding(),
-                    ),
-                  ],
                 );
               },
             );

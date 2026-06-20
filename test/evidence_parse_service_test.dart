@@ -1,8 +1,31 @@
+import 'dart:io';
+
 import 'package:flutter_test/flutter_test.dart';
-import 'package:life_log/modules/evidence/evidence_file_utils.dart';
-import 'package:life_log/modules/evidence/evidence_parse_service.dart';
+import 'package:life_log/features/evidence/data/evidence_file_utils.dart';
+import 'package:life_log/features/evidence/data/evidence_parse_service.dart';
 
 void main() {
+  test('evidence parse utilities live under the feature data boundary', () {
+    expect(
+      File('lib/features/evidence/data/evidence_file_utils.dart').existsSync(),
+      isTrue,
+    );
+    expect(
+      File(
+        'lib/features/evidence/data/evidence_parse_service.dart',
+      ).existsSync(),
+      isTrue,
+    );
+    expect(
+      File('lib/modules/evidence/evidence_file_utils.dart').existsSync(),
+      isFalse,
+    );
+    expect(
+      File('lib/modules/evidence/evidence_parse_service.dart').existsSync(),
+      isFalse,
+    );
+  });
+
   test('evidence file utilities infer supported types', () {
     expect(evidenceExtensionForPath('invoice.PDF'), '.pdf');
     expect(evidenceMimeTypeForPath('invoice.PDF'), 'application/pdf');

@@ -1,39 +1,36 @@
-import 'package:get/get.dart';
-import '../../modules/tabs/tabs_controller.dart';
-import '../../modules/work_log/work_log_controller.dart';
-import '../../modules/work_log/work_log_repository.dart';
-import '../../modules/subscription/subscription_controller.dart';
-import '../../modules/subscription/subscription_repository.dart';
-import '../../modules/photo/photo_controller.dart';
-import '../../modules/photo/photo_repository.dart';
-import '../../modules/evidence/evidence_controller.dart';
-import '../../modules/evidence/evidence_parse_service.dart';
-import '../../modules/evidence/evidence_repository.dart';
-import '../../modules/expense/expense_record_controller.dart';
-import '../../modules/expense/expense_record_repository.dart';
-import '../../modules/project/project_controller.dart';
-import '../../modules/project/project_repository.dart';
-import '../../modules/statistics/statistics_controller.dart';
-import '../../modules/profile/profile_controller.dart';
+import 'dart:async';
 
-class TabsBinding extends Bindings {
-  @override
-  void dependencies() {
-    Get.lazyPut(() => TabsController(), fenix: true);
-    Get.lazyPut(() => WorkLogRepository(), fenix: true);
-    Get.lazyPut(() => WorkLogController(), fenix: true);
-    Get.lazyPut(() => SubscriptionRepository(), fenix: true);
-    Get.lazyPut(() => SubscriptionController(), fenix: true);
-    Get.lazyPut(() => ProjectRepository(), fenix: true);
-    Get.lazyPut(() => ProjectController(), fenix: true);
-    Get.lazyPut(() => ExpenseRecordRepository(), fenix: true);
-    Get.lazyPut(() => ExpenseRecordController(), fenix: true);
-    Get.lazyPut(() => PhotoRepository(), fenix: true);
-    Get.lazyPut(() => PhotoController(), fenix: true);
-    Get.lazyPut(() => EvidenceRepository(), fenix: true);
-    Get.lazyPut(() => EvidenceParseService(), fenix: true);
-    Get.lazyPut(() => EvidenceController(), fenix: true);
-    Get.lazyPut(() => StatisticsController(), fenix: true);
-    Get.lazyPut(() => ProfileController(), fenix: true);
+import 'package:life_log/features/shell/presentation/tabs_controller.dart';
+import 'package:life_log/features/work_log/application/initialize_work_log_feature.dart';
+import 'package:life_log/core/di/service_locator.dart';
+import '../services/log_service.dart';
+import 'package:life_log/features/statistics/presentation/statistics_controller.dart';
+
+void configurePresentationDependencies() {
+  if (!serviceLocator.isRegistered<TabsController>()) {
+    serviceLocator.registerLazySingleton<TabsController>(TabsController.new);
+  }
+  if (!serviceLocator.isRegistered<StatisticsController>()) {
+    serviceLocator.registerLazySingleton<StatisticsController>(
+      () => StatisticsController()..start(),
+      dispose: (controller) => controller.dispose(),
+    );
+  }
+  if (serviceLocator.isRegistered<InitializeWorkLogFeature>()) {
+    unawaited(
+      _initializeWorkLogFeature(serviceLocator<InitializeWorkLogFeature>()),
+    );
+  }
+}
+
+Future<void> _initializeWorkLogFeature(
+  InitializeWorkLogFeature initialize,
+) async {
+  try {
+    await initialize();
+  } catch (error, stackTrace) {
+    if (serviceLocator.isRegistered<LogService>()) {
+      LogService.to.error('WorkLog', '启动归并重复工时失败: $error', stackTrace);
+    }
   }
 }

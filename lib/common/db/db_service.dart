@@ -1,26 +1,25 @@
 import 'package:flutter/foundation.dart';
-import 'package:get/get.dart';
 import 'package:isar/isar.dart';
+import 'package:life_log/core/di/service_locator.dart';
+import 'package:life_log/features/subscription/data/subscription_model.dart';
+import 'package:life_log/features/work_log/data/work_log_model.dart';
 import 'package:path_provider/path_provider.dart';
-import '../../modules/work_log/work_log_model.dart';
-import '../../modules/subscription/subscription_model.dart';
-import '../../modules/photo/photo_model.dart'; // Import PhotoModel
-import '../../modules/evidence/evidence_model.dart';
-import '../../modules/expense/expense_record_model.dart';
-import '../../modules/project/project_model.dart';
+import 'package:life_log/features/photo/data/photo_model.dart';
+import 'package:life_log/features/evidence/data/evidence_model.dart';
+import 'package:life_log/features/expense/data/expense_record_model.dart';
+import 'package:life_log/features/project/data/project_model.dart';
 import '../utils/date_utils.dart';
 import '../services/auth_service.dart';
 import '../utils/sync_id_policy.dart';
 // import '../services/sync_service.dart'; // Removed cyclic dependency
 
-class DbService extends GetxService {
-  // 单例模式：确保整个App只有一个仓库管理员
-  static DbService get to => Get.find();
-
+class DbService {
   late Isar isar; // 数据库实例
+  bool _isInitialized = false;
 
-  String? get currentOwnerUserId =>
-      Get.isRegistered<AuthService>() ? AuthService.to.userId : null;
+  String? get currentOwnerUserId => serviceLocator.isRegistered<AuthService>()
+      ? serviceLocator<AuthService>().userId
+      : null;
 
   bool _belongsToCurrentUser(String? ownerUserId) {
     final currentUserId = currentOwnerUserId;
@@ -276,6 +275,7 @@ class DbService extends GetxService {
 
     await _backfillRecordAuditTimestamps();
 
+    _isInitialized = true;
     return this;
   }
 
@@ -359,12 +359,10 @@ class DbService extends GetxService {
     });
   }
 
-  @override
-  void onClose() {
-    if (isar.isOpen) {
+  void dispose() {
+    if (_isInitialized && isar.isOpen) {
       isar.close();
     }
-    super.onClose();
   }
 
   // --- 2. 增加一条日志 (入库) ---

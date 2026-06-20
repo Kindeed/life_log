@@ -1,21 +1,18 @@
 import 'dart:async';
 
-import 'package:get/get.dart';
+import 'package:flutter/foundation.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../../common/services/log_service.dart';
 
-class AuthService extends GetxService {
-  static AuthService get to => Get.find();
-
+class AuthService extends ChangeNotifier {
   final _client = Supabase.instance.client;
-  final Rx<User?> currentUser = Rx<User?>(null);
+  final ValueNotifier<User?> currentUser = ValueNotifier<User?>(null);
   StreamSubscription<AuthState>? _authStateSub;
+  VoidCallback? _sessionExpiredHandler;
 
-  @override
-  void onInit() {
-    super.onInit();
+  AuthService start() {
     // Initialize current user
-    currentUser.value = _client.auth.currentUser;
+    _setCurrentUser(_client.auth.currentUser);
 
     // Listen to auth state changes
     _authStateSub = _client.auth.onAuthStateChange.listen((data) {
@@ -23,7 +20,7 @@ class AuthService extends GetxService {
       final Session? session = data.session;
       final hadUser = currentUser.value != null;
 
-      currentUser.value = session?.user;
+      _setCurrentUser(session?.user);
 
       if (event == AuthChangeEvent.signedIn) {
         LogService.to.info('Auth', 'User signed in: ${session?.user.email}');
@@ -34,21 +31,27 @@ class AuthService extends GetxService {
         _redirectToLogin();
       }
     });
+    return this;
   }
 
   @override
-  void onClose() {
+  void dispose() {
     _authStateSub?.cancel();
     _authStateSub = null;
-    super.onClose();
+    currentUser.dispose();
+    super.dispose();
+  }
+
+  void setSessionExpiredHandler(VoidCallback? handler) {
+    _sessionExpiredHandler = handler;
   }
 
   // Sign In
   Future<void> signIn({required String email, required String password}) async {
     try {
       await _client.auth.signInWithPassword(email: email, password: password);
-    } catch (e) {
-      LogService.to.error('Auth', 'Sign in failed: $e');
+    } catch (e, stackTrace) {
+      LogService.to.error('Auth', 'Sign in failed: $e', stackTrace);
       rethrow;
     }
   }
@@ -57,8 +60,8 @@ class AuthService extends GetxService {
   Future<void> signUp({required String email, required String password}) async {
     try {
       await _client.auth.signUp(email: email, password: password);
-    } catch (e) {
-      LogService.to.error('Auth', 'Sign up failed: $e');
+    } catch (e, stackTrace) {
+      LogService.to.error('Auth', 'Sign up failed: $e', stackTrace);
       rethrow;
     }
   }
@@ -67,9 +70,9 @@ class AuthService extends GetxService {
   Future<void> signOut() async {
     try {
       await _client.auth.signOut();
-      currentUser.value = null;
-    } catch (e) {
-      LogService.to.error('Auth', 'Sign out failed: $e');
+      _setCurrentUser(null);
+    } catch (e, stackTrace) {
+      LogService.to.error('Auth', 'Sign out failed: $e', stackTrace);
       rethrow;
     }
   }
@@ -84,7 +87,7 @@ class AuthService extends GetxService {
       'Auth',
       'Session expired during $source; signing out locally',
     );
-    currentUser.value = null;
+    _setCurrentUser(null);
     try {
       await _client.auth.signOut();
     } catch (e) {
@@ -106,9 +109,13 @@ class AuthService extends GetxService {
   }
 
   void _redirectToLogin() {
-    if (Get.currentRoute != '/login') {
-      Get.offAllNamed('/login');
-    }
+    _sessionExpiredHandler?.call();
+  }
+
+  void _setCurrentUser(User? user) {
+    if (currentUser.value == user) return;
+    currentUser.value = user;
+    notifyListeners();
   }
 
   // Check if logged in

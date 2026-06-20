@@ -1,7 +1,7 @@
-import '../../modules/evidence/evidence_model.dart';
-import '../../modules/expense/expense_record_model.dart';
-import '../../modules/subscription/subscription_model.dart';
-import '../../modules/work_log/work_log_model.dart';
+import 'package:life_log/features/evidence/data/evidence_model.dart';
+import 'package:life_log/features/expense/data/expense_record_model.dart';
+import 'package:life_log/features/subscription/data/subscription_model.dart';
+import 'package:life_log/features/work_log/data/work_log_model.dart';
 
 void validateWorkLog(WorkLog log) {
   final overtimeHours = log.overtimeHours;

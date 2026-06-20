@@ -1,6 +1,6 @@
 import 'dart:io';
 import 'package:flutter/foundation.dart';
-import 'package:get/get.dart';
+import 'package:life_log/core/di/service_locator.dart';
 import 'package:path_provider/path_provider.dart';
 import 'cloud_config_service.dart';
 
@@ -58,11 +58,11 @@ class LogEntry {
 
 /// 日志服务
 /// 统一管理应用日志，支持查看和导出
-class LogService extends GetxService {
-  static LogService get to => Get.find();
+class LogService extends ChangeNotifier {
+  static LogService get to => serviceLocator<LogService>();
 
   /// 日志缓存（内存中保留最近500条）
-  final logs = <LogEntry>[].obs;
+  final List<LogEntry> _logs = <LogEntry>[];
   File? _logFile;
   Future<void> _fileWriteQueue = Future.value();
   int _fileWriteFailureCount = 0;
@@ -74,7 +74,15 @@ class LogService extends GetxService {
   static const int maxLogFileBytes = 1024 * 1024;
 
   /// 是否启用 debug 日志（生产环境可关闭）
-  final enableDebug = true.obs;
+  bool enableDebug = true;
+
+  List<LogEntry> get logs => List.unmodifiable(_logs);
+
+  void setDebugEnabled(bool enabled) {
+    if (enableDebug == enabled) return;
+    enableDebug = enabled;
+    notifyListeners();
+  }
 
   /// 初始化
   Future<LogService> init() async {
@@ -94,7 +102,7 @@ class LogService extends GetxService {
   }
 
   LogEntry? get latestError {
-    for (final entry in logs.reversed) {
+    for (final entry in _logs.reversed) {
       if (entry.level == LogLevel.error) return entry;
     }
     return null;
@@ -104,24 +112,9 @@ class LogService extends GetxService {
 
   String? get lastFileWriteError => _lastFileWriteError;
 
-  String _maskUrl(String url) {
-    final parsed = Uri.tryParse(url);
-    if (parsed == null || parsed.host.isEmpty) return '已配置（URL 已隐藏）';
-    final hostParts = parsed.host.split('.');
-    final maskedHost = hostParts.isEmpty
-        ? '***'
-        : [
-            hostParts.first.length <= 6
-                ? '***'
-                : '${hostParts.first.substring(0, 3)}***',
-            ...hostParts.skip(1),
-          ].join('.');
-    return '${parsed.scheme}://$maskedHost';
-  }
-
   /// 记录 Debug 日志
   void debug(String tag, String message) {
-    if (!enableDebug.value) return;
+    if (!enableDebug) return;
     _log(LogLevel.debug, tag, message);
   }
 
@@ -151,12 +144,13 @@ class LogService extends GetxService {
     );
 
     // 添加到缓存
-    logs.add(entry);
+    _logs.add(entry);
 
     // 限制日志数量
-    if (logs.length > maxLogs) {
-      logs.removeAt(0);
+    if (_logs.length > maxLogs) {
+      _logs.removeAt(0);
     }
+    notifyListeners();
 
     final logString = entry.toString();
 
@@ -193,6 +187,7 @@ class LogService extends GetxService {
     _fileWriteFailureCount++;
     _lastFileWriteError = error.toString();
     _lastFileWriteErrorAt = DateTime.now();
+    notifyListeners();
   }
 
   Future<void> _rotateLogFileIfNeeded() async {
@@ -214,7 +209,7 @@ class LogService extends GetxService {
     final buffer = StringBuffer();
     buffer.writeln('=== LifeLog 应用日志 ===');
     buffer.writeln('导出时间: ${DateTime.now()}');
-    buffer.writeln('日志数量: ${logs.length}');
+    buffer.writeln('日志数量: ${_logs.length}');
     buffer.writeln(
       '构建模式: ${kReleaseMode
           ? "release"
@@ -222,11 +217,11 @@ class LogService extends GetxService {
           ? "profile"
           : "debug"}',
     );
-    if (Get.isRegistered<CloudConfigService>()) {
-      final cloudConfig = CloudConfigService.to;
+    if (serviceLocator.isRegistered<CloudConfigService>()) {
+      final cloudConfig = serviceLocator<CloudConfigService>();
       buffer.writeln('云配置: ${cloudConfig.statusLabel}');
-      if (cloudConfig.isConfigured.value) {
-        buffer.writeln('Supabase URL: ${_maskUrl(cloudConfig.supabaseUrl)}');
+      if (cloudConfig.isConfigured) {
+        buffer.writeln('Supabase URL: ${cloudConfig.maskedSupabaseUrl}');
       }
     }
     buffer.writeln('日志文件写入失败次数: $_fileWriteFailureCount');
@@ -237,7 +232,7 @@ class LogService extends GetxService {
     }
     buffer.writeln('========================\n');
 
-    for (final log in logs) {
+    for (final log in _logs) {
       buffer.writeln(log.toString());
     }
 
@@ -246,7 +241,8 @@ class LogService extends GetxService {
 
   /// 清空日志
   void clearLogs() {
-    logs.clear();
+    _logs.clear();
+    notifyListeners();
     _enqueueFileWrite(() async {
       await _logFile?.writeAsString('');
     });
@@ -268,27 +264,49 @@ class LogService extends GetxService {
           ? "profile"
           : "debug"}',
     );
-    buffer.writeln('日志数量: ${logs.length}');
+    buffer.writeln('日志数量: ${_logs.length}');
+    buffer.writeln('日志级别统计: ${_logLevelSummary()}');
     buffer.writeln('日志文件写入失败次数: $_fileWriteFailureCount');
     if (_lastFileWriteError != null) {
       buffer.writeln(
         '最近日志文件写入失败: ${_lastFileWriteErrorAt?.toIso8601String()} $_lastFileWriteError',
       );
     }
-    if (Get.isRegistered<CloudConfigService>()) {
-      final cloudConfig = CloudConfigService.to;
+    if (serviceLocator.isRegistered<CloudConfigService>()) {
+      final cloudConfig = serviceLocator<CloudConfigService>();
       buffer.writeln('云配置: ${cloudConfig.statusLabel}');
-      if (cloudConfig.isConfigured.value) {
-        buffer.writeln('Supabase URL: ${_maskUrl(cloudConfig.supabaseUrl)}');
+      if (cloudConfig.isConfigured) {
+        buffer.writeln('Supabase URL: ${cloudConfig.maskedSupabaseUrl}');
       }
     }
     buffer.writeln('最近错误:');
     buffer.writeln(exportLatestError());
+    buffer.writeln('最近日志:');
+    for (final log in _recentLogs()) {
+      buffer.writeln(log.toString());
+    }
     return buffer.toString();
+  }
+
+  String _logLevelSummary() {
+    final counts = {for (final level in LogLevel.values) level: 0};
+    for (final log in _logs) {
+      counts[log.level] = (counts[log.level] ?? 0) + 1;
+    }
+    return 'DEBUG=${counts[LogLevel.debug]} '
+        'INFO=${counts[LogLevel.info]} '
+        'WARN=${counts[LogLevel.warning]} '
+        'ERROR=${counts[LogLevel.error]}';
+  }
+
+  Iterable<LogEntry> _recentLogs() {
+    const recentLogLimit = 20;
+    if (_logs.length <= recentLogLimit) return _logs;
+    return _logs.skip(_logs.length - recentLogLimit);
   }
 
   /// 按级别筛选日志
   List<LogEntry> filterByLevel(LogLevel level) {
-    return logs.where((log) => log.level == level).toList();
+    return _logs.where((log) => log.level == level).toList();
   }
 }

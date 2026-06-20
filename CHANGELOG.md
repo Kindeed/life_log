@@ -1,5 +1,27 @@
 # Changelog
 
+## [1.4.12] - 2026-06-20
+
+### 架构迁移与诊断增强
+
+#### 变更 (Changed)
+- 应用版本升级到 `1.4.12+18`。
+- 生产入口迁移到 GoRouter / GetIt / Cubit / ChangeNotifier 组合，移除旧 GetX 运行时入口。
+- 主导航新增“今天”入口，让日常总览页成为第一主入口。
+- 新增本地质量门禁脚本 `tool/quality_gate.ps1`，统一执行 analyze、全量测试、架构扫描、照片 local-only 扫描、debug APK 构建和设备检查，并保存日志。
+
+#### 修复 (Fixed)
+- 修复迁移后 About 页面和部分生产符号仍显示旧 GetX 栈的问题。
+- 修复诊断导出缺少日志级别统计和最近操作上下文的问题。
+- 加固照片 local-only 约束，继续禁止 `PhotoItem` 进入云同步字段和 Supabase 同步路径。
+
+#### 验证 (Validation)
+- `tool/quality_gate.ps1` 通过。
+- `flutter analyze --no-fatal-infos` 通过。
+- `flutter test` 通过，当前环境为 `376 passed, 3 skipped`；跳过项为缺少 `isar.dll` 的数据库环境限制。
+- `flutter build apk --debug` 通过。
+- 当前本机未检测到 Android 真机或模拟器，真实设备烟测仍需在连接设备后补做。
+
 ## [1.4.11] - 2026-06-02
 
 ### 项目凭证与发票识别增强

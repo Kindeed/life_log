@@ -1,22 +1,17 @@
 import 'dart:io';
 import 'package:file_picker/file_picker.dart';
-import 'package:get/get.dart';
 import 'package:life_log/common/db/db_service.dart';
-import 'package:life_log/modules/photo/photo_controller.dart';
-import 'package:life_log/modules/project/project_controller.dart';
-import 'package:life_log/modules/evidence/evidence_controller.dart';
-import 'package:life_log/modules/statistics/statistics_controller.dart';
-import 'package:life_log/modules/subscription/subscription_controller.dart';
-import 'package:life_log/modules/tabs/tabs_controller.dart';
-import 'package:life_log/modules/work_log/work_log_controller.dart';
+import 'package:life_log/common/services/log_service.dart';
+import 'package:life_log/core/di/service_locator.dart';
+import 'package:life_log/features/statistics/presentation/statistics_controller.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:share_plus/share_plus.dart';
 import 'package:path/path.dart' as p;
 
 /// 备份/恢复工具类。
 ///
-/// 设计说明：与其他 Service（GetxService）不同，BackupService 是纯静态工具类，
-/// 因为它没有需要管理的状态，仅执行一次性的文件操作。
+/// 设计说明：BackupService 是纯静态工具类，因为它没有需要管理的状态，
+/// 仅执行一次性的文件操作。
 class BackupService {
   static const databaseOnlyNotice = '当前备份仅包含本地数据库，不包含照片和凭证文件本体。';
   static bool _restoreInProgress = false;
@@ -28,13 +23,14 @@ class BackupService {
           'LifeLog_Backup_${DateTime.now().millisecondsSinceEpoch}.isar';
       final backupPath = p.join(tempDir.path, backupName);
 
-      await DbService.to.isar.copyToFile(backupPath);
+      await serviceLocator<DbService>().isar.copyToFile(backupPath);
 
       final xFile = XFile(backupPath);
       await Share.shareXFiles([
         xFile,
       ], text: 'LifeLog 数据库备份。$databaseOnlyNotice');
-    } catch (e) {
+    } catch (e, stackTrace) {
+      _logError('备份导出失败: $e', stackTrace);
       throw Exception("备份异常: $e");
     }
   }
@@ -86,20 +82,21 @@ class BackupService {
       }
 
       if (await existingDb.exists()) {
-        await DbService.to.isar.copyToFile(rollbackPath);
+        await serviceLocator<DbService>().isar.copyToFile(rollbackPath);
       }
       await backupFile.copy(candidatePath);
 
-      await _deleteDatabaseControllers();
-      await DbService.to.isar.close();
+      await serviceLocator<DbService>().isar.close();
 
       if (await existingDb.exists()) {
         await existingDb.delete();
       }
       await candidateFile.copy(dbPath);
 
-      await DbService.to.init();
-    } catch (e) {
+      await serviceLocator<DbService>().init();
+      await _refreshStatisticsIfRegistered();
+    } catch (e, stackTrace) {
+      _logError('恢复备份失败: $e', stackTrace);
       try {
         if (rollbackFile != null &&
             existingDb != null &&
@@ -109,9 +106,11 @@ class BackupService {
             await existingDb.delete();
           }
           await rollbackFile.copy(dbPath);
-          await DbService.to.init();
+          await serviceLocator<DbService>().init();
+          await _refreshStatisticsIfRegistered();
         }
-      } catch (_) {
+      } catch (rollbackError, rollbackStackTrace) {
+        _logError('恢复回滚失败: $rollbackError', rollbackStackTrace);
         // Keep the original error visible; the app may need a restart if the
         // platform still holds a database file handle.
       }
@@ -128,26 +127,22 @@ class BackupService {
   }
 
   static String _currentDatabasePath() {
-    final dbPath = DbService.to.isar.path;
+    final dbPath = serviceLocator<DbService>().isar.path;
     if (dbPath == null || dbPath.isEmpty) {
       throw Exception("当前平台不支持数据库文件恢复");
     }
     return dbPath;
   }
 
-  static Future<void> _deleteDatabaseControllers() async {
-    await _deleteIfRegistered<WorkLogController>();
-    await _deleteIfRegistered<SubscriptionController>();
-    await _deleteIfRegistered<ProjectController>();
-    await _deleteIfRegistered<PhotoController>();
-    await _deleteIfRegistered<EvidenceController>();
-    await _deleteIfRegistered<StatisticsController>();
-    await _deleteIfRegistered<TabsController>();
+  static Future<void> _refreshStatisticsIfRegistered() async {
+    if (serviceLocator.isRegistered<StatisticsController>()) {
+      await serviceLocator<StatisticsController>().refreshStats();
+    }
   }
 
-  static Future<void> _deleteIfRegistered<T>() async {
-    if (Get.isRegistered<T>()) {
-      await Get.delete<T>(force: true);
+  static void _logError(String message, StackTrace stackTrace) {
+    if (serviceLocator.isRegistered<LogService>()) {
+      LogService.to.error('Backup', message, stackTrace);
     }
   }
 }
