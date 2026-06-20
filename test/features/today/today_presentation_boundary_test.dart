@@ -46,5 +46,22 @@ void main() {
         expect(source, contains('Navigator.of(sheetContext).pop'));
       },
     );
+
+    test(
+      'keeps the home tab focused on today instead of duplicate summaries',
+      () {
+        final source = File(
+          'lib/features/today/presentation/today_view.dart',
+        ).readAsStringSync();
+
+        expect(source, contains('待处理'));
+        expect(source, contains('最近工时'));
+        expect(source, isNot(contains('AppMetricTile')));
+        expect(source, isNot(contains('本月工时')));
+        expect(source, isNot(contains('本月支出')));
+        expect(source, isNot(contains('凭证待报销')));
+        expect(source, isNot(contains("toStringAsFixed(1)}h")));
+      },
+    );
   });
 }

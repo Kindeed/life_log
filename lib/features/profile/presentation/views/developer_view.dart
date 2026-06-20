@@ -9,8 +9,6 @@ import 'package:life_log/common/widgets/app_card.dart';
 import 'package:life_log/core/di/service_locator.dart';
 import 'package:share_plus/share_plus.dart';
 
-import 'design_gallery_view.dart';
-
 /// 开发者选项页面
 class DeveloperView extends StatelessWidget {
   const DeveloperView({super.key});
@@ -133,7 +131,7 @@ class DeveloperView extends StatelessWidget {
         children: [
           SwitchListTile(
             title: Text(
-              'Debug 日志',
+              '调试日志',
               style: TextStyle(
                 fontSize: 15.sp,
                 fontWeight: FontWeight.w500,
@@ -205,28 +203,6 @@ class DeveloperView extends StatelessWidget {
             ),
             trailing: Icon(Icons.chevron_right_rounded, color: textSecondary),
             onTap: () => _copyDiagnostics(context, logService),
-          ),
-          _buildDivider(theme),
-          ListTile(
-            leading: Icon(Icons.palette_outlined, color: textSecondary),
-            title: Text(
-              'UI Gallery',
-              style: TextStyle(
-                fontSize: 15.sp,
-                fontWeight: FontWeight.w500,
-                color: textPrimary,
-              ),
-            ),
-            subtitle: Text(
-              '查看设计 Token 和公共组件',
-              style: TextStyle(fontSize: 12.sp, color: textSecondary),
-            ),
-            trailing: Icon(Icons.chevron_right_rounded, color: textSecondary),
-            onTap: () => Navigator.of(context).push(
-              MaterialPageRoute<void>(
-                builder: (_) => const DesignGalleryView(),
-              ),
-            ),
           ),
         ],
       ),

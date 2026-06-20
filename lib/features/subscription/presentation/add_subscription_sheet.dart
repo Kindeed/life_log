@@ -4,6 +4,7 @@ import 'package:intl/intl.dart';
 import 'package:life_log/common/theme/theme_extensions.dart';
 import 'package:life_log/common/utils/date_utils.dart';
 import 'package:life_log/common/widgets/app_button.dart';
+import 'package:life_log/common/widgets/app_date_picker.dart';
 import 'package:life_log/common/widgets/app_safe_bottom_bar.dart';
 import 'package:life_log/common/widgets/app_sheet_scaffold.dart';
 import 'package:life_log/common/widgets/app_text_field.dart';
@@ -221,7 +222,7 @@ class _AddSubscriptionSheetState extends State<AddSubscriptionSheet> {
   }
 
   void _pickDate() async {
-    final picked = await showDatePicker(
+    final picked = await showLifeLogDatePicker(
       context: context,
       initialDate: _nextPaymentDate,
       firstDate: DateTime.now().subtract(const Duration(days: 365)),

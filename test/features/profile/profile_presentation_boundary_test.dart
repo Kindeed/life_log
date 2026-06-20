@@ -10,7 +10,6 @@ void main() {
         'lib/features/profile/presentation/views/about_view.dart',
         'lib/features/profile/presentation/views/appearance_view.dart',
         'lib/features/profile/presentation/views/data_management_view.dart',
-        'lib/features/profile/presentation/views/design_gallery_view.dart',
         'lib/features/profile/presentation/views/developer_view.dart',
         'lib/features/profile/presentation/views/login_view.dart',
       ];
@@ -32,6 +31,13 @@ void main() {
       for (final path in featurePaths) {
         expect(File(path).existsSync(), isTrue, reason: '$path should exist');
       }
+      expect(
+        File(
+          'lib/features/profile/presentation/views/design_gallery_view.dart',
+        ).existsSync(),
+        isFalse,
+        reason: 'UI gallery is not a user-facing diagnostics surface',
+      );
       for (final path in legacyPaths) {
         expect(File(path).existsSync(), isFalse, reason: '$path is retired');
       }
@@ -177,52 +183,62 @@ void main() {
       );
     });
 
+    test('developer page uses local dialog, feedback, and DI lifecycles', () {
+      final view = File(
+        'lib/features/profile/presentation/views/developer_view.dart',
+      ).readAsStringSync();
+      final appEntry = File(
+        'lib/app/lifelog_mobile_entry.dart',
+      ).readAsStringSync();
+      final logService = File(
+        'lib/common/services/log_service.dart',
+      ).readAsStringSync();
+      final cloudConfig = File(
+        'lib/common/services/cloud_config_service.dart',
+      ).readAsStringSync();
+      final commonServiceState = '$logService\n$cloudConfig';
+
+      expect(view, isNot(contains("package:get/get.dart")));
+      expect(view, isNot(contains('Get.find<LogService>')));
+      expect(view, isNot(contains('Get.find<CloudConfigService>')));
+      expect(view, isNot(contains('Obx(')));
+      expect(view, isNot(contains('.value')));
+      expect(view, isNot(contains('Get.to(')));
+      expect(view, isNot(contains('Get.snackbar')));
+      expect(view, isNot(contains('AppConfirmDialog')));
+      expect(view, contains('serviceLocator<LogService>()'));
+      expect(view, contains('serviceLocator<CloudConfigService>()'));
+      expect(view, contains('AnimatedBuilder'));
+      expect(view, isNot(contains('DesignGalleryView')));
+      expect(view, isNot(contains('design_gallery_view.dart')));
+      expect(view, isNot(contains('UI Gallery')));
+      expect(commonServiceState, isNot(contains("package:get/get.dart")));
+      expect(commonServiceState, isNot(contains('GetxService')));
+      expect(commonServiceState, isNot(contains('.obs')));
+      expect(commonServiceState, contains('extends ChangeNotifier'));
+      expect(logService, contains('setDebugEnabled'));
+      expect(cloudConfig, contains('bool isConfigured'));
+      expect(view, contains('showDialog<bool>'));
+      expect(view, contains('ScaffoldMessenger.of(context)'));
+      expect(
+        appEntry,
+        contains('serviceLocator.registerSingleton<CloudConfigService>'),
+      );
+      expect(
+        appEntry,
+        contains('serviceLocator.registerSingleton<LogService>'),
+      );
+    });
+
     test(
-      'developer page uses local route, dialog, feedback, and DI lifecycles',
+      'profile developer entry describes diagnostics without UI gallery copy',
       () {
         final view = File(
-          'lib/features/profile/presentation/views/developer_view.dart',
+          'lib/features/profile/presentation/profile_view.dart',
         ).readAsStringSync();
-        final appEntry = File(
-          'lib/app/lifelog_mobile_entry.dart',
-        ).readAsStringSync();
-        final logService = File(
-          'lib/common/services/log_service.dart',
-        ).readAsStringSync();
-        final cloudConfig = File(
-          'lib/common/services/cloud_config_service.dart',
-        ).readAsStringSync();
-        final commonServiceState = '$logService\n$cloudConfig';
 
-        expect(view, isNot(contains("package:get/get.dart")));
-        expect(view, isNot(contains('Get.find<LogService>')));
-        expect(view, isNot(contains('Get.find<CloudConfigService>')));
-        expect(view, isNot(contains('Obx(')));
-        expect(view, isNot(contains('.value')));
-        expect(view, isNot(contains('Get.to(')));
-        expect(view, isNot(contains('Get.snackbar')));
-        expect(view, isNot(contains('AppConfirmDialog')));
-        expect(view, contains('serviceLocator<LogService>()'));
-        expect(view, contains('serviceLocator<CloudConfigService>()'));
-        expect(view, contains('AnimatedBuilder'));
-        expect(commonServiceState, isNot(contains("package:get/get.dart")));
-        expect(commonServiceState, isNot(contains('GetxService')));
-        expect(commonServiceState, isNot(contains('.obs')));
-        expect(commonServiceState, contains('extends ChangeNotifier'));
-        expect(logService, contains('setDebugEnabled'));
-        expect(cloudConfig, contains('bool isConfigured'));
-        expect(view, contains('Navigator.of(context).push'));
-        expect(view, contains('MaterialPageRoute'));
-        expect(view, contains('showDialog<bool>'));
-        expect(view, contains('ScaffoldMessenger.of(context)'));
-        expect(
-          appEntry,
-          contains('serviceLocator.registerSingleton<CloudConfigService>'),
-        );
-        expect(
-          appEntry,
-          contains('serviceLocator.registerSingleton<LogService>'),
-        );
+        expect(view, contains("subtitle: '日志、调试、诊断信息'"));
+        expect(view, isNot(contains('UI Gallery')));
       },
     );
 

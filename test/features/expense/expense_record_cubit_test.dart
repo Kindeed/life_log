@@ -84,19 +84,18 @@ void main() {
   });
 
   group('ExpenseRecord read UI ownership', () {
-    test('routes Today expense totals through the feature cubit', () {
+    test('routes Today expense quick actions through the feature cubit', () {
       final todayView = File(
         'lib/features/today/presentation/today_view.dart',
       ).readAsStringSync();
 
       expect(todayView, contains('BlocProvider<ExpenseRecordCubit>'));
-      expect(
-        todayView,
-        matches(RegExp(r'BlocBuilder<\s*ExpenseRecordCubit', multiLine: true)),
-      );
-      expect(todayView, contains('currentMonthTotal'));
+      expect(todayView, contains('openExpenseRecordEditorPage'));
+      expect(todayView, contains('context.read<ExpenseRecordCubit>()'));
+      expect(todayView, contains('loadEntries()'));
       expect(todayView, isNot(contains('ExpenseRecordController')));
       expect(todayView, isNot(contains('Get.find<ExpenseRecordController>')));
+      expect(todayView, isNot(contains('currentMonthTotal')));
       expect(todayView, isNot(contains('totalForMonth(')));
     });
 

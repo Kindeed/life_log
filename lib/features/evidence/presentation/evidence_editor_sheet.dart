@@ -10,6 +10,7 @@ import 'package:life_log/common/theme/app_colors.dart';
 import 'package:life_log/common/theme/theme_extensions.dart';
 import 'package:life_log/common/utils/date_utils.dart';
 import 'package:life_log/common/utils/formatters.dart';
+import 'package:life_log/common/widgets/app_date_picker.dart';
 import 'package:life_log/core/di/service_locator.dart';
 import 'package:life_log/core/errors/app_failure.dart';
 import 'package:life_log/features/evidence/application/delete_evidence_entry.dart';
@@ -637,7 +638,7 @@ class _EvidenceEditorSheetState extends State<EvidenceEditorSheet> {
     required DateTime initial,
     required ValueChanged<DateTime> onPicked,
   }) async {
-    final picked = await showDatePicker(
+    final picked = await showLifeLogDatePicker(
       context: context,
       initialDate: initial,
       firstDate: DateTime(2000),

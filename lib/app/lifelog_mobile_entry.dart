@@ -4,6 +4,7 @@ import 'dart:ui';
 import 'package:dynamic_color/dynamic_color.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:get_storage/get_storage.dart';
 import 'package:intl/date_symbol_data_local.dart';
@@ -288,6 +289,9 @@ class _MyAppState extends State<MyApp> {
                   theme: AppTheme.lightWith(useDynamic ? lightDynamic : null),
                   darkTheme: AppTheme.darkWith(useDynamic ? darkDynamic : null),
                   themeMode: themeController.flutterThemeMode,
+                  locale: const Locale('zh', 'CN'),
+                  localizationsDelegates: GlobalMaterialLocalizations.delegates,
+                  supportedLocales: const [Locale('zh', 'CN')],
                   routerConfig: _router,
                   builder: (context, child) {
                     final warning = _cloudStartupWarning;

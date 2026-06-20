@@ -242,7 +242,7 @@ void main() {
         todayView,
         matches(RegExp(r'BlocBuilder<\s*EvidenceCubit', multiLine: true)),
       );
-      expect(todayView, contains('state.totalPendingAmount'));
+      expect(todayView, contains('totalPendingAmount'));
       expect(todayView, isNot(contains('final evidence = Get.find')));
       expect(todayView, isNot(contains('evidence.totalPendingAmount')));
       expect(todayView, isNot(contains('evidence.loadEvidence()')));

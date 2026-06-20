@@ -3,6 +3,7 @@ import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:intl/intl.dart';
 import 'package:life_log/common/theme/app_radius.dart';
 import 'package:life_log/common/theme/theme_extensions.dart';
+import 'package:life_log/common/widgets/app_date_picker.dart';
 
 class CalendarHeader extends StatelessWidget {
   final DateTime focusedDay;
@@ -35,7 +36,7 @@ class CalendarHeader extends StatelessWidget {
           Expanded(
             child: GestureDetector(
               onTap: () async {
-                final picked = await showDatePicker(
+                final picked = await showLifeLogDatePicker(
                   context: context,
                   initialDate: focusedDay,
                   firstDate: DateTime(2020),

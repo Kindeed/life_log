@@ -134,7 +134,7 @@ class _ProfileViewState extends State<ProfileView> {
                       icon: Icons.bug_report_outlined,
                       iconColor: semantic.warning,
                       title: '开发者选项',
-                      subtitle: '日志、调试、UI Gallery',
+                      subtitle: '日志、调试、诊断信息',
                       onTap: () =>
                           _openProfilePage(context, const DeveloperView()),
                     ),

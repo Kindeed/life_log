@@ -8,6 +8,7 @@ import 'package:life_log/common/theme/theme_extensions.dart';
 import 'package:life_log/common/utils/formatters.dart';
 import 'package:life_log/common/widgets/app_button.dart';
 import 'package:life_log/common/widgets/app_card.dart';
+import 'package:life_log/common/widgets/app_date_picker.dart';
 import 'package:life_log/common/widgets/app_pill.dart';
 import 'package:life_log/common/widgets/app_safe_bottom_bar.dart';
 import 'package:life_log/common/widgets/app_text_field.dart';
@@ -104,7 +105,7 @@ class _ExpenseRecordEditViewState extends State<ExpenseRecordEditView> {
   }
 
   Future<void> _pickDate() async {
-    final picked = await showDatePicker(
+    final picked = await showLifeLogDatePicker(
       context: context,
       initialDate: _editorCubit.state.selectedDate,
       firstDate: DateTime(2000),

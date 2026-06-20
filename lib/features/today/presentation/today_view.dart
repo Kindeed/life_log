@@ -7,7 +7,6 @@ import 'package:life_log/common/theme/theme_extensions.dart';
 import 'package:life_log/common/utils/formatters.dart';
 import 'package:life_log/common/widgets/app_card.dart';
 import 'package:life_log/common/widgets/app_empty_state.dart';
-import 'package:life_log/common/widgets/app_metric_tile.dart';
 import 'package:life_log/common/widgets/app_pill.dart';
 import 'package:life_log/core/di/service_locator.dart';
 import 'package:life_log/features/evidence/presentation/evidence_add_action_launcher.dart';
@@ -52,8 +51,6 @@ class _TodayContent extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final statsColor = Theme.of(context).semanticColors.stats;
-    final semantic = Theme.of(context).semanticColors;
     final textSecondary = Theme.of(context).colorScheme.onSurfaceVariant;
     final now = DateTime.now();
     final today = DateTime(now.year, now.month, now.day);
@@ -98,91 +95,6 @@ class _TodayContent extends StatelessWidget {
                           },
                         ),
                         SizedBox(height: 12.h),
-                        BlocBuilder<
-                          SubscriptionTodayCubit,
-                          SubscriptionTodayState
-                        >(
-                          buildWhen: (previous, current) =>
-                              previous.snapshot.dueSoonEntries !=
-                              current.snapshot.dueSoonEntries,
-                          builder: (context, subscriptionState) {
-                            return _DueSoonCard(
-                              subs: subscriptionState.snapshot.dueSoonEntries,
-                              textSecondary: textSecondary,
-                            );
-                          },
-                        ),
-                        SizedBox(height: 12.h),
-                        BlocBuilder<WorkLogTodayCubit, WorkLogTodayState>(
-                          buildWhen: (previous, current) =>
-                              previous.snapshot.currentMonthSummary.workHours !=
-                              current.snapshot.currentMonthSummary.workHours,
-                          builder: (context, workLogState) {
-                            return BlocBuilder<
-                              SubscriptionTodayCubit,
-                              SubscriptionTodayState
-                            >(
-                              buildWhen: (previous, current) =>
-                                  previous.snapshot.currentMonthCost !=
-                                  current.snapshot.currentMonthCost,
-                              builder: (context, subscriptionState) {
-                                return BlocBuilder<
-                                  ExpenseRecordCubit,
-                                  ExpenseRecordState
-                                >(
-                                  buildWhen: (previous, current) =>
-                                      previous.currentMonthTotal !=
-                                      current.currentMonthTotal,
-                                  builder: (context, expenseState) {
-                                    final expenseTotal =
-                                        subscriptionState
-                                            .snapshot
-                                            .currentMonthCost +
-                                        expenseState.currentMonthTotal;
-                                    return Row(
-                                      children: [
-                                        Expanded(
-                                          child: AppMetricTile(
-                                            label: '本月工时',
-                                            value: workLogState
-                                                .snapshot
-                                                .currentMonthSummary
-                                                .workHours
-                                                .toStringAsFixed(1),
-                                            icon: Icons.timelapse_rounded,
-                                            color: semantic.work,
-                                          ),
-                                        ),
-                                        SizedBox(width: 10.w),
-                                        Expanded(
-                                          child: AppMetricTile(
-                                            label: '本月支出',
-                                            value: formatMoney(expenseTotal),
-                                            icon: Icons.payments_rounded,
-                                            color: semantic.expense,
-                                          ),
-                                        ),
-                                      ],
-                                    );
-                                  },
-                                );
-                              },
-                            );
-                          },
-                        ),
-                        SizedBox(height: 10.h),
-                        BlocBuilder<EvidenceCubit, EvidenceState>(
-                          buildWhen: (previous, current) =>
-                              previous.totalPendingAmount !=
-                              current.totalPendingAmount,
-                          builder: (context, state) => AppMetricTile(
-                            label: '凭证待报销',
-                            value: formatMoney(state.totalPendingAmount),
-                            icon: Icons.pending_actions_rounded,
-                            color: statsColor,
-                          ),
-                        ),
-                        SizedBox(height: 16.h),
                         BlocBuilder<WorkLogTodayCubit, WorkLogTodayState>(
                           buildWhen: (previous, current) =>
                               previous.snapshot.todayEntry !=
@@ -200,9 +112,36 @@ class _TodayContent extends StatelessWidget {
                             );
                           },
                         ),
+                        SizedBox(height: 12.h),
+                        BlocBuilder<
+                          SubscriptionTodayCubit,
+                          SubscriptionTodayState
+                        >(
+                          buildWhen: (previous, current) =>
+                              previous.snapshot.dueSoonEntries !=
+                                  current.snapshot.dueSoonEntries ||
+                              previous.snapshot.currentMonthCost !=
+                                  current.snapshot.currentMonthCost,
+                          builder: (context, subscriptionState) {
+                            return BlocBuilder<EvidenceCubit, EvidenceState>(
+                              buildWhen: (previous, current) =>
+                                  previous.totalPendingAmount !=
+                                  current.totalPendingAmount,
+                              builder: (context, evidenceState) {
+                                return _PendingCard(
+                                  subs:
+                                      subscriptionState.snapshot.dueSoonEntries,
+                                  pendingEvidenceAmount:
+                                      evidenceState.totalPendingAmount,
+                                  textSecondary: textSecondary,
+                                );
+                              },
+                            );
+                          },
+                        ),
                         SizedBox(height: 18.h),
                         Text(
-                          '最近记录',
+                          '最近工时',
                           style: Theme.of(context).textTheme.titleMedium
                               ?.copyWith(fontWeight: FontWeight.w800),
                         ),
@@ -250,7 +189,7 @@ class _DateHeader extends StatelessWidget {
           ).textTheme.headlineMedium?.copyWith(fontWeight: FontWeight.w800),
         ),
         SizedBox(height: 4.h),
-        Text('生活记录从今天开始', style: TextStyle(color: textSecondary)),
+        Text('今天需要记录的事情', style: TextStyle(color: textSecondary)),
       ],
     );
   }
@@ -309,7 +248,7 @@ class _TodayLogCard extends StatelessWidget {
     };
     final location = log.location?.trim();
     final extra = log.type == WorkLogEntryType.work
-        ? ' · 加班 ${(log.overtimeHours ?? 0).toStringAsFixed(1)}h'
+        ? ' · 加班 ${(log.overtimeHours ?? 0).toStringAsFixed(1)} 小时'
         : location != null && location.isNotEmpty
         ? ' · $location'
         : '';
@@ -317,14 +256,28 @@ class _TodayLogCard extends StatelessWidget {
   }
 }
 
-class _DueSoonCard extends StatelessWidget {
+class _PendingCard extends StatelessWidget {
   final List<SubscriptionEntry> subs;
+  final double pendingEvidenceAmount;
   final Color textSecondary;
 
-  const _DueSoonCard({required this.subs, required this.textSecondary});
+  const _PendingCard({
+    required this.subs,
+    required this.pendingEvidenceAmount,
+    required this.textSecondary,
+  });
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final semantic = theme.semanticColors;
+    final dueAmount = subs.fold<double>(
+      0,
+      (total, sub) => total + (sub.price ?? 0),
+    );
+    final hasDueSoon = subs.isNotEmpty;
+    final hasPendingEvidence = pendingEvidenceAmount > 0;
+
     return AppCard(
       padding: EdgeInsets.all(16.w),
       child: Column(
@@ -332,13 +285,10 @@ class _DueSoonCard extends StatelessWidget {
         children: [
           Row(
             children: [
-              Icon(
-                Icons.account_balance_wallet_rounded,
-                color: Theme.of(context).semanticColors.expense,
-              ),
+              Icon(Icons.flag_rounded, color: semantic.warning),
               SizedBox(width: 8.w),
               Text(
-                '即将扣款',
+                '待处理',
                 style: Theme.of(
                   context,
                 ).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w800),
@@ -351,24 +301,64 @@ class _DueSoonCard extends StatelessWidget {
               ),
             ],
           ),
-          if (subs.isEmpty)
-            Text('7 天内没有订阅扣款', style: TextStyle(color: textSecondary))
-          else
-            for (final sub in subs.take(3))
-              Padding(
-                padding: EdgeInsets.only(top: 8.h),
-                child: Row(
-                  children: [
-                    Expanded(child: Text(sub.name)),
-                    Text(
-                      '${sub.nextPaymentDate.month}/${sub.nextPaymentDate.day}  ${formatMoney(sub.price ?? 0)}',
-                      style: TextStyle(color: textSecondary),
-                    ),
-                  ],
-                ),
+          SizedBox(height: 10.h),
+          if (!hasDueSoon && !hasPendingEvidence)
+            Text('今天没有待处理事项', style: TextStyle(color: textSecondary))
+          else ...[
+            if (hasDueSoon)
+              _PendingRow(
+                icon: Icons.account_balance_wallet_rounded,
+                color: semantic.expense,
+                label: '7 天内扣款',
+                value: '${subs.length} 项 · ${formatMoney(dueAmount)}',
               ),
+            if (hasPendingEvidence) ...[
+              if (hasDueSoon) SizedBox(height: 8.h),
+              _PendingRow(
+                icon: Icons.pending_actions_rounded,
+                color: semantic.stats,
+                label: '待报销凭证',
+                value: formatMoney(pendingEvidenceAmount),
+              ),
+            ],
+          ],
         ],
       ),
+    );
+  }
+}
+
+class _PendingRow extends StatelessWidget {
+  final IconData icon;
+  final Color color;
+  final String label;
+  final String value;
+
+  const _PendingRow({
+    required this.icon,
+    required this.color,
+    required this.label,
+    required this.value,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final textSecondary = Theme.of(context).colorScheme.onSurfaceVariant;
+    return Row(
+      children: [
+        Container(
+          width: 30.w,
+          height: 30.w,
+          decoration: BoxDecoration(
+            color: color.withValues(alpha: 0.12),
+            borderRadius: BorderRadius.circular(8.r),
+          ),
+          child: Icon(icon, color: color, size: 17.sp),
+        ),
+        SizedBox(width: 10.w),
+        Expanded(child: Text(label)),
+        Text(value, style: TextStyle(color: textSecondary)),
+      ],
     );
   }
 }
