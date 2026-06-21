@@ -165,6 +165,7 @@ This is the active defect ledger. `REVIEW_REPORT.md` is historical context only.
 - Newly discovered and fixed: T23. Isar-backed tests now load `isar.dll` from `ISAR_DLL_PATH` or `D:\Tool\Isar\isar.dll` and initialize through the current `DbService` schema/DAO path.
 - Newly discovered and fixed: T24. Merges to `main` now trigger a CI debug APK build artifact instead of requiring a manual workflow dispatch for every post-merge test package.
 - Newly discovered and fixed: T25. Evidence presentation boundary tests now normalize Windows CRLF line endings before matching multiline source snippets.
+- Newly discovered and fixed: T26. Local quality gates now run `build_runner` before format checks so generated Isar schema formatting drift is caught before tag release workflows fail.
 
 ## Repository Hygiene Audit (2026-05-28)
 
@@ -430,6 +431,7 @@ This is the active defect ledger. `REVIEW_REPORT.md` is historical context only.
 | T23 | Medium | fixed | Isar test environment | `db_service_test.dart` only checked for `isar.dll` in the current working directory and manually opened Isar with an outdated schema list, so the Isar-backed tests were skipped on this machine and then failed once a DLL was supplied. | Fixed: copied the existing `isar_flutter_libs 3.1.0+1` Windows DLL to `D:\Tool\Isar\isar.dll`, made tests accept `ISAR_DLL_PATH` or the D-drive default, and initialized tests through `DbService.schemas` plus `initWithDatabaseForTest()` so schema and DAO setup stay current. |
 | T24 | Medium | fixed | main CI APK | Merging a PR into `main` did not automatically build a CI test APK; `build.yml` only runs on `v*` tags and `test-apk.yml` only runs on manual dispatch, so post-merge verification packages could be missed unless someone remembered to start the workflow. | Fixed: added `Main CI Test APK` on `push` to `main` and manual dispatch, running dependency install, build_runner, format, fatal analyze, tests, debug APK build, APK size report, and artifact upload. |
 | T25 | Low | fixed | source boundary tests | `evidence_cubit_test.dart` matched a multiline source snippet containing `\n` directly after reading `today_view.dart`; on Windows working trees with CRLF, the semantic source pattern existed but the test failed due to line-ending differences. | Fixed: normalize CRLF to LF before matching the multiline `showEvidenceAddActions` call, keeping the boundary assertion stable across platforms. |
+| T26 | Medium | fixed | generated code release gate | GitHub release and main-CI workflows run `build_runner` before `dart format --set-exit-if-changed .`, but the local quality gate did not, allowing generated Isar `.g.dart` formatting drift to pass locally and fail the `v1.4.15` tag workflow at the formatting step. | Fixed: regenerated/formatted the affected Isar generated files and added `build-runner` to `tool/quality_gate.ps1` before the format/analyze/test/build sequence, with test coverage in `quality_gate_script_test.dart`. |
 
 ### Backup / Restore
 

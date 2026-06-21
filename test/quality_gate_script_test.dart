@@ -15,6 +15,13 @@ void main() {
 
       final source = script.readAsStringSync();
 
+      expect(source, contains("-Name 'build-runner'"));
+      expect(
+        source,
+        contains(
+          "'dart', 'run', 'build_runner', 'build', '--delete-conflicting-outputs'",
+        ),
+      );
       expect(source, contains("-Name 'dart-format-check'"));
       expect(
         source,

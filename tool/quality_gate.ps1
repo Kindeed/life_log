@@ -156,6 +156,10 @@ function Invoke-RequiredMatchScan {
 
 try {
   Invoke-GateCommand `
+    -Name 'build-runner' `
+    -Command @('dart', 'run', 'build_runner', 'build', '--delete-conflicting-outputs')
+
+  Invoke-GateCommand `
     -Name 'dart-format-check' `
     -Command @('dart', 'format', '--set-exit-if-changed', '.')
 
