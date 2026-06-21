@@ -15,6 +15,30 @@ void main() {
 
       final source = script.readAsStringSync();
 
+      final formatCheckIndex = source.indexOf("-Name 'dart-format-check'");
+      final buildRunnerIndex = source.indexOf("-Name 'build-runner'");
+      final generatedFormatIndex = source.indexOf(
+        "-Name 'format-generated-code'",
+      );
+
+      expect(formatCheckIndex, isNonNegative);
+      expect(buildRunnerIndex, isNonNegative);
+      expect(generatedFormatIndex, isNonNegative);
+      expect(
+        formatCheckIndex,
+        lessThan(buildRunnerIndex),
+        reason: 'Committed source should be checked before generators run.',
+      );
+      expect(
+        buildRunnerIndex,
+        lessThan(generatedFormatIndex),
+        reason: 'Generated Isar outputs should be formatted before analysis.',
+      );
+      expect(source, contains("-Name 'dart-format-check'"));
+      expect(
+        source,
+        contains("'dart', 'format', '--set-exit-if-changed', '.'"),
+      );
       expect(source, contains("-Name 'build-runner'"));
       expect(
         source,
@@ -22,11 +46,8 @@ void main() {
           "'dart', 'run', 'build_runner', 'build', '--delete-conflicting-outputs'",
         ),
       );
-      expect(source, contains("-Name 'dart-format-check'"));
-      expect(
-        source,
-        contains("'dart', 'format', '--set-exit-if-changed', '.'"),
-      );
+      expect(source, contains("-Name 'format-generated-code'"));
+      expect(source, contains("'dart', 'format', '.'"));
       expect(source, contains("-Name 'flutter-analyze'"));
       expect(
         source,

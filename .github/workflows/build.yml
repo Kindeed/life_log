@@ -82,12 +82,15 @@ jobs:
       - name: Install dependencies
         run: flutter pub get --enforce-lockfile
 
+      - name: Check formatting
+        run: dart format --set-exit-if-changed .
+
       # ── 6. 代码生成（Isar .g.dart）────────────────────
       - name: Run build_runner
         run: dart run build_runner build --delete-conflicting-outputs
 
-      - name: Check formatting
-        run: dart format --set-exit-if-changed .
+      - name: Format generated code
+        run: dart format .
 
       # ── 7. 静态分析 ──────────────────────────────────
       - name: Analyze code

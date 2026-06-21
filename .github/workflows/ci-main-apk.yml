@@ -57,11 +57,14 @@ jobs:
       - name: Install dependencies
         run: flutter pub get --enforce-lockfile
 
+      - name: Check formatting
+        run: dart format --set-exit-if-changed .
+
       - name: Run build_runner
         run: dart run build_runner build --delete-conflicting-outputs
 
-      - name: Check formatting
-        run: dart format --set-exit-if-changed .
+      - name: Format generated code
+        run: dart format .
 
       - name: Analyze code
         run: flutter analyze --fatal-infos --fatal-warnings

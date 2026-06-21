@@ -84,11 +84,11 @@ void main() {
 
       expect(metadata, contains('localSchemaVersion = 2026062101'));
       expect(metadata, contains('syncProtocolVersion = 2'));
-      expect(metadata, contains("minimumSupportedAppVersion = '1.4.16'"));
-      expect(metadata, contains('minimumSupportedBuildNumber = 22'));
+      expect(metadata, contains("minimumSupportedAppVersion = '1.4.17'"));
+      expect(metadata, contains('minimumSupportedBuildNumber = 23'));
       expect(logs, contains('ReleaseMetadata.diagnosticLines()'));
       expect(protocol, contains('Sync protocol version: `2`'));
-      expect(protocol, contains('Minimum supported app version: `1.4.16+22`'));
+      expect(protocol, contains('Minimum supported app version: `1.4.17+23`'));
       expect(protocol, contains('Photos are local-only'));
     });
   });

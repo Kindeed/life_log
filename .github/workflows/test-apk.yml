@@ -72,8 +72,14 @@ jobs:
       - name: Install dependencies
         run: flutter pub get --enforce-lockfile
 
+      - name: Check formatting
+        run: dart format --set-exit-if-changed .
+
       - name: Run build_runner
         run: dart run build_runner build --delete-conflicting-outputs
+
+      - name: Format generated code
+        run: dart format .
 
       - name: Decode release keystore
         if: ${{ inputs.build_mode == 'release' }}
@@ -89,9 +95,6 @@ jobs:
           keyAlias=${{ secrets.KEY_ALIAS }}
           storeFile=upload-keystore.jks
           EOF
-
-      - name: Check formatting
-        run: dart format --set-exit-if-changed .
 
       - name: Analyze code
         run: flutter analyze --fatal-infos --fatal-warnings

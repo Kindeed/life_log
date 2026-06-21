@@ -1,11 +1,11 @@
 # Changelog
 
-## [1.4.16] - 2026-06-21
+## [1.4.17] - 2026-06-21
 
 ### 架构现代化与同步协议重构
 
 #### 新增 (Added)
-- 应用版本升级到 `1.4.16+22`。
+- 应用版本升级到 `1.4.17+23`。
 - 新增 `IsarDatabase`、分 feature DAO、`SyncEngine`、`SyncAdapter`、同步游标、同步队列和本地冲突记录，为后续模块扩展提供统一边界。
 - 新增凭证附件队列和 Supabase migration，附件上传、远端记录和删除确认可独立重试。
 - 新增本地匿名数据迁移批次模型，登录后不再自动认领匿名数据，后续迁移必须进入显式用户确认流程。
@@ -28,11 +28,11 @@
 - 修复 release 缺少签名配置时可能 fallback 到 debug signing 的发布风险。
 - 修复 release/debug 日志和诊断导出中 email、userId、文件路径、Supabase URL、Storage path 脱敏不足的问题。
 - 修复本机 Isar 测试只检查仓库根目录 `isar.dll` 导致数据库测试被跳过的问题；现在支持 `ISAR_DLL_PATH` 或 `D:\Tool\Isar\isar.dll`。
-- 修复 `v1.4.15` GitHub Release workflow 在 `build_runner` 后因生成的 Isar `.g.dart` 文件格式漂移而失败的问题；本地 `tool/quality_gate.ps1` 现在也会先运行 `build_runner`。
+- 修复 `v1.4.15` 和 `v1.4.16` GitHub Release workflow 在干净 CI 环境中因 Isar 生成代码格式化顺序错误而失败的问题；现在先检查已提交源码格式，再生成并格式化 `.g.dart` 文件供 analyze/test/build 使用。
 
 #### 验证 (Validation)
 - `tool/quality_gate.ps1` 通过。
-- `dart run build_runner build --delete-conflicting-outputs` 已纳入本地质量门禁。
+- `dart run build_runner build --delete-conflicting-outputs` 已纳入本地质量门禁，生成代码会在 analyze/test/build 前自动格式化。
 - `dart format --set-exit-if-changed .` 通过。
 - `flutter analyze --fatal-infos --fatal-warnings` 通过。
 - `flutter test` 通过，当前环境为 `443 passed`。
@@ -41,12 +41,19 @@
 - 照片 local-only 同步字段扫描通过。
 - `flutter build apk --debug` 通过。
 
+## [1.4.16] - 2026-06-21
+
+### 被 1.4.17 取代的发布尝试
+
+- `v1.4.16` tag 已推送，但 GitHub Release workflow 在格式检查阶段失败，未生成正式 Release APK。
+- `1.4.17+23` 包含同一批架构现代化改造，并修正 CI 中 Isar 生成代码的格式化顺序后重新发布。
+
 ## [1.4.15] - 2026-06-21
 
-### 被 1.4.16 取代的发布尝试
+### 被 1.4.17 取代的发布尝试
 
 - `v1.4.15` tag 已推送，但 GitHub Release workflow 在格式检查阶段失败，未生成正式 Release APK。
-- `1.4.16+22` 包含同一批架构现代化改造，并补齐生成代码格式和本地门禁后重新发布。
+- `1.4.17+23` 包含同一批架构现代化改造，并补齐生成代码格式和本地门禁后重新发布。
 
 ## [1.4.14] - 2026-06-20
 

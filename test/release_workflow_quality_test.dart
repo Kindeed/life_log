@@ -16,6 +16,10 @@ void main() {
         final formatIndex = source.indexOf(
           'dart format --set-exit-if-changed .',
         );
+        final buildRunnerIndex = source.indexOf(
+          'dart run build_runner build --delete-conflicting-outputs',
+        );
+        final generatedFormatIndex = source.indexOf('dart format .');
         final analyzeIndex = source.indexOf(
           'flutter analyze --fatal-infos --fatal-warnings',
         );
@@ -23,6 +27,16 @@ void main() {
         final firstBuildIndex = source.indexOf('flutter build apk');
 
         expect(formatIndex, isNonNegative, reason: '$path must check format.');
+        expect(
+          buildRunnerIndex,
+          isNonNegative,
+          reason: '$path must regenerate checked-in Isar outputs.',
+        );
+        expect(
+          generatedFormatIndex,
+          isNonNegative,
+          reason: '$path must normalize generated code before analysis.',
+        );
         expect(
           analyzeIndex,
           isNonNegative,
@@ -36,8 +50,18 @@ void main() {
         );
         expect(
           formatIndex,
+          lessThan(buildRunnerIndex),
+          reason: '$path should reject unformatted source before generators.',
+        );
+        expect(
+          buildRunnerIndex,
+          lessThan(generatedFormatIndex),
+          reason: '$path should format Isar generator output.',
+        );
+        expect(
+          generatedFormatIndex,
           lessThan(analyzeIndex),
-          reason: '$path should reject unformatted code before analysis.',
+          reason: '$path should normalize generated code before analysis.',
         );
         expect(
           analyzeIndex,
