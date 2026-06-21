@@ -288,7 +288,7 @@ void main() {
       ].map((path) => File(path).readAsStringSync()).join('\n');
       final todaySource = File(
         'lib/features/today/presentation/today_view.dart',
-      ).readAsStringSync();
+      ).readAsStringSync().replaceAll('\r\n', '\n');
 
       expect(sources, isNot(contains('Get.to(')));
       expect(sources, isNot(contains('Get.bottomSheet(')));

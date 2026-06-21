@@ -6,7 +6,7 @@ Last updated: 2026-06-21
 
 - Local schema version: `2026062101`
 - Sync protocol version: `2`
-- Minimum supported app version: `1.4.14+20`
+- Minimum supported app version: `1.4.15+21`
 - Minimum supported sync protocol version: `2`
 
 ## Entity Identity

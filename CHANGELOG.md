@@ -1,5 +1,44 @@
 # Changelog
 
+## [1.4.15] - 2026-06-21
+
+### 架构现代化与同步协议重构
+
+#### 新增 (Added)
+- 应用版本升级到 `1.4.15+21`。
+- 新增 `IsarDatabase`、分 feature DAO、`SyncEngine`、`SyncAdapter`、同步游标、同步队列和本地冲突记录，为后续模块扩展提供统一边界。
+- 新增凭证附件队列和 Supabase migration，附件上传、远端记录和删除确认可独立重试。
+- 新增本地匿名数据迁移批次模型，登录后不再自动认领匿名数据，后续迁移必须进入显式用户确认流程。
+- 新增 `projectSyncId` 关系字段和迁移，消费/凭证通过稳定项目身份关联，不再依赖可变项目名。
+- 新增订阅 anchor date、next due date、end date、status、reminder days 等周期字段，支持更稳定的月/年/自定义账期计算。
+- 新增共享 UI 页面模板、章节、指标网格、滑动操作和 `AppTypography`，减少页面级重复组件。
+- 新增 `Main CI Test APK` 工作流，合并到 `main` 后自动运行 format、fatal analyze、测试、debug APK 构建、包体报告并上传测试包 artifact。
+
+#### 变更 (Changed)
+- `DbService` 保留为兼容 facade，但核心查询逐步委托到 feature DAO，owner/deleted 过滤下沉到 Isar 查询边界。
+- 云端创建写入改为按 `(user_id, sync_id)` 幂等 upsert，降低网络抖动后重复插入风险。
+- 同步 pull cursor 改为每表独立 `(updated_at, id)` 边界，减少跨表耦合和同 timestamp 漏拉风险。
+- 工时数据层支持同一天多条真实记录，统计按聚合结果计算，不再静默删除同日原始记录。
+- Release、手动测试包和本地质量门禁统一使用 fatal analyzer、全量测试、包体报告和照片 local-only 扫描。
+
+#### 修复 (Fixed)
+- 修复登录/启动同步自动认领匿名本地数据的高风险行为。
+- 修复凭证附件上传和删除与凭证行写入耦合导致的孤儿文件/状态不一致风险。
+- 修复同步冲突只停留在日志或失败返回中、缺少本地可追踪记录的问题。
+- 修复 release 缺少签名配置时可能 fallback 到 debug signing 的发布风险。
+- 修复 release/debug 日志和诊断导出中 email、userId、文件路径、Supabase URL、Storage path 脱敏不足的问题。
+- 修复本机 Isar 测试只检查仓库根目录 `isar.dll` 导致数据库测试被跳过的问题；现在支持 `ISAR_DLL_PATH` 或 `D:\Tool\Isar\isar.dll`。
+
+#### 验证 (Validation)
+- `tool/quality_gate.ps1` 通过。
+- `dart format --set-exit-if-changed .` 通过。
+- `flutter analyze --fatal-infos --fatal-warnings` 通过。
+- `flutter test` 通过，当前环境为 `442 passed`。
+- `git diff --check` 通过。
+- 旧 `lib/modules` / GetX 运行时扫描通过。
+- 照片 local-only 同步字段扫描通过。
+- `flutter build apk --debug` 通过。
+
 ## [1.4.14] - 2026-06-20
 
 ### 首页与日期选择体验优化

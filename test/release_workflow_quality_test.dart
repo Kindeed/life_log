@@ -8,6 +8,7 @@ void main() {
       final workflowPaths = [
         '.github/workflows/build.yml',
         '.github/workflows/test-apk.yml',
+        '.github/workflows/ci-main-apk.yml',
       ];
 
       for (final path in workflowPaths) {
@@ -49,6 +50,20 @@ void main() {
           reason: '$path should run tests before building APKs.',
         );
       }
+    });
+
+    test('main branch pushes publish a CI debug APK artifact', () {
+      final source = File(
+        '.github/workflows/ci-main-apk.yml',
+      ).readAsStringSync();
+
+      expect(source, contains('name: Main CI Test APK'));
+      expect(source, contains('push:'));
+      expect(source, contains('branches:'));
+      expect(source, contains('- main'));
+      expect(source, contains('flutter build apk --debug'));
+      expect(source, contains('lifelog-main-debug.apk'));
+      expect(source, contains('actions/upload-artifact@v4'));
     });
   });
 }

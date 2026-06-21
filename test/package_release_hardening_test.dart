@@ -27,19 +27,27 @@ void main() {
       final testWorkflow = File(
         '.github/workflows/test-apk.yml',
       ).readAsStringSync();
+      final mainCiWorkflow = File(
+        '.github/workflows/ci-main-apk.yml',
+      ).readAsStringSync();
 
-      for (final source in [releaseWorkflow, testWorkflow]) {
+      for (final source in [releaseWorkflow, testWorkflow, mainCiWorkflow]) {
         expect(source, contains('tool/apk_size_report.dart'));
         expect(source, contains('lifelog-apk-size-report.md'));
       }
       expect(releaseWorkflow, contains('--max-mb=120'));
       expect(testWorkflow, contains('--max-mb=250'));
+      expect(mainCiWorkflow, contains('--max-mb=250'));
       expect(
         releaseWorkflow,
         contains('build/app/outputs/flutter-apk/lifelog-apk-size-report.md'),
       );
       expect(
         testWorkflow,
+        contains('build/app/outputs/flutter-apk/lifelog-apk-size-report.md'),
+      );
+      expect(
+        mainCiWorkflow,
         contains('build/app/outputs/flutter-apk/lifelog-apk-size-report.md'),
       );
     });
@@ -76,10 +84,11 @@ void main() {
 
       expect(metadata, contains('localSchemaVersion = 2026062101'));
       expect(metadata, contains('syncProtocolVersion = 2'));
-      expect(metadata, contains("minimumSupportedAppVersion = '1.4.14'"));
-      expect(metadata, contains('minimumSupportedBuildNumber = 20'));
+      expect(metadata, contains("minimumSupportedAppVersion = '1.4.15'"));
+      expect(metadata, contains('minimumSupportedBuildNumber = 21'));
       expect(logs, contains('ReleaseMetadata.diagnosticLines()'));
       expect(protocol, contains('Sync protocol version: `2`'));
+      expect(protocol, contains('Minimum supported app version: `1.4.15+21`'));
       expect(protocol, contains('Photos are local-only'));
     });
   });
