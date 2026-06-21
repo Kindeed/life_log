@@ -9,14 +9,14 @@ import 'package:life_log/features/subscription/application/watch_subscription_en
 import 'package:life_log/features/subscription/domain/entities/subscription_entry.dart';
 import 'package:life_log/features/subscription/domain/entities/subscription_entry_stats.dart';
 
-enum SubscriptionStatus { initial, loading, ready, failure }
+enum SubscriptionReadStatus { initial, loading, ready, failure }
 
 enum SubscriptionFilter { all, monthly, yearly, oneTime }
 
 enum SubscriptionSortMode { manual, date, price }
 
 final class SubscriptionState extends Equatable {
-  final SubscriptionStatus status;
+  final SubscriptionReadStatus status;
   final List<SubscriptionEntry> entries;
   final List<SubscriptionEntry> visibleEntries;
   final List<SubscriptionEntry> dueSoonEntries;
@@ -46,7 +46,7 @@ final class SubscriptionState extends Equatable {
       filter: SubscriptionFilter.all,
       sortMode: SubscriptionSortMode.manual,
       referenceDay: now,
-      status: SubscriptionStatus.initial,
+      status: SubscriptionReadStatus.initial,
     );
   }
 
@@ -55,7 +55,7 @@ final class SubscriptionState extends Equatable {
     required SubscriptionFilter filter,
     required SubscriptionSortMode sortMode,
     required DateTime referenceDay,
-    SubscriptionStatus status = SubscriptionStatus.ready,
+    SubscriptionReadStatus status = SubscriptionReadStatus.ready,
     AppFailure? failure,
   }) {
     final localReference = dateOnlyLocal(referenceDay);
@@ -81,7 +81,7 @@ final class SubscriptionState extends Equatable {
   }
 
   SubscriptionState copyWith({
-    SubscriptionStatus? status,
+    SubscriptionReadStatus? status,
     AppFailure? failure,
     bool clearFailure = false,
   }) {
@@ -173,7 +173,10 @@ final class SubscriptionCubit extends Cubit<SubscriptionState> {
   Future<void> loadEntries() async {
     if (isClosed) return;
     emit(
-      state.copyWith(status: SubscriptionStatus.loading, clearFailure: true),
+      state.copyWith(
+        status: SubscriptionReadStatus.loading,
+        clearFailure: true,
+      ),
     );
 
     final result = await _loadEntries();
@@ -191,7 +194,10 @@ final class SubscriptionCubit extends Cubit<SubscriptionState> {
       },
       failure: (failure) {
         emit(
-          state.copyWith(status: SubscriptionStatus.failure, failure: failure),
+          state.copyWith(
+            status: SubscriptionReadStatus.failure,
+            failure: failure,
+          ),
         );
       },
     );

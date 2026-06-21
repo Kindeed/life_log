@@ -40,6 +40,7 @@ final class EvidenceEntry extends Equatable {
   final int id;
   final String projectName;
   final int? projectId;
+  final String? projectSyncId;
   final DateTime evidenceDate;
   final double? amount;
   final String currency;
@@ -59,6 +60,7 @@ final class EvidenceEntry extends Equatable {
     required this.projectName,
     required this.evidenceDate,
     this.projectId,
+    this.projectSyncId,
     this.amount,
     this.currency = 'CNY',
     this.category = EvidenceEntryCategory.invoice,
@@ -78,6 +80,7 @@ final class EvidenceEntry extends Equatable {
     id,
     projectName,
     projectId,
+    projectSyncId,
     evidenceDate,
     amount,
     currency,

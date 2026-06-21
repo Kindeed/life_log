@@ -40,6 +40,7 @@ class ExpenseRecordRepository {
       );
       record.projectId = project.id;
       record.projectName = project.name;
+      record.projectSyncId = project.syncId;
     }
 
     await _localDataSource.addExpenseRecord(record);

@@ -31,5 +31,27 @@ void main() {
             'CI release builds should not hit Aliyun before Flutter storage.',
       );
     });
+
+    test('release builds fail instead of falling back to debug signing', () {
+      final source = File('android/app/build.gradle.kts').readAsStringSync();
+
+      expect(
+        source,
+        contains('Release signing config missing'),
+        reason:
+            'Release builds must fail when the production keystore is absent.',
+      );
+      expect(
+        source,
+        contains('gradle.taskGraph.whenReady'),
+        reason:
+            'The failure should be scoped to release tasks so debug builds still work.',
+      );
+      expect(
+        source,
+        isNot(contains('signingConfigs.getByName("debug")')),
+        reason: 'Release builds must never silently use the debug key.',
+      );
+    });
   });
 }

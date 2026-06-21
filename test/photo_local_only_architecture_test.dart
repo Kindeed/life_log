@@ -57,6 +57,7 @@ void main() {
         'subscriptions',
         'projects',
         'expense_evidence',
+        'evidence_attachments',
         'expense_records',
       });
     });
@@ -71,13 +72,7 @@ void main() {
           .map((match) => match.group(1)!)
           .toSet();
 
-      expect(helpers, {
-        'getPendingLogsForSync',
-        'getPendingSubscriptionsForSync',
-        'getPendingProjectsForSync',
-        'getPendingEvidenceForSync',
-        'getPendingExpenseRecordsForSync',
-      });
+      expect(helpers, {'getPendingEvidenceAttachmentsForSync'});
     });
 
     test(
@@ -126,6 +121,7 @@ void main() {
           'getPendingLogsForSync',
           'getPendingSubscriptionsForSync',
           'getPendingEvidenceForSync',
+          'getPendingEvidenceAttachmentsForSync',
           'getPendingProjectsForSync',
           'getPendingExpenseRecordsForSync',
           'syncRemoteLogsToLocal',

@@ -11,9 +11,12 @@ import 'package:life_log/common/utils/formatters.dart';
 import 'package:life_log/common/widgets/app_card.dart';
 import 'package:life_log/common/widgets/app_empty_state.dart';
 import 'package:life_log/common/widgets/app_filter_chip_bar.dart';
+import 'package:life_log/common/widgets/app_list_page.dart';
+import 'package:life_log/common/widgets/app_metric_grid.dart';
 import 'package:life_log/common/widgets/app_metric_tile.dart';
 import 'package:life_log/common/widgets/app_pill.dart';
-import 'package:life_log/common/widgets/app_section_header.dart';
+import 'package:life_log/common/widgets/app_section.dart';
+import 'package:life_log/common/widgets/app_swipe_action.dart';
 import 'package:life_log/core/di/service_locator.dart';
 import 'package:life_log/features/subscription/application/delete_subscription_entry.dart';
 import 'package:life_log/features/subscription/application/reorder_subscription_entries.dart';
@@ -44,117 +47,105 @@ class _SubscriptionContent extends StatelessWidget {
     final semantic = theme.semanticColors;
     final textSecondary = theme.colorScheme.onSurfaceVariant;
 
-    return Scaffold(
-      backgroundColor: theme.scaffoldBackgroundColor,
-      appBar: AppBar(title: const Text("财务")),
-      body: SafeArea(
-        child: BlocBuilder<SubscriptionCubit, SubscriptionState>(
-          builder: (context, state) {
-            final visibleEntries = state.visibleEntries;
-            if (visibleEntries.isEmpty) {
-              return const AppEmptyState(
-                icon: Icons.subscriptions_outlined,
-                title: "还没有固定支出",
-                message: "使用右下角「添加支出」新增订阅、房租或月度开销。",
+    return BlocBuilder<SubscriptionCubit, SubscriptionState>(
+      builder: (context, state) {
+        final visibleEntries = state.visibleEntries;
+        return AppListPage(
+          title: "财务",
+          isEmpty: visibleEntries.isEmpty,
+          empty: const AppEmptyState(
+            icon: Icons.subscriptions_outlined,
+            title: "还没有固定支出",
+            message: "使用右下角「添加支出」新增订阅、房租或月度开销。",
+          ),
+          overview: _SubscriptionOverview(
+            state: state,
+            cubit: context.read<SubscriptionCubit>(),
+            semantic: semantic,
+            textSecondary: textSecondary,
+          ),
+          sliverBuilder: (_) {
+            if (state.filter == SubscriptionFilter.all &&
+                state.sortMode == SubscriptionSortMode.manual) {
+              return SliverPadding(
+                padding: EdgeInsets.fromLTRB(16.w, 8.h, 16.w, 88.h),
+                sliver: SliverReorderableList(
+                  itemCount: visibleEntries.length,
+                  onReorder: (oldIndex, newIndex) {
+                    unawaited(
+                      _reorderEntries(
+                        context,
+                        visibleEntries,
+                        oldIndex,
+                        newIndex,
+                      ),
+                    );
+                  },
+                  itemBuilder: (context, index) {
+                    final entry = visibleEntries[index];
+                    return ConstrainedPage(
+                      key: ValueKey(entry.id),
+                      child: Padding(
+                        padding: EdgeInsets.only(bottom: 12.h),
+                        child: ReorderableDelayedDragStartListener(
+                          index: index,
+                          child: _SubscriptionCard(
+                            entry: entry,
+                            semantic: semantic,
+                            textSecondary: textSecondary,
+                            showDragHandle: true,
+                            onTap: () => openSubscriptionEditorPage(
+                              context,
+                              entry: entry,
+                            ),
+                            onDelete: () => _deleteEntry(context, entry),
+                          ),
+                        ),
+                      ),
+                    );
+                  },
+                ),
               );
             }
 
-            return CustomScrollView(
-              slivers: [
-                SliverToBoxAdapter(
-                  child: ConstrainedPage(
-                    child: _SubscriptionOverview(
-                      state: state,
-                      cubit: context.read<SubscriptionCubit>(),
-                      semantic: semantic,
-                      textSecondary: textSecondary,
+            return SliverPadding(
+              padding: EdgeInsets.fromLTRB(16.w, 8.h, 16.w, 88.h),
+              sliver: SliverList.separated(
+                itemCount: visibleEntries.length,
+                separatorBuilder: (_, _) => SizedBox(height: 12.h),
+                itemBuilder: (context, index) {
+                  final entry = visibleEntries[index];
+                  return ConstrainedPage(
+                    child: Dismissible(
+                      key: ValueKey('sub-dismiss-${entry.id}'),
+                      direction: DismissDirection.endToStart,
+                      background: const SizedBox.shrink(),
+                      secondaryBackground: AppSwipeAction.delete(
+                        color: theme.colorScheme.error,
+                      ),
+                      confirmDismiss: (_) => _deleteEntry(context, entry),
+                      child: _SubscriptionCard(
+                        entry: entry,
+                        semantic: semantic,
+                        textSecondary: textSecondary,
+                        onTap: () =>
+                            openSubscriptionEditorPage(context, entry: entry),
+                        onDelete: () => _deleteEntry(context, entry),
+                      ),
                     ),
-                  ),
-                ),
-                if (state.filter == SubscriptionFilter.all &&
-                    state.sortMode == SubscriptionSortMode.manual)
-                  SliverPadding(
-                    padding: EdgeInsets.fromLTRB(16.w, 8.h, 16.w, 88.h),
-                    sliver: SliverReorderableList(
-                      itemCount: visibleEntries.length,
-                      onReorder: (oldIndex, newIndex) {
-                        unawaited(
-                          _reorderEntries(
-                            context,
-                            visibleEntries,
-                            oldIndex,
-                            newIndex,
-                          ),
-                        );
-                      },
-                      itemBuilder: (context, index) {
-                        final entry = visibleEntries[index];
-                        return ConstrainedPage(
-                          key: ValueKey(entry.id),
-                          child: Padding(
-                            padding: EdgeInsets.only(bottom: 12.h),
-                            child: ReorderableDelayedDragStartListener(
-                              index: index,
-                              child: _SubscriptionCard(
-                                entry: entry,
-                                semantic: semantic,
-                                textSecondary: textSecondary,
-                                showDragHandle: true,
-                                onTap: () => openSubscriptionEditorPage(
-                                  context,
-                                  entry: entry,
-                                ),
-                                onDelete: () => _deleteEntry(context, entry),
-                              ),
-                            ),
-                          ),
-                        );
-                      },
-                    ),
-                  )
-                else
-                  SliverPadding(
-                    padding: EdgeInsets.fromLTRB(16.w, 8.h, 16.w, 88.h),
-                    sliver: SliverList.separated(
-                      itemCount: visibleEntries.length,
-                      separatorBuilder: (_, _) => SizedBox(height: 12.h),
-                      itemBuilder: (context, index) {
-                        final entry = visibleEntries[index];
-                        return ConstrainedPage(
-                          child: Dismissible(
-                            key: ValueKey('sub-dismiss-${entry.id}'),
-                            direction: DismissDirection.endToStart,
-                            background: const SizedBox.shrink(),
-                            secondaryBackground: _DeleteBackground(
-                              color: theme.colorScheme.error,
-                            ),
-                            confirmDismiss: (_) => _deleteEntry(context, entry),
-                            child: _SubscriptionCard(
-                              entry: entry,
-                              semantic: semantic,
-                              textSecondary: textSecondary,
-                              onTap: () => openSubscriptionEditorPage(
-                                context,
-                                entry: entry,
-                              ),
-                              onDelete: () => _deleteEntry(context, entry),
-                            ),
-                          ),
-                        );
-                      },
-                    ),
-                  ),
-              ],
+                  );
+                },
+              ),
             );
           },
-        ),
-      ),
-      floatingActionButton: FloatingActionButton.extended(
-        heroTag: 'subscription_add_fab',
-        onPressed: () => openSubscriptionEditorPage(context),
-        icon: const Icon(Icons.add_rounded),
-        label: const Text("添加支出"),
-      ),
+          floatingActionButton: FloatingActionButton.extended(
+            heroTag: 'subscription_add_fab',
+            onPressed: () => openSubscriptionEditorPage(context),
+            icon: const Icon(Icons.add_rounded),
+            label: const Text("添加支出"),
+          ),
+        );
+      },
     );
   }
 
@@ -260,24 +251,19 @@ class _SubscriptionOverview extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Row(
+          AppMetricGrid(
             children: [
-              Expanded(
-                child: AppMetricTile(
-                  label: "本月预计",
-                  value: formatMoney(state.currentMonthCost),
-                  icon: Icons.calendar_month_rounded,
-                  color: semantic.expense,
-                ),
+              AppMetricTile(
+                label: "本月预计",
+                value: formatMoney(state.currentMonthCost),
+                icon: Icons.calendar_month_rounded,
+                color: semantic.expense,
               ),
-              SizedBox(width: 10.w),
-              Expanded(
-                child: AppMetricTile(
-                  label: "固定年支",
-                  value: formatMoney(state.yearlyCost),
-                  icon: Icons.account_balance_wallet_rounded,
-                  color: semantic.stats,
-                ),
+              AppMetricTile(
+                label: "固定年支",
+                value: formatMoney(state.yearlyCost),
+                icon: Icons.account_balance_wallet_rounded,
+                color: semantic.stats,
               ),
             ],
           ),
@@ -310,53 +296,55 @@ class _SubscriptionOverview extends StatelessWidget {
             ),
           ),
           SizedBox(height: 14.h),
-          const AppSectionHeader(title: "分类"),
-          SizedBox(height: 8.h),
-          AppFilterChipBar<SubscriptionFilter>(
-            value: state.filter,
-            onChanged: cubit.setFilter,
-            items: const [
-              AppFilterChipItem(value: SubscriptionFilter.all, label: "全部"),
-              AppFilterChipItem(
-                value: SubscriptionFilter.monthly,
-                label: "每月",
-                icon: Icons.repeat_rounded,
-              ),
-              AppFilterChipItem(
-                value: SubscriptionFilter.yearly,
-                label: "每年",
-                icon: Icons.event_repeat_rounded,
-              ),
-              AppFilterChipItem(
-                value: SubscriptionFilter.oneTime,
-                label: "一次性",
-                icon: Icons.looks_one_rounded,
-              ),
-            ],
+          AppSection(
+            title: "分类",
+            child: AppFilterChipBar<SubscriptionFilter>(
+              value: state.filter,
+              onChanged: cubit.setFilter,
+              items: const [
+                AppFilterChipItem(value: SubscriptionFilter.all, label: "全部"),
+                AppFilterChipItem(
+                  value: SubscriptionFilter.monthly,
+                  label: "每月",
+                  icon: Icons.repeat_rounded,
+                ),
+                AppFilterChipItem(
+                  value: SubscriptionFilter.yearly,
+                  label: "每年",
+                  icon: Icons.event_repeat_rounded,
+                ),
+                AppFilterChipItem(
+                  value: SubscriptionFilter.oneTime,
+                  label: "一次性",
+                  icon: Icons.looks_one_rounded,
+                ),
+              ],
+            ),
           ),
           SizedBox(height: 12.h),
-          const AppSectionHeader(title: "排序"),
-          SizedBox(height: 8.h),
-          AppFilterChipBar<SubscriptionSortMode>(
-            value: state.sortMode,
-            onChanged: cubit.setSortMode,
-            items: const [
-              AppFilterChipItem(
-                value: SubscriptionSortMode.manual,
-                label: "手动",
-                icon: Icons.drag_handle_rounded,
-              ),
-              AppFilterChipItem(
-                value: SubscriptionSortMode.date,
-                label: "日期",
-                icon: Icons.schedule_rounded,
-              ),
-              AppFilterChipItem(
-                value: SubscriptionSortMode.price,
-                label: "金额",
-                icon: Icons.payments_outlined,
-              ),
-            ],
+          AppSection(
+            title: "排序",
+            child: AppFilterChipBar<SubscriptionSortMode>(
+              value: state.sortMode,
+              onChanged: cubit.setSortMode,
+              items: const [
+                AppFilterChipItem(
+                  value: SubscriptionSortMode.manual,
+                  label: "手动",
+                  icon: Icons.drag_handle_rounded,
+                ),
+                AppFilterChipItem(
+                  value: SubscriptionSortMode.date,
+                  label: "日期",
+                  icon: Icons.schedule_rounded,
+                ),
+                AppFilterChipItem(
+                  value: SubscriptionSortMode.price,
+                  label: "金额",
+                  icon: Icons.payments_outlined,
+                ),
+              ],
+            ),
           ),
           SizedBox(height: 12.h),
         ],
@@ -506,26 +494,9 @@ class _SubscriptionCard extends StatelessWidget {
         return "每年";
       case SubscriptionBillingCycle.oneTime:
         return "一次性";
+      case SubscriptionBillingCycle.custom:
+        return "自定义";
     }
-  }
-}
-
-class _DeleteBackground extends StatelessWidget {
-  final Color color;
-
-  const _DeleteBackground({required this.color});
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      alignment: Alignment.centerRight,
-      padding: EdgeInsets.only(right: 22.w),
-      decoration: BoxDecoration(
-        color: color,
-        borderRadius: BorderRadius.circular(18.r),
-      ),
-      child: const Icon(Icons.delete_outline_rounded, color: Colors.white),
-    );
   }
 }
 

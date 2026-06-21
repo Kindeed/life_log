@@ -8,8 +8,19 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:get_storage/get_storage.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:life_log/features/project/data/project_model.dart';
+import 'package:life_log/features/evidence/data/evidence_attachment_model.dart';
 import 'package:life_log/features/evidence/data/evidence_model.dart';
+import 'package:life_log/features/evidence/sync/evidence_sync_adapter.dart';
 import 'package:life_log/features/expense/data/expense_record_model.dart';
+import 'package:life_log/features/expense/sync/expense_record_sync_adapter.dart';
+import 'package:life_log/features/project/sync/project_sync_adapter.dart';
+import 'package:life_log/features/subscription/sync/subscription_sync_adapter.dart';
+import 'package:life_log/features/work_log/sync/work_log_sync_adapter.dart';
+import 'package:life_log/core/sync/get_storage_sync_cursor_store.dart';
+import 'package:life_log/core/sync/isar_sync_conflict_store.dart';
+import 'package:life_log/core/sync/sync_adapter.dart';
+import 'package:life_log/core/sync/sync_engine.dart';
+import 'package:life_log/core/sync/sync_queue.dart';
 import 'package:life_log/core/di/service_locator.dart';
 import '../db/db_service.dart';
 import '../services/auth_service.dart';
@@ -20,21 +31,21 @@ import '../utils/sync_id_policy.dart';
 class SyncService {
   final _client = Supabase.instance.client;
   final _storage = GetStorage();
+  final _syncQueue = InMemorySyncQueue();
   static const _evidenceBucket = 'evidence-files';
   Future<bool>? _activeSync;
-  Future<void>? _claimUnownedRecordsFuture;
-  String? _claimUnownedRecordsUserId;
   Future<void>? _bootstrapSyncFuture;
   String? _bootstrapSyncUserId;
   DateTime? _lastBootstrapSyncAt;
   AuthService? _listenedAuthService;
   VoidCallback? _authListener;
-  static const int _pullPageSize = 500;
-  static const Duration _serverTimeTimeout = Duration(seconds: 10);
+  bool _syncPaused = false;
+  bool _syncCancelRequested = false;
   static const String _workLogsTable = 'work_logs';
   static const String _subscriptionsTable = 'subscriptions';
   static const String _projectsTable = 'projects';
   static const String _expenseEvidenceTable = 'expense_evidence';
+  static const String _evidenceAttachmentsTable = 'evidence_attachments';
   static const String _expenseRecordsTable = 'expense_records';
 
   AuthService? get _authService => serviceLocator.isRegistered<AuthService>()
@@ -52,17 +63,32 @@ class SyncService {
     return user != null ? 'last_sync_time_${user.id}' : 'last_sync_time';
   }
 
-  String get _lastPullCursorKey {
-    final user = _currentUser;
-    return user != null ? 'last_pull_cursor_${user.id}' : 'last_pull_cursor';
-  }
-
-  String get _legacyLastSyncKey => _lastSyncKey;
-
   String newSyncId() => SyncIdGenerator.newSyncId();
 
   String _ensureSyncId(String? current) =>
       ensureSyncId(current, generator: newSyncId);
+
+  void pauseSync() {
+    _syncPaused = true;
+    LogService.to.info('Sync', 'Sync paused');
+  }
+
+  void resumeSync() {
+    _syncPaused = false;
+    LogService.to.info('Sync', 'Sync resumed');
+  }
+
+  void cancelSync() {
+    _syncCancelRequested = true;
+    _syncPaused = false;
+    LogService.to.info('Sync', 'Sync cancellation requested');
+  }
+
+  Future<void> _waitWhilePaused() async {
+    while (_syncPaused && !_syncCancelRequested) {
+      await Future<void>.delayed(const Duration(milliseconds: 200));
+    }
+  }
 
   void _handlePossibleSessionExpired(Object error, String source) {
     final authService = _authService;
@@ -240,10 +266,7 @@ class SyncService {
     void handleAuthChange() {
       final user = authService.currentUser.value;
       if (user != null) {
-        _claimUnownedRecordsThenSync(user.id, reason: 'auth');
-      } else {
-        _claimUnownedRecordsFuture = null;
-        _claimUnownedRecordsUserId = null;
+        _bootstrapSync(user.id, reason: 'auth');
       }
     }
 
@@ -255,7 +278,7 @@ class SyncService {
       final userId = authService.currentUser.value!.id;
       WidgetsBinding.instance.addPostFrameCallback((_) {
         LogService.to.info('Sync', 'Delay startup sync until first frame');
-        _claimUnownedRecordsThenSync(userId, reason: 'startup');
+        _bootstrapSync(userId, reason: 'startup');
       });
     }
   }
@@ -270,10 +293,7 @@ class SyncService {
     _listenedAuthService = null;
   }
 
-  Future<void> _claimUnownedRecordsThenSync(
-    String userId, {
-    required String reason,
-  }) async {
+  Future<void> _bootstrapSync(String userId, {required String reason}) async {
     final activeBootstrap = _bootstrapSyncFuture;
     if (activeBootstrap != null && _bootstrapSyncUserId == userId) {
       LogService.to.debug('Sync', 'Reuse bootstrap sync for $reason');
@@ -304,7 +324,6 @@ class SyncService {
     required String reason,
   }) async {
     try {
-      await _claimUnownedRecordsForCurrentUser(userId);
       await syncAll(reason: reason);
     } catch (e, stackTrace) {
       _handlePossibleSessionExpired(e, '$reason sync bootstrap');
@@ -314,26 +333,6 @@ class SyncService {
         stackTrace,
       );
     }
-  }
-
-  Future<void> _claimUnownedRecordsForCurrentUser(String userId) {
-    if (_claimUnownedRecordsUserId != userId) {
-      _claimUnownedRecordsUserId = userId;
-      _claimUnownedRecordsFuture = null;
-    }
-
-    return _claimUnownedRecordsFuture ??= _dbService
-        .claimUnownedRecordsForCurrentUser()
-        .catchError((Object e, StackTrace stackTrace) {
-          _claimUnownedRecordsFuture = null;
-          _handlePossibleSessionExpired(e, 'claim unowned records');
-          LogService.to.error(
-            'Sync',
-            'Claim unowned records failed: $e',
-            stackTrace,
-          );
-          throw e;
-        });
   }
 
   // --- Work Log Sync ---
@@ -356,7 +355,8 @@ class SyncService {
 
     try {
       final user = _currentUser!;
-      log.syncId = _ensureSyncId(log.syncId);
+      final syncId = _ensureSyncId(log.syncId);
+      log.syncId = syncId;
       final data = {
         'user_id': user.id,
         'local_id': log.id,
@@ -372,10 +372,8 @@ class SyncService {
         'notes': log.note,
         'deleted_at': null,
         'updated_at': DateTime.now().toUtc().toIso8601String(),
+        'sync_id': syncId,
       };
-      if (log.syncId != null) {
-        data['sync_id'] = log.syncId;
-      }
 
       final operation = log.remoteId == null ? 'insert' : 'update';
 
@@ -404,7 +402,7 @@ class SyncService {
         // Insert
         final response = await _client
             .from(_workLogsTable)
-            .insert(data)
+            .upsert(data, onConflict: 'user_id,sync_id')
             .select('id, sync_id, version, updated_at')
             .single();
 
@@ -487,23 +485,27 @@ class SyncService {
 
     try {
       final user = _currentUser!;
-      sub.syncId = _ensureSyncId(sub.syncId);
+      final syncId = _ensureSyncId(sub.syncId);
+      sub.syncId = syncId;
       final data = {
         'user_id': user.id,
         'local_id': sub.id,
         'name': sub.name,
         'price': sub.price,
         'cycle': sub.cycle.name,
+        'anchor_date': sub.anchorDate?.toIso8601String(),
+        'next_due_date': sub.nextPaymentDate.toIso8601String(),
         'start_date': sub.nextPaymentDate
             .toIso8601String(), // Using nextPaymentDate as the date anchor
+        'end_date': sub.endDate?.toIso8601String(),
+        'status': sub.status.name,
+        'reminder_days': sub.reminderDays,
         'description': sub.note,
         'sort_index': sub.sortIndex,
         'deleted_at': null,
         'updated_at': DateTime.now().toUtc().toIso8601String(),
+        'sync_id': syncId,
       };
-      if (sub.syncId != null) {
-        data['sync_id'] = sub.syncId;
-      }
 
       final operation = sub.remoteId == null ? 'insert' : 'update';
 
@@ -530,7 +532,7 @@ class SyncService {
       } else {
         final response = await _client
             .from(_subscriptionsTable)
-            .insert(data)
+            .upsert(data, onConflict: 'user_id,sync_id')
             .select('id, sync_id, version, updated_at')
             .single();
 
@@ -567,7 +569,8 @@ class SyncService {
 
     try {
       final user = _currentUser!;
-      project.syncId = _ensureSyncId(project.syncId);
+      final syncId = _ensureSyncId(project.syncId);
+      project.syncId = syncId;
       final data = {
         'user_id': user.id,
         'local_id': project.id,
@@ -576,7 +579,7 @@ class SyncService {
         'deleted_at': null,
         'updated_at': DateTime.now().toUtc().toIso8601String(),
         'created_at': project.createdAt.toUtc().toIso8601String(),
-        'sync_id': project.syncId,
+        'sync_id': syncId,
       };
 
       final operation = project.remoteId == null ? 'insert' : 'update';
@@ -603,7 +606,7 @@ class SyncService {
       } else {
         final response = await _client
             .from(_projectsTable)
-            .insert(data)
+            .upsert(data, onConflict: 'user_id,sync_id')
             .select('id, sync_id, version, updated_at')
             .single();
         _applyProjectSyncResult(project, response);
@@ -707,33 +710,144 @@ class SyncService {
 
   // --- Evidence Sync ---
 
-  Future<String?> _uploadEvidenceFile(ExpenseEvidence evidence) async {
+  String _attachmentStoragePath(User user, EvidenceAttachment attachment) {
+    final existing = attachment.remoteStoragePath;
+    if (existing != null && existing.trim().isNotEmpty) return existing;
+
+    final fileName = attachment.originalFileName;
+    final dotIndex = fileName.lastIndexOf('.');
+    final extension = dotIndex <= 0 ? '' : fileName.substring(dotIndex);
+    return '${user.id}/${attachment.evidenceSyncId}/${attachment.syncId}$extension';
+  }
+
+  Future<bool> _uploadEvidenceAttachment(EvidenceAttachment attachment) async {
     final user = _currentUser;
-    final localPath = evidence.localFilePath;
-    if (user == null || localPath == null) return evidence.remoteStoragePath;
+    if (user == null) return false;
 
-    final file = File(localPath);
-    if (!await file.exists()) return evidence.remoteStoragePath;
+    try {
+      await _dbService.markEvidenceAttachmentUploading(attachment);
 
-    evidence.syncId = _ensureSyncId(evidence.syncId);
-    final fileName =
-        evidence.fileName ?? localPath.split(Platform.pathSeparator).last;
-    final storagePath = '${user.id}/${evidence.syncId}/$fileName';
+      final localPath = attachment.localPath;
+      if (localPath == null || localPath.trim().isEmpty) {
+        throw StateError('Evidence attachment local path is missing');
+      }
 
-    await _client.storage
-        .from(_evidenceBucket)
-        .upload(
-          storagePath,
-          file,
-          fileOptions: FileOptions(
-            contentType: evidence.mimeType ?? 'image/jpeg',
-            upsert: true,
-          ),
-        );
+      final file = File(localPath);
+      if (!await file.exists()) {
+        throw StateError('Evidence attachment file does not exist: $localPath');
+      }
 
-    evidence.remoteStoragePath = storagePath;
-    evidence.uploadedAt = DateTime.now().toUtc();
-    return storagePath;
+      final storagePath = _attachmentStoragePath(user, attachment);
+      await _client.storage
+          .from(_evidenceBucket)
+          .upload(
+            storagePath,
+            file,
+            fileOptions: FileOptions(
+              contentType: attachment.mimeType ?? 'application/octet-stream',
+              upsert: true,
+            ),
+          );
+
+      final now = DateTime.now().toUtc().toIso8601String();
+      await _client
+          .from(_evidenceAttachmentsTable)
+          .upsert({
+            'user_id': user.id,
+            'sync_id': attachment.syncId,
+            'evidence_sync_id': attachment.evidenceSyncId,
+            'local_id': attachment.id,
+            'remote_storage_path': storagePath,
+            'original_file_name': attachment.originalFileName,
+            'content_hash': attachment.contentHash,
+            'size_bytes': attachment.sizeBytes,
+            'mime_type': attachment.mimeType,
+            'upload_state': EvidenceAttachmentUploadState.uploaded.name,
+            'deleted_at': null,
+            'updated_at': now,
+          }, onConflict: 'user_id,sync_id')
+          .select('sync_id')
+          .single();
+
+      await _dbService.markEvidenceAttachmentUploaded(
+        attachment,
+        remoteStoragePath: storagePath,
+      );
+      return true;
+    } catch (e, stackTrace) {
+      _handlePossibleSessionExpired(e, 'upload Evidence attachment');
+      await _dbService.markEvidenceAttachmentFailed(attachment, e);
+      LogService.to.error(
+        'Sync',
+        'Upload Evidence attachment failed localId=${attachment.id} '
+            'syncId=${attachment.syncId}: $e',
+        stackTrace,
+      );
+      return false;
+    }
+  }
+
+  Future<bool> _deleteEvidenceAttachment(EvidenceAttachment attachment) async {
+    final user = _currentUser;
+    if (user == null) return false;
+
+    try {
+      final now = DateTime.now().toUtc().toIso8601String();
+      await _client
+          .from(_evidenceAttachmentsTable)
+          .upsert({
+            'user_id': user.id,
+            'sync_id': attachment.syncId,
+            'evidence_sync_id': attachment.evidenceSyncId,
+            'local_id': attachment.id,
+            'remote_storage_path': attachment.remoteStoragePath,
+            'original_file_name': attachment.originalFileName,
+            'content_hash': attachment.contentHash,
+            'size_bytes': attachment.sizeBytes,
+            'mime_type': attachment.mimeType,
+            'upload_state': EvidenceAttachmentUploadState.deleted.name,
+            'deleted_at': now,
+            'updated_at': now,
+          }, onConflict: 'user_id,sync_id')
+          .select('sync_id')
+          .single();
+
+      final remotePath = attachment.remoteStoragePath;
+      if (remotePath != null && remotePath.trim().isNotEmpty) {
+        await _client.storage.from(_evidenceBucket).remove([remotePath]);
+      }
+      await _dbService.purgeEvidenceAttachment(attachment.id);
+      return true;
+    } catch (e, stackTrace) {
+      _handlePossibleSessionExpired(e, 'delete Evidence attachment');
+      await _dbService.markEvidenceAttachmentFailed(attachment, e);
+      LogService.to.error(
+        'Sync',
+        'Delete Evidence attachment failed localId=${attachment.id} '
+            'syncId=${attachment.syncId}: $e',
+        stackTrace,
+      );
+      return false;
+    }
+  }
+
+  Future<bool> _syncPendingEvidenceAttachments({String? evidenceSyncId}) async {
+    final pending = await _dbService.getPendingEvidenceAttachmentsForSync();
+    var success = true;
+    for (final attachment in pending) {
+      if (evidenceSyncId != null &&
+          attachment.evidenceSyncId != evidenceSyncId) {
+        continue;
+      }
+
+      final pushed =
+          attachment.uploadState == EvidenceAttachmentUploadState.deleted ||
+              attachment.deletedAt != null
+          ? await _deleteEvidenceAttachment(attachment)
+          : await _uploadEvidenceAttachment(attachment);
+      success = pushed && success;
+    }
+    return success;
   }
 
   Future<void> downloadEvidenceFile(ExpenseEvidence evidence) async {
@@ -782,13 +896,15 @@ class SyncService {
 
     try {
       final user = _currentUser!;
-      evidence.syncId = _ensureSyncId(evidence.syncId);
-      await _uploadEvidenceFile(evidence);
+      final syncId = _ensureSyncId(evidence.syncId);
+      evidence.syncId = syncId;
+      await _dbService.ensureEvidenceAttachmentForEvidence(evidence);
 
       final data = {
         'user_id': user.id,
         'local_id': evidence.id,
         'project_name': evidence.projectName,
+        'project_sync_id': evidence.projectSyncId,
         'evidence_date': evidence.evidenceDate.toIso8601String(),
         'amount': evidence.amount,
         'currency': evidence.currency,
@@ -803,7 +919,7 @@ class SyncService {
         'trip_date': evidence.tripDate?.toIso8601String(),
         'deleted_at': null,
         'updated_at': DateTime.now().toUtc().toIso8601String(),
-        'sync_id': evidence.syncId,
+        'sync_id': syncId,
       };
 
       final operation = evidence.remoteId == null ? 'insert' : 'update';
@@ -830,14 +946,14 @@ class SyncService {
       } else {
         final response = await _client
             .from(_expenseEvidenceTable)
-            .insert(data)
+            .upsert(data, onConflict: 'user_id,sync_id')
             .select('id, sync_id, version, updated_at')
             .single();
         _applyEvidenceSyncResult(evidence, response);
         await _dbService.updateEvidenceRemoteId(evidence);
       }
       LogService.to.info('Sync', 'Evidence $operation success: ${evidence.id}');
-      return true;
+      return await _syncPendingEvidenceAttachments(evidenceSyncId: syncId);
     } catch (e, stackTrace) {
       _handlePossibleSessionExpired(e, 'push Evidence');
       LogService.to.error(
@@ -875,17 +991,15 @@ class SyncService {
           'Remote Evidence delete conflict or not found: ${evidence.remoteId}',
         );
       }
-      if (evidence.remoteStoragePath != null) {
-        await _client.storage.from(_evidenceBucket).remove([
-          evidence.remoteStoragePath!,
-        ]);
-      }
+      await _dbService.queueEvidenceAttachmentDeleteForEvidence(evidence);
       _applyEvidenceSyncResult(evidence, response);
       LogService.to.info(
         'Sync',
         'Evidence delete success: ${evidence.remoteId}',
       );
-      return true;
+      return await _syncPendingEvidenceAttachments(
+        evidenceSyncId: evidence.syncId,
+      );
     } catch (e, stackTrace) {
       _handlePossibleSessionExpired(e, 'delete Evidence');
       LogService.to.error(
@@ -916,7 +1030,8 @@ class SyncService {
 
     try {
       final user = _currentUser!;
-      record.syncId = _ensureSyncId(record.syncId);
+      final syncId = _ensureSyncId(record.syncId);
+      record.syncId = syncId;
       final data = {
         'user_id': user.id,
         'local_id': record.id,
@@ -927,12 +1042,11 @@ class SyncService {
         'merchant': record.merchant,
         'note': record.note,
         'project_name': record.projectName,
+        'project_sync_id': record.projectSyncId,
         'deleted_at': null,
         'updated_at': DateTime.now().toUtc().toIso8601String(),
+        'sync_id': syncId,
       };
-      if (record.syncId != null) {
-        data['sync_id'] = record.syncId;
-      }
 
       final operation = record.remoteId == null ? 'insert' : 'update';
       if (record.remoteId != null) {
@@ -958,7 +1072,7 @@ class SyncService {
       } else {
         final response = await _client
             .from(_expenseRecordsTable)
-            .insert(data)
+            .upsert(data, onConflict: 'user_id,sync_id')
             .select('id, sync_id, version, updated_at')
             .single();
         _applyExpenseRecordSyncResult(record, response);
@@ -1057,166 +1171,131 @@ class SyncService {
     String reason, {
     required bool forceFullRefresh,
   }) async {
+    _syncCancelRequested = false;
     LogService.to.info(
       'Sync',
       'Sync started: $reason${forceFullRefresh ? " (full refresh)" : ""}',
     );
 
-    final pullSuccess = await _pullAll(forceFullRefresh: forceFullRefresh);
+    final workLogSuccess = await _syncWorkLogsWithEngine(
+      forceFullRefresh: forceFullRefresh,
+    );
+    final pullSuccess = await _pullAll();
     if (!pullSuccess) return false;
 
     final pushSuccess = await _pushUnsyncedData();
+    final success = workLogSuccess && pushSuccess;
     if (pushSuccess) {
       // Kept for compatibility with older builds and existing debug displays.
       _storage.write(_lastSyncKey, DateTime.now().toUtc().toIso8601String());
     }
 
-    LogService.to.info(
-      'Sync',
-      pushSuccess ? 'Sync complete' : 'Sync incomplete',
-    );
-    return pushSuccess;
+    LogService.to.info('Sync', success ? 'Sync complete' : 'Sync incomplete');
+    return success;
   }
 
-  Future<DateTime> _getServerNow() async {
-    final response = await _client
-        .rpc('get_server_time')
-        .timeout(_serverTimeTimeout);
-    if (response == null) {
-      throw StateError('get_server_time returned null');
+  Future<bool> _syncWorkLogsWithEngine({required bool forceFullRefresh}) async {
+    final user = _currentUser;
+    if (user == null) return false;
+
+    try {
+      final summary =
+          await SyncEngine(
+            adapters: [
+              WorkLogSyncAdapter(
+                client: _client,
+                dbService: _dbService,
+                userId: user.id,
+              ),
+              SubscriptionSyncAdapter(
+                client: _client,
+                dbService: _dbService,
+                userId: user.id,
+              ),
+              ProjectSyncAdapter(
+                client: _client,
+                dbService: _dbService,
+                userId: user.id,
+              ),
+              ExpenseRecordSyncAdapter(
+                client: _client,
+                dbService: _dbService,
+                userId: user.id,
+              ),
+              EvidenceSyncAdapter(
+                client: _client,
+                dbService: _dbService,
+                userId: user.id,
+                syncAttachmentsForEvidence: (evidence) {
+                  return _syncPendingEvidenceAttachments(
+                    evidenceSyncId: evidence.syncId,
+                  );
+                },
+                downloadEvidenceFile: downloadEvidenceFile,
+              ),
+            ],
+            cursorStore: GetStorageSyncCursorStore(
+              storage: _storage,
+              namespace: user.id,
+            ),
+            conflictStore: IsarSyncConflictStore(_dbService.database),
+            queue: _syncQueue,
+            runControl: SyncRunControl(
+              isCancelled: () => _syncCancelRequested,
+              isPaused: () => _syncPaused,
+              waitWhilePaused: _waitWhilePaused,
+            ),
+          ).syncAll(
+            mode: forceFullRefresh
+                ? SyncMode.fullRefresh
+                : SyncMode.incremental,
+          );
+      final workLogSummary = summary.adapters['work_log'];
+      final subscriptionSummary = summary.adapters['subscription'];
+      final projectSummary = summary.adapters['project'];
+      final expenseRecordSummary = summary.adapters['expense_record'];
+      final evidenceSummary = summary.adapters['evidence'];
+      LogService.to.info(
+        'Sync',
+        'WorkLog adapter sync ${summary.success ? "complete" : "incomplete"}: '
+            '${workLogSummary?.pulledRows ?? 0} pulled, '
+            '${workLogSummary?.pushedChanges ?? 0} pushed, '
+            '${workLogSummary?.failedPushes ?? 0} failed; '
+            'Subscription adapter: '
+            '${subscriptionSummary?.pulledRows ?? 0} pulled, '
+            '${subscriptionSummary?.pushedChanges ?? 0} pushed, '
+            '${subscriptionSummary?.failedPushes ?? 0} failed; '
+            'Project adapter: '
+            '${projectSummary?.pulledRows ?? 0} pulled, '
+            '${projectSummary?.pushedChanges ?? 0} pushed, '
+            '${projectSummary?.failedPushes ?? 0} failed; '
+            'ExpenseRecord adapter: '
+            '${expenseRecordSummary?.pulledRows ?? 0} pulled, '
+            '${expenseRecordSummary?.pushedChanges ?? 0} pushed, '
+            '${expenseRecordSummary?.failedPushes ?? 0} failed; '
+            'Evidence adapter: '
+            '${evidenceSummary?.pulledRows ?? 0} pulled, '
+            '${evidenceSummary?.pushedChanges ?? 0} pushed, '
+            '${evidenceSummary?.failedPushes ?? 0} failed',
+      );
+      return summary.success;
+    } catch (e, stackTrace) {
+      _handlePossibleSessionExpired(e, 'WorkLog adapter sync');
+      LogService.to.error(
+        'Sync',
+        'WorkLog adapter sync failed: $e',
+        stackTrace,
+      );
+      return false;
     }
-    final parsed = _parseRemoteDateTime(response);
-    if (parsed == null) {
-      throw StateError('get_server_time returned an invalid timestamp');
-    }
-    return parsed;
   }
 
-  Future<List<Map<String, dynamic>>> _pullPagedRows({
-    required String table,
-    required String userId,
-    required bool fullRefresh,
-    required DateTime? lastCursor,
-    required DateTime pullStartedAt,
-  }) async {
-    final rows = <Map<String, dynamic>>[];
-    var start = 0;
-
-    while (true) {
-      dynamic query = _client.from(table).select().eq('user_id', userId);
-      if (!fullRefresh && lastCursor != null) {
-        query = query
-            .gte('updated_at', lastCursor.toIso8601String())
-            .lte('updated_at', pullStartedAt.toIso8601String());
-      }
-
-      final page = await query
-          .order('updated_at', ascending: true)
-          .order('id', ascending: true)
-          .range(start, start + _pullPageSize - 1);
-      final pageRows = (page as List)
-          .cast<Map>()
-          .map((row) => Map<String, dynamic>.from(row))
-          .toList();
-      rows.addAll(pageRows);
-
-      if (pageRows.length < _pullPageSize) break;
-      start += _pullPageSize;
-    }
-
-    return rows;
-  }
-
-  Future<bool> _pullAll({required bool forceFullRefresh}) async {
+  Future<bool> _pullAll() async {
     try {
       final user = _currentUser;
       if (user == null) return false;
 
-      final pullStartedAt = await _getServerNow();
-      final cursorStr =
-          _storage.read(_lastPullCursorKey) ??
-          _storage.read(_legacyLastSyncKey);
-      final lastCursor = _parseRemoteDateTime(cursorStr);
-      final fullRefresh = forceFullRefresh || lastCursor == null;
-
-      final logsData = await _pullPagedRows(
-        table: _workLogsTable,
-        userId: user.id,
-        fullRefresh: fullRefresh,
-        lastCursor: lastCursor,
-        pullStartedAt: pullStartedAt,
-      );
-
-      await _dbService.syncRemoteLogsToLocal(logsData);
-
-      final subsData = await _pullPagedRows(
-        table: _subscriptionsTable,
-        userId: user.id,
-        fullRefresh: fullRefresh,
-        lastCursor: lastCursor,
-        pullStartedAt: pullStartedAt,
-      );
-
-      await _dbService.syncRemoteSubscriptionsToLocal(subsData);
-
-      final projectsData = await _pullPagedRows(
-        table: _projectsTable,
-        userId: user.id,
-        fullRefresh: fullRefresh,
-        lastCursor: lastCursor,
-        pullStartedAt: pullStartedAt,
-      );
-
-      await _dbService.syncRemoteProjectsToLocal(projectsData);
-
-      final evidenceData = await _pullPagedRows(
-        table: _expenseEvidenceTable,
-        userId: user.id,
-        fullRefresh: fullRefresh,
-        lastCursor: lastCursor,
-        pullStartedAt: pullStartedAt,
-      );
-
-      await _dbService.syncRemoteEvidenceRowsToLocal(evidenceData);
-      for (var map in evidenceData) {
-        final syncId = _parseRemoteString(map['sync_id']);
-        if (map['deleted_at'] == null && syncId != null) {
-          final evidence = await _dbService.getEvidenceBySyncId(syncId);
-          if (evidence != null) {
-            try {
-              await downloadEvidenceFile(evidence);
-            } catch (e, stackTrace) {
-              _handlePossibleSessionExpired(e, 'download Evidence file');
-              LogService.to.error(
-                'Sync',
-                'Download Evidence file failed syncId=${evidence.syncId} remoteId=${evidence.remoteId} storage=${evidence.remoteStoragePath}: $e',
-                stackTrace,
-              );
-            }
-          }
-        }
-      }
-
-      final expenseRecordsData = await _pullPagedRows(
-        table: _expenseRecordsTable,
-        userId: user.id,
-        fullRefresh: fullRefresh,
-        lastCursor: lastCursor,
-        pullStartedAt: pullStartedAt,
-      );
-
-      await _dbService.syncRemoteExpenseRecordsToLocal(expenseRecordsData);
-
-      _storage.write(_lastPullCursorKey, pullStartedAt.toIso8601String());
-
-      LogService.to.info(
-        'Sync',
-        'Pull complete (${fullRefresh ? "full" : "incremental"}): '
-            '${logsData.length} logs, ${subsData.length} subscriptions, '
-            '${projectsData.length} projects, '
-            '${evidenceData.length} evidence, '
-            '${expenseRecordsData.length} expenseRecords',
-      );
+      LogService.to.info('Sync', 'Legacy pull skipped; adapters own pull');
       return true;
     } catch (e, stackTrace) {
       _handlePossibleSessionExpired(e, 'pull');
@@ -1227,68 +1306,17 @@ class SyncService {
 
   Future<bool> _pushUnsyncedData() async {
     try {
-      // Work Logs: unsynced (remoteId == null) or dirty
-      final allLogs = await _dbService.getPendingLogsForSync();
       var success = true;
-      var workLogAttempts = 0;
-      var workLogFailures = 0;
-      for (var log in allLogs) {
-        workLogAttempts++;
-        final pushed = await pushWorkLog(log);
-        if (!pushed) workLogFailures++;
-        success = pushed && success;
-      }
 
-      // Subscriptions
-      final allSubs = await _dbService.getPendingSubscriptionsForSync();
-      var subscriptionAttempts = 0;
-      var subscriptionFailures = 0;
-      for (var sub in allSubs) {
-        subscriptionAttempts++;
-        final pushed = await pushSubscription(sub);
-        if (!pushed) subscriptionFailures++;
-        success = pushed && success;
-      }
-
-      final allProjects = await _dbService.getPendingProjectsForSync();
-      var projectAttempts = 0;
-      var projectFailures = 0;
-      for (var project in allProjects) {
-        projectAttempts++;
-        final pushed = await pushProject(project);
-        if (!pushed) projectFailures++;
-        success = pushed && success;
-      }
-
-      final allEvidence = await _dbService.getPendingEvidenceForSync();
-      var evidenceAttempts = 0;
-      var evidenceFailures = 0;
-      for (var item in allEvidence) {
-        evidenceAttempts++;
-        final pushed = await pushEvidence(item);
-        if (!pushed) evidenceFailures++;
-        success = pushed && success;
-      }
-
-      final allExpenseRecords = await _dbService
-          .getPendingExpenseRecordsForSync();
-      var expenseRecordAttempts = 0;
-      var expenseRecordFailures = 0;
-      for (var item in allExpenseRecords) {
-        expenseRecordAttempts++;
-        final pushed = await pushExpenseRecord(item);
-        if (!pushed) expenseRecordFailures++;
-        success = pushed && success;
+      final attachmentsPushed = await _syncPendingEvidenceAttachments();
+      if (!attachmentsPushed) {
+        success = false;
       }
 
       LogService.to.info(
         'Sync',
         'Push ${success ? "complete" : "incomplete"}: '
-            'workLogs $workLogAttempts attempted/$workLogFailures failed, '
-            'subscriptions $subscriptionAttempts attempted/$subscriptionFailures failed, '
-            'projects $projectAttempts attempted/$projectFailures failed, '
-            'evidence $evidenceAttempts attempted/$evidenceFailures failed, '
-            'expenseRecords $expenseRecordAttempts attempted/$expenseRecordFailures failed',
+            'evidenceAttachments ${attachmentsPushed ? "complete" : "incomplete"}',
       );
       return success;
     } catch (e, stackTrace) {

@@ -1,6 +1,8 @@
 import 'dart:io';
 import 'package:flutter/foundation.dart';
 import 'package:life_log/core/di/service_locator.dart';
+import 'package:life_log/core/logging/log_redactor.dart';
+import 'package:life_log/core/release/release_metadata.dart';
 import 'package:path_provider/path_provider.dart';
 import 'cloud_config_service.dart';
 
@@ -74,7 +76,7 @@ class LogService extends ChangeNotifier {
   static const int maxLogFileBytes = 1024 * 1024;
 
   /// 是否启用 debug 日志（生产环境可关闭）
-  bool enableDebug = true;
+  bool enableDebug = !kReleaseMode;
 
   List<LogEntry> get logs => List.unmodifiable(_logs);
 
@@ -139,8 +141,8 @@ class LogService extends ChangeNotifier {
       timestamp: DateTime.now(),
       level: level,
       tag: tag,
-      message: message,
-      stackTrace: stackTrace,
+      message: LogRedactor.redact(message),
+      stackTrace: stackTrace == null ? null : LogRedactor.redact(stackTrace),
     );
 
     // 添加到缓存
@@ -217,6 +219,9 @@ class LogService extends ChangeNotifier {
           ? "profile"
           : "debug"}',
     );
+    for (final line in ReleaseMetadata.diagnosticLines()) {
+      buffer.writeln(line);
+    }
     if (serviceLocator.isRegistered<CloudConfigService>()) {
       final cloudConfig = serviceLocator<CloudConfigService>();
       buffer.writeln('云配置: ${cloudConfig.statusLabel}');
@@ -233,7 +238,7 @@ class LogService extends ChangeNotifier {
     buffer.writeln('========================\n');
 
     for (final log in _logs) {
-      buffer.writeln(log.toString());
+      buffer.writeln(LogRedactor.redact(log.toString()));
     }
 
     return buffer.toString();
@@ -250,7 +255,7 @@ class LogService extends ChangeNotifier {
 
   String exportLatestError() {
     final error = latestError;
-    return error?.toString() ?? '暂无错误日志';
+    return error == null ? '暂无错误日志' : LogRedactor.redact(error.toString());
   }
 
   String exportDiagnostics() {
@@ -264,6 +269,9 @@ class LogService extends ChangeNotifier {
           ? "profile"
           : "debug"}',
     );
+    for (final line in ReleaseMetadata.diagnosticLines()) {
+      buffer.writeln(line);
+    }
     buffer.writeln('日志数量: ${_logs.length}');
     buffer.writeln('日志级别统计: ${_logLevelSummary()}');
     buffer.writeln('日志文件写入失败次数: $_fileWriteFailureCount');
@@ -283,7 +291,7 @@ class LogService extends ChangeNotifier {
     buffer.writeln(exportLatestError());
     buffer.writeln('最近日志:');
     for (final log in _recentLogs()) {
-      buffer.writeln(log.toString());
+      buffer.writeln(LogRedactor.redact(log.toString()));
     }
     return buffer.toString();
   }

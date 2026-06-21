@@ -165,6 +165,11 @@ class _AddSubscriptionSheetState extends State<AddSubscriptionSheet> {
                 "一次性",
                 SubscriptionBillingCycle.oneTime,
               ),
+              _buildCycleOption(
+                sheetContext,
+                "自定义",
+                SubscriptionBillingCycle.custom,
+              ),
               SizedBox(height: 16.h),
             ],
           ),
@@ -218,6 +223,8 @@ class _AddSubscriptionSheetState extends State<AddSubscriptionSheet> {
         return "每年支付";
       case SubscriptionBillingCycle.oneTime:
         return "一次性";
+      case SubscriptionBillingCycle.custom:
+        return "自定义";
     }
   }
 
@@ -256,6 +263,9 @@ class _AddSubscriptionSheetState extends State<AddSubscriptionSheet> {
       price: price,
       cycle: _cycle,
       nextPaymentDate: dateOnlyLocal(_nextPaymentDate),
+      anchorDate: existingEntry?.anchorDate ?? dateOnlyLocal(_nextPaymentDate),
+      endDate: existingEntry?.endDate,
+      status: existingEntry?.status ?? SubscriptionStatus.active,
       reminderDays: existingEntry?.reminderDays ?? 1,
       note: existingEntry?.note,
       sortIndex: existingEntry?.sortIndex,

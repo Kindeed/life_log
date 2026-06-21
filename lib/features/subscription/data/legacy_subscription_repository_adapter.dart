@@ -75,6 +75,9 @@ extension LegacySubscriptionMapper on Subscription {
       price: price,
       cycle: cycle.toSubscriptionBillingCycle(),
       nextPaymentDate: nextPaymentDate,
+      anchorDate: anchorDate,
+      endDate: endDate,
+      status: status.toSubscriptionEntryStatus(),
       reminderDays: reminderDays,
       note: note,
       sortIndex: sortIndex,
@@ -90,6 +93,9 @@ extension SubscriptionEntryLegacyMapper on SubscriptionEntry {
       ..price = price
       ..cycle = cycle.toLegacySubscriptionCycle()
       ..nextPaymentDate = nextPaymentDate
+      ..anchorDate = anchorDate
+      ..endDate = endDate
+      ..status = status.toLegacySubscriptionStatus()
       ..reminderDays = reminderDays
       ..note = note
       ..sortIndex = sortIndex;
@@ -102,6 +108,7 @@ extension LegacySubscriptionCycleMapper on SubscriptionCycle {
       SubscriptionCycle.monthly => SubscriptionBillingCycle.monthly,
       SubscriptionCycle.yearly => SubscriptionBillingCycle.yearly,
       SubscriptionCycle.oneTime => SubscriptionBillingCycle.oneTime,
+      SubscriptionCycle.custom => SubscriptionBillingCycle.custom,
     };
   }
 }
@@ -112,6 +119,29 @@ extension SubscriptionBillingCycleLegacyMapper on SubscriptionBillingCycle {
       SubscriptionBillingCycle.monthly => SubscriptionCycle.monthly,
       SubscriptionBillingCycle.yearly => SubscriptionCycle.yearly,
       SubscriptionBillingCycle.oneTime => SubscriptionCycle.oneTime,
+      SubscriptionBillingCycle.custom => SubscriptionCycle.custom,
+    };
+  }
+}
+
+extension LegacySubscriptionStatusMapper on SubscriptionRecordStatus {
+  SubscriptionStatus toSubscriptionEntryStatus() {
+    return switch (this) {
+      SubscriptionRecordStatus.active => SubscriptionStatus.active,
+      SubscriptionRecordStatus.paused => SubscriptionStatus.paused,
+      SubscriptionRecordStatus.canceled => SubscriptionStatus.canceled,
+      SubscriptionRecordStatus.archived => SubscriptionStatus.archived,
+    };
+  }
+}
+
+extension SubscriptionStatusLegacyMapper on SubscriptionStatus {
+  SubscriptionRecordStatus toLegacySubscriptionStatus() {
+    return switch (this) {
+      SubscriptionStatus.active => SubscriptionRecordStatus.active,
+      SubscriptionStatus.paused => SubscriptionRecordStatus.paused,
+      SubscriptionStatus.canceled => SubscriptionRecordStatus.canceled,
+      SubscriptionStatus.archived => SubscriptionRecordStatus.archived,
     };
   }
 }

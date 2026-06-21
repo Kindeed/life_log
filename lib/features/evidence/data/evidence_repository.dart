@@ -44,6 +44,7 @@ class EvidenceRepository {
     );
     evidence.projectId = project.id;
     evidence.projectName = project.name;
+    evidence.projectSyncId = project.syncId;
 
     if (sourcePath != null && sourcePath.isNotEmpty) {
       await _fileStore.copyEvidenceFile(

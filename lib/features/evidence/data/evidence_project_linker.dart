@@ -8,8 +8,13 @@ abstract interface class EvidenceProjectLinker {
 final class EvidenceLinkedProject {
   final int id;
   final String name;
+  final String? syncId;
 
-  const EvidenceLinkedProject({required this.id, required this.name});
+  const EvidenceLinkedProject({
+    required this.id,
+    required this.name,
+    this.syncId,
+  });
 }
 
 final class GetItEvidenceProjectLinker implements EvidenceProjectLinker {
@@ -19,6 +24,10 @@ final class GetItEvidenceProjectLinker implements EvidenceProjectLinker {
   Future<EvidenceLinkedProject> ensureSyncableProject(String name) async {
     final project = await serviceLocator<ProjectRepository>()
         .ensureSyncableProject(name);
-    return EvidenceLinkedProject(id: project.id, name: project.name);
+    return EvidenceLinkedProject(
+      id: project.id,
+      name: project.name,
+      syncId: project.syncId,
+    );
   }
 }

@@ -29,6 +29,9 @@ class ExpenseEvidence {
   @Index()
   int? projectId;
 
+  @Index(caseSensitive: false)
+  String? projectSyncId;
+
   @Index()
   late DateTime evidenceDate;
 
@@ -69,6 +72,7 @@ extension ExpenseEvidenceBusinessChanges on ExpenseEvidence {
   bool hasBusinessChangesComparedTo(ExpenseEvidence other) {
     return projectName != other.projectName ||
         projectId != other.projectId ||
+        projectSyncId != other.projectSyncId ||
         evidenceDate != other.evidenceDate ||
         amount != other.amount ||
         currency != other.currency ||

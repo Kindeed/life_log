@@ -1,7 +1,7 @@
 # LifeLog Framework Migration Decision
 
 Date: 2026-06-17
-Last updated: 2026-06-18
+Last updated: 2026-06-21
 Status: current architecture snapshot
 
 ## Decision
@@ -61,6 +61,8 @@ Boundary tests keep the removed module paths from returning.
   `isDirty`, `remoteVersion`, `deletedAt`, or `pendingDelete`.
 - `SyncService` and `DbService` cloud-sync protocol paths must not be extended
   to cover photos.
+- The current modernization roadmap is recorded in
+  `docs/adr/0001-architecture-modernization-roadmap.md`.
 
 ## Current Feature Status
 
@@ -107,8 +109,9 @@ invalidated.
 Use these gates for architecture-affecting changes:
 
 - Targeted tests for the touched feature or boundary.
+- `dart format --set-exit-if-changed .`
 - `flutter test`
-- `flutter analyze`
+- `flutter analyze --fatal-infos --fatal-warnings`
 - `git diff --check`
 - Production source scans for forbidden framework or sync-boundary regressions.
 - `flutter build apk --debug` when preparing a test APK.

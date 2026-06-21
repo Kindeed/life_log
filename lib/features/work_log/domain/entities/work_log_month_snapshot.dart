@@ -27,7 +27,7 @@ final class WorkLogMonthSummary extends Equatable {
 
 final class WorkLogMonthSnapshot extends Equatable {
   final DateTime month;
-  final Map<DateTime, WorkLogEntry> entriesByDay;
+  final Map<DateTime, List<WorkLogEntry>> entriesByDay;
   final WorkLogMonthSummary summary;
 
   const WorkLogMonthSnapshot({

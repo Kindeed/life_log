@@ -25,6 +25,48 @@ void main() {
       );
     });
 
+    test(
+      'debug logging defaults to build-mode policy instead of always on',
+      () {
+        final source = File(
+          'lib/common/services/log_service.dart',
+        ).readAsStringSync();
+
+        expect(source, contains('bool enableDebug = !kReleaseMode;'));
+        expect(source, isNot(contains('bool enableDebug = true;')));
+      },
+    );
+
+    test(
+      'log exports redact direct identifiers, paths, and storage locations',
+      () {
+        final service = LogService();
+        const email = 'person@example.com';
+        const userId = '123e4567-e89b-12d3-a456-426614174000';
+        const supabaseUrl = 'https://project-ref.supabase.co/rest/v1/work_logs';
+        const localPath = r'C:\Users\WZH\Documents\LifeLog\receipt.pdf';
+
+        service.info(
+          'Privacy',
+          'email=$email userId=$userId url=$supabaseUrl path=$localPath '
+              'storage=user/evidence/file.pdf',
+        );
+
+        final logs = service.exportLogs();
+
+        expect(logs, isNot(contains(email)));
+        expect(logs, isNot(contains(userId)));
+        expect(logs, isNot(contains('project-ref.supabase.co')));
+        expect(logs, isNot(contains(r'C:\Users\WZH')));
+        expect(logs, isNot(contains('user/evidence/file.pdf')));
+        expect(logs, contains('[email]'));
+        expect(logs, contains('[id]'));
+        expect(logs, contains('https://[supabase-url]'));
+        expect(logs, contains('[local-path]'));
+        expect(logs, contains('storage=[storage-path]'));
+      },
+    );
+
     test('auth failures include stack traces in logs', () {
       final source = File(
         'lib/common/services/auth_service.dart',

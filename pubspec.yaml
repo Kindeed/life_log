@@ -40,6 +40,7 @@ dependencies:
   # 2. 路径获取 (为了把数据库存到手机正确的位置)
   path_provider: ^2.1.2
   path: ^1.8.3
+  crypto: ^3.0.6
 
 
   # 3. 日历组件 (纯Dart编写，不依赖谷歌)

@@ -8,8 +8,13 @@ abstract interface class ExpenseRecordProjectLinker {
 final class ExpenseRecordLinkedProject {
   final int id;
   final String name;
+  final String? syncId;
 
-  const ExpenseRecordLinkedProject({required this.id, required this.name});
+  const ExpenseRecordLinkedProject({
+    required this.id,
+    required this.name,
+    this.syncId,
+  });
 }
 
 final class GetItExpenseRecordProjectLinker
@@ -20,6 +25,10 @@ final class GetItExpenseRecordProjectLinker
   Future<ExpenseRecordLinkedProject> ensureSyncableProject(String name) async {
     final project = await serviceLocator<ProjectRepository>()
         .ensureSyncableProject(name);
-    return ExpenseRecordLinkedProject(id: project.id, name: project.name);
+    return ExpenseRecordLinkedProject(
+      id: project.id,
+      name: project.name,
+      syncId: project.syncId,
+    );
   }
 }

@@ -10,6 +10,7 @@ import 'package:life_log/common/widgets/app_card.dart';
 import 'package:life_log/common/widgets/app_empty_state.dart';
 import 'package:life_log/common/widgets/app_filter_chip_bar.dart';
 import 'package:life_log/common/widgets/app_loading.dart';
+import 'package:life_log/common/widgets/app_metric_grid.dart';
 import 'package:life_log/common/widgets/app_metric_tile.dart';
 import 'package:life_log/common/widgets/app_text_field.dart';
 import 'package:life_log/core/di/service_locator.dart';
@@ -246,24 +247,19 @@ class _EvidenceOverview extends StatelessWidget {
       padding: EdgeInsets.fromLTRB(16.w, 8.h, 16.w, 8.h),
       child: Column(
         children: [
-          Row(
+          AppMetricGrid(
             children: [
-              Expanded(
-                child: AppMetricTile(
-                  label: '凭证',
-                  value: state.totalEvidenceCount.toString(),
-                  icon: Icons.receipt_long_rounded,
-                  color: semantic.warning,
-                ),
+              AppMetricTile(
+                label: '凭证',
+                value: state.totalEvidenceCount.toString(),
+                icon: Icons.receipt_long_rounded,
+                color: semantic.warning,
               ),
-              SizedBox(width: 10.w),
-              Expanded(
-                child: AppMetricTile(
-                  label: '待报销',
-                  value: formatMoney(state.totalPendingAmount),
-                  icon: Icons.pending_actions_rounded,
-                  color: semantic.expense,
-                ),
+              AppMetricTile(
+                label: '待报销',
+                value: formatMoney(state.totalPendingAmount),
+                icon: Icons.pending_actions_rounded,
+                color: semantic.expense,
               ),
             ],
           ),

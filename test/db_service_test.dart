@@ -1,39 +1,38 @@
+import 'dart:ffi';
 import 'dart:io';
 
 import 'package:flutter_test/flutter_test.dart';
 import 'package:isar/isar.dart';
 import 'package:life_log/common/db/db_service.dart';
+import 'package:life_log/core/db/isar_database.dart';
 import 'package:life_log/features/evidence/data/evidence_model.dart';
-import 'package:life_log/features/subscription/data/subscription_model.dart';
 import 'package:life_log/features/expense/data/expense_record_model.dart';
 import 'package:life_log/features/project/data/project_model.dart';
 import 'package:life_log/features/photo/data/photo_model.dart';
-import 'package:life_log/features/work_log/data/work_log_model.dart';
 
 void main() {
-  final canOpenIsar = File('isar.dll').existsSync();
-  final isarSkip = canOpenIsar
+  final isarLibraryPath = _isarLibraryPath();
+  final isarSkip = isarLibraryPath != null
       ? false
-      : 'isar.dll is not available in this test environment';
+      : 'isar.dll is not available in this test environment. '
+            'Set ISAR_DLL_PATH or place it at D:\\Tool\\Isar\\isar.dll.';
   late Directory tempDir;
   late DbService db;
+
+  setUpAll(() async {
+    if (isarLibraryPath == null) return;
+    await Isar.initializeIsarCore(libraries: {Abi.current(): isarLibraryPath});
+  });
 
   Future<DbService> openDb() async {
     tempDir = await Directory.systemTemp.createTemp('life_log_db_test_');
     final service = DbService();
-    service.isar = await Isar.open(
-      [
-        WorkLogSchema,
-        SubscriptionSchema,
-        PhotoItemSchema,
-        ExpenseEvidenceSchema,
-        ExpenseRecordSchema,
-        ProjectSchema,
-      ],
+    final database = await IsarDatabase.open(
+      schemas: DbService.schemas,
       directory: tempDir.path,
       name: 'life_log_test_${DateTime.now().microsecondsSinceEpoch}',
     );
-    return service;
+    return service.initWithDatabaseForTest(database);
   }
 
   setUp(() async {
@@ -123,4 +122,19 @@ void main() {
     expect(await db.getAllEvidence(), isEmpty);
     expect(await db.isar.expenseEvidences.get(id), isNull);
   }, skip: isarSkip);
+}
+
+String? _isarLibraryPath() {
+  final explicitPath = Platform.environment['ISAR_DLL_PATH'];
+  if (explicitPath != null && explicitPath.trim().isNotEmpty) {
+    final file = File(explicitPath.trim());
+    if (file.existsSync()) return file.path;
+  }
+
+  final defaultDDrivePath = File(r'D:\Tool\Isar\isar.dll');
+  if (defaultDDrivePath.existsSync()) {
+    return defaultDDrivePath.path;
+  }
+
+  return null;
 }

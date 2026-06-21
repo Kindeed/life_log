@@ -31,6 +31,7 @@ final class ExpenseRecordEntry extends Equatable {
   final String? merchant;
   final String? note;
   final int? projectId;
+  final String? projectSyncId;
   final String? projectName;
 
   const ExpenseRecordEntry({
@@ -42,6 +43,7 @@ final class ExpenseRecordEntry extends Equatable {
     this.merchant,
     this.note,
     this.projectId,
+    this.projectSyncId,
     this.projectName,
   });
 
@@ -55,6 +57,7 @@ final class ExpenseRecordEntry extends Equatable {
     merchant,
     note,
     projectId,
+    projectSyncId,
     projectName,
   ];
 }

@@ -15,8 +15,17 @@ void main() {
 
       final source = script.readAsStringSync();
 
+      expect(source, contains("-Name 'dart-format-check'"));
+      expect(
+        source,
+        contains("'dart', 'format', '--set-exit-if-changed', '.'"),
+      );
       expect(source, contains("-Name 'flutter-analyze'"));
-      expect(source, contains("'flutter', 'analyze', '--no-fatal-infos'"));
+      expect(
+        source,
+        contains("'flutter', 'analyze', '--fatal-infos', '--fatal-warnings'"),
+      );
+      expect(source, isNot(contains('--no-fatal-infos')));
       expect(source, contains("-Name 'flutter-test'"));
       expect(source, contains("'flutter', 'test'"));
       expect(source, contains("-Name 'flutter-build-apk-debug'"));

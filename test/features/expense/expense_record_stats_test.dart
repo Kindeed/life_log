@@ -224,6 +224,7 @@ void main() {
         linkedProject: const ExpenseRecordLinkedProject(
           id: 42,
           name: 'Canonical Project',
+          syncId: 'project-sync-42',
         ),
       );
       final repository = ExpenseRecordRepository(
@@ -238,6 +239,7 @@ void main() {
       expect(projectLinker.linkedNames, ['canonical project']);
       expect(record.projectId, 42);
       expect(record.projectName, 'Canonical Project');
+      expect(record.projectSyncId, 'project-sync-42');
       expect(localDataSource.addedRecords, [same(record)]);
     });
 

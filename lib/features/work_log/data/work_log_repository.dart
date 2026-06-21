@@ -61,24 +61,12 @@ class WorkLogRepository {
 
   Future<void> _normalizeDuplicateDays() async {
     final allLogs = await getAllLogs();
-    final grouped = <DateTime, List<WorkLog>>{};
     for (final log in allLogs) {
-      grouped.putIfAbsent(dateOnlyLocal(log.date), () => <WorkLog>[]).add(log);
-    }
-
-    for (final entry in grouped.entries) {
-      if (entry.value.length < 2) continue;
-      final canonical = entry.value.latestByLocalDate()[entry.key];
-      if (canonical == null) continue;
-
-      for (final duplicate in entry.value) {
-        if (duplicate.id == canonical.id) continue;
-        await _deleteStoredLog(duplicate);
+      final normalizedDate = dateOnlyLocal(log.date);
+      if (log.date != normalizedDate) {
+        log.date = normalizedDate;
+        await _localDataSource.addLog(log);
       }
-      LogService.to.info(
-        'WorkLogRepository',
-        '归并同日重复工时记录: ${entry.key}，保留 ID ${canonical.id}',
-      );
     }
   }
 
@@ -89,22 +77,12 @@ class WorkLogRepository {
 
   Future<void> _saveLog(WorkLog log) async {
     log.date = dateOnlyLocal(log.date);
-    final sameDayLogs = await _sameDayLogs(log.date);
-    final existing = _resolveCanonicalLog(log, sameDayLogs);
-    if (existing != null) {
-      _adoptCanonicalIdentity(log, existing);
-    }
 
     validateWorkLog(log);
     log.syncId = ensureSyncId(log.syncId);
 
     // 1. 本地存储 (包含产生 dirty/remoteId)
     await _localDataSource.addLog(log);
-
-    for (final duplicate in sameDayLogs) {
-      if (duplicate.id == log.id) continue;
-      await _deleteStoredLog(duplicate);
-    }
 
     _pushWorkLogInBackground(log);
   }
@@ -133,46 +111,12 @@ class WorkLogRepository {
     }
   }
 
-  Future<List<WorkLog>> _sameDayLogs(DateTime date) async {
-    return _localDataSource.getLogsForDay(date);
-  }
-
-  WorkLog? _resolveCanonicalLog(WorkLog incoming, List<WorkLog> sameDayLogs) {
-    for (final item in sameDayLogs) {
-      if (item.id == incoming.id) {
-        return item;
-      }
-    }
-    if (sameDayLogs.isEmpty) return null;
-    final day = dateOnlyLocal(incoming.date);
-    return sameDayLogs.latestByLocalDate()[day] ?? sameDayLogs.first;
-  }
-
-  void _adoptCanonicalIdentity(WorkLog incoming, WorkLog existing) {
-    incoming.id = existing.id;
-    incoming.ownerUserId = existing.ownerUserId;
-    incoming.remoteId = existing.remoteId;
-    incoming.syncId = existing.syncId;
-    incoming.remoteVersion = existing.remoteVersion;
-    incoming.remoteUpdatedAt = existing.remoteUpdatedAt;
-    incoming.syncedAt = existing.syncedAt;
-    incoming.createdAt ??= existing.createdAt;
-    incoming.updatedAt ??= existing.updatedAt;
-    incoming.deletedAt = existing.deletedAt;
-    incoming.pendingDelete = existing.pendingDelete;
-    incoming.isDirty = incoming.isDirty || existing.isDirty;
-  }
-
   // 删除业务逻辑
   Future<void> deleteLog(int id) async {
     final log = await _localDataSource.getWorkLog(id);
     if (log == null) return;
 
-    final sameDayLogs = await _sameDayLogs(log.date);
-
-    for (final item in sameDayLogs) {
-      await _deleteStoredLog(item);
-    }
+    await _deleteStoredLog(log);
   }
 
   Future<void> _deleteStoredLog(WorkLog target) async {

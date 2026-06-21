@@ -28,6 +28,12 @@ void validateSubscription(Subscription sub) {
   if (sub.reminderDays < 0) {
     throw ArgumentError.value(sub.reminderDays, 'reminderDays', '提醒天数不能为负数');
   }
+
+  final anchorDate = sub.anchorDate ?? sub.nextPaymentDate;
+  final endDate = sub.endDate;
+  if (endDate != null && endDate.isBefore(anchorDate)) {
+    throw ArgumentError.value(endDate, 'endDate', '结束日期不能早于开始日期');
+  }
 }
 
 void validateExpenseEvidence(ExpenseEvidence evidence) {

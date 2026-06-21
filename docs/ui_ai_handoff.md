@@ -31,7 +31,8 @@ AI output is design input only. The accepted implementation must be translated
 into this Flutter codebase, covered by widget/source tests, checked against
 `BUG_TRACKER.md`, and verified with the standard gates:
 
-- `flutter analyze --no-fatal-infos`
+- `dart format --set-exit-if-changed .`
+- `flutter analyze --fatal-infos --fatal-warnings`
 - `flutter test`
 - `git diff --check`
 - `flutter build apk --debug` when preparing a test APK

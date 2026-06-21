@@ -19,6 +19,9 @@ void main() {
     double? price = 10,
     SubscriptionBillingCycle cycle = SubscriptionBillingCycle.monthly,
     DateTime? nextPaymentDate,
+    DateTime? anchorDate,
+    DateTime? endDate,
+    SubscriptionStatus status = SubscriptionStatus.active,
     int? sortIndex,
   }) {
     return SubscriptionEntry(
@@ -27,6 +30,9 @@ void main() {
       price: price,
       cycle: cycle,
       nextPaymentDate: nextPaymentDate ?? DateTime(2026, 5, 10),
+      anchorDate: anchorDate,
+      endDate: endDate,
+      status: status,
       sortIndex: sortIndex,
     );
   }
@@ -55,6 +61,41 @@ void main() {
         expect(entries.totalYearlyCost, 248);
       },
     );
+
+    test('respects anchor date, end date, and inactive statuses', () {
+      final startsInJune = entry(
+        price: 10,
+        anchorDate: DateTime(2026, 6, 10),
+        nextPaymentDate: DateTime(2026, 6, 10),
+      );
+      final endsInMay = entry(
+        price: 10,
+        anchorDate: DateTime(2026, 1, 10),
+        endDate: DateTime(2026, 5, 31),
+      );
+      final paused = entry(price: 10, status: SubscriptionStatus.paused);
+      final canceled = entry(price: 10, status: SubscriptionStatus.canceled);
+
+      expect(startsInJune.costForMonth(DateTime(2026, 5)), 0);
+      expect(startsInJune.costForMonth(DateTime(2026, 6)), 10);
+      expect(endsInMay.costForMonth(DateTime(2026, 5)), 10);
+      expect(endsInMay.costForMonth(DateTime(2026, 6)), 0);
+      expect(paused.costForMonth(DateTime(2026, 5)), 0);
+      expect(canceled.yearlyCost, 0);
+    });
+
+    test('advances monthly anchors safely across short months', () {
+      final monthly31 = entry(
+        cycle: SubscriptionBillingCycle.monthly,
+        anchorDate: DateTime(2026, 1, 31),
+        nextPaymentDate: DateTime(2026, 1, 31),
+      );
+
+      expect(
+        monthly31.nextOccurrenceAfter(DateTime(2026, 2, 1)),
+        DateTime(2026, 2, 28),
+      );
+    });
 
     test('finds subscriptions due soon using local-day bounds', () {
       final entries = [

@@ -15,18 +15,19 @@ final class LoadWorkLogMonth {
     try {
       final localMonth = dateOnlyLocal(month);
       final entries = await _repository.getAllEntries();
-      final latestByDay = entries.inMonth(localMonth).latestByLocalDate();
+      final entriesByDay = entries.inMonth(localMonth).groupedByLocalDate();
 
-      final sortedDays = latestByDay.keys.toList()..sort();
-      final sortedEntriesByDay = <DateTime, WorkLogEntry>{
-        for (final day in sortedDays) day: latestByDay[day]!,
+      final sortedDays = entriesByDay.keys.toList()..sort();
+      final sortedEntriesByDay = <DateTime, List<WorkLogEntry>>{
+        for (final day in sortedDays)
+          day: List<WorkLogEntry>.unmodifiable(entriesByDay[day]!),
       };
 
       return AppResult.success(
         WorkLogMonthSnapshot(
           month: DateTime(localMonth.year, localMonth.month),
           entriesByDay: Map.unmodifiable(sortedEntriesByDay),
-          summary: sortedEntriesByDay.values.getMonthSummary(localMonth),
+          summary: entries.getMonthSummary(localMonth),
         ),
       );
     } catch (error, stackTrace) {

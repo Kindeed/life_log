@@ -30,6 +30,7 @@ class SubscriptionRepository {
   Future<void> saveSubscription(Subscription sub, int currentCount) async {
     validateSubscription(sub);
     sub.syncId = ensureSyncId(sub.syncId);
+    sub.anchorDate ??= sub.nextPaymentDate;
 
     // 如果是新增（没有 sortIndex），把它排到最后
     sub.sortIndex ??= currentCount;

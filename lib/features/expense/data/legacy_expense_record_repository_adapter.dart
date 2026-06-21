@@ -59,6 +59,7 @@ extension ExpenseRecordEntryMapper on ExpenseRecord {
       merchant: merchant,
       note: note,
       projectId: projectId,
+      projectSyncId: projectSyncId,
       projectName: projectName,
     );
   }
@@ -75,6 +76,7 @@ extension ExpenseRecordEntryLegacyMapper on ExpenseRecordEntry {
       ..merchant = merchant
       ..note = note
       ..projectId = projectId
+      ..projectSyncId = projectSyncId
       ..projectName = projectName;
   }
 }

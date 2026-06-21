@@ -6,7 +6,7 @@ import 'package:life_log/common/widgets/app_button.dart';
 Future<bool> confirmWorkLogDelete(
   BuildContext context, {
   String title = '删除记录',
-  String message = '确定清空这一天的记录吗？删除后无法恢复。',
+  String message = '确定删除这条工时记录吗？删除后无法恢复。',
 }) async {
   final result = await showDialog<bool>(
     context: context,

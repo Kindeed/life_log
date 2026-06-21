@@ -37,6 +37,10 @@ class ExpenseRecord {
 
   @Index()
   int? projectId;
+
+  @Index(caseSensitive: false)
+  String? projectSyncId;
+
   @Index(caseSensitive: false)
   String? projectName;
 }
@@ -71,6 +75,7 @@ extension ExpenseRecordBusinessChanges on ExpenseRecord {
         merchant != other.merchant ||
         note != other.note ||
         projectId != other.projectId ||
+        projectSyncId != other.projectSyncId ||
         projectName != other.projectName;
   }
 }

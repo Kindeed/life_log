@@ -228,6 +228,7 @@ void main() {
           linkedProject: const EvidenceLinkedProject(
             id: 42,
             name: 'Canonical Project',
+            syncId: 'project-sync-42',
           ),
         );
         final fileStore = _EvidenceFileStoreSpy();
@@ -250,6 +251,7 @@ void main() {
         expect(projectLinker.linkedNames, ['canonical project']);
         expect(evidence.projectId, 42);
         expect(evidence.projectName, 'Canonical Project');
+        expect(evidence.projectSyncId, 'project-sync-42');
         expect(fileStore.copiedEvidence, [same(evidence)]);
         expect(fileStore.copiedSourcePaths, ['C:/tmp/ticket.pdf']);
         expect(fileStore.copiedSourceExtensions, ['pdf']);

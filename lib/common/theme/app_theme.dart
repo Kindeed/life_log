@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'app_typography.dart';
 import 'app_colors.dart';
 import 'app_semantic_colors.dart';
 import 'custom_colors.dart';
@@ -111,7 +112,7 @@ class AppTheme {
           shape: const CircleBorder(),
         ),
       ),
-      textTheme: _textTheme(colorScheme),
+      textTheme: AppTypography.textTheme(colorScheme),
     );
   }
 
@@ -221,54 +222,7 @@ class AppTheme {
           shape: const CircleBorder(),
         ),
       ),
-      textTheme: _textTheme(colorScheme),
-    );
-  }
-
-  static TextTheme _textTheme(ColorScheme colorScheme) {
-    final primary = colorScheme.onSurface;
-    final secondary = colorScheme.onSurfaceVariant;
-
-    return TextTheme(
-      headlineLarge: TextStyle(
-        color: primary,
-        fontSize: 34,
-        fontWeight: FontWeight.w700,
-        height: 1.08,
-      ),
-      headlineMedium: TextStyle(
-        color: primary,
-        fontSize: 28,
-        fontWeight: FontWeight.w700,
-      ),
-      titleLarge: TextStyle(
-        color: primary,
-        fontSize: 22,
-        fontWeight: FontWeight.w700,
-      ),
-      titleMedium: TextStyle(
-        color: primary,
-        fontSize: 17,
-        fontWeight: FontWeight.w600,
-      ),
-      titleSmall: TextStyle(
-        color: primary,
-        fontSize: 15,
-        fontWeight: FontWeight.w600,
-      ),
-      bodyLarge: TextStyle(color: primary, fontSize: 17),
-      bodyMedium: TextStyle(color: primary, fontSize: 15),
-      bodySmall: TextStyle(color: secondary, fontSize: 13),
-      labelLarge: TextStyle(
-        color: primary,
-        fontSize: 16,
-        fontWeight: FontWeight.w600,
-      ),
-      labelMedium: TextStyle(
-        color: secondary,
-        fontSize: 13,
-        fontWeight: FontWeight.w500,
-      ),
+      textTheme: AppTypography.textTheme(colorScheme),
     );
   }
 }

@@ -1,6 +1,8 @@
 import 'package:equatable/equatable.dart';
 
-enum SubscriptionBillingCycle { monthly, yearly, oneTime }
+enum SubscriptionBillingCycle { monthly, yearly, oneTime, custom }
+
+enum SubscriptionStatus { active, paused, canceled, archived }
 
 final class SubscriptionEntry extends Equatable {
   final int id;
@@ -8,6 +10,9 @@ final class SubscriptionEntry extends Equatable {
   final double? price;
   final SubscriptionBillingCycle cycle;
   final DateTime nextPaymentDate;
+  final DateTime? anchorDate;
+  final DateTime? endDate;
+  final SubscriptionStatus status;
   final int reminderDays;
   final String? note;
   final int? sortIndex;
@@ -18,6 +23,9 @@ final class SubscriptionEntry extends Equatable {
     required this.price,
     required this.cycle,
     required this.nextPaymentDate,
+    this.anchorDate,
+    this.endDate,
+    this.status = SubscriptionStatus.active,
     this.reminderDays = 1,
     this.note,
     this.sortIndex,
@@ -30,6 +38,9 @@ final class SubscriptionEntry extends Equatable {
     price,
     cycle,
     nextPaymentDate,
+    anchorDate,
+    endDate,
+    status,
     reminderDays,
     note,
     sortIndex,
@@ -42,6 +53,9 @@ extension SubscriptionEntryBusinessChanges on SubscriptionEntry {
         price != other.price ||
         cycle != other.cycle ||
         nextPaymentDate != other.nextPaymentDate ||
+        anchorDate != other.anchorDate ||
+        endDate != other.endDate ||
+        status != other.status ||
         reminderDays != other.reminderDays ||
         note != other.note ||
         sortIndex != other.sortIndex;

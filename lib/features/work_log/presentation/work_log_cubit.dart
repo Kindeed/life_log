@@ -18,7 +18,7 @@ final class WorkLogState extends Equatable {
   final DateTime focusedDay;
   final DateTime selectedDay;
   final WorkLogCalendarSpan calendarSpan;
-  final Map<DateTime, WorkLogEntry> entriesByDay;
+  final Map<DateTime, List<WorkLogEntry>> entriesByDay;
   final WorkLogMonthSummary summary;
   final AppFailure? failure;
 
@@ -45,8 +45,7 @@ final class WorkLogState extends Equatable {
   }
 
   List<WorkLogEntry> eventsForDay(DateTime day) {
-    final entry = entriesByDay[dateOnlyLocal(day)];
-    return entry == null ? const [] : [entry];
+    return entriesByDay[dateOnlyLocal(day)] ?? const [];
   }
 
   WorkLogState copyWith({
@@ -54,7 +53,7 @@ final class WorkLogState extends Equatable {
     DateTime? focusedDay,
     DateTime? selectedDay,
     WorkLogCalendarSpan? calendarSpan,
-    Map<DateTime, WorkLogEntry>? entriesByDay,
+    Map<DateTime, List<WorkLogEntry>>? entriesByDay,
     WorkLogMonthSummary? summary,
     AppFailure? failure,
     bool clearFailure = false,

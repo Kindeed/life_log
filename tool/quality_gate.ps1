@@ -156,8 +156,12 @@ function Invoke-RequiredMatchScan {
 
 try {
   Invoke-GateCommand `
+    -Name 'dart-format-check' `
+    -Command @('dart', 'format', '--set-exit-if-changed', '.')
+
+  Invoke-GateCommand `
     -Name 'flutter-analyze' `
-    -Command @('flutter', 'analyze', '--no-fatal-infos')
+    -Command @('flutter', 'analyze', '--fatal-infos', '--fatal-warnings')
 
   Invoke-GateCommand `
     -Name 'flutter-test' `

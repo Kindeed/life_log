@@ -40,7 +40,7 @@ void main() {
     expect(next.hasBusinessChangesComparedTo(original), isTrue);
   });
 
-  test('WorkLog month stats keeps only the latest status for a day', () {
+  test('WorkLog month stats aggregates multiple entries on one day', () {
     final date = DateTime(2026, 5, 9);
     final logs = [
       WorkLog()
@@ -56,10 +56,10 @@ void main() {
 
     final stats = logs.getMonthStats(DateTime(2026, 5));
 
-    expect(stats.workDays, 0);
+    expect(stats.workDays, 1);
     expect(stats.tripDays, 0);
     expect(stats.restDays, 1);
-    expect(stats.workHours, 0);
+    expect(stats.workHours, 2);
   });
 
   test('Subscription business change detection ignores sync metadata', () {

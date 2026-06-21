@@ -20,7 +20,7 @@ import 'package:life_log/features/work_log/work_log_feature_di.dart';
 void main() {
   group('LoadWorkLogMonth', () {
     test(
-      'keeps latest entry per day and calculates legacy month stats',
+      'keeps all entries per day and calculates day summary stats',
       () async {
         final repository = _FakeWorkLogRepository([
           _entry(
@@ -59,11 +59,14 @@ void main() {
           DateTime(2026, 5, 9),
           DateTime(2026, 5, 10),
         ]);
-        expect(snapshot.entriesByDay[DateTime(2026, 5, 9)]!.id, 2);
-        expect(snapshot.summary.workDays, 0);
+        expect(
+          snapshot.entriesByDay[DateTime(2026, 5, 9)]!.map((entry) => entry.id),
+          [1, 2],
+        );
+        expect(snapshot.summary.workDays, 1);
         expect(snapshot.summary.tripDays, 1);
         expect(snapshot.summary.restDays, 1);
-        expect(snapshot.summary.workHours, 0);
+        expect(snapshot.summary.workHours, 2);
       },
     );
 
@@ -124,7 +127,7 @@ void main() {
 
       expect(repository.getAllEntriesCallCount, 1);
       expect(
-        cubit.state.entriesByDay[DateTime(2026, 5, 9)]!.type,
+        cubit.state.eventsForDay(DateTime(2026, 5, 9)).single.type,
         WorkLogEntryType.work,
       );
 
@@ -136,7 +139,7 @@ void main() {
 
       expect(repository.getAllEntriesCallCount, 2);
       expect(
-        cubit.state.entriesByDay[DateTime(2026, 5, 9)]!.type,
+        cubit.state.eventsForDay(DateTime(2026, 5, 9)).single.type,
         WorkLogEntryType.rest,
       );
     });

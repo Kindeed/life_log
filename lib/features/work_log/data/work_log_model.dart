@@ -93,20 +93,33 @@ extension WorkLogListDomainLogic on Iterable<WorkLog> {
     int tDays = 0;
     int rDays = 0;
 
-    for (final log in inMonth(monthYear).latestByLocalDate().values) {
-      switch (log.type) {
-        case LogType.work:
-          wDays++;
-          hours += log.overtimeHours ?? 0.0;
-          break;
-        case LogType.businessTrip:
-          tDays++;
-          break;
-        case LogType.leave:
-        case LogType.rest:
-          rDays++;
-          break;
+    final grouped = <DateTime, List<WorkLog>>{};
+    for (final log in inMonth(monthYear)) {
+      grouped.putIfAbsent(dateOnlyLocal(log.date), () => <WorkLog>[]).add(log);
+    }
+
+    for (final dayLogs in grouped.values) {
+      var hasWork = false;
+      var hasTrip = false;
+      var hasRest = false;
+      for (final log in dayLogs) {
+        switch (log.type) {
+          case LogType.work:
+            hasWork = true;
+            hours += log.overtimeHours ?? 0.0;
+            break;
+          case LogType.businessTrip:
+            hasTrip = true;
+            break;
+          case LogType.leave:
+          case LogType.rest:
+            hasRest = true;
+            break;
+        }
       }
+      if (hasWork) wDays++;
+      if (hasTrip) tDays++;
+      if (hasRest) rDays++;
     }
 
     return WorkMonthStats(

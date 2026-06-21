@@ -91,6 +91,33 @@ void main() {
       expect(backupService, contains('serviceLocator<DbService>()'));
     });
 
+    test('DbService opens Isar through the core IsarDatabase seam', () {
+      final appEntry = File(
+        'lib/app/lifelog_mobile_entry.dart',
+      ).readAsStringSync();
+      final dbService = File(
+        'lib/common/db/db_service.dart',
+      ).readAsStringSync();
+      final isarDatabase = File('lib/core/db/isar_database.dart');
+
+      expect(
+        isarDatabase.existsSync(),
+        isTrue,
+        reason: 'The local database open/transaction seam should live in core.',
+      );
+
+      final isarDatabaseSource = isarDatabase.readAsStringSync();
+
+      expect(isarDatabaseSource, contains('class IsarDatabase'));
+      expect(isarDatabaseSource, contains('Future<IsarDatabase> open'));
+      expect(isarDatabaseSource, contains('Future<T> writeTxn<T>'));
+      expect(isarDatabaseSource, contains('Future<T> readTxn<T>'));
+      expect(isarDatabaseSource, contains('Future<void> close'));
+      expect(appEntry, contains('registerSingleton<IsarDatabase>'));
+      expect(dbService, contains('IsarDatabase.open('));
+      expect(dbService, isNot(contains('Isar.open(')));
+    });
+
     test('core runtime services are no longer owned by GetX', () {
       final appEntry = File(
         'lib/app/lifelog_mobile_entry.dart',

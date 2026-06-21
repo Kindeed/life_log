@@ -46,7 +46,7 @@ void main() {
 
         await cubit.loadEntries();
 
-        expect(cubit.state.status, SubscriptionStatus.ready);
+        expect(cubit.state.status, SubscriptionReadStatus.ready);
         expect(cubit.state.visibleEntries.map((entry) => entry.name), [
           'Rent',
           'Cloud',
@@ -117,7 +117,7 @@ void main() {
 
       await cubit.loadEntries();
 
-      expect(cubit.state.status, SubscriptionStatus.failure);
+      expect(cubit.state.status, SubscriptionReadStatus.failure);
       expect(cubit.state.failure?.code, 'subscription/load-entries');
       expect(cubit.state.failure?.message, contains('subscriptions down'));
     });

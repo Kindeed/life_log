@@ -16,6 +16,23 @@ extension WorkLogEntryStats on Iterable<WorkLogEntry> {
     return result;
   }
 
+  Map<DateTime, List<WorkLogEntry>> groupedByLocalDate() {
+    final result = <DateTime, List<WorkLogEntry>>{};
+    for (final entry in this) {
+      final key = dateOnlyLocal(entry.date);
+      final normalized = entry.copyWith(date: key);
+      result.putIfAbsent(key, () => <WorkLogEntry>[]).add(normalized);
+    }
+    for (final entries in result.values) {
+      entries.sort((a, b) {
+        final dateCompare = a.date.compareTo(b.date);
+        if (dateCompare != 0) return dateCompare;
+        return a.id.compareTo(b.id);
+      });
+    }
+    return result;
+  }
+
   Iterable<WorkLogEntry> inMonth(DateTime monthYear) {
     final localMonth = dateOnlyLocal(monthYear);
     return where((entry) {
@@ -44,20 +61,28 @@ extension WorkLogEntryStats on Iterable<WorkLogEntry> {
     var tripDays = 0;
     var restDays = 0;
 
-    for (final entry in inMonth(monthYear).latestByLocalDate().values) {
-      switch (entry.type) {
-        case WorkLogEntryType.work:
-          workDays++;
-          workHours += entry.overtimeHours ?? 0;
-          break;
-        case WorkLogEntryType.businessTrip:
-          tripDays++;
-          break;
-        case WorkLogEntryType.leave:
-        case WorkLogEntryType.rest:
-          restDays++;
-          break;
+    for (final dayEntries in inMonth(monthYear).groupedByLocalDate().values) {
+      var hasWork = false;
+      var hasTrip = false;
+      var hasRest = false;
+      for (final entry in dayEntries) {
+        switch (entry.type) {
+          case WorkLogEntryType.work:
+            hasWork = true;
+            workHours += entry.overtimeHours ?? 0;
+            break;
+          case WorkLogEntryType.businessTrip:
+            hasTrip = true;
+            break;
+          case WorkLogEntryType.leave:
+          case WorkLogEntryType.rest:
+            hasRest = true;
+            break;
+        }
       }
+      if (hasWork) workDays++;
+      if (hasTrip) tripDays++;
+      if (hasRest) restDays++;
     }
 
     return WorkLogMonthSummary(
