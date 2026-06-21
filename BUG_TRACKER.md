@@ -167,6 +167,7 @@ This is the active defect ledger. `REVIEW_REPORT.md` is historical context only.
 - Newly discovered and fixed: T25. Evidence presentation boundary tests now normalize Windows CRLF line endings before matching multiline source snippets.
 - Newly discovered and fixed: T26. CI and local quality gates now check committed source formatting before `build_runner`, then format generated Isar outputs before analysis/build so clean release workflows do not fail on generator formatting drift.
 - Newly discovered and fixed: T27. Date grouping tests no longer encode an Asia/Shanghai-only UTC boundary that fails in GitHub's UTC runners.
+- Newly discovered and fixed: T28. Release R8 shrink now tolerates unused ML Kit optional script classes while keeping the package-size trim to Chinese OCR only.
 
 ## Repository Hygiene Audit (2026-05-28)
 
@@ -434,6 +435,7 @@ This is the active defect ledger. `REVIEW_REPORT.md` is historical context only.
 | T25 | Low | fixed | source boundary tests | `evidence_cubit_test.dart` matched a multiline source snippet containing `\n` directly after reading `today_view.dart`; on Windows working trees with CRLF, the semantic source pattern existed but the test failed due to line-ending differences. | Fixed: normalize CRLF to LF before matching the multiline `showEvidenceAddActions` call, keeping the boundary assertion stable across platforms. |
 | T26 | Medium | fixed | generated code release gate | GitHub release and main-CI workflows ran `build_runner` before `dart format --set-exit-if-changed .`; in clean CI environments Isar generator output is rewritten and then formatted, causing both `v1.4.15` and `v1.4.16` tag workflows to fail before APK assets were produced. | Fixed: moved the strict committed-source format check before `build_runner`, then format generated outputs before analyze/test/build in release, main CI, manual test APK workflows, and `tool/quality_gate.ps1`, with test coverage in `quality_gate_script_test.dart` and `release_workflow_quality_test.dart`. |
 | T27 | Medium | fixed | CI date grouping tests | `date_grouping_test.dart` and `expense_record_stats_test.dart` used `DateTime.utc(2026, 4, 30, 16)` as a May local-date boundary; that is May 1 in Asia/Shanghai but April 30 in GitHub's UTC runners, causing release workflows to fail in CI while passing locally. | Fixed: use local `DateTime(2026, 5, 1)` / `DateTime(2026, 5)` fixtures so month grouping tests assert local-date behavior without depending on the host timezone. |
+| T28 | Medium | fixed | Release R8 OCR shrink | After trimming unused ML Kit Devanagari/Japanese/Korean dependencies, release builds failed in R8 because `google_mlkit_text_recognition` still contains optional references to those script option classes even though LifeLog only initializes the Chinese recognizer. | Fixed: keep only `text-recognition-chinese` as a dependency and add R8 `-dontwarn` rules for the unused optional script classes, with package hardening tests covering both the dependency trim and the release shrink rules. |
 
 ### Backup / Restore
 

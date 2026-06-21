@@ -6,6 +6,9 @@ void main() {
   group('package and release hardening', () {
     test('Android OCR dependencies keep only the used Chinese text pack', () {
       final gradle = File('android/app/build.gradle.kts').readAsStringSync();
+      final proguard = File(
+        'android/app/proguard-rules.pro',
+      ).readAsStringSync();
       final parser = File(
         'lib/features/evidence/data/evidence_parse_service.dart',
       ).readAsStringSync();
@@ -18,6 +21,18 @@ void main() {
       expect(gradle, isNot(contains('text-recognition-devanagari')));
       expect(gradle, isNot(contains('text-recognition-japanese')));
       expect(gradle, isNot(contains('text-recognition-korean')));
+      expect(
+        proguard,
+        contains('-dontwarn com.google.mlkit.vision.text.devanagari.**'),
+      );
+      expect(
+        proguard,
+        contains('-dontwarn com.google.mlkit.vision.text.japanese.**'),
+      );
+      expect(
+        proguard,
+        contains('-dontwarn com.google.mlkit.vision.text.korean.**'),
+      );
     });
 
     test('GitHub APK workflows generate a size report with thresholds', () {
@@ -84,11 +99,11 @@ void main() {
 
       expect(metadata, contains('localSchemaVersion = 2026062101'));
       expect(metadata, contains('syncProtocolVersion = 2'));
-      expect(metadata, contains("minimumSupportedAppVersion = '1.4.18'"));
-      expect(metadata, contains('minimumSupportedBuildNumber = 24'));
+      expect(metadata, contains("minimumSupportedAppVersion = '1.4.19'"));
+      expect(metadata, contains('minimumSupportedBuildNumber = 25'));
       expect(logs, contains('ReleaseMetadata.diagnosticLines()'));
       expect(protocol, contains('Sync protocol version: `2`'));
-      expect(protocol, contains('Minimum supported app version: `1.4.18+24`'));
+      expect(protocol, contains('Minimum supported app version: `1.4.19+25`'));
       expect(protocol, contains('Photos are local-only'));
     });
   });

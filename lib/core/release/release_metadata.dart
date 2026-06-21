@@ -1,8 +1,8 @@
 final class ReleaseMetadata {
   static const int localSchemaVersion = 2026062101;
   static const int syncProtocolVersion = 2;
-  static const String minimumSupportedAppVersion = '1.4.18';
-  static const int minimumSupportedBuildNumber = 24;
+  static const String minimumSupportedAppVersion = '1.4.19';
+  static const int minimumSupportedBuildNumber = 25;
   static const int minimumSupportedSyncProtocolVersion = 2;
 
   static Iterable<String> diagnosticLines() sync* {
