@@ -5,7 +5,7 @@ import 'package:life_log/features/work_log/data/work_log_model.dart';
 
 void main() {
   test('month grouping normalizes the target month to local date', () {
-    final localMayFromUtcBoundary = DateTime.utc(2026, 4, 30, 16);
+    final localMay = DateTime(2026, 5);
 
     final logs = [
       WorkLog()
@@ -27,9 +27,9 @@ void main() {
         ..category = ExpenseCategory.meal,
     ];
 
-    expect(logs.inMonth(localMayFromUtcBoundary).length, 1);
-    expect(logs.getMonthStats(localMayFromUtcBoundary).workHours, 2);
-    expect(evidence.inMonth(localMayFromUtcBoundary).length, 1);
-    expect(expenses.inMonth(localMayFromUtcBoundary).totalAmount, 12);
+    expect(logs.inMonth(localMay).length, 1);
+    expect(logs.getMonthStats(localMay).workHours, 2);
+    expect(evidence.inMonth(localMay).length, 1);
+    expect(expenses.inMonth(localMay).totalAmount, 12);
   });
 }

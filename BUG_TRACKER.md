@@ -166,6 +166,7 @@ This is the active defect ledger. `REVIEW_REPORT.md` is historical context only.
 - Newly discovered and fixed: T24. Merges to `main` now trigger a CI debug APK build artifact instead of requiring a manual workflow dispatch for every post-merge test package.
 - Newly discovered and fixed: T25. Evidence presentation boundary tests now normalize Windows CRLF line endings before matching multiline source snippets.
 - Newly discovered and fixed: T26. CI and local quality gates now check committed source formatting before `build_runner`, then format generated Isar outputs before analysis/build so clean release workflows do not fail on generator formatting drift.
+- Newly discovered and fixed: T27. Date grouping tests no longer encode an Asia/Shanghai-only UTC boundary that fails in GitHub's UTC runners.
 
 ## Repository Hygiene Audit (2026-05-28)
 
@@ -432,6 +433,7 @@ This is the active defect ledger. `REVIEW_REPORT.md` is historical context only.
 | T24 | Medium | fixed | main CI APK | Merging a PR into `main` did not automatically build a CI test APK; `build.yml` only runs on `v*` tags and `test-apk.yml` only runs on manual dispatch, so post-merge verification packages could be missed unless someone remembered to start the workflow. | Fixed: added `Main CI Test APK` on `push` to `main` and manual dispatch, running dependency install, build_runner, format, fatal analyze, tests, debug APK build, APK size report, and artifact upload. |
 | T25 | Low | fixed | source boundary tests | `evidence_cubit_test.dart` matched a multiline source snippet containing `\n` directly after reading `today_view.dart`; on Windows working trees with CRLF, the semantic source pattern existed but the test failed due to line-ending differences. | Fixed: normalize CRLF to LF before matching the multiline `showEvidenceAddActions` call, keeping the boundary assertion stable across platforms. |
 | T26 | Medium | fixed | generated code release gate | GitHub release and main-CI workflows ran `build_runner` before `dart format --set-exit-if-changed .`; in clean CI environments Isar generator output is rewritten and then formatted, causing both `v1.4.15` and `v1.4.16` tag workflows to fail before APK assets were produced. | Fixed: moved the strict committed-source format check before `build_runner`, then format generated outputs before analyze/test/build in release, main CI, manual test APK workflows, and `tool/quality_gate.ps1`, with test coverage in `quality_gate_script_test.dart` and `release_workflow_quality_test.dart`. |
+| T27 | Medium | fixed | CI date grouping tests | `date_grouping_test.dart` and `expense_record_stats_test.dart` used `DateTime.utc(2026, 4, 30, 16)` as a May local-date boundary; that is May 1 in Asia/Shanghai but April 30 in GitHub's UTC runners, causing release workflows to fail in CI while passing locally. | Fixed: use local `DateTime(2026, 5, 1)` / `DateTime(2026, 5)` fixtures so month grouping tests assert local-date behavior without depending on the host timezone. |
 
 ### Backup / Restore
 

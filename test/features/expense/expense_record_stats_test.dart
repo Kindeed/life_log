@@ -23,7 +23,7 @@ void main() {
       final entries = [
         ExpenseRecordEntry(
           id: 1,
-          expenseDate: DateTime.utc(2026, 4, 30, 16),
+          expenseDate: DateTime(2026, 5, 1),
           amount: 12,
         ),
         ExpenseRecordEntry(
