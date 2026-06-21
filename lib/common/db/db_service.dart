@@ -1,26 +1,57 @@
+import 'dart:io';
+
+import 'package:crypto/crypto.dart';
 import 'package:flutter/foundation.dart';
-import 'package:get/get.dart';
 import 'package:isar/isar.dart';
+import 'package:life_log/core/db/isar_database.dart';
+import 'package:life_log/core/di/service_locator.dart';
+import 'package:life_log/core/sync/sync_conflict_model.dart';
+import 'package:life_log/common/db/local_data_migration_batch.dart';
+import 'package:life_log/common/db/local_data_migration_summary.dart';
+import 'package:life_log/features/subscription/data/subscription_dao.dart';
+import 'package:life_log/features/subscription/data/subscription_model.dart';
+import 'package:life_log/features/evidence/data/evidence_attachment_model.dart';
+import 'package:life_log/features/work_log/data/work_log_dao.dart';
+import 'package:life_log/features/work_log/data/work_log_model.dart';
+import 'package:path/path.dart' as p;
 import 'package:path_provider/path_provider.dart';
-import '../../modules/work_log/work_log_model.dart';
-import '../../modules/subscription/subscription_model.dart';
-import '../../modules/photo/photo_model.dart'; // Import PhotoModel
-import '../../modules/evidence/evidence_model.dart';
-import '../../modules/expense/expense_record_model.dart';
-import '../../modules/project/project_model.dart';
+import 'package:life_log/features/photo/data/photo_model.dart';
+import 'package:life_log/features/project/data/project_dao.dart';
+import 'package:life_log/features/evidence/data/evidence_dao.dart';
+import 'package:life_log/features/evidence/data/evidence_model.dart';
+import 'package:life_log/features/expense/data/expense_record_dao.dart';
+import 'package:life_log/features/expense/data/expense_record_model.dart';
+import 'package:life_log/features/project/data/project_model.dart';
 import '../utils/date_utils.dart';
 import '../services/auth_service.dart';
 import '../utils/sync_id_policy.dart';
 // import '../services/sync_service.dart'; // Removed cyclic dependency
 
-class DbService extends GetxService {
-  // 单例模式：确保整个App只有一个仓库管理员
-  static DbService get to => Get.find();
+class DbService {
+  static List<CollectionSchema<dynamic>> get schemas => [
+    WorkLogSchema,
+    SubscriptionSchema,
+    PhotoItemSchema,
+    ExpenseEvidenceSchema,
+    ExpenseRecordSchema,
+    ProjectSchema,
+    LocalDataMigrationBatchSchema,
+    EvidenceAttachmentSchema,
+    SyncConflictRecordSchema,
+  ];
 
   late Isar isar; // 数据库实例
+  late IsarDatabase database;
+  late WorkLogDao _workLogDao;
+  late SubscriptionDao _subscriptionDao;
+  late ProjectDao _projectDao;
+  late ExpenseRecordDao _expenseRecordDao;
+  late EvidenceDao _evidenceDao;
+  bool _isInitialized = false;
 
-  String? get currentOwnerUserId =>
-      Get.isRegistered<AuthService>() ? AuthService.to.userId : null;
+  String? get currentOwnerUserId => serviceLocator.isRegistered<AuthService>()
+      ? serviceLocator<AuthService>().userId
+      : null;
 
   bool _belongsToCurrentUser(String? ownerUserId) {
     final currentUserId = currentOwnerUserId;
@@ -172,6 +203,114 @@ class DbService extends GetxService {
     await _claimUnownedRecordsForOwner(currentUserId);
   }
 
+  Future<LocalDataMigrationSummary> countUnownedRecords() async {
+    final logs = await isar.workLogs.filter().ownerUserIdIsNull().count();
+    final subs = await isar.subscriptions.filter().ownerUserIdIsNull().count();
+    final evidence = await isar.expenseEvidences
+        .filter()
+        .ownerUserIdIsNull()
+        .count();
+    final expenseRecords = await isar.expenseRecords
+        .filter()
+        .ownerUserIdIsNull()
+        .count();
+    final projects = await isar.projects.filter().ownerUserIdIsNull().count();
+    final photos = await isar.photoItems.filter().ownerUserIdIsNull().count();
+
+    return LocalDataMigrationSummary(
+      workLogs: logs,
+      subscriptions: subs,
+      evidence: evidence,
+      expenseRecords: expenseRecords,
+      projects: projects,
+      photos: photos,
+    );
+  }
+
+  Future<void> deleteUnownedRecords() async {
+    await isar.writeTxn(() async {
+      final logs = await isar.workLogs.filter().ownerUserIdIsNull().findAll();
+      await isar.workLogs.deleteAll(logs.map((item) => item.id).toList());
+
+      final subs = await isar.subscriptions
+          .filter()
+          .ownerUserIdIsNull()
+          .findAll();
+      await isar.subscriptions.deleteAll(subs.map((item) => item.id).toList());
+
+      final evidence = await isar.expenseEvidences
+          .filter()
+          .ownerUserIdIsNull()
+          .findAll();
+      await isar.expenseEvidences.deleteAll(
+        evidence.map((item) => item.id).toList(),
+      );
+
+      final evidenceAttachments = await isar.evidenceAttachments
+          .filter()
+          .ownerUserIdIsNull()
+          .findAll();
+      await isar.evidenceAttachments.deleteAll(
+        evidenceAttachments.map((item) => item.id).toList(),
+      );
+
+      final expenseRecords = await isar.expenseRecords
+          .filter()
+          .ownerUserIdIsNull()
+          .findAll();
+      await isar.expenseRecords.deleteAll(
+        expenseRecords.map((item) => item.id).toList(),
+      );
+
+      final photos = await isar.photoItems
+          .filter()
+          .ownerUserIdIsNull()
+          .findAll();
+      await isar.photoItems.deleteAll(photos.map((item) => item.id).toList());
+
+      final projects = await isar.projects
+          .filter()
+          .ownerUserIdIsNull()
+          .findAll();
+      await isar.projects.deleteAll(projects.map((item) => item.id).toList());
+    });
+  }
+
+  Future<int> startLocalDataMigrationBatch({
+    required String toUserId,
+    required int recordCount,
+    String? fromOwner,
+  }) async {
+    final now = DateTime.now().toUtc();
+    final batch = LocalDataMigrationBatch()
+      ..fromOwner = fromOwner
+      ..toUserId = toUserId
+      ..recordCount = recordCount
+      ..startedAt = now
+      ..status = 'started';
+    return isar.writeTxn(() => isar.localDataMigrationBatchs.put(batch));
+  }
+
+  Future<void> completeLocalDataMigrationBatch(int id) async {
+    await isar.writeTxn(() async {
+      final batch = await isar.localDataMigrationBatchs.get(id);
+      if (batch == null) return;
+      batch.completedAt = DateTime.now().toUtc();
+      batch.status = 'completed';
+      await isar.localDataMigrationBatchs.put(batch);
+    });
+  }
+
+  Future<void> failLocalDataMigrationBatch(int id) async {
+    await isar.writeTxn(() async {
+      final batch = await isar.localDataMigrationBatchs.get(id);
+      if (batch == null) return;
+      batch.completedAt = DateTime.now().toUtc();
+      batch.status = 'failed';
+      await isar.localDataMigrationBatchs.put(batch);
+    });
+  }
+
   @visibleForTesting
   Future<void> claimUnownedRecordsForOwnerForTest(String ownerUserId) {
     return _claimUnownedRecordsForOwner(ownerUserId);
@@ -210,6 +349,19 @@ class DbService extends GetxService {
       }
       if (evidence.isNotEmpty) {
         await isar.expenseEvidences.putAll(evidence);
+      }
+
+      final evidenceAttachments = await isar.evidenceAttachments
+          .filter()
+          .ownerUserIdIsNull()
+          .findAll();
+      for (final item in evidenceAttachments) {
+        item.ownerUserId = ownerUserId;
+        item.uploadState = EvidenceAttachmentUploadState.pending;
+        item.updatedAt = DateTime.now().toUtc();
+      }
+      if (evidenceAttachments.isNotEmpty) {
+        await isar.evidenceAttachments.putAll(evidenceAttachments);
       }
 
       final expenseRecords = await isar.expenseRecords
@@ -265,18 +417,39 @@ class DbService extends GetxService {
     final dir = await getApplicationDocumentsDirectory();
 
     // 打开数据库
-    isar = await Isar.open([
-      WorkLogSchema,
-      SubscriptionSchema,
-      PhotoItemSchema,
-      ExpenseEvidenceSchema,
-      ExpenseRecordSchema,
-      ProjectSchema,
-    ], directory: dir.path);
+    final openedDatabase = await IsarDatabase.open(
+      schemas: schemas,
+      directory: dir.path,
+    );
+    _bindDatabase(openedDatabase);
 
     await _backfillRecordAuditTimestamps();
 
+    _isInitialized = true;
     return this;
+  }
+
+  @visibleForTesting
+  Future<DbService> initWithDatabaseForTest(
+    IsarDatabase openedDatabase, {
+    bool runBackfills = true,
+  }) async {
+    _bindDatabase(openedDatabase);
+    if (runBackfills) {
+      await _backfillRecordAuditTimestamps();
+    }
+    _isInitialized = true;
+    return this;
+  }
+
+  void _bindDatabase(IsarDatabase openedDatabase) {
+    database = openedDatabase;
+    isar = openedDatabase.isar;
+    _workLogDao = WorkLogDao(database);
+    _subscriptionDao = SubscriptionDao(database);
+    _projectDao = ProjectDao(database);
+    _expenseRecordDao = ExpenseRecordDao(database);
+    _evidenceDao = EvidenceDao(database);
   }
 
   Future<void> _backfillRecordAuditTimestamps() async {
@@ -359,12 +532,10 @@ class DbService extends GetxService {
     });
   }
 
-  @override
-  void onClose() {
-    if (isar.isOpen) {
+  void dispose() {
+    if (_isInitialized && isar.isOpen) {
       isar.close();
     }
-    super.onClose();
   }
 
   // --- 2. 增加一条日志 (入库) ---
@@ -387,89 +558,40 @@ class DbService extends GetxService {
 
   // --- 3. 查询某个月的日志 (盘点) ---
   Future<List<WorkLog>> getLogsByMonth(DateTime month) async {
-    final start = DateTime(month.year, month.month, 1);
-    final end = DateTime(month.year, month.month + 1, 1);
-
-    final logs = await isar.workLogs
-        .filter()
-        .dateGreaterThan(start, include: true)
-        .and()
-        .dateLessThan(end, include: false)
-        .sortByDate()
-        .findAll();
-    return logs
-        .where(
-          (log) =>
-              log.deletedAt == null && _belongsToCurrentUser(log.ownerUserId),
-        )
-        .toList();
+    return _workLogDao.getActiveByMonthForOwner(month, currentOwnerUserId);
   }
 
   // --- 【新增】4. 获取所有日志 (供日历初始化使用) ---
   Future<List<WorkLog>> getAllLogs() async {
-    final logs = await isar.workLogs
-        .where()
-        .sortByDate() // 按日期排序，保证日历加载顺序
-        .findAll();
-    return logs
-        .where(
-          (log) =>
-              log.deletedAt == null && _belongsToCurrentUser(log.ownerUserId),
-        )
-        .toList();
+    return _workLogDao.getActiveSortedForOwner(currentOwnerUserId);
   }
 
   Future<List<WorkLog>> getLogsForDay(DateTime date) async {
-    final day = dateOnlyLocal(date);
-    final nextDay = day.add(const Duration(days: 1));
-    final logs = await isar.workLogs
-        .filter()
-        .dateGreaterThan(day, include: true)
-        .and()
-        .dateLessThan(nextDay, include: false)
-        .sortByDate()
-        .findAll();
-    return logs
-        .where(
-          (log) =>
-              log.deletedAt == null && _belongsToCurrentUser(log.ownerUserId),
-        )
-        .toList();
+    return _workLogDao.getActiveByDayForOwner(date, currentOwnerUserId);
   }
 
   Future<List<WorkLog>> getAllLogsForSync() async {
-    final logs = await isar.workLogs.where().sortByDate().findAll();
+    final logs = await _workLogDao.getAllForSync();
     return logs.where((log) => _belongsToCurrentUser(log.ownerUserId)).toList();
   }
 
   Future<List<WorkLog>> getPendingLogsForSync() async {
-    final logs = await isar.workLogs
-        .filter()
-        .remoteIdIsNull()
-        .or()
-        .isDirtyEqualTo(true)
-        .or()
-        .pendingDeleteEqualTo(true)
-        .sortByDate()
-        .findAll();
-    return logs.where((log) => _belongsToCurrentUser(log.ownerUserId)).toList();
+    return _workLogDao.getPendingForSyncForOwner(currentOwnerUserId);
   }
 
   // --- 5. 获取单条记录 (供 Repository 查询使用) ---
   Future<WorkLog?> getWorkLog(int id) async {
-    final log = await isar.workLogs.get(id);
+    final log = await _workLogDao.getById(id);
     if (log == null || !_belongsToCurrentUser(log.ownerUserId)) return null;
     return log;
   }
 
   // 获取日志变更流
-  Stream<void> watchWorkLogs() => isar.workLogs.watchLazy();
+  Stream<void> watchWorkLogs() => _workLogDao.watch();
 
   // --- 5. 删除日志 (出库) ---
   Future<void> deleteLog(int id) async {
-    await isar.writeTxn(() async {
-      await isar.workLogs.delete(id);
-    });
+    await _workLogDao.delete(id);
   }
 
   Future<WorkLog?> markLogDeleted(int id) async {
@@ -487,57 +609,34 @@ class DbService extends GetxService {
   }
 
   Future<void> purgeDeletedLog(int id) async {
-    await isar.writeTxn(() async {
-      await isar.workLogs.delete(id);
-    });
+    await _workLogDao.delete(id);
   }
 
   // --- 订阅管理相关 ---
 
   // 1. 获取所有订阅 (按下次付款时间排序)
   Future<List<Subscription>> getAllSubscriptions() async {
-    final subs = await isar.subscriptions
-        .where()
-        .sortByNextPaymentDate()
-        .findAll();
-    return subs
-        .where(
-          (sub) =>
-              sub.deletedAt == null && _belongsToCurrentUser(sub.ownerUserId),
-        )
-        .toList();
+    return _subscriptionDao.getActiveSortedForOwner(currentOwnerUserId);
   }
 
   Future<List<Subscription>> getAllSubscriptionsForSync() async {
-    final subs = await isar.subscriptions
-        .where()
-        .sortByNextPaymentDate()
-        .findAll();
+    final subs = await _subscriptionDao.getAllForSync();
     return subs.where((sub) => _belongsToCurrentUser(sub.ownerUserId)).toList();
   }
 
   Future<List<Subscription>> getPendingSubscriptionsForSync() async {
-    final subs = await isar.subscriptions
-        .filter()
-        .remoteIdIsNull()
-        .or()
-        .isDirtyEqualTo(true)
-        .or()
-        .pendingDeleteEqualTo(true)
-        .sortByNextPaymentDate()
-        .findAll();
-    return subs.where((sub) => _belongsToCurrentUser(sub.ownerUserId)).toList();
+    return _subscriptionDao.getPendingForSyncForOwner(currentOwnerUserId);
   }
 
   // 2. 获取单条订阅
   Future<Subscription?> getSubscription(int id) async {
-    final sub = await isar.subscriptions.get(id);
+    final sub = await _subscriptionDao.getById(id);
     if (sub == null || !_belongsToCurrentUser(sub.ownerUserId)) return null;
     return sub;
   }
 
   // 获取订阅变更流
-  Stream<void> watchSubscriptions() => isar.subscriptions.watchLazy();
+  Stream<void> watchSubscriptions() => _subscriptionDao.watch();
 
   // 2. 添加/修改订阅
   Future<int> addSubscription(Subscription sub) async {
@@ -558,9 +657,7 @@ class DbService extends GetxService {
 
   // 3. 删除订阅
   Future<void> deleteSubscription(int id) async {
-    await isar.writeTxn(() async {
-      await isar.subscriptions.delete(id);
-    });
+    await _subscriptionDao.delete(id);
   }
 
   Future<Subscription?> markSubscriptionDeleted(int id) async {
@@ -645,61 +742,40 @@ class DbService extends GetxService {
   // --- 凭证系统 Evidence ---
 
   Future<List<ExpenseEvidence>> getAllEvidence() async {
-    final items = await isar.expenseEvidences
-        .where()
-        .sortByEvidenceDateDesc()
-        .findAll();
-    return items
-        .where(
-          (item) =>
-              item.deletedAt == null && _belongsToCurrentUser(item.ownerUserId),
-        )
-        .toList();
+    return _evidenceDao.getActiveSortedForOwner(currentOwnerUserId);
   }
 
   Future<List<ExpenseEvidence>> getAllEvidenceForSync() async {
-    final items = await isar.expenseEvidences
-        .where()
-        .sortByEvidenceDateDesc()
-        .findAll();
+    final items = await _evidenceDao.getAllSorted();
     return items
         .where((item) => _belongsToCurrentUser(item.ownerUserId))
         .toList();
   }
 
   Future<List<ExpenseEvidence>> getPendingEvidenceForSync() async {
-    final items = await isar.expenseEvidences
-        .filter()
-        .remoteIdIsNull()
-        .or()
-        .isDirtyEqualTo(true)
-        .or()
-        .pendingDeleteEqualTo(true)
-        .sortByEvidenceDateDesc()
-        .findAll();
-    return items
-        .where((item) => _belongsToCurrentUser(item.ownerUserId))
-        .toList();
+    return _evidenceDao.getPendingForSyncForOwner(currentOwnerUserId);
   }
 
   Future<ExpenseEvidence?> getEvidenceBySyncId(String syncId) async {
-    final item = await isar.expenseEvidences
-        .filter()
-        .syncIdEqualTo(syncId)
-        .findFirst();
+    final item = await _evidenceDao.getBySyncId(syncId);
     if (item == null || !_belongsToCurrentUser(item.ownerUserId)) return null;
     return item;
   }
 
   Future<ExpenseEvidence?> getEvidence(int id) async {
-    final item = await isar.expenseEvidences.get(id);
+    final item = await _evidenceDao.getById(id);
     if (item == null || !_belongsToCurrentUser(item.ownerUserId)) return null;
     return item;
   }
 
-  Stream<void> watchEvidence() => isar.expenseEvidences.watchLazy();
+  Stream<void> watchEvidence() => _evidenceDao.watch();
 
   Future<int> addEvidence(ExpenseEvidence evidence) async {
+    final hasLocalAttachment =
+        evidence.localFilePath?.trim().isNotEmpty == true;
+    if (hasLocalAttachment) {
+      evidence.syncId = ensureSyncId(evidence.syncId);
+    }
     final id = await isar.writeTxn(() async {
       _stampEvidenceOwner(evidence);
       final existing = evidence.id == Isar.autoIncrement
@@ -713,6 +789,10 @@ class DbService extends GetxService {
           (existing != null && evidence.hasBusinessChangesComparedTo(existing));
       return await isar.expenseEvidences.put(evidence);
     });
+    evidence.id = id;
+    if (hasLocalAttachment) {
+      await ensureEvidenceAttachmentForEvidence(evidence);
+    }
     return id;
   }
 
@@ -725,21 +805,269 @@ class DbService extends GetxService {
       item.updatedAt = item.deletedAt;
       item.pendingDelete = true;
       item.isDirty = true;
+      if (item.localFilePath != null || item.remoteStoragePath != null) {
+        item.syncId = ensureSyncId(item.syncId);
+        await _queueEvidenceAttachmentDeleteInTxn(item);
+      }
       await isar.expenseEvidences.put(item);
       return item;
     });
   }
 
   Future<void> purgeDeletedEvidence(int id) async {
-    await isar.writeTxn(() async {
-      await isar.expenseEvidences.delete(id);
-    });
+    final item = await _evidenceDao.getById(id);
+    final evidenceSyncId = item?.syncId;
+    if (evidenceSyncId != null) {
+      await isar.writeTxn(() async {
+        final attachments = await isar.evidenceAttachments
+            .filter()
+            .evidenceSyncIdEqualTo(evidenceSyncId)
+            .findAll();
+        await isar.evidenceAttachments.deleteAll(
+          attachments.map((attachment) => attachment.id).toList(),
+        );
+      });
+    }
+    await _evidenceDao.delete(id);
   }
 
   Future<void> updateEvidenceRemoteId(ExpenseEvidence evidence) async {
     await isar.writeTxn(() async {
       await isar.expenseEvidences.put(evidence);
     });
+  }
+
+  Future<EvidenceAttachment?> ensureEvidenceAttachmentForEvidence(
+    ExpenseEvidence evidence,
+  ) async {
+    final localPath = evidence.localFilePath?.trim();
+    if (localPath == null || localPath.isEmpty) return null;
+
+    evidence.syncId = ensureSyncId(evidence.syncId);
+    final evidenceSyncId = evidence.syncId!;
+    final now = DateTime.now().toUtc();
+    final fileMetadata = await _readEvidenceAttachmentFileMetadata(
+      localPath: localPath,
+      fallbackFileName: evidence.fileName,
+      fallbackMimeType: evidence.mimeType,
+    );
+
+    return isar.writeTxn(() async {
+      final persistedEvidence = await isar.expenseEvidences.get(evidence.id);
+      if (persistedEvidence != null && persistedEvidence.syncId == null) {
+        persistedEvidence.syncId = evidenceSyncId;
+        await isar.expenseEvidences.put(persistedEvidence);
+      }
+
+      final existing = await isar.evidenceAttachments
+          .filter()
+          .evidenceSyncIdEqualTo(evidenceSyncId)
+          .findAll();
+      EvidenceAttachment? attachment;
+      for (final item in existing) {
+        if (item.localPath == localPath && item.deletedAt == null) {
+          attachment = item;
+          break;
+        }
+      }
+
+      for (final item in existing) {
+        if (item.id == attachment?.id) continue;
+        item.uploadState = EvidenceAttachmentUploadState.deleted;
+        item.deletedAt ??= now;
+        item.updatedAt = now;
+        await isar.evidenceAttachments.put(item);
+      }
+
+      attachment ??= EvidenceAttachment()
+        ..syncId = ensureSyncId(null)
+        ..createdAt = now;
+
+      final fileChanged =
+          attachment.localPath != localPath ||
+          attachment.contentHash != fileMetadata.contentHash;
+      attachment
+        ..ownerUserId = evidence.ownerUserId ?? currentOwnerUserId
+        ..evidenceSyncId = evidenceSyncId
+        ..evidenceLocalId = evidence.id
+        ..localPath = localPath
+        ..originalFileName = fileMetadata.fileName
+        ..contentHash = fileMetadata.contentHash
+        ..sizeBytes = fileMetadata.sizeBytes
+        ..mimeType = fileMetadata.mimeType
+        ..deletedAt = null
+        ..failureMessage = null
+        ..updatedAt = now;
+      if (fileChanged ||
+          attachment.uploadState == EvidenceAttachmentUploadState.failed) {
+        attachment.uploadState = EvidenceAttachmentUploadState.pending;
+        attachment.uploadedAt = null;
+      }
+      await isar.evidenceAttachments.put(attachment);
+      return attachment;
+    });
+  }
+
+  Future<List<EvidenceAttachment>>
+  getPendingEvidenceAttachmentsForSync() async {
+    final attachments = await isar.evidenceAttachments.where().findAll();
+    return attachments
+        .where(
+          (item) =>
+              _belongsToCurrentUser(item.ownerUserId) &&
+              (item.uploadState == EvidenceAttachmentUploadState.pending ||
+                  item.uploadState == EvidenceAttachmentUploadState.failed ||
+                  item.uploadState == EvidenceAttachmentUploadState.deleted),
+        )
+        .toList();
+  }
+
+  Future<void> markEvidenceAttachmentUploading(EvidenceAttachment attachment) {
+    return _updateEvidenceAttachment(attachment.id, (item) {
+      item
+        ..uploadState = EvidenceAttachmentUploadState.uploading
+        ..failureMessage = null
+        ..updatedAt = DateTime.now().toUtc();
+    });
+  }
+
+  Future<void> markEvidenceAttachmentUploaded(
+    EvidenceAttachment attachment, {
+    required String remoteStoragePath,
+  }) {
+    return isar.writeTxn(() async {
+      final item = await isar.evidenceAttachments.get(attachment.id);
+      if (item == null) return;
+      final now = DateTime.now().toUtc();
+      item
+        ..remoteStoragePath = remoteStoragePath
+        ..uploadState = EvidenceAttachmentUploadState.uploaded
+        ..uploadedAt = now
+        ..deletedAt = null
+        ..failureMessage = null
+        ..updatedAt = now;
+      await isar.evidenceAttachments.put(item);
+
+      final evidence = await isar.expenseEvidences
+          .filter()
+          .syncIdEqualTo(item.evidenceSyncId)
+          .findFirst();
+      if (evidence != null) {
+        evidence
+          ..remoteStoragePath = remoteStoragePath
+          ..uploadedAt = now
+          ..fileName ??= item.originalFileName
+          ..mimeType ??= item.mimeType;
+        await isar.expenseEvidences.put(evidence);
+      }
+    });
+  }
+
+  Future<void> markEvidenceAttachmentFailed(
+    EvidenceAttachment attachment,
+    Object error,
+  ) {
+    return _updateEvidenceAttachment(attachment.id, (item) {
+      item
+        ..uploadState = EvidenceAttachmentUploadState.failed
+        ..failureMessage = error.toString()
+        ..updatedAt = DateTime.now().toUtc();
+    });
+  }
+
+  Future<void> queueEvidenceAttachmentDeleteForEvidence(
+    ExpenseEvidence evidence,
+  ) async {
+    if (evidence.localFilePath == null && evidence.remoteStoragePath == null) {
+      return;
+    }
+    evidence.syncId = ensureSyncId(evidence.syncId);
+    await isar.writeTxn(() async {
+      await _queueEvidenceAttachmentDeleteInTxn(evidence);
+    });
+  }
+
+  Future<void> purgeEvidenceAttachment(int id) async {
+    await isar.writeTxn(() => isar.evidenceAttachments.delete(id));
+  }
+
+  Future<void> _updateEvidenceAttachment(
+    int id,
+    void Function(EvidenceAttachment item) update,
+  ) async {
+    await isar.writeTxn(() async {
+      final item = await isar.evidenceAttachments.get(id);
+      if (item == null) return;
+      update(item);
+      await isar.evidenceAttachments.put(item);
+    });
+  }
+
+  Future<void> _queueEvidenceAttachmentDeleteInTxn(
+    ExpenseEvidence evidence,
+  ) async {
+    final evidenceSyncId = evidence.syncId;
+    if (evidenceSyncId == null) return;
+
+    final now = DateTime.now().toUtc();
+    final attachments = await isar.evidenceAttachments
+        .filter()
+        .evidenceSyncIdEqualTo(evidenceSyncId)
+        .findAll();
+
+    if (attachments.isEmpty) {
+      final localPath = evidence.localFilePath;
+      final fileName = evidence.fileName ?? evidence.remoteStoragePath;
+      if (localPath == null && evidence.remoteStoragePath == null) return;
+      final attachment = EvidenceAttachment()
+        ..ownerUserId = evidence.ownerUserId ?? currentOwnerUserId
+        ..syncId = ensureSyncId(null)
+        ..evidenceSyncId = evidenceSyncId
+        ..evidenceLocalId = evidence.id
+        ..localPath = localPath
+        ..remoteStoragePath = evidence.remoteStoragePath
+        ..originalFileName = fileName == null
+            ? 'attachment'
+            : p.basename(fileName)
+        ..mimeType = evidence.mimeType
+        ..uploadState = EvidenceAttachmentUploadState.deleted
+        ..createdAt = now
+        ..updatedAt = now
+        ..deletedAt = now;
+      await isar.evidenceAttachments.put(attachment);
+      return;
+    }
+
+    for (final attachment in attachments) {
+      attachment
+        ..uploadState = EvidenceAttachmentUploadState.deleted
+        ..deletedAt ??= now
+        ..updatedAt = now;
+      await isar.evidenceAttachments.put(attachment);
+    }
+  }
+
+  Future<_EvidenceAttachmentFileMetadata> _readEvidenceAttachmentFileMetadata({
+    required String localPath,
+    String? fallbackFileName,
+    String? fallbackMimeType,
+  }) async {
+    final file = File(localPath);
+    String? contentHash;
+    int? sizeBytes;
+    if (await file.exists()) {
+      sizeBytes = await file.length();
+      contentHash = (await sha256.bind(file.openRead()).first).toString();
+    }
+    final safeFallback = fallbackFileName?.trim();
+    return _EvidenceAttachmentFileMetadata(
+      fileName: safeFallback?.isNotEmpty == true
+          ? safeFallback!
+          : p.basename(localPath),
+      contentHash: contentHash,
+      sizeBytes: sizeBytes,
+      mimeType: fallbackMimeType,
+    );
   }
 
   // --- 6. Sync Helpers (Called by SyncService) ---
@@ -759,20 +1087,10 @@ class DbService extends GetxService {
   // --- 项目 Project ---
 
   Future<List<Project>> getAllProjects() async {
-    final projects = await isar.projects
-        .where()
-        .sortByUpdatedAtDesc()
-        .findAll();
-    return projects
-        .where(
-          (project) =>
-              project.deletedAt == null &&
-              _belongsToCurrentUser(project.ownerUserId),
-        )
-        .toList();
+    return _projectDao.getActiveSortedForOwner(currentOwnerUserId);
   }
 
-  Stream<void> watchProjects() => isar.projects.watchLazy();
+  Stream<void> watchProjects() => _projectDao.watch();
 
   Future<int> addProject(Project project) async {
     final id = await isar.writeTxn(() async {
@@ -797,10 +1115,7 @@ class DbService extends GetxService {
 
   Future<List<Project>> getAllProjectsForSync() async {
     final syncableProjectNames = await _getSyncableProjectNames();
-    final projects = await isar.projects
-        .where()
-        .sortByUpdatedAtDesc()
-        .findAll();
+    final projects = await _projectDao.getAllSorted();
     return projects
         .where(
           (project) =>
@@ -815,15 +1130,9 @@ class DbService extends GetxService {
 
   Future<List<Project>> getPendingProjectsForSync() async {
     final syncableProjectNames = await _getSyncableProjectNames();
-    final projects = await isar.projects
-        .filter()
-        .remoteIdIsNull()
-        .or()
-        .isDirtyEqualTo(true)
-        .or()
-        .pendingDeleteEqualTo(true)
-        .sortByUpdatedAtDesc()
-        .findAll();
+    final projects = await _projectDao.getPendingForSyncForOwner(
+      currentOwnerUserId,
+    );
     return projects
         .where(
           (project) =>
@@ -837,7 +1146,7 @@ class DbService extends GetxService {
   }
 
   Future<Project?> getProject(int id) async {
-    final project = await isar.projects.get(id);
+    final project = await _projectDao.getById(id);
     if (project == null || !_belongsToCurrentUser(project.ownerUserId)) {
       return null;
     }
@@ -858,9 +1167,7 @@ class DbService extends GetxService {
   }
 
   Future<void> purgeDeletedProject(int id) async {
-    await isar.writeTxn(() async {
-      await isar.projects.delete(id);
-    });
+    await _projectDao.delete(id);
   }
 
   Future<void> updateProjectRemoteId(Project project) async {
@@ -893,48 +1200,74 @@ class DbService extends GetxService {
     return project;
   }
 
+  Future<_ProjectLink?> _resolveProjectLinkInTxn({
+    String? projectName,
+    String? projectSyncId,
+  }) async {
+    final normalizedSyncId = projectSyncId?.trim();
+    final hasSyncId = normalizedSyncId?.isNotEmpty == true;
+    final normalizedName = projectName?.trim();
+    final hasName = normalizedName?.isNotEmpty == true;
+
+    if (!hasSyncId && !hasName) return null;
+
+    Project? project;
+    if (hasSyncId) {
+      project = await isar.projects
+          .filter()
+          .syncIdEqualTo(normalizedSyncId)
+          .findFirst();
+      if (project != null && !_belongsToCurrentUser(project.ownerUserId)) {
+        project = null;
+      }
+    } else if (hasName) {
+      final projects = await isar.projects.where().findAll();
+      for (final item in projects) {
+        if (_belongsToCurrentUser(item.ownerUserId) &&
+            item.name.toLowerCase() == normalizedName!.toLowerCase()) {
+          project = item;
+          break;
+        }
+      }
+    }
+
+    if (project == null) {
+      final now = DateTime.now();
+      project = Project()
+        ..name = hasName ? normalizedName! : 'DefaultProject'
+        ..ownerUserId = currentOwnerUserId
+        ..createdAt = now
+        ..updatedAt = now
+        ..syncId = hasSyncId ? normalizedSyncId : ensureSyncId(null)
+        ..isDirty = !hasSyncId;
+      project.id = await isar.projects.put(project);
+    }
+
+    return _ProjectLink(
+      id: project.id,
+      name: project.name,
+      syncId: project.syncId,
+    );
+  }
+
   // --- 一次性消费 ExpenseRecord ---
 
   Future<List<ExpenseRecord>> getAllExpenseRecords() async {
-    final records = await isar.expenseRecords
-        .where()
-        .sortByExpenseDateDesc()
-        .findAll();
-    return records
-        .where(
-          (record) =>
-              record.deletedAt == null &&
-              _belongsToCurrentUser(record.ownerUserId),
-        )
-        .toList();
+    return _expenseRecordDao.getActiveSortedForOwner(currentOwnerUserId);
   }
 
   Future<List<ExpenseRecord>> getAllExpenseRecordsForSync() async {
-    final records = await isar.expenseRecords
-        .where()
-        .sortByExpenseDateDesc()
-        .findAll();
+    final records = await _expenseRecordDao.getAllSorted();
     return records
         .where((record) => _belongsToCurrentUser(record.ownerUserId))
         .toList();
   }
 
   Future<List<ExpenseRecord>> getPendingExpenseRecordsForSync() async {
-    final records = await isar.expenseRecords
-        .filter()
-        .remoteIdIsNull()
-        .or()
-        .isDirtyEqualTo(true)
-        .or()
-        .pendingDeleteEqualTo(true)
-        .sortByExpenseDateDesc()
-        .findAll();
-    return records
-        .where((record) => _belongsToCurrentUser(record.ownerUserId))
-        .toList();
+    return _expenseRecordDao.getPendingForSyncForOwner(currentOwnerUserId);
   }
 
-  Stream<void> watchExpenseRecords() => isar.expenseRecords.watchLazy();
+  Stream<void> watchExpenseRecords() => _expenseRecordDao.watch();
 
   Future<int> addExpenseRecord(ExpenseRecord record) async {
     final id = await isar.writeTxn(() async {
@@ -954,7 +1287,7 @@ class DbService extends GetxService {
   }
 
   Future<ExpenseRecord?> getExpenseRecord(int id) async {
-    final record = await isar.expenseRecords.get(id);
+    final record = await _expenseRecordDao.getById(id);
     if (record == null || !_belongsToCurrentUser(record.ownerUserId)) {
       return null;
     }
@@ -976,9 +1309,7 @@ class DbService extends GetxService {
   }
 
   Future<void> purgeDeletedExpenseRecord(int id) async {
-    await isar.writeTxn(() async {
-      await isar.expenseRecords.delete(id);
-    });
+    await _expenseRecordDao.delete(id);
   }
 
   Future<void> updateExpenseRecordRemoteId(ExpenseRecord record) async {
@@ -1193,9 +1524,22 @@ class DbService extends GetxService {
     );
 
     sub.nextPaymentDate = _parseRemoteDateOnly(
-      data['start_date'],
+      data['next_due_date'] ?? data['start_date'],
       fallback: remoteUpdatedAt,
     );
+    sub.anchorDate = _parseRemoteDateOnly(
+      data['anchor_date'] ?? data['start_date'] ?? data['next_due_date'],
+      fallback: sub.nextPaymentDate,
+    );
+    sub.endDate = data['end_date'] == null
+        ? null
+        : _parseRemoteDateOnly(data['end_date']);
+    final statusStr = _parseRemoteString(data['status']);
+    sub.status = SubscriptionRecordStatus.values.firstWhere(
+      (e) => e.name == statusStr,
+      orElse: () => SubscriptionRecordStatus.active,
+    );
+    sub.reminderDays = _parseRemoteInt(data['reminder_days']) ?? 1;
     sub.note = _parseRemoteString(data['description']);
     sub.sortIndex = _parseRemoteInt(data['sort_index']);
 
@@ -1289,8 +1633,15 @@ class DbService extends GetxService {
     final now = DateTime.now().toUtc();
     item.createdAt ??= now;
     item.updatedAt = now;
-    item.projectName =
-        _parseRemoteString(data['project_name']) ?? 'DefaultProject';
+    final projectName = _parseRemoteString(data['project_name']);
+    final projectSyncId = _parseRemoteString(data['project_sync_id']);
+    final projectLink = await _resolveProjectLinkInTxn(
+      projectName: projectName,
+      projectSyncId: projectSyncId,
+    );
+    item.projectName = projectLink?.name ?? projectName ?? 'DefaultProject';
+    item.projectId = projectLink?.id;
+    item.projectSyncId = projectLink?.syncId ?? projectSyncId;
     item.evidenceDate = _parseRemoteDateOnly(
       data['evidence_date'],
       fallback: remoteUpdatedAt,
@@ -1399,31 +1750,11 @@ class DbService extends GetxService {
     }
 
     final projectName = _parseRemoteString(data['project_name']);
-    int? projectId;
-    if (projectName != null && projectName.trim().isNotEmpty) {
-      final safeProjectName = projectName.trim();
-      final projects = await isar.projects.where().findAll();
-      Project? project;
-      for (final item in projects) {
-        if (_belongsToCurrentUser(item.ownerUserId) &&
-            item.name.toLowerCase() == safeProjectName.toLowerCase()) {
-          project = item;
-          break;
-        }
-      }
-      if (project == null) {
-        final now = DateTime.now();
-        project = Project()
-          ..name = safeProjectName
-          ..ownerUserId = currentOwnerUserId
-          ..createdAt = now
-          ..updatedAt = now
-          ..syncId = ensureSyncId(null)
-          ..isDirty = true;
-        project.id = await isar.projects.put(project);
-      }
-      projectId = project.id;
-    }
+    final projectSyncId = _parseRemoteString(data['project_sync_id']);
+    final projectLink = await _resolveProjectLinkInTxn(
+      projectName: projectName,
+      projectSyncId: projectSyncId,
+    );
 
     record.remoteId = remoteId;
     record.ownerUserId = currentOwnerUserId;
@@ -1449,8 +1780,9 @@ class DbService extends GetxService {
     );
     record.merchant = _parseRemoteString(data['merchant']);
     record.note = _parseRemoteString(data['note']);
-    record.projectName = projectName;
-    record.projectId = projectId;
+    record.projectName = projectLink?.name ?? projectName;
+    record.projectId = projectLink?.id;
+    record.projectSyncId = projectLink?.syncId ?? projectSyncId;
 
     await isar.expenseRecords.put(record);
   }
@@ -1553,4 +1885,30 @@ class DbService extends GetxService {
 
     await isar.projects.put(project);
   }
+}
+
+class _ProjectLink {
+  final int id;
+  final String name;
+  final String? syncId;
+
+  const _ProjectLink({
+    required this.id,
+    required this.name,
+    required this.syncId,
+  });
+}
+
+class _EvidenceAttachmentFileMetadata {
+  final String fileName;
+  final String? contentHash;
+  final int? sizeBytes;
+  final String? mimeType;
+
+  const _EvidenceAttachmentFileMetadata({
+    required this.fileName,
+    required this.contentHash,
+    required this.sizeBytes,
+    required this.mimeType,
+  });
 }

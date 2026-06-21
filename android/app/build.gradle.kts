@@ -38,35 +38,45 @@ android {
     if (keystorePropertiesFile.exists()) {
         keystoreProperties.load(FileInputStream(keystorePropertiesFile))
     }
+    val releaseKeyAlias = keystoreProperties.getProperty("keyAlias")
+    val releaseKeyPassword = keystoreProperties.getProperty("keyPassword")
+    val releaseStorePassword = keystoreProperties.getProperty("storePassword")
+    val releaseStoreFilePath = keystoreProperties.getProperty("storeFile")
+    val releaseStoreFile = releaseStoreFilePath?.let { file(it) }
+    val releaseSigningReady = !releaseKeyAlias.isNullOrBlank() &&
+        !releaseKeyPassword.isNullOrBlank() &&
+        !releaseStorePassword.isNullOrBlank() &&
+        !releaseStoreFilePath.isNullOrBlank() &&
+        releaseStoreFile?.exists() == true
 
     signingConfigs {
         create("release") {
-            val alias = keystoreProperties.getProperty("keyAlias")
-            val keyPass = keystoreProperties.getProperty("keyPassword")
-            val storePass = keystoreProperties.getProperty("storePassword")
-            val storePath = keystoreProperties.getProperty("storeFile")
-
-            if (alias != null && keyPass != null && storePass != null && storePath != null) {
-                keyAlias = alias
-                keyPassword = keyPass
-                storePassword = storePass
-                storeFile = file(storePath)
+            if (releaseSigningReady) {
+                keyAlias = releaseKeyAlias
+                keyPassword = releaseKeyPassword
+                storePassword = releaseStorePassword
+                storeFile = releaseStoreFile
             }
         }
     }
 
     buildTypes {
         release {
-            signingConfig = if (keystorePropertiesFile.exists()) {
-                signingConfigs.getByName("release")
-            } else {
-                signingConfigs.getByName("debug")
-            }
+            signingConfig = signingConfigs.getByName("release")
             
             // Enable R8 shrinking and obfuscation
             isMinifyEnabled = true
             isShrinkResources = true
             proguardFiles(getDefaultProguardFile("proguard-android-optimize.txt"), "proguard-rules.pro")
+        }
+    }
+
+    gradle.taskGraph.whenReady {
+        val hasReleaseTask = allTasks.any { it.name.contains("Release") }
+        if (hasReleaseTask && !releaseSigningReady) {
+            throw GradleException(
+                "Release signing config missing. Configure android/key.properties with keyAlias, keyPassword, storePassword, and an existing storeFile; release builds must not fall back to debug signing."
+            )
         }
     }
 }
@@ -77,7 +87,4 @@ flutter {
 
 dependencies {
     implementation("com.google.mlkit:text-recognition-chinese:16.0.1")
-    implementation("com.google.mlkit:text-recognition-devanagari:16.0.1")
-    implementation("com.google.mlkit:text-recognition-japanese:16.0.1")
-    implementation("com.google.mlkit:text-recognition-korean:16.0.1")
 }

@@ -15,7 +15,9 @@ LifeLog 是一个本地优先的 Flutter 生活记录应用，用于管理工时
 ## 技术栈
 
 - Flutter 3.38.5 / Dart 3.10
-- GetX：路由、依赖注入和状态管理
+- GoRouter：应用路由
+- GetIt：依赖注入
+- flutter_bloc/Cubit + ChangeNotifier：功能状态和轻量应用状态
 - Isar：本地数据库
 - Supabase：认证、远端数据同步和 Storage
 - GitHub Actions：测试包和发布 APK 构建
@@ -42,10 +44,18 @@ flutter run -d 10ADBE34P2001PF \
 - `SUPABASE_URL`
 - `SUPABASE_ANON_KEY`
 
+Release 构建还需要签名配置；缺少任一项时 release build 会直接失败，不会退回 debug signing：
+
+- `KEYSTORE_BASE64`
+- `STORE_PASSWORD`
+- `KEY_PASSWORD`
+- `KEY_ALIAS`
+
 ## 常用命令
 
 ```bash
-flutter analyze
+dart format --set-exit-if-changed .
+flutter analyze --fatal-infos --fatal-warnings
 flutter test
 flutter build apk --debug
 flutter build apk --release --split-per-abi
@@ -63,13 +73,14 @@ flutter build apk --debug \
 
 应用启动时会先初始化本地存储、日志服务、Isar 数据库和主题服务。只有在 `SUPABASE_URL` 与 `SUPABASE_ANON_KEY` 都存在时才初始化 Supabase，并注册认证与同步服务。
 
-同步协议使用本地 `syncId`、远端版本、软删除和拉取游标处理多设备合并。相关数据库变更在 `supabase/migrations/` 下维护。
+同步协议使用本地 `syncId`、远端版本、软删除和拉取游标处理多设备合并。照片保持本地-only，`PhotoItem`、照片文件和照片元数据不进入 Supabase 同步。相关数据库变更在 `supabase/migrations/` 下维护，后续同步引擎路线见 `docs/adr/0001-architecture-modernization-roadmap.md`。
 
 ## 发布
 
 - `build.yml`：推送 `v*` tag 后构建 release APK 并上传 GitHub Release。
 - `test-apk.yml`：手动触发测试 APK 构建。
 - 两个 workflow 默认要求 Supabase secrets 存在，避免产出无法登录同步的云版本 APK。
+- release APK 必须使用正式 keystore 签名；缺少签名 secrets 或本地 `android/key.properties` 时构建失败。
 
 ## 维护说明
 

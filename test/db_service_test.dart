@@ -1,45 +1,41 @@
+import 'dart:ffi';
 import 'dart:io';
 
 import 'package:flutter_test/flutter_test.dart';
-import 'package:get/get.dart';
 import 'package:isar/isar.dart';
 import 'package:life_log/common/db/db_service.dart';
-import 'package:life_log/modules/evidence/evidence_model.dart';
-import 'package:life_log/modules/expense/expense_record_model.dart';
-import 'package:life_log/modules/photo/photo_model.dart';
-import 'package:life_log/modules/project/project_model.dart';
-import 'package:life_log/modules/subscription/subscription_model.dart';
-import 'package:life_log/modules/work_log/work_log_model.dart';
+import 'package:life_log/core/db/isar_database.dart';
+import 'package:life_log/features/evidence/data/evidence_model.dart';
+import 'package:life_log/features/expense/data/expense_record_model.dart';
+import 'package:life_log/features/project/data/project_model.dart';
+import 'package:life_log/features/photo/data/photo_model.dart';
 
 void main() {
-  final canOpenIsar = File('isar.dll').existsSync();
-  final isarSkip = canOpenIsar
+  final isarLibraryPath = _isarLibraryPath();
+  final isarSkip = isarLibraryPath != null
       ? false
-      : 'isar.dll is not available in this test environment';
+      : 'isar.dll is not available in this test environment. '
+            'Set ISAR_DLL_PATH or place it at D:\\Tool\\Isar\\isar.dll.';
   late Directory tempDir;
   late DbService db;
+
+  setUpAll(() async {
+    if (isarLibraryPath == null) return;
+    await Isar.initializeIsarCore(libraries: {Abi.current(): isarLibraryPath});
+  });
 
   Future<DbService> openDb() async {
     tempDir = await Directory.systemTemp.createTemp('life_log_db_test_');
     final service = DbService();
-    service.isar = await Isar.open(
-      [
-        WorkLogSchema,
-        SubscriptionSchema,
-        PhotoItemSchema,
-        ExpenseEvidenceSchema,
-        ExpenseRecordSchema,
-        ProjectSchema,
-      ],
+    final database = await IsarDatabase.open(
+      schemas: DbService.schemas,
       directory: tempDir.path,
       name: 'life_log_test_${DateTime.now().microsecondsSinceEpoch}',
     );
-    Get.put<DbService>(service);
-    return service;
+    return service.initWithDatabaseForTest(database);
   }
 
   setUp(() async {
-    Get.testMode = true;
     db = await openDb();
   });
 
@@ -48,7 +44,6 @@ void main() {
     if (await tempDir.exists()) {
       await tempDir.delete(recursive: true);
     }
-    Get.reset();
   });
 
   test(
@@ -109,4 +104,37 @@ void main() {
     expect(project.isDirty, isTrue);
     expect(record!.projectId, project.id);
   }, skip: isarSkip);
+
+  test('new local evidence can be deleted from visible records', () async {
+    final id = await db.addEvidence(
+      ExpenseEvidence()
+        ..projectName = 'Build'
+        ..evidenceDate = DateTime(2026, 6, 15)
+        ..amount = 42,
+    );
+
+    expect(await db.getAllEvidence(), hasLength(1));
+
+    final deleted = await db.markEvidenceDeleted(id);
+    await db.purgeDeletedEvidence(id);
+
+    expect(deleted, isNotNull);
+    expect(await db.getAllEvidence(), isEmpty);
+    expect(await db.isar.expenseEvidences.get(id), isNull);
+  }, skip: isarSkip);
+}
+
+String? _isarLibraryPath() {
+  final explicitPath = Platform.environment['ISAR_DLL_PATH'];
+  if (explicitPath != null && explicitPath.trim().isNotEmpty) {
+    final file = File(explicitPath.trim());
+    if (file.existsSync()) return file.path;
+  }
+
+  final defaultDDrivePath = File(r'D:\Tool\Isar\isar.dll');
+  if (defaultDDrivePath.existsSync()) {
+    return defaultDDrivePath.path;
+  }
+
+  return null;
 }

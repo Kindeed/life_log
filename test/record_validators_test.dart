@@ -1,9 +1,9 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:life_log/common/utils/record_validators.dart';
-import 'package:life_log/modules/evidence/evidence_model.dart';
-import 'package:life_log/modules/expense/expense_record_model.dart';
-import 'package:life_log/modules/subscription/subscription_model.dart';
-import 'package:life_log/modules/work_log/work_log_model.dart';
+import 'package:life_log/features/evidence/data/evidence_model.dart';
+import 'package:life_log/features/subscription/data/subscription_model.dart';
+import 'package:life_log/features/expense/data/expense_record_model.dart';
+import 'package:life_log/features/work_log/data/work_log_model.dart';
 
 void main() {
   test('validateWorkLog rejects negative values', () {

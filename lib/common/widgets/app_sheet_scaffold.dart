@@ -92,17 +92,7 @@ class AppSheetScaffold extends StatelessWidget {
           ],
           if (title != null) ...[
             const SizedBox(height: AppSpacing.lg),
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: AppSpacing.lg),
-              child: Text(
-                title!,
-                textAlign: TextAlign.center,
-                style: theme.textTheme.titleMedium?.copyWith(
-                  fontWeight: FontWeight.w700,
-                  letterSpacing: 0,
-                ),
-              ),
-            ),
+            _SheetTitle(title: title!, isPage: isPage),
           ],
           const SizedBox(height: AppSpacing.lg),
           if (effectiveHeight == null)
@@ -132,5 +122,58 @@ class AppSheetScaffold extends StatelessWidget {
     );
 
     return scaffold;
+  }
+}
+
+class _SheetTitle extends StatelessWidget {
+  final String title;
+  final bool isPage;
+
+  const _SheetTitle({required this.title, required this.isPage});
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final titleText = Text(
+      title,
+      textAlign: TextAlign.center,
+      style: theme.textTheme.titleMedium?.copyWith(
+        fontWeight: FontWeight.w700,
+        letterSpacing: 0,
+      ),
+    );
+
+    if (!isPage) {
+      return Padding(
+        padding: const EdgeInsets.symmetric(horizontal: AppSpacing.lg),
+        child: titleText,
+      );
+    }
+
+    final canPop = Navigator.canPop(context);
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: AppSpacing.md),
+      child: SizedBox(
+        height: 48,
+        child: Stack(
+          alignment: Alignment.center,
+          children: [
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 56),
+              child: titleText,
+            ),
+            if (canPop)
+              Align(
+                alignment: Alignment.centerLeft,
+                child: IconButton(
+                  tooltip: MaterialLocalizations.of(context).backButtonTooltip,
+                  icon: const Icon(Icons.arrow_back_rounded),
+                  onPressed: () => Navigator.of(context).maybePop(),
+                ),
+              ),
+          ],
+        ),
+      ),
+    );
   }
 }

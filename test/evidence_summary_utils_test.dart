@@ -1,8 +1,23 @@
+import 'dart:io';
+
 import 'package:flutter_test/flutter_test.dart';
-import 'package:life_log/modules/evidence/evidence_model.dart';
-import 'package:life_log/modules/evidence/evidence_summary_utils.dart';
+import 'package:life_log/features/evidence/data/evidence_model.dart';
+import 'package:life_log/features/evidence/presentation/evidence_summary_utils.dart';
 
 void main() {
+  test('evidence summary utilities live under feature presentation', () {
+    expect(
+      File(
+        'lib/features/evidence/presentation/evidence_summary_utils.dart',
+      ).existsSync(),
+      isTrue,
+    );
+    expect(
+      File('lib/modules/evidence/evidence_summary_utils.dart').existsSync(),
+      isFalse,
+    );
+  });
+
   ExpenseEvidence evidence({
     required EvidenceCategory category,
     required DateTime evidenceDate,

@@ -1,9 +1,9 @@
 import 'package:flutter_test/flutter_test.dart';
-import 'package:life_log/modules/evidence/evidence_model.dart';
-import 'package:life_log/modules/expense/expense_record_model.dart';
-import 'package:life_log/modules/project/project_model.dart';
-import 'package:life_log/modules/subscription/subscription_model.dart';
-import 'package:life_log/modules/work_log/work_log_model.dart';
+import 'package:life_log/features/evidence/data/evidence_model.dart';
+import 'package:life_log/features/subscription/data/subscription_model.dart';
+import 'package:life_log/features/expense/data/expense_record_model.dart';
+import 'package:life_log/features/project/data/project_model.dart';
+import 'package:life_log/features/work_log/data/work_log_model.dart';
 
 void main() {
   WorkLog workLog() {
@@ -40,7 +40,7 @@ void main() {
     expect(next.hasBusinessChangesComparedTo(original), isTrue);
   });
 
-  test('WorkLog month stats keeps only the latest status for a day', () {
+  test('WorkLog month stats aggregates multiple entries on one day', () {
     final date = DateTime(2026, 5, 9);
     final logs = [
       WorkLog()
@@ -56,10 +56,10 @@ void main() {
 
     final stats = logs.getMonthStats(DateTime(2026, 5));
 
-    expect(stats.workDays, 0);
+    expect(stats.workDays, 1);
     expect(stats.tripDays, 0);
     expect(stats.restDays, 1);
-    expect(stats.workHours, 0);
+    expect(stats.workHours, 2);
   });
 
   test('Subscription business change detection ignores sync metadata', () {
@@ -133,7 +133,10 @@ void main() {
     }
 
     final original = project()..remoteVersion = 1;
-    final next = project()..remoteVersion = 2;
+    final next = project()
+      ..remoteVersion = 2
+      ..createdAt = DateTime(2026, 5, 7)
+      ..updatedAt = DateTime(2026, 5, 8);
 
     expect(next.hasBusinessChangesComparedTo(original), isFalse);
 

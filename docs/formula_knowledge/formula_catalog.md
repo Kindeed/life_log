@@ -1,0 +1,1296 @@
+# Formula Catalog v0.1
+
+This is the first source-backed seed catalog for a larger formula knowledge base. It intentionally separates `formula availability` from `app implementation`: many formulas are known and documented here but not yet implemented in LifeLog.
+
+Notation:
+
+- `Implemented`: already represented in the current app.
+- `Seeded`: documented here; implementation not yet done.
+- `Procedure`: top-level relationship is known, but a standard table or multi-step procedure must still be extracted.
+
+## RF, Antenna, and Receiver Front End
+
+| ID | Formula | Variables | Explanation | Source family | Status |
+| --- | --- | --- | --- | --- | --- |
+| RF-001 | `lambda = c / f` | `lambda`: wavelength m; `c`: speed of light m/s; `f`: frequency Hz | Converts RF frequency to wavelength. Used by antenna gain, aperture, and FSPL. | ITU-P525, BOOK-BALANIS | Implemented |
+| RF-002 | `A = pi D^2 / 4` | `A`: circular aperture area m^2; `D`: antenna diameter m | Physical area of a circular dish aperture. | BOOK-BALANIS | Implemented |
+| RF-003 | `G = eta (pi D / lambda)^2` | `G`: linear antenna gain; `eta`: aperture efficiency; `D`: diameter; `lambda`: wavelength | Parabolic aperture gain. Convert to dBi with `10 log10(G)`. | BOOK-BALANIS, DESCANSO-DSTSE | Implemented |
+| RF-004 | `A_e = G lambda^2 / (4 pi)` | `A_e`: effective aperture m^2; `G`: linear gain | Relates antenna gain to receiving effective aperture. | BOOK-BALANIS, DESCANSO-DSTSE | Implemented |
+| RF-005 | `G_dBi = 10 log10(G)` | `G`: linear gain | Converts linear gain to dBi. | General RF engineering | Implemented |
+| RF-006 | `G = 10^(G_dBi/10)` | `G_dBi`: antenna gain in dBi | Converts dBi gain to linear gain. | General RF engineering | Seeded |
+| RF-007 | `theta_3dB ~= K lambda / D` | `theta_3dB`: beamwidth rad; `K`: aperture-dependent constant | Approximate half-power beamwidth. Use source-specific constants for reflector/taper type. | BOOK-BALANIS | Procedure |
+| RF-008 | `EIRP_dBW = P_tx_dBW - L_tx_dB + G_tx_dBi` | `P_tx`: transmitter output; `L_tx`: feed/network loss; `G_tx`: antenna gain | Effective isotropic radiated power. | DSN-810-005, BOOK-MARAL | Implemented |
+| RF-009 | `ERP_dBW = EIRP_dBW - 2.15` | `ERP`: referenced to half-wave dipole | Converts EIRP to ERP. | General RF engineering | Seeded |
+| RF-010 | `G/T_dB/K = G_rx_dBi - 10 log10(T_sys_K)` | `T_sys`: system noise temperature | Receiver merit figure used directly in link budgets. | DSN-810-005, DESCANSO-DSTSE | Implemented |
+| RF-011 | `T_e = T0 (10^(NF_dB/10) - 1)` | `T_e`: equivalent noise temperature; `T0`: 290 K; `NF`: noise figure | Converts receiver noise figure to equivalent temperature. | BOOK-MARAL, BOOK-SKLAR | Implemented |
+| RF-012 | `T_cascade = T1 + T2/G1 + T3/(G1 G2) + ...` | `Tn`: stage equivalent noise temp; `Gn`: linear stage gain | Friis noise cascade in temperature form. | BOOK-MARAL, BOOK-SKLAR | Seeded |
+| RF-013 | `F = F1 + (F2-1)/G1 + (F3-1)/(G1 G2) + ...` | `F`: noise factor; `G`: linear gain | Friis noise cascade in noise-factor form. | BOOK-SKLAR | Seeded |
+| RF-014 | `T_sys = T_ant + T_feed + T_rx + T_sky + T_misc` | component temperatures K | System noise temperature budget. Terms depend on reference plane. | DSN-810-005, DESCANSO-DSTSE | Seeded |
+| RF-015 | `L_point_dB ~= 12 (theta_error/theta_3dB)^2` | `theta_error`: pointing error; `theta_3dB`: HPBW | Common small-error pointing loss approximation. Must be validated for antenna pattern. | BOOK-MARAL, BOOK-BALANIS | Seeded |
+| RF-016 | `Gamma = (VSWR - 1)/(VSWR + 1)` | `Gamma`: reflection coefficient | VSWR to reflection coefficient. | General RF engineering | Seeded |
+| RF-017 | `L_mismatch_dB = -10 log10(1 - |Gamma|^2)` | `Gamma`: reflection coefficient magnitude | Mismatch loss from input reflection. | General RF engineering | Seeded |
+| RF-018 | `L_pol_dB = -20 log10(|e_tx dot e_rx|)` | `e_tx`, `e_rx`: unit polarization vectors | Polarization mismatch loss. | BOOK-BALANIS | Seeded |
+| RF-019 | `P_rx_dBW = EIRP + G_rx - L_path - L_misc` | `L_path`: propagation losses; `L_misc`: implementation losses | Received carrier power at receiver reference plane. | DSN-810-005, BOOK-MARAL | Implemented |
+| RF-020 | `N0_dBW/Hz = 10 log10(k T_sys)` | `k`: Boltzmann constant; `T_sys`: K | Noise spectral density. Equivalent dB form uses `-228.6 + 10log10(T)`. | BOOK-SKLAR, DSN-810-005 | Seeded |
+| RF-021 | `eta_ap = eta_rad * eta_taper * eta_spillover * eta_surface * eta_blockage * eta_strut * eta_squint * eta_astigmatism` | aperture efficiency factors | Aperture efficiency budget for reflector antennas. Terms can be omitted when unavailable but must not be double-counted. | DESCANSO-DSTSE, BOOK-BALANIS | Seeded |
+| RF-022 | `eta_surface = exp(-(4*pi*K_surf*sigma_surface/lambda)^2)` | `sigma_surface`: reflector surface rms error | Ruze-style surface-error efficiency term as given in DESCANSO reflector discussion. `K_surf` depends on reflector geometry such as f/D. | DESCANSO-DSTSE, BOOK-BALANIS | Seeded |
+| RF-023 | `G_ap_dBi = 10log10(eta_ap * 4*pi*A_p/lambda^2)` | aperture area and total aperture efficiency | Aperture antenna gain in dBi; equivalent to `eta_ap*(pi*D/lambda)^2` for a circular aperture. | DESCANSO-DSTSE, BOOK-BALANIS | Implemented |
+| RF-024 | `A_p = pi*D^2/4` | circular reflector diameter | Geometrical aperture area for circular dish antennas; kept as an explicit antenna-design output even though RF-002 already covers area. | DESCANSO-DSTSE, BOOK-BALANIS | Implemented |
+| RF-025 | `PointingLoss_dB(theta,phi) = G_m_dBi - G(theta,phi)_dBi` | antenna gain pattern and boresight gain | Pattern-based pointing loss from off-boresight target location. | DESCANSO-DSTSE | Procedure |
+| RF-026 | `MeanPointingLoss = integral(PointingLoss(theta,phi) * p_e(theta,phi) dtheta dphi)` | pointing-error probability density | Statistical pointing loss for design-control tables. | DESCANSO-DSTSE | Procedure |
+| RF-027 | `VarPointingLoss = integral((PointingLoss-MeanPointingLoss)^2 * p_e(theta,phi) dtheta dphi)` | pointing-loss distribution | Variance of pointing loss for tolerance/statistical link budgets. | DESCANSO-DSTSE | Procedure |
+| RF-028 | `eta_pol = P_delivered / P_available` | delivered and polarization-matched available power | Polarization efficiency definition. | DESCANSO-DSTSE, BOOK-BALANIS | Seeded |
+| RF-029 | `L_pol_dB = -10log10(eta_pol)` | polarization efficiency | Polarization mismatch loss from efficiency; complements RF-018 vector form. | DESCANSO-DSTSE, BOOK-BALANIS | Seeded |
+| RF-030 | `Ellipticity_dB = 20log10(AR)` | `AR`: polarization axial ratio | Ellipticity from polarization axial ratio. | DESCANSO-DSTSE, BOOK-BALANIS | Seeded |
+| RF-031 | `D_lambda = D/lambda` | antenna diameter and wavelength | Electrical aperture size used by ITU reference-pattern validity and beamwidth checks. | ITU-S465, ITU-S580, BOOK-BALANIS | Seeded |
+| RF-032 | `phi_min = max(1 deg, 100/D_lambda deg)` for `D_lambda>=50` | electrical aperture size | Minimum off-axis angle for the main ITU-R S.465 reference pattern branch. | ITU-S465 | Procedure |
+| RF-033 | `G_ref(phi) = 32 - 25log10(phi_deg)` for `phi_min<=phi<48 deg`; `G_ref=-10 dBi` for `48<=phi<=180 deg` | off-axis angle in degrees | ITU-R S.465 fixed-satellite earth-station reference radiation pattern for coordination/interference assessment. | ITU-S465 | Procedure |
+| RF-034 | `phi_min_small = max(2 deg, 114*D_lambda^-1.09 deg)` for `D_lambda<50` | electrical aperture size | ITU-R S.465 minimum off-axis angle branch for smaller earth-station antennas. | ITU-S465 | Procedure |
+| RF-035 | `G_ref_legacy(phi) = 52 - 10log10(D_lambda) - 25log10(phi_deg)`; far sidelobe `=10 - 10log10(D_lambda)` | legacy network condition | ITU-R S.465 note branch for certain pre-1993 coordinated earth-station networks. | ITU-S465 | Procedure |
+| RF-036 | `G_sidelobe_objective(phi) = 29 - 25log10(phi_deg)` | off-axis angle toward the GSO region | ITU-R S.580 design objective for GSO earth-station side-lobe peaks. | ITU-S580 | Procedure |
+| RF-037 | `G_s580_transition = -3.5 dBi` for `20 deg < phi <= 26.3 deg` | off-axis angle | ITU-R S.580 transition note when the design objective and S.465 reference pattern are discontinuous. | ITU-S580 | Procedure |
+| RF-038 | `D_e = sqrt(4*A_aperture/pi)` | asymmetric aperture area | Circular-equivalent diameter for asymmetric apertures used by S.580 side-lobe checks. | ITU-S580, BOOK-BALANIS | Seeded |
+| RF-039 | `U(theta,phi) = r^2*S_rad(theta,phi)` | radiation power density | Radiation intensity from far-field power density. | BOOK-BALANIS | Seeded |
+| RF-040 | `D_0 = 4*pi*U_max/P_rad` | maximum radiation intensity and radiated power | Antenna directivity definition. | BOOK-BALANIS | Seeded |
+| RF-041 | `G = eta_rad*D_0` | radiation efficiency and directivity | Realized antenna gain as efficiency times directivity. | BOOK-BALANIS | Seeded |
+| RF-042 | `Omega_A = integral_0^(2pi) integral_0^pi P_n(theta,phi)*sin(theta)dtheta dphi` | normalized power pattern | Antenna beam solid angle. | BOOK-BALANIS | Procedure |
+| RF-043 | `D_0 = 4*pi/Omega_A` | beam solid angle | Directivity from beam solid angle. | BOOK-BALANIS | Seeded |
+| RF-044 | `D_0 ~= 41253/(theta_HP_deg*phi_HP_deg)` | half-power beamwidths in degrees | Common pencil-beam directivity estimate from orthogonal HPBWs. | BOOK-BALANIS | Seeded |
+| RF-045 | `theta_FNBW_uniform_circular ~= 2.44*lambda/D` | circular aperture diameter | First-null beamwidth approximation for a uniformly illuminated circular aperture. | BOOK-BALANIS | Seeded |
+| RF-046 | `theta_HPBW_uniform_circular ~= 1.02*lambda/D` | circular aperture diameter | Half-power beamwidth approximation for a uniformly illuminated circular aperture. | BOOK-BALANIS | Seeded |
+| RF-047 | `R_ff >= 2*D_max^2/lambda` | largest antenna dimension | Fraunhofer far-field distance criterion for antenna pattern/link measurements. | BOOK-BALANIS | Implemented |
+| RF-048 | `PLF = |rho_wave dot rho_ant|^2` | wave and antenna polarization unit vectors | Polarization loss factor in linear power ratio. | BOOK-BALANIS | Seeded |
+| RF-049 | `AF(theta) = sum_{n=0}^{N_elem-1} w_n*exp(j*n*(k0*d_elem*cos(theta)+beta_phase))` | element weights, spacing, phase progression | Uniform-line array-factor structure before normalization. | BOOK-BALANIS | Procedure |
+| RF-050 | `AF_norm = |sin(N_elem*psi/2)/(N_elem*sin(psi/2))|`, `psi=k0*d_elem*cos(theta)+beta_phase` | array size and phase variable | Closed-form normalized array factor for equal-amplitude linear arrays. | BOOK-BALANIS | Seeded |
+| RF-051 | `F = 1 + T_e/T0` | equivalent noise temperature and standard temperature | Converts equivalent noise temperature back to linear noise factor. Complements RF-011. | BOOK-MARAL, BOOK-SKLAR | Seeded |
+| RF-052 | `NF_dB = 10log10(F)` | linear noise factor | Converts noise factor to noise figure in dB. | BOOK-MARAL, BOOK-SKLAR | Seeded |
+| RF-053 | `T_passive = (L_linear - 1)*T_phys` | passive loss factor and physical temperature | Equivalent input noise temperature of a passive lossy element at physical temperature. | BOOK-MARAL, BOOK-SKLAR | Seeded |
+| RF-054 | `T_referred_before_loss = (L_linear - 1)*T_phys + L_linear*T_downstream` | passive loss before a receiver/noise stage | Refers downstream receiver noise through a lossy feed, radome, diplexer, waveguide, or switch placed before the LNA. | BOOK-MARAL, BOOK-SKLAR, DSN-810-005 | Seeded |
+| RF-055 | `T_sys_ant_ref = T_ant + (L_feed - 1)*T_feed_phys + L_feed*T_rx + T_misc` | antenna temperature, feed loss, receiver temperature | System temperature referred to the antenna/feed reference plane when a lossy feed precedes the receiver. | DESCANSO-DSTSE, BOOK-MARAL, DSN-810-005 | Seeded |
+| RF-056 | `T_out_lossy = T_in/L_linear + (1 - 1/L_linear)*T_phys` | input brightness/noise temperature and passive loss | Output noise temperature after a lossy passive path, useful for atmosphere/feed attenuation and emission. | BOOK-MARAL, DSN-810-005 | Seeded |
+| RF-057 | `Y = P_hot/P_cold` | measured hot/cold output powers | Y-factor definition for receiver noise-temperature measurement. | BOOK-SKLAR, BOOK-HAYKIN | Seeded |
+| RF-058 | `T_e_yfactor = (T_hot - Y*T_cold)/(Y - 1)` | hot and cold source temperatures, Y factor | Receiver equivalent noise temperature from a hot/cold Y-factor measurement. | BOOK-SKLAR, BOOK-HAYKIN | Seeded |
+| RF-059 | `Y_dB = 10log10(Y)` | Y factor | dB representation of a power-ratio Y-factor measurement. | BOOK-SKLAR, BOOK-HAYKIN | Seeded |
+| RF-060 | `ENR_linear = (T_hot - T0)/T0` | hot-source temperature and standard temperature | Excess noise ratio for a calibrated noise source. | BOOK-SKLAR, BOOK-HAYKIN | Seeded |
+| RF-061 | `T_hot = T0*(ENR_linear + 1)` | excess noise ratio | Hot-source equivalent temperature from ENR. | BOOK-SKLAR, BOOK-HAYKIN | Seeded |
+| RF-062 | `T_ant = integral_4pi(T_b(theta,phi)*P_n(theta,phi)dOmega) / integral_4pi(P_n(theta,phi)dOmega)` | scene brightness temperature and antenna power pattern | Antenna noise temperature from scene brightness weighted by the normalized antenna pattern. | BOOK-BALANIS, DESCANSO-DSTSE | Procedure |
+| RF-063 | `T_ant_ohmic = eta_rad*T_scene + (1 - eta_rad)*T_phys` | radiation efficiency, scene and physical temperature | First-order antenna temperature with ohmic/radiation-efficiency loss. | BOOK-BALANIS, BOOK-MARAL | Seeded |
+| RF-064 | `G_DSN(theta) = G0 - G1*(theta - gamma)^2 - A_zen/sin(theta)` | DSN gain parameters and zenith attenuation | DSN station antenna gain versus elevation angle, referenced to the feedhorn aperture in modules 101/103/104. | DSN-810-005-101, DSN-810-005-103, DSN-810-005-104 | Procedure |
+| RF-065 | `k0 = 2*pi/lambda` | wavelength | Free-space phase constant for array phasing and aperture fields. | BOOK-BALANIS, BOOK-MAILLOUX | Seeded |
+| RF-066 | `u_dir = sin(theta_broadside)` | angle measured from broadside | Direction-cosine coordinate used for scan and grating-lobe checks in a linear array. | BOOK-BALANIS, BOOK-MAILLOUX | Seeded |
+| RF-067 | `beta_phase = -k0*d_elem*u_scan` | element spacing and commanded scan direction | Progressive phase needed to steer a uniform linear array to `u_scan`. | BOOK-BALANIS, BOOK-MAILLOUX | Seeded |
+| RF-068 | `AF_u = sum_{n=0}^{N_elem-1} w_n*exp(j*n*k0*d_elem*(u_dir-u_scan))` | element weights, spacing, observation direction, scan direction | Broadside-coordinate linear-array factor useful for electronically scanned arrays. | BOOK-BALANIS, BOOK-MAILLOUX | Procedure |
+| RF-069 | `u_grating_m = u_scan + m*lambda/d_elem` | scan direction, element spacing, grating-lobe order | Linear-array grating-lobe direction in direction-cosine space. A lobe is visible when `abs(u_grating_m)<=1`. | BOOK-BALANIS, BOOK-MAILLOUX | Procedure |
+| RF-070 | `NoGratingLobe = all(abs(u_scan + m*lambda/d_elem)>1 for m!=0)` | scan direction and integer lobe orders | Visibility test for linear-array grating lobes. | BOOK-MAILLOUX | Procedure |
+| RF-071 | `d_elem <= lambda/(1 + u_scan_max)` | maximum absolute scan direction cosine | Conservative spacing rule to avoid visible grating lobes over a symmetric scan sector. | BOOK-MAILLOUX, BOOK-BALANIS | Seeded |
+| RF-072 | `theta_FNBW_ULA_broadside ~= 2*lambda/(N_elem*d_elem)` | element count and spacing | Uniform linear array broadside first-null beamwidth approximation. | BOOK-BALANIS | Seeded |
+| RF-073 | `theta_HPBW_ULA_broadside ~= 0.886*lambda/(N_elem*d_elem)` | element count and spacing | Uniform linear array broadside half-power beamwidth approximation for large arrays. | BOOK-BALANIS | Seeded |
+| RF-074 | `SLL_uniform_ULA ~= -13.26 dB` | uniform amplitude excitation | First sidelobe level of a uniformly weighted linear aperture/array, before element pattern and truncation details. | BOOK-BALANIS, BOOK-MAILLOUX | Seeded |
+| RF-075 | `G_array_max ~= G_elem*N_elem*eta_array` | element gain, element count, array efficiency | Approximate maximum array gain for coherent element combining. | BOOK-BALANIS, BOOK-MAILLOUX | Seeded |
+| RF-076 | `G_scan_dBi ~= G_broadside_dBi + 10log10(cos(theta_scan))` | broadside gain and scan angle | Projected-aperture scan-loss approximation for planar arrays; element pattern and mutual coupling need separate terms. | BOOK-MAILLOUX | Procedure |
+| RF-077 | `AF_planar = sum_m sum_n w_mn*exp(j*k0*(m*d_x*u_dir + n*d_y*v_dir))` | planar element weights, spacings, direction cosines | Rectangular planar-array factor before steering phase is applied. | BOOK-BALANIS, BOOK-MAILLOUX | Procedure |
+| RF-078 | `beta_x = -k0*d_x*u_scan; beta_y = -k0*d_y*v_scan` | planar spacings and commanded scan direction cosines | Progressive phase commands for a rectangular planar array. | BOOK-BALANIS, BOOK-MAILLOUX | Seeded |
+| RF-079 | `u_dir = sin(theta)*cos(phi); v_dir = sin(theta)*sin(phi)` | spherical observation angles | Direction-cosine mapping for planar array scan and grating-lobe checks. | BOOK-BALANIS, BOOK-MAILLOUX | Seeded |
+| RF-080 | `u_grating_m = u_scan + m*lambda/d_x; v_grating_n = v_scan + n*lambda/d_y` | scan point, lattice spacings, integer lobe orders | Rectangular-array grating-lobe lattice in direction-cosine space. Visible lobes satisfy `u^2+v^2<=1`. | BOOK-MAILLOUX | Procedure |
+| RF-081 | `d_x <= lambda/(1+u_scan_max); d_y <= lambda/(1+v_scan_max)` | scan-sector direction-cosine bounds | Rectangular-array spacing rule for avoiding visible grating lobes across a scan sector. | BOOK-MAILLOUX | Seeded |
+| RF-082 | `eta_phase_quant ~= (sin(pi/2^B_phase)/(pi/2^B_phase))^2` | phase-shifter bit depth | Approximate coherent gain efficiency from uniform phase quantization. | BOOK-MAILLOUX | Seeded |
+| RF-083 | `sigma_phase_quant = (2*pi/2^B_phase)/sqrt(12)` | phase-shifter bit depth | RMS phase error for a uniform quantization interval. | BOOK-MAILLOUX, BOOK-SKLAR | Seeded |
+| RF-084 | `eta_phase_rms ~= exp(-sigma_phase_rms^2)` | RMS random phase error in radians | Coherent array gain reduction from independent RMS phase errors. | BOOK-MAILLOUX | Seeded |
+| RF-085 | `sin(theta_squint_f) ~= (f0/f)*sin(theta_scan_f0)` | phase-shift beam steering frequency and design scan angle | First-order beam squint of a phase-shifter-steered array away from its design frequency. | BOOK-MAILLOUX | Procedure |
+| RF-086 | `eta_taper_cont = abs(integral_A E_a(x,y)dA)^2 / (A_p*integral_A abs(E_a(x,y))^2 dA)` | aperture field distribution | Continuous-aperture illumination taper efficiency. Uniform phase is assumed; phase errors belong in separate efficiency terms. | BOOK-BALANIS | Procedure |
+| RF-087 | `F_ap(u,v) = integral_A E_a(x,y)*exp(j*k0*(x*u + y*v)) dxdy` | aperture field and direction cosines | Far-field aperture pattern is proportional to the Fourier transform of the aperture illumination. | BOOK-BALANIS | Procedure |
+| RF-088 | `P_n_meas_i = 10^((G_meas_i_dBi - G_peak_dBi)/10)` | measured gain samples | Converts measured gain pattern samples to normalized linear power pattern samples. | BOOK-BALANIS | Seeded |
+| RF-089 | `Omega_A_meas ~= sum_i(P_n_meas_i*DeltaOmega_i)` | sampled normalized pattern | Beam solid angle from a measured or simulated sampled pattern. | BOOK-BALANIS | Procedure |
+| RF-090 | `D0_meas ~= 4*pi/Omega_A_meas` | measured beam solid angle | Directivity estimated from integrated measured pattern data. | BOOK-BALANIS | Seeded |
+| RF-091 | `eta_beam = integral_main_beam(P_n dOmega) / integral_4pi(P_n dOmega)` | normalized power pattern | Beam efficiency: fraction of radiated power captured by the selected main-beam region. | BOOK-BALANIS | Procedure |
+| RF-092 | `EdgeTaper_dB = 20log10(abs(E_edge)/abs(E_center))` | aperture or feed illumination field | Edge taper of reflector/aperture illumination, usually negative for tapered feeds. | BOOK-BALANIS, DESCANSO-DSTSE | Seeded |
+| RF-093 | `eta_amp_array = abs(sum_n a_n)^2/(N_elem*sum_n abs(a_n)^2)` | array amplitude weights | Discrete-array amplitude taper efficiency relative to equal-amplitude coherent combining. | BOOK-BALANIS, BOOK-MAILLOUX | Seeded |
+| RF-094 | `TaperLoss_dB = -10log10(eta_amp_array)` | amplitude taper efficiency | Gain loss caused by amplitude taper, before considering sidelobe benefit and element pattern. | BOOK-BALANIS, BOOK-MAILLOUX | Seeded |
+| RF-095 | `SLL_meas_dB = 20log10(max_sidelobe(abs(AF_norm))/max_main(abs(AF_norm)))` | normalized array factor or measured pattern | Sidelobe level from a measured/simulated pattern relative to the main lobe. | BOOK-BALANIS, BOOK-MAILLOUX | Procedure |
+| RF-096 | `NullDepth_dB = 20log10(abs(AF_null)/abs(AF_main))` | null and main-lobe pattern magnitude | Null depth for array synthesis or measured-pattern diagnostics. | BOOK-BALANIS | Seeded |
+| RF-097 | `w_n_Dolph = DolphChebyshevWeights(N_elem, SLL_target_dB)` | element count and target sidelobe level | Dolph-Chebyshev taper synthesis is a table/algorithm output, not a scalar closed-form UI input. | BOOK-BALANIS, BOOK-MAILLOUX | Procedure |
+| RF-098 | `w_n_Taylor = TaylorWeights(N_elem, n_bar, SLL_target_dB)` | Taylor taper parameters | Taylor taper synthesis seed for controlled sidelobe design; exact coefficients should be generated by a reviewed numerical routine. | BOOK-BALANIS, BOOK-MAILLOUX | Procedure |
+| RF-099 | `Gamma_active_n = sum_m(S_nm*a_m/a_n)` | array S-parameter matrix and excitation vector | Active reflection coefficient of array element `n` under the selected scan/excitation state. | BOOK-MAILLOUX | Procedure |
+| RF-100 | `VSWR_active_n = (1 + abs(Gamma_active_n))/(1 - abs(Gamma_active_n))` | active reflection coefficient | Active VSWR for scan-angle and mutual-coupling checks. | BOOK-MAILLOUX | Seeded |
+| RF-101 | `P_accepted_array = a^H*(I_N - S_array^H*S_array)*a` | normalized incident power-wave vector and S-matrix | Accepted array input power after multiport reflections and coupling. | BOOK-MAILLOUX | Procedure |
+| RF-102 | `eta_coupling = P_accepted_array / (a^H*a)` | accepted and incident array powers | Coupling/reflection efficiency for a driven array network under a given excitation vector. | BOOK-MAILLOUX | Procedure |
+| RF-103 | `M_ij_dB = P_r_ij_dBW - P_t_i_dBW + L_fs_ij_dB` | antenna-pair measurement terms | Gain-sum observable for antenna pair `i,j` in a two-port far-field gain measurement: ideally `M_ij=G_i+G_j`. | BOOK-BALANIS | Procedure |
+| RF-104 | `G_1_dBi = (M_12_dB + M_13_dB - M_23_dB)/2` | three antenna-pair measurements | Three-antenna gain measurement solution for antenna 1; cyclic permutations give antennas 2 and 3. | BOOK-BALANIS | Procedure |
+| RF-105 | `G_AUT_dBi = G_ref_dBi + P_AUT_dB - P_ref_dB` | reference antenna gain and received-power readings | Gain-transfer measurement when AUT and reference antenna are measured in the same range geometry and polarization. | BOOK-BALANIS | Seeded |
+| RF-106 | `F_reflector = f_over_D*D` | reflector focal ratio and diameter | Focal length of a parabolic reflector from its f/D ratio. | BOOK-BALANIS, DESCANSO-DSTSE | Seeded |
+| RF-107 | `f_over_D = F_reflector/D` | reflector focal length and diameter | Dimensionless reflector focal ratio used for feed-angle and efficiency trade checks. | BOOK-BALANIS, DESCANSO-DSTSE | Seeded |
+| RF-108 | `z_rim = D^2/(16*F_reflector)` | parabolic reflector diameter and focal length | Rim depth of a paraboloid measured from vertex to aperture plane. | BOOK-BALANIS | Seeded |
+| RF-109 | `psi_edge = 2*atan(D/(4*F_reflector))` | reflector diameter and focal length | Feed half-angle from focus to reflector rim for edge-taper and spillover checks. | BOOK-BALANIS, DESCANSO-DSTSE | Seeded |
+| RF-110 | `D_illum = 4*F_reflector*tan(psi_edge/2)` | focal length and selected feed edge angle | Illuminated reflector diameter implied by a feed edge angle. | BOOK-BALANIS | Seeded |
+| RF-111 | `BlockageAreaRatio = (D_block/D)^2` | blockage and main reflector diameters | First-order central blockage area ratio for circular subreflector/feed blockage. | BOOK-BALANIS | Seeded |
+| RF-112 | `eta_blockage_circular ~= (1 - (D_block/D)^2)^2` | circular blockage diameter ratio | Approximate aperture-efficiency loss from centered circular aperture blockage. | BOOK-BALANIS | Procedure |
+| RF-113 | `eta_spillover = integral_0^psi_edge(P_feed(psi)sin(psi)dpsi) / integral_0^pi(P_feed(psi)sin(psi)dpsi)` | feed power pattern and reflector subtended angle | Feed spillover efficiency: fraction of feed radiated power intercepted by the reflector. | BOOK-BALANIS, DESCANSO-DSTSE | Procedure |
+| RF-114 | `T_spillover ~= eta_spillover*T_sky_region + (1-eta_spillover)*T_ground_region` | spillover efficiency and scene temperatures | First-order antenna-noise contribution from feed spillover toward sky and warm ground/structure. | DESCANSO-DSTSE, BOOK-BALANIS | Procedure |
+| RF-115 | `XPD_ant_dB = G_co_dBi - G_cross_dBi` | co-polar and cross-polar pattern gains | Antenna cross-polar discrimination from measured or modeled co/cross-polar gains in the same direction. | BOOK-BALANIS, ITU-S465 | Seeded |
+| RF-116 | `CrossPolLeakageRatio = 10^(-XPD_ant_dB/10)` | antenna cross-polar discrimination | Linear leakage ratio associated with antenna cross-polar discrimination. | BOOK-BALANIS | Seeded |
+| RF-117 | `AR = 10^(AR_dB/20)` | axial ratio in dB | Converts polarization axial ratio from dB to linear ratio. | BOOK-BALANIS | Seeded |
+| RF-118 | `A_projected_scan = A_p*cos(theta_scan)` | physical aperture and scan angle | Projected aperture area when an aperture or planar array scans off broadside. | BOOK-MAILLOUX, BOOK-BALANIS | Seeded |
+| RF-119 | `theta_HPBW_scan ~= theta_HPBW_broadside/cos(theta_scan)` | broadside beamwidth and scan angle | Approximate beam broadening for a scanned planar aperture. | BOOK-MAILLOUX | Procedure |
+| RF-120 | `N_elem_planar = N_x*N_y` | rectangular array element counts | Total element count in a rectangular planar array. | BOOK-MAILLOUX, BOOK-BALANIS | Seeded |
+| RF-121 | `ArrayLength_x = (N_x-1)*d_x; ArrayLength_y = (N_y-1)*d_y` | element counts and lattice spacings | Center-to-center active array length in each principal lattice direction. | BOOK-MAILLOUX | Seeded |
+| RF-122 | `ArrayAperture_geom ~= ArrayLength_x*ArrayLength_y` | rectangular active dimensions | Approximate geometric active aperture of a rectangular planar array. | BOOK-MAILLOUX | Seeded |
+| RF-123 | `EIRP_array_total_dBW = P_total_array_dBW + G_elem_dBi + 10log10(N_active*eta_array)` | total RF power, element gain, active count, efficiency | EIRP estimate for a coherent equal-phase array when total array RF power is the input. | BOOK-MAILLOUX, BOOK-BALANIS | Seeded |
+| RF-124 | `EIRP_array_elem_dBW = P_elem_dBW + G_elem_dBi + 20log10(N_active) + 10log10(eta_array)` | per-element RF power and coherent active count | EIRP estimate for a coherent array when per-element RF power is the input. | BOOK-MAILLOUX | Seeded |
+| RF-125 | `tau_mn = (m*d_x*u_scan + n*d_y*v_scan)/c` | planar lattice coordinates and scan direction cosines | True-time-delay command for wideband planar-array steering without phase-shifter beam squint. | BOOK-MAILLOUX | Seeded |
+| RF-126 | `PSD_avg_dBW_Hz = P_band_dBW - 10log10(B_meas_Hz)` | integrated band power and measurement bandwidth | Average power spectral density across a selected measurement band. | ITU-SM328, ITU-SM1541, BOOK-SKLAR | Seeded |
+| RF-127 | `EIRP_density_dBW_Hz = EIRP_band_dBW - 10log10(B_meas_Hz)` | integrated EIRP over a measured band | EIRP spectral density for coordination or mask checks that use a reference bandwidth. | ITU-SM1541, ITU-SM329, BOOK-MARAL | Seeded |
+| RF-128 | `PFD_density_dBW_m2_Hz = PFD_band_dBW_m2 - 10log10(B_meas_Hz)` | integrated PFD and measurement bandwidth | Power-flux-density spectral density over a stated measurement bandwidth. | ITU-SM1541, ITU-SM329, BOOK-MARAL | Seeded |
+| RF-129 | `P_band = integral_f_low^f_high S_PSD(f) df` | measured or modeled PSD spectrum and band edges | Integrated emission power over an arbitrary frequency interval. | ITU-SM328, ITU-SM1541 | Procedure |
+| RF-130 | `OBW_fraction = P_f_low_to_f_high / P_total_emission` | integrated power between candidate edges and total emission power | Occupied-bandwidth fraction used to find x-percent occupied bandwidth. | ITU-SM328, BOOK-SKLAR | Procedure |
+| RF-131 | `OBW_x = f_high_x - f_low_x` where `CDF(f_low_x)=(1-x)/2` and `CDF(f_high_x)=(1+x)/2` | cumulative normalized emission spectrum | x-percent occupied bandwidth from symmetric tail-power exclusion. | ITU-SM328, ITU-SM1541 | Procedure |
+| RF-132 | `OBW_margin_Hz = B_allowed_Hz - OBW_x` | allowed bandwidth and measured occupied bandwidth | Margin between allowed or assigned bandwidth and occupied bandwidth. | ITU-SM328, ITU-SM1541, CCSDS401 | Seeded |
+| RF-133 | `NecessaryBandwidthMargin_Hz = B_allocated_Hz - B_necessary_Hz` | allocated bandwidth and necessary bandwidth | Allocation check using the necessary-bandwidth concept from radio regulations and spectrum-management recommendations. | ITU-SM328, ITU-SM329 | Seeded |
+| RF-134 | `GuardBandLower_Hz = f_emission_low - f_allocation_low` | lower emission edge and lower allocation edge | Lower-side guard band remaining inside an assigned or allocated frequency interval. | ITU-SM328, ITU-SM1541 | Seeded |
+| RF-135 | `GuardBandUpper_Hz = f_allocation_high - f_emission_high` | upper allocation edge and upper emission edge | Upper-side guard band remaining inside an assigned or allocated frequency interval. | ITU-SM328, ITU-SM1541 | Seeded |
+| RF-136 | `GuardBandMargin_Hz = min(GuardBandLower_Hz, GuardBandUpper_Hz)` | lower and upper guard bands | Worst-side frequency-placement margin for a carrier or emission. | ITU-SM328, CCSDS401 | Seeded |
+| RF-137 | `MaskMargin_dB(f) = MaskLimit_dBW_Hz(f) - PSD_meas_dBW_Hz(f)` | measured PSD and spectral mask limit versus frequency | Frequency-resolved spectral-emission mask margin. | ITU-SM1541, CCSDS401 | Procedure |
+| RF-138 | `WorstMaskMargin_dB = min_f(MaskMargin_dB(f))` | spectral mask margin curve | Worst-case pass/fail scalar for a measured or simulated spectrum mask. | ITU-SM1541 | Seeded |
+| RF-139 | `AdjacentPowerRatio_dB = P_inband_dBW - P_adjacent_dBW` | in-band and adjacent-band integrated powers | Adjacent-band power ratio used by out-of-band conformance methods. | ITU-SM1541, BOOK-PROAKIS | Seeded |
+| RF-140 | `AdjacentPowerMargin_dB = AdjacentPowerRatio_dB - AdjacentPowerRatio_required_dB` | measured and required adjacent-band power ratios | Margin for adjacent-channel or alternate-adjacent-channel leakage checks. | ITU-SM1541 | Seeded |
+| RF-141 | `P_oob = integral_OOB S_PSD(f) df` | PSD spectrum and out-of-band domain interval | Integrated unwanted emission power in the out-of-band domain. | ITU-SM1541, ITU-SM328 | Procedure |
+| RF-142 | `OOBPowerRatio_dB = P_inband_dBW - P_oob_dBW` | in-band and out-of-band integrated powers | Ratio of wanted in-band power to integrated out-of-band power. | ITU-SM1541 | Seeded |
+| RF-143 | `OOBPowerMargin_dB = OOBPowerLimit_dBW - P_oob_dBW` | out-of-band power limit and measured OOB power | Pass/fail margin against an out-of-band integrated power limit. | ITU-SM1541 | Seeded |
+| RF-144 | `SpuriousMargin_dB = SpuriousLimit_dBW - SpurPower_dBW` | spurious-domain component power and limit | Conducted spurious-emission margin for a discrete or measured unwanted component. | ITU-SM329 | Seeded |
+| RF-145 | `SpuriousEIRPMargin_dB = SpuriousEIRPLimit_dBW - SpurEIRP_dBW` | radiated spurious EIRP and limit | Radiated spurious-emission margin when the applicable limit is stated as EIRP. | ITU-SM329 | Seeded |
+| RF-146 | `FrequencyError_Hz = f_meas - f_nominal` | measured and nominal carrier frequencies | Signed carrier-frequency error. | CCSDS401, ITU-SM328 | Seeded |
+| RF-147 | `FrequencyTolerance_ppm = 1e6*FrequencyError_Hz/f_nominal` | frequency error and nominal carrier frequency | Carrier-frequency tolerance in parts per million. | CCSDS401, ITU-SM328 | Seeded |
+| RF-148 | `FrequencyToleranceMargin_Hz = FrequencyToleranceLimit_Hz - abs(FrequencyError_Hz)` | allowed and measured carrier-frequency error | Carrier-frequency tolerance margin. | CCSDS401, ITU-SM328 | Seeded |
+| RF-149 | `DopplerGuardMargin_Hz = GuardBand_available_Hz - (abs(f_D_max_Hz)+abs(FrequencyError_Hz)+FrequencyDriftAllowance_Hz)` | guard band, Doppler, frequency error, and drift allowance | Frequency guard margin after worst-case Doppler, oscillator error, and drift reserve. | CCSDS401, DSN-810-005, ITU-SM328 | Seeded |
+| RF-150 | `ChannelOccupancyRatio = OBW_x / ChannelSpacing_Hz` | occupied bandwidth and channel spacing | Fraction of channel spacing consumed by the measured or predicted occupied bandwidth. | ITU-SM328, ITU-SM1541 | Seeded |
+| RF-151 | `G_chain_dB = sum_i(G_stage_i_dB) - sum_i(L_stage_i_dB)` | receiver gains and losses by stage | Total small-signal gain from the selected RF input reference point to the selected output/reference point. | BOOK-POZAR, BOOK-RAZAVI | Seeded |
+| RF-152 | `P_stage_i_dBm = P_in_dBm + sum_{k<=i}(G_stage_k_dB - L_stage_k_dB)` | input power and cumulative stage gains/losses | Per-stage signal level for overload, compression, and ADC-loading checks. | BOOK-POZAR, BOOK-RAZAVI | Procedure |
+| RF-153 | `N_floor_dBm = -174 + 10log10(B_n_Hz) + NF_dB` | noise bandwidth and receiver noise figure at `T0` | Receiver input-referred thermal noise floor at standard temperature. | BOOK-SKLAR, BOOK-HAYKIN, BOOK-POZAR | Seeded |
+| RF-154 | `Sensitivity_dBm = N_floor_dBm + SNR_required_dB` | noise floor and required detector SNR | Minimum input signal power for the selected required SNR. | BOOK-SKLAR, BOOK-HAYKIN | Seeded |
+| RF-155 | `MDS_dBm = N_floor_dBm + SNR_detect_dB` | noise floor and detection-threshold SNR | Minimum discernible signal for a stated detection threshold and bandwidth. | BOOK-POZAR, BOOK-SKLAR | Seeded |
+| RF-156 | `CompressionHeadroom_dB = P_1dB_in_dBm - P_signal_peak_in_dBm` | input compression point and peak input signal | Front-end compression headroom at the receiver input reference point. | BOOK-POZAR, BOOK-RAZAVI | Seeded |
+| RF-157 | `InputDynamicRange_dB = P_1dB_in_dBm - MDS_dBm` | input compression point and minimum discernible signal | Input dynamic range between small-signal detectability and compression. | BOOK-POZAR, BOOK-RAZAVI | Seeded |
+| RF-158 | `OIP3_dBm = IIP3_dBm + G_chain_dB` | input third-order intercept and chain gain | Output third-order intercept point from input intercept and gain. | BOOK-POZAR, BOOK-RAZAVI | Seeded |
+| RF-159 | `IM3_input_dBm = 3*P_tone_in_dBm - 2*IIP3_dBm` | equal two-tone input level and input IP3 | Input-referred third-order intermodulation product estimate for equal tones. | BOOK-POZAR, BOOK-RAZAVI | Seeded |
+| RF-160 | `IM3Margin_dB = IM3_limit_dBm - IM3_input_dBm` | allowed and estimated input-referred IM3 levels | Third-order intermodulation margin relative to a specified limit. | BOOK-POZAR, BOOK-RAZAVI, BOOK-MARAL | Seeded |
+| RF-161 | `1/IIP3_total = sum_i((prod_{j<i} G_j_linear)/IIP3_i)` | stage gains and linear input IP3 powers | Cascaded input third-order intercept estimate using linear power units. | BOOK-POZAR, BOOK-RAZAVI | Procedure |
+| RF-162 | `1/P1dB_total = sum_i((prod_{j<i} G_j_linear)/P1dB_i)` | stage gains and linear input compression powers | Approximate cascaded input 1 dB compression point using linear power units. | BOOK-POZAR, BOOK-RAZAVI | Procedure |
+| RF-163 | `SFDR_dB = (2/3)*(IIP3_dBm - N_floor_dBm)` | input IP3 and noise floor in the same bandwidth | Two-tone spurious-free dynamic range over the selected noise bandwidth. | BOOK-POZAR, BOOK-RAZAVI | Seeded |
+| RF-164 | `BlockingMargin_dB = P_blocker_limit_dBm - P_blocker_in_dBm` | allowed and actual blocker input powers | Receiver blocking margin before gain compression, desense, or ADC overload. | BOOK-RAZAVI, BOOK-SKLAR | Seeded |
+| RF-165 | `Desense_dB = 10log10(1 + I_block_linear/N_linear)` | blocker-coupled interference power and receiver noise power | SNR degradation caused by blocker/interference power added to the noise floor. | BOOK-SKLAR, BOOK-HAYKIN | Seeded |
+| RF-166 | `ReciprocalMixingNoise_dBm = P_blocker_dBm + L_phase_dBc_Hz(Deltaf) + 10log10(B_IF_Hz)` | blocker power, LO phase noise at offset, IF bandwidth | Reciprocal-mixing noise caused by LO phase noise around a strong offset blocker. | BOOK-RAZAVI, BOOK-POZAR | Seeded |
+| RF-167 | `ImageLeakage_dBm = P_image_in_dBm - IRR_dB` | image-frequency input power and image rejection ratio | Residual image response after finite image rejection. | BOOK-RAZAVI, BOOK-POZAR | Seeded |
+| RF-168 | `ImageRejectionMargin_dB = IRR_dB - IRR_required_dB` | available and required image rejection | Image-rejection margin for low-IF, superheterodyne, or I/Q receivers. | BOOK-RAZAVI, BOOK-POZAR | Seeded |
+| RF-169 | `G_AGC_required_dB = P_adc_target_dBm - P_detector_in_dBm` | detector input level and target ADC/input level | AGC gain command required to place the signal at the target downstream level. | BOOK-RAZAVI, BOOK-SKLAR | Seeded |
+| RF-170 | `AGCHeadroom_dB = min(G_AGC_max_dB - G_AGC_required_dB, G_AGC_required_dB - G_AGC_min_dB)` | AGC command and gain range | Worst-side AGC range headroom against max-gain and min-gain stops. | BOOK-RAZAVI | Seeded |
+| RF-171 | `P_adc_fullscale_dBm = 10log10(((V_FS_pp/(2*sqrt(2)))^2/R_in)/1e-3)` | ADC full-scale sine voltage and input resistance | ADC full-scale sine power for converting dBFS, volts, and dBm at the converter input. | ADI-MT001, BOOK-SKLAR | Seeded |
+| RF-172 | `ADCLoadingMargin_dB = P_adc_fullscale_dBm - P_adc_signal_peak_dBm` | ADC full-scale and peak signal power | ADC clipping/loading margin at the converter input. | ADI-MT001, BOOK-SKLAR | Seeded |
+| RF-173 | `QuantNoiseDensity_dBFS_Hz = -SNR_q_dB - 10log10(f_s/2)` | quantization SNR and sampling rate | Quantization-noise density relative to full scale over the first Nyquist zone. | ADI-MT001, BOOK-SKLAR | Seeded |
+| RF-174 | `SNR_jitter_dB = -20log10(2*pi*f_in*sigma_t_jitter)` | input frequency and aperture jitter | Jitter-limited SNR for sampled sinusoidal inputs. | ADI-MT008, BOOK-HAYKIN | Seeded |
+| RF-175 | `SINAD_total_dB = -10log10(sum_k(10^(-SNR_k_dB/10)))` | independent SNR/SINAD impairment terms | Combines independent receiver/ADC impairment limits such as thermal noise, jitter, quantization, and distortion. | ADI-MT001, ADI-MT008, BOOK-SKLAR | Procedure |
+
+## Propagation and Link Budget
+
+| ID | Formula | Variables | Explanation | Source family | Status |
+| --- | --- | --- | --- | --- | --- |
+| LINK-001 | `L_fs = 20 log10(4 pi R / lambda)` | `R`: range m; `lambda`: wavelength m | Free-space path loss. | ITU-P525, BOOK-BALANIS | Implemented |
+| LINK-002 | `L_fs_dB = 92.45 + 20log10(d_km) + 20log10(f_GHz)` | `d_km`: distance km; `f_GHz`: frequency GHz | Convenient FSPL form. | ITU-P525 | Implemented |
+| LINK-003 | `C/N0 = EIRP + G/T - L_total + 228.6` | dB units | Carrier-to-noise-density ratio. `228.6` is `-10log10(k)` in dB. | DSN-810-005, BOOK-MARAL | Implemented |
+| LINK-004 | `Eb/N0 = C/N0 - 10log10(R_b)` | `R_b`: bit rate bps | Converts carrier density to energy-per-bit density. | BOOK-SKLAR | Implemented |
+| LINK-005 | `Es/N0 = Eb/N0 + 10log10(log2(M) R_c)` | `M`: modulation order; `R_c`: code rate | Converts bit metric to symbol metric for M-ary modulation with coding. | BOOK-SKLAR | Seeded |
+| LINK-006 | `C/N = C/N0 - 10log10(B_n)` | `B_n`: receiver noise bandwidth Hz | Carrier-to-noise ratio in a finite bandwidth. | BOOK-SKLAR | Seeded |
+| LINK-007 | `N_dBW = -228.6 + 10log10(T_sys) + 10log10(B)` | `B`: Hz | Thermal noise power in bandwidth. | BOOK-SKLAR | Seeded |
+| LINK-008 | `Margin = Available Eb/N0 - Required Eb/N0` | dB | Link closure margin. | DSN-810-005, BOOK-MARAL | Implemented |
+| LINK-009 | `A_total = A_fs + A_gas + A_rain + A_cloud + A_scint + A_pol + A_misc` | loss terms dB | Full propagation/implementation loss budget. | ITU-P618, ITU-P676, ITU-P838 | Seeded |
+| LINK-010 | `gamma_R = k R^alpha` | `gamma_R`: dB/km; `R`: rain rate mm/h; `k`, `alpha`: frequency/polarization coefficients | Rain specific attenuation. | ITU-P838 | Seeded |
+| LINK-011 | `A_rain = gamma_R L_eff` | `L_eff`: effective path length km | Rain attenuation once effective path is known. | ITU-P618, ITU-P838 | Procedure |
+| LINK-012 | `A_gas = integral(gamma_gas(s) ds)` | `gamma_gas`: dB/km | Atmospheric oxygen/water-vapor attenuation along path. | ITU-P676 | Procedure |
+| LINK-013 | `S = P_tx G_tx / (4 pi R^2)` | `S`: power flux density W/m^2 | Free-space power flux at range. | BOOK-BALANIS | Seeded |
+| LINK-014 | `P_rx = S A_e` | `A_e`: effective aperture | Received power from incident flux and effective aperture. | BOOK-BALANIS | Seeded |
+| LINK-015 | `C = B log2(1 + S/N)` | `C`: channel capacity bps; `B`: bandwidth Hz | Shannon capacity upper bound. | BOOK-SKLAR | Seeded |
+| LINK-016 | `Required EIRP = Required C/N0 - G/T + L_total - 228.6` | dB units | Inverts link equation for transmitter sizing. | DSN-810-005, BOOK-MARAL | Seeded |
+| LINK-017 | `Required G/T = Required C/N0 - EIRP + L_total - 228.6` | dB/K | Inverts link equation for ground-station sizing. | DSN-810-005, BOOK-MARAL | Seeded |
+| LINK-018 | `e = sqrt(30 p) / d` | `e`: RMS field strength V/m; `p`: EIRP W; `d`: distance m | ITU-R P.525 point-to-area field strength. | ITU-P525 | Seeded |
+| LINK-019 | `e_mV_m = 173 sqrt(p_kW) / d_km` | practical units | ITU-R P.525 field-strength expression in mV/m, kW, and km. | ITU-P525 | Seeded |
+| LINK-020 | `s = e^2 / (120 pi) = p / (4 pi d^2)` | `s`: power flux density W/m^2 | Plane-wave PFD relation from ITU-R P.525. | ITU-P525 | Seeded |
+| LINK-021 | `p_r = p lambda^2 / ((4 pi d)^2)` | isotropic receiving antenna | Received power at isotropic receive antenna in free space. | ITU-P525 | Seeded |
+| LINK-022 | `L_bf = 20 log10(4 pi d / lambda)` | same units for `d` and `lambda` | ITU-R free-space basic transmission loss. | ITU-P525 | Seeded |
+| LINK-023 | `L_bf = 32.4 + 20 log10(f_MHz) + 20 log10(d_km)` | `f_MHz`, `d_km` | ITU-R P.525 practical FSPL form. | ITU-P525 | Seeded |
+| LINK-024 | `E = Pt - 20 log10(d_km) + 74.8` | `E`: dB(uV/m); `Pt`: dBW isotropic power | Field strength from isotropically transmitted power. | ITU-P525 | Seeded |
+| LINK-025 | `Pr = E - 20 log10(f_GHz) - 167.2` | `Pr`: dBW received by isotropic matched antenna | Available isotropic receive power from field strength. | ITU-P525 | Seeded |
+| LINK-026 | `S_dBW_m2 = E - 145.8` | `S`: dBW/m^2; `E`: dB(uV/m) | Power flux density from electric field strength. | ITU-P525 | Seeded |
+| LINK-027 | `P_R_dBW = P_T_dBW - L_T_dB + G_T_dBi - L_TP_dB - L_s_dB - L_A_dB - L_P_dB - L_RP_dB + G_R_dBi - L_R_dB` | transmit power, antenna gains, circuit/pointing/space/atmosphere/polarization losses | Full received-power accounting form for ground-space links. | DESCANSO-DSTSE, DSN-810-005 | Seeded |
+| LINK-028 | `L_s_ratio = (lambda/(4*pi*r))^2` | wavelength and range | Linear space-loss ratio between two antennas. | DESCANSO-DSTSE, ITU-P525 | Seeded |
+| LINK-029 | `L_s_dB = 20log10(4*pi*r/lambda)` | range and wavelength | Positive dB space loss corresponding to LINK-028. | DESCANSO-DSTSE, ITU-P525 | Seeded |
+| LINK-030 | `N0_W_Hz = k*T_sys` | system equivalent noise temperature | One-sided thermal noise spectral density. | DESCANSO-DSTSE, DSN-810-005 | Seeded |
+| LINK-031 | `P_to_N0_dBHz = P_R_dBW - N0_dBW_Hz` | received power and noise spectral density | Received total power-to-noise-density ratio. | DESCANSO-DSTSE, DSN-810-005 | Seeded |
+| LINK-032 | `ST_N0_receiver_dB = S_data_dBW - N0_dBW_Hz - 10log10(R_b)` | data-sideband power, bit rate, noise density | Telemetry/command energy-per-bit to noise-density ratio at receiver input. | DESCANSO-DSTSE | Seeded |
+| LINK-033 | `ST_N0_output_dB = ST_N0_receiver_dB - L_system_dB` | receiver/demodulation implementation loss | Output `ST/N0` after system losses. | DESCANSO-DSTSE | Seeded |
+| LINK-034 | `PerformanceMargin_dB = ST_N0_output_dB - Threshold_ST_N0_dB` | output and threshold bit-energy metric | Telemetry or command performance margin. | DESCANSO-DSTSE, DSN-810-005 | Seeded |
+| LINK-035 | `CarrierMargin_dB = P_c_dBW - N0_dBW_Hz - 10log10(2*B_LO)` | residual carrier power and loop bandwidth | Carrier margin relative to phase-lock threshold. | DESCANSO-DSTSE | Seeded |
+| LINK-036 | `RangingInputSNR = P_R_ul / (B_R * N0_ul)` | uplink ranging sideband power, transponder ranging bandwidth, uplink noise density | Ranging channel input SNR at the spacecraft receiver. | DESCANSO-DSTSE | Seeded |
+| LINK-037 | `RangingMargin_dB = OutputSNR_dB - RequiredSNR_dB` | returned ranging SNR and required SNR | Ranging performance margin. | DESCANSO-DSTSE | Seeded |
+| LINK-038 | `T_M = 255 + 25*CD` | weather cumulative distribution `CD` | DSN 105E atmosphere mean effective radiating temperature model. | DSN-810-005-105E | Seeded |
+| LINK-039 | `A_atm(theta_elev) = A_zen / sin(theta_elev)` | zenith attenuation and elevation angle | Flat-Earth elevation scaling for atmospheric attenuation. | DSN-810-005-105E | Procedure |
+| LINK-040 | `L_atm = 10^(A_atm(theta_elev)/10)` | atmospheric attenuation in dB | Converts atmospheric attenuation to linear loss factor. | DSN-810-005-105E | Seeded |
+| LINK-041 | `T_atm(theta_elev) = T_M * (1 - 1/L_atm)` | atmosphere mean radiating temperature and loss factor | Atmospheric noise-temperature contribution. | DSN-810-005-105E | Seeded |
+| LINK-042 | `T_CMB_eff(theta_elev) = T_CMB / L_atm` | cosmic microwave background and atmosphere loss | Effective cosmic background noise contribution after atmospheric attenuation. | DSN-810-005-105E | Seeded |
+| LINK-043 | `T_AMW(theta_elev) = T1 + T2*exp(-a_noise*theta_elev)` | antenna module coefficients | DSN antenna-microwave noise-temperature component used by station modules. | DSN-810-005-105E | Procedure |
+| LINK-044 | `T_op(theta_elev) = T_AMW(theta_elev) + T_atm(theta_elev) + T_CMB_eff(theta_elev)` | antenna-microwave, atmosphere, cosmic terms | System operating noise temperature with atmosphere and attenuated cosmic background. | DSN-810-005-105E | Seeded |
+| LINK-045 | `gamma_R = k_rain * R_p^alpha_rain` | `R_p`: rain rate mm/h exceeded for probability p | ITU-R rain specific attenuation power-law model. P.618 uses `R_0_01` for the 0.01% annual statistic. | ITU-P838, ITU-P618 | Seeded |
+| LINK-046 | `log10(k_pol) = sum(a_j * exp(-((log10(f_GHz)-b_j)/c_j)^2)) + m_k*log10(f_GHz) + c_k` | P.838 coefficient table constants | Curve fit for horizontal or vertical rain coefficient `k_H`/`k_V` over 1 to 1000 GHz. | ITU-P838 | Procedure |
+| LINK-047 | `alpha_pol = sum(a_j * exp(-((log10(f_GHz)-b_j)/c_j)^2)) + m_alpha*log10(f_GHz) + c_alpha` | P.838 coefficient table constants | Curve fit for horizontal or vertical rain exponent `alpha_H`/`alpha_V`. | ITU-P838 | Procedure |
+| LINK-048 | `k_rain = (k_H + k_V + (k_H-k_V)*cos(theta_elev)^2*cos(2*tau))/2` | elevation and polarization tilt | Path/polarization-adjusted rain coefficient. `tau=45 deg` for circular polarization. | ITU-P838 | Seeded |
+| LINK-049 | `alpha_rain = (k_H*alpha_H + k_V*alpha_V + (k_H*alpha_H-k_V*alpha_V)*cos(theta_elev)^2*cos(2*tau))/(2*k_rain)` | horizontal/vertical coefficients | Path/polarization-adjusted rain exponent. | ITU-P838 | Seeded |
+| LINK-050 | `h_R = h_0 + 0.36 km` | `h_0`: annual mean 0 deg C isotherm height | ITU-R rain height above mean sea level when no local rain-height data are available. | ITU-P839 | Seeded |
+| LINK-051 | `h_0 = bilinear(lat, lon, h0_grid)` | P.839 digital map grid | Interpolates 0 deg C isotherm height from four nearest P.839 map grid points. | ITU-P839 | Procedure |
+| LINK-052 | `L_s = (h_R - h_s)/sin(theta_elev)` | rain height, station height, elevation | Slant path length below rain height for elevation angles at least 5 degrees. | ITU-P618 | Seeded |
+| LINK-053 | `L_s = 2*(h_R-h_s)/(sqrt(sin(theta_elev)^2 + 2*(h_R-h_s)/R_eff) + sin(theta_elev))` | low elevation geometry | Slant path length below rain height for elevation angles below 5 degrees. | ITU-P618 | Seeded |
+| LINK-054 | `L_G = L_s*cos(theta_elev)` | slant path length and elevation | Horizontal projection of the slant rain path. | ITU-P618 | Seeded |
+| LINK-055 | `r_0_01 = 1/(1 + 0.78*sqrt(L_G*gamma_R/f_GHz) - 0.38*(1-exp(-2*L_G)))` | horizontal path projection and rain specific attenuation | Horizontal reduction factor for 0.01% of an average year. | ITU-P618 | Seeded |
+| LINK-056 | `zeta = atan((h_R-h_s)/(L_G*r_0_01))` | rain height and reduced horizontal path | Auxiliary angle for vertical adjustment factor. | ITU-P618 | Seeded |
+| LINK-057 | `L_R = if zeta>theta_elev then L_G*r_0_01/cos(theta_elev) else (h_R-h_s)/sin(theta_elev)` | reduced slant path | Adjusted slant-path term used by P.618 vertical factor. | ITU-P618 | Procedure |
+| LINK-058 | `chi = max(0, 36 - abs(phi_lat))` | station latitude in degrees | Latitude adjustment term used in P.618 rain vertical factor. | ITU-P618 | Seeded |
+| LINK-059 | `v_0_01 = 1/(1 + sqrt(sin(theta_elev))*(31*(1-exp(-theta_elev_deg/(1+chi)))*sqrt(L_R*gamma_R)/f_GHz^2 - 0.45))` | elevation, latitude term, path, rain, frequency | Vertical adjustment factor for 0.01% of an average year; P.618 uses elevation in degrees in the exponential term. | ITU-P618 | Seeded |
+| LINK-060 | `L_E = L_R*v_0_01` | adjusted path and vertical factor | Effective rain path length. | ITU-P618 | Seeded |
+| LINK-061 | `A_0_01 = gamma_R*L_E` | rain specific attenuation and effective path | Rain attenuation exceeded for 0.01% of an average year. | ITU-P618 | Seeded |
+| LINK-062 | `beta = 0` or `-0.005*(abs(phi_lat)-36)` or `-0.005*(abs(phi_lat)-36)+1.8-4.25*sin(theta_elev)` | probability, latitude, elevation branch | P.618 beta branch used for annual probability extrapolation from `A_0_01`. | ITU-P618 | Procedure |
+| LINK-063 | `A_rain_p = A_0_01*(p_exceed/0.01)^(-(0.655 + 0.033*ln(p_exceed) - 0.045*ln(A_0_01) - beta*(1-p_exceed)*sin(theta_elev)))` | target exceedance probability | Rain attenuation exceeded for `p_exceed` percent of an average year, valid over the P.618 probability range. | ITU-P618 | Seeded |
+| LINK-064 | `A_T(p_exceed) = A_G(p_exceed) + sqrt((A_R(p_exceed)+A_C(p_exceed))^2 + A_S(p_exceed)^2)` | gas, rain, cloud, scintillation | Total attenuation for `0.001% <= p_exceed <= 5%`, combining simultaneous effects. | ITU-P618 | Procedure |
+| LINK-065 | `A_T(p_exceed) = A_G(p_exceed) + sqrt(A_C(p_exceed)^2 + A_S(p_exceed)^2)` | gas, cloud, scintillation | Total attenuation for `5% < p_exceed <= 50%`; P.618 holds cloud and gas terms at 5% for p below 5%. | ITU-P618 | Procedure |
+| LINK-066 | `gamma_gas = gamma_o + gamma_w = 0.1820*f_GHz*(Npp_oxygen + Npp_water)` | complex refractivity imaginary parts | ITU-R P.676 line-by-line specific gaseous attenuation from oxygen/dry air and water vapour. | ITU-P676 | Procedure |
+| LINK-067 | `e_wv = rho_wv*T_K/216.7` | water vapour density and temperature | Converts water vapour density to water vapour partial pressure for P.676. | ITU-P676 | Seeded |
+| LINK-068 | `Npp_oxygen = sum(S_i*F_i for oxygen lines) + Npp_D` | spectroscopic line table | Imaginary oxygen/dry-air refractivity including dry continuum. | ITU-P676 | Procedure |
+| LINK-069 | `Npp_water = sum(S_i*F_i for water-vapour lines)` | spectroscopic line table | Imaginary water-vapour refractivity from water-vapour spectral lines. | ITU-P676 | Procedure |
+| LINK-070 | `S_i_oxygen = a1*1e-7*p_dry*theta_300^3*exp(a2*(1-theta_300))` | oxygen line coefficients | Oxygen line strength for P.676 line-by-line calculation. | ITU-P676 | Procedure |
+| LINK-071 | `S_i_water = b1*1e-1*e_wv*theta_300^3.5*exp(b2*(1-theta_300))` | water-vapour line coefficients | Water-vapour line strength for P.676 line-by-line calculation. | ITU-P676 | Procedure |
+| LINK-072 | `F_i = f_GHz/f_i*((Delta_f-delta_i*(f_i-f_GHz))/((f_i-f_GHz)^2+Delta_f^2) + (Delta_f-delta_i*(f_i+f_GHz))/((f_i+f_GHz)^2+Delta_f^2))` | line frequency, width, and interference factor | P.676 spectral line-shape factor. | ITU-P676 | Procedure |
+| LINK-073 | `A_gas_profile = sum(path_length_i*gamma_i)` | layer path length and layer specific attenuation | P.676 slant-path gaseous attenuation by summing atmospheric layers. | ITU-P676 | Procedure |
+| LINK-074 | `A_o_inst = gamma_o*h_o/sin(theta_elev)` | oxygen specific attenuation and equivalent height | P.676 approximate instantaneous slant oxygen attenuation. | ITU-P676 | Procedure |
+| LINK-075 | `h_o = a_o(f)+b_o(f)*T_surface+c_o(f)*P_s+d_o(f)*rho_ws` | coefficient data file | Oxygen equivalent height in the P.676 approximate method. | ITU-P676 | Procedure |
+| LINK-076 | `A_w_inst = gamma_w*h_w/sin(theta_elev)` | water-vapour specific attenuation and equivalent height | P.676 approximate instantaneous water-vapour attenuation method 1. | ITU-P676 | Procedure |
+| LINK-077 | `h_w = A_hw*f_GHz + B_hw + sum(a_hw_i/((f_GHz-f_hw_i)^2+b_hw_i))` | water-vapour equivalent-height coefficients | Water-vapour equivalent height approximation for P.676 method 1. | ITU-P676 | Procedure |
+| LINK-078 | `A_G = A_o + A_w` | oxygen and water-vapour attenuation | Total gaseous attenuation term for P.618 total-attenuation combination. | ITU-P676, ITU-P618 | Seeded |
+| LINK-079 | `gamma_c = K_l*rho_l` | cloud liquid coefficient and liquid density | Specific attenuation inside cloud/fog under P.840 Rayleigh approximation. | ITU-P840 | Seeded |
+| LINK-080 | `K_l = 0.819*f_GHz/(epsilon_pp*(1+eta_cloud^2))` | dielectric permittivity model | Cloud liquid water specific attenuation coefficient. | ITU-P840 | Procedure |
+| LINK-081 | `eta_cloud = (2 + epsilon_p)/epsilon_pp` | real and imaginary permittivity | P.840 auxiliary ratio for liquid-water attenuation. | ITU-P840 | Seeded |
+| LINK-082 | `epsilon_0 = 77.66 + 103.3*(300/T_cloud - 1)` | liquid water temperature | Static dielectric constant term in the P.840 double-Debye model. | ITU-P840 | Seeded |
+| LINK-083 | `epsilon_1 = 0.0671*epsilon_0`; `epsilon_2 = 3.52` | liquid water dielectric constants | Secondary dielectric constants in the P.840 model. | ITU-P840 | Seeded |
+| LINK-084 | `f_p = 20.20 - 146*(300/T_cloud - 1) + 316*(300/T_cloud - 1)^2`; `f_s = 39.8*f_p` | relaxation frequencies | Principal and secondary relaxation frequencies for liquid water. | ITU-P840 | Seeded |
+| LINK-085 | `K_L = K_l(f_GHz,273.75K)*(A1*exp(-((f_GHz-f1_cloud)^2)/sigma1_cloud)+A2*exp(-((f_GHz-f2_cloud)^2)/sigma2_cloud)+A3)` | P.840 fitted coefficients | Cloud liquid mass absorption coefficient used with integrated liquid water. | ITU-P840 | Procedure |
+| LINK-086 | `A_C_inst = K_L*L_cloud/sin(theta_elev)` | integrated cloud liquid water | Instantaneous slant cloud attenuation. | ITU-P840 | Seeded |
+| LINK-087 | `A_C_stat = K_L*L_cloud_p/sin(theta_elev)` | cloud liquid water at exceedance probability | Statistical slant cloud attenuation. | ITU-P840 | Procedure |
+| LINK-088 | `A_C_logn = if p_exceed<P_L then K_L*exp(m_L + sigma_L*Qinv(p_exceed/P_L))/sin(theta_elev) else 0` | cloud probability and log-normal parameters | P.840 log-normal cloud attenuation approximation. | ITU-P840 | Procedure |
+| LINK-089 | `sigma_ref = 3.6e-3 + 1e-4*N_wet` | wet refractivity term | P.618 reference standard deviation for tropospheric scintillation amplitude. | ITU-P618 | Seeded |
+| LINK-090 | `L_scint = 2*h_L/(sqrt(sin(theta_elev)^2 + 2.35e-4) + sin(theta_elev))` | turbulent-layer height and elevation | Effective path length for scintillation prediction. | ITU-P618 | Seeded |
+| LINK-091 | `D_eff = sqrt(eta_ant)*D` | antenna efficiency and diameter | Effective antenna diameter for scintillation antenna averaging. | ITU-P618 | Seeded |
+| LINK-092 | `x_scint = 1.22*D_eff^2*f_GHz/L_scint` | effective antenna diameter, frequency, path length | P.618 antenna-averaging argument. | ITU-P618 | Seeded |
+| LINK-093 | `g_x = 3.86*(x_scint^2+1)^(11/12)*sin((11/6)*atan(1/x_scint)) - 7.08*x_scint^(5/6)` | antenna-averaging argument | P.618 antenna averaging helper. If `g_x < 0`, scintillation fade depth is set to zero. | ITU-P618 | Seeded |
+| LINK-094 | `sigma_scint = sigma_ref*f_GHz^(7/12)*sqrt(g_x)/sin(theta_elev)^1.2` | reference sigma and antenna averaging | Standard deviation of tropospheric scintillation amplitude for elevation at least 5 degrees. | ITU-P618 | Seeded |
+| LINK-095 | `a_scint(p) = -0.061*(log10(p_exceed))^3 + 0.072*(log10(p_exceed))^2 - 1.71*log10(p_exceed) + 3.0` | exceedance probability | P.618 time-percentage factor for scintillation, valid over the stated probability range. | ITU-P618 | Seeded |
+| LINK-096 | `A_S = a_scint(p_exceed)*sigma_scint` | time-percentage factor and sigma | Tropospheric scintillation fade depth exceeded for `p_exceed` percent of time. | ITU-P618 | Seeded |
+| LINK-097 | `T_sky = T_mr*(1 - 10^(-A_atm_no_scint/10)) + 2.7*10^(-A_atm_no_scint/10)` | atmospheric attenuation and mean radiating temperature | P.618 sky noise temperature at a ground-station antenna. | ITU-P618 | Seeded |
+| LINK-098 | `T_mr = 37.34 + 0.81*T_surface` | surface temperature | P.618 mean radiating temperature estimate for clear/cloudy weather when surface temperature is known. | ITU-P618 | Seeded |
+| LINK-099 | `y(t) = h(t) * x(t) + n(t)` | channel impulse response, transmitted signal, noise | Linear baseband channel model with convolution and additive noise. | BOOK-GOLDSMITH, BOOK-PROAKIS | Seeded |
+| LINK-100 | `h(tau,t) = sum_i a_i(t)*exp(-j*2*pi*f_c*tau_i(t))*delta(tau-tau_i(t))` | multipath amplitudes, delays, carrier frequency | Time-varying tapped multipath channel impulse response. | BOOK-GOLDSMITH, BOOK-RAPPAPORT | Procedure |
+| LINK-101 | `tau_bar = sum_i(P_i*tau_i)/sum_i(P_i)` | power-delay profile taps | Mean excess delay from a discrete power-delay profile. | BOOK-RAPPAPORT, BOOK-GOLDSMITH | Seeded |
+| LINK-102 | `sigma_tau = sqrt(sum_i(P_i*tau_i^2)/sum_i(P_i) - tau_bar^2)` | power-delay profile taps | RMS delay spread, used to assess frequency selectivity. | BOOK-RAPPAPORT, BOOK-GOLDSMITH | Seeded |
+| LINK-103 | `B_c_50 ~= 1/(5*sigma_tau)` | RMS delay spread | Approximate coherence bandwidth for moderate frequency correlation. | BOOK-RAPPAPORT, BOOK-GOLDSMITH | Procedure |
+| LINK-104 | `B_c_90 ~= 1/(50*sigma_tau)` | RMS delay spread | Approximate coherence bandwidth for high frequency correlation. | BOOK-RAPPAPORT | Procedure |
+| LINK-105 | `f_Dmax = v_rel/lambda` | relative speed and wavelength | Maximum Doppler shift for a moving terminal or reflector. | BOOK-RAPPAPORT, BOOK-GOLDSMITH | Seeded |
+| LINK-106 | `T_c ~= 0.423/f_Dmax` | maximum Doppler shift | Common coherence-time approximation for fading channels. | BOOK-RAPPAPORT, BOOK-GOLDSMITH | Procedure |
+| LINK-107 | `PL_logdist_dB = PL_d0_dB + 10*n_path*log10(d/d0) + X_sigma` | reference path loss, path-loss exponent, lognormal shadowing | Log-distance path-loss model with Gaussian shadowing term in dB. | BOOK-RAPPAPORT, BOOK-GOLDSMITH | Seeded |
+| LINK-108 | `gamma_inst = |h|^2 * gamma_bar` | fading coefficient and average SNR | Instantaneous SNR under flat fading with normalized channel gain convention. | BOOK-GOLDSMITH, BOOK-PROAKIS | Seeded |
+| LINK-109 | `P_out = Pr(gamma_inst < gamma_th)` | instantaneous and threshold SNR | Generic outage probability definition. | BOOK-GOLDSMITH | Seeded |
+| LINK-110 | `P_out_rayleigh = 1 - exp(-gamma_th/gamma_bar)` | threshold and average SNR | Rayleigh flat-fading outage probability for exponential instantaneous SNR. | BOOK-GOLDSMITH, BOOK-PROAKIS | Seeded |
+| LINK-111 | `f_R(r) = r/sigma_h^2 * exp(-r^2/(2*sigma_h^2))`, `r>=0` | Rayleigh envelope scale | Rayleigh fading envelope probability density. | BOOK-RAPPAPORT, BOOK-GOLDSMITH | Seeded |
+| LINK-112 | `F_R(r) = 1 - exp(-r^2/(2*sigma_h^2))` | Rayleigh envelope scale | Rayleigh fading envelope cumulative distribution. | BOOK-RAPPAPORT, BOOK-GOLDSMITH | Seeded |
+| LINK-113 | `K_Rice = s_LOS^2/(2*sigma_h^2)` | LOS component and diffuse component scale | Rician K factor as specular-to-diffuse power ratio. | BOOK-RAPPAPORT, BOOK-GOLDSMITH | Seeded |
+| LINK-114 | `P_b_BPSK_Rayleigh = 0.5*(1 - sqrt(gamma_bar/(1 + gamma_bar)))` | average bit SNR | Average coherent BPSK bit error probability over Rayleigh fading. | BOOK-PROAKIS, BOOK-GOLDSMITH | Seeded |
+| LINK-115 | `C_inst = B*log2(1 + gamma_inst)` | bandwidth and instantaneous SNR | Instantaneous Shannon capacity for a flat-fading channel state. | BOOK-GOLDSMITH, BOOK-SKLAR | Seeded |
+| LINK-116 | `C_ergodic = E_h[B*log2(1 + gamma_inst(h))]` | channel-state distribution | Ergodic fading-channel capacity with receiver-side channel-state averaging. | BOOK-GOLDSMITH | Procedure |
+| LINK-117 | `PFD_sat_dBW_m2 = EIRP_uplink_dBW - L_uplink_path_dB - 10log10(4*pi*R_uplink^2)` | uplink EIRP, additional uplink losses, uplink range | Power flux density incident at the satellite receive antenna. | BOOK-MARAL, ITU-P525 | Seeded |
+| LINK-118 | `IBO_dB = SFD_dBW_m2 - PFD_sat_dBW_m2` | saturation flux density and incident PFD | Transponder input back-off from saturation, expressed from the satellite input PFD reference. | BOOK-MARAL | Seeded |
+| LINK-119 | `P_in_sat_dBW = PFD_sat_dBW_m2 + G_rx_sat_dBi + 10log10(lambda_u^2/(4*pi)) - L_rx_sat_dB` | incident PFD, receive gain, wavelength, satellite receive losses | Satellite receiver/transponder input carrier power from incident PFD and receive aperture relation. | BOOK-MARAL, BOOK-BALANIS | Seeded |
+| LINK-120 | `G_transponder_dB = P_out_sat_dBW - P_in_sat_dBW` | transponder output and input carrier power | Effective bent-pipe transponder gain at the selected operating point. | BOOK-MARAL | Seeded |
+| LINK-121 | `OBO_dB = P_out_sat_dBW_sat - P_out_sat_dBW` | saturated and operating output powers | Output back-off from saturated transponder or HPA output. | BOOK-MARAL | Seeded |
+| LINK-122 | `EIRP_sat_oper_dBW = EIRP_sat_sat_dBW - OBO_dB` | saturated satellite EIRP and output back-off | Operating satellite EIRP after output back-off. | BOOK-MARAL | Seeded |
+| LINK-123 | `P_carrier_share_dB = -10log10(N_carriers)` | equal-power carrier count | Per-carrier power share for equal carriers in a multi-carrier transponder. | BOOK-MARAL | Seeded |
+| LINK-124 | `EIRP_sat_per_carrier_dBW = EIRP_sat_sat_dBW - OBO_total_dB - 10log10(N_carriers)` | saturated EIRP, aggregate OBO, equal carrier count | Per-carrier satellite EIRP in equal-carrier multi-carrier operation. | BOOK-MARAL | Seeded |
+| LINK-125 | `OBO_per_carrier_dB = OBO_total_dB + 10log10(N_carriers)` | aggregate OBO and carrier count | Per-carrier output back-off relative to saturated single-carrier EIRP. | BOOK-MARAL | Seeded |
+| LINK-126 | `(C/N0)_total_linear^-1 = (C/N0)_uplink_linear^-1 + (C/N0)_downlink_linear^-1` | uplink and downlink carrier-to-noise density ratios | Cascaded bent-pipe carrier-to-noise-density combination. Convert each dB-Hz term to linear Hz first. | BOOK-MARAL | Seeded |
+| LINK-127 | `(C/N)_total_linear^-1 = sum_i((C/N)_i_linear^-1)` | independent noise and impairment sections | Generic reciprocal summation for independent C/N contributors over the same reference bandwidth. | BOOK-MARAL, BOOK-SKLAR | Seeded |
+| LINK-128 | `(C/(N+I+IM))_linear^-1 = (C/N)_linear^-1 + (C/I)_linear^-1 + (C/IM)_linear^-1` | noise, interference, intermodulation ratios | Composite carrier quality when thermal noise, interference, and intermodulation are represented as independent carrier-relative impairments. | BOOK-MARAL | Seeded |
+| LINK-129 | `C_I_margin_dB = C_I_available_dB - C_I_required_dB` | available and required carrier-to-interference ratios | Interference margin for adjacent satellite, cross-polar, co-channel, or in-band interferers. | BOOK-MARAL, ITU-S465 | Seeded |
+| LINK-130 | `I_total_linear = sum_i(I_i_linear)` | individual interference powers at same reference point | Linear summation of independent interference powers before converting to C/I. | BOOK-MARAL, BOOK-SKLAR | Seeded |
+| LINK-131 | `C_I_total_dB = C_dBW - 10log10(I_total_linear_W)` | carrier power and total interference power | Total carrier-to-interference ratio from aggregated interference powers. | BOOK-MARAL | Seeded |
+| LINK-132 | `C_IM_dB = C_dBW - IM_dBW` | carrier and intermodulation distortion power | Carrier-to-intermodulation ratio from a selected HPA/transponder operating point or measured intermodulation product. | BOOK-MARAL | Procedure |
+| LINK-133 | `eta_hpa_oper ~= eta_hpa_sat*10^(-OBO_dB/10)` | saturated efficiency and output back-off | First-order HPA efficiency derating with RF output back-off; use measured HPA curves when available. | BOOK-MARAL | Procedure |
+| LINK-134 | `P_dc_hpa = P_rf_out/eta_hpa_oper` | RF output power and operating HPA efficiency | DC power required by an RF power amplifier at the selected operating point. | BOOK-MARAL, BOOK-SMAD | Seeded |
+| LINK-135 | `P_diss_hpa = P_dc_hpa - P_rf_out` | DC input and RF output power | Heat dissipated by the HPA for thermal and power subsystem sizing. | BOOK-MARAL, BOOK-SMAD | Seeded |
+| LINK-136 | `TransponderUtilization = sum_i(B_carrier_i)/B_transponder` | occupied carrier bandwidths and transponder bandwidth | Fraction of transponder bandwidth occupied by assigned carriers. | BOOK-MARAL | Seeded |
+| LINK-137 | `PowerUtilization = sum_i(P_carrier_i_linear)/P_transponder_oper_linear` | assigned carrier powers and available operating RF output power | Fraction of operating transponder RF power allocated to active carriers. | BOOK-MARAL | Seeded |
+| LINK-138 | `LinkAvailability = 1 - p_out_percent/100` | outage percentage of an average year | Converts propagation outage percentage to availability fraction. | ITU-P618, BOOK-MARAL | Seeded |
+| LINK-139 | `LinkAvailability_percent = 100 - p_out_percent` | outage percentage | Availability in percent of an average year. | ITU-P618, BOOK-MARAL | Seeded |
+| LINK-140 | `AnnualOutageTime = T_year*p_out_percent/100` | year duration and outage percentage | Expected annual link outage time associated with a propagation exceedance probability. | ITU-P618, BOOK-MARAL | Seeded |
+| LINK-141 | `p_out_percent = 100*AnnualOutageTime/T_year` | outage time and analysis year | Converts a target outage duration into outage percentage for propagation design. | ITU-P618, BOOK-MARAL | Seeded |
+| LINK-142 | `RequiredFadeMargin_p = FadeDepth(p_target_percent)` | target exceedance probability | Fade margin needed to meet a target availability once the P.618/ITU procedure produces fade depth. | ITU-P618 | Procedure |
+| LINK-143 | `p_out_margin = inverse_p(FadeDepth(p) = FadeMargin_dB)` | fade-margin threshold | Outage percentage implied by a fixed fade margin and a monotonic attenuation distribution. | ITU-P618, BOOK-MARAL | Procedure |
+| LINK-144 | `ResidualFadeMargin_p = FadeMargin_dB - FadeDepth(p_target_percent)` | margin and target-percentile fade depth | Availability-driven margin after reserving the fade depth for a target exceedance probability. | ITU-P618, BOOK-MARAL | Seeded |
+| LINK-145 | `P_out_div_ind = product_j(p_out_j_percent/100)` | independent site outage percentages | Independent-site approximation for simultaneous outage probability across diversity gateways. | ITU-P618, BOOK-MARAL | Procedure |
+| LINK-146 | `Availability_div_ind = 1 - P_out_div_ind` | simultaneous diversity outage probability | Availability of a site-diversity group under the independent-site approximation. | ITU-P618, BOOK-MARAL | Procedure |
+| LINK-147 | `DiversityImprovement = p_single_percent/p_diverse_percent` | same attenuation threshold | Improvement factor comparing single-site and site-diverse outage percentages at the same fade threshold. | ITU-P618 | Procedure |
+| LINK-148 | `DiversityGain_dB = A_single_site(p) - A_diverse(p)` | same target outage percentage | Diversity gain in dB at a fixed outage probability. | ITU-P618 | Procedure |
+| LINK-149 | `GatewayExpectedRate = sum_s Prob_state_s*NetRate_s` | weather/link states and state rates | Expected adaptive gateway throughput across propagation states. | BOOK-MARAL, ITU-P618 | Seeded |
+| LINK-150 | `GatewayOutageCapacityLoss = ClearSkyRate - GatewayExpectedRate` | clear-sky and expected rates | Average throughput loss caused by weather/fade state adaptation. | BOOK-MARAL, ITU-P618 | Seeded |
+| LINK-151 | `R_p = P837_RainRate(lat, lon, p_exceed)` | location and exceedance percentage | P.837 rain-rate climatology lookup/procedure used before P.838/P.618 rain attenuation. | ITU-P837, ITU-P618 | Procedure |
+| LINK-152 | `N_radio = (n_radio - 1)*1e6` | radio refractive index | Radio refractivity in N-units. | ITU-P453 | Seeded |
+| LINK-153 | `N_radio ~= 77.6*P_s/T_K + 3.73e5*e_wv/T_K^2` | pressure, water-vapour partial pressure, temperature | Common radio refractivity approximation used for propagation atmosphere characterization. | ITU-P453 | Procedure |
+| LINK-154 | `n_radio = 1 + N_radio*1e-6` | radio refractivity | Converts refractivity back to refractive index. | ITU-P453 | Seeded |
+| LINK-155 | `XPDMargin_dB = XPD_available_dB - XPD_required_dB` | available and required cross-polar discrimination | Cross-polarization margin for dual-polarized links or interference checks. | ITU-P618, BOOK-MARAL | Seeded |
+| LINK-156 | `I_xpol_W = I_copol_W*10^(-XPD_available_dB/10)` | co-polar interference and XPD | First-order cross-polar leakage power from a co-frequency opposite-polarization carrier. | ITU-P618, BOOK-MARAL | Procedure |
+| LINK-157 | `C_XPI_dB = C_dBW - 10log10(I_xpol_W)` | wanted carrier and cross-polar interference power | Carrier-to-cross-polar interference ratio after depolarization or polarization leakage. | ITU-P618, BOOK-MARAL | Procedure |
+| LINK-158 | `RayleighRequiredGammaBar = gamma_th / (-ln(1 - P_out_target))` | outage threshold and target outage probability | Average SNR required to meet a target outage probability under normalized Rayleigh flat fading. | BOOK-GOLDSMITH, BOOK-PROAKIS | Seeded |
+| LINK-159 | `RayleighOutageMargin_dB = gamma_bar_dB - 10log10(RayleighRequiredGammaBar)` | available and required average SNR | Margin against a target Rayleigh outage probability. | BOOK-GOLDSMITH | Seeded |
+| LINK-160 | `ShadowFadeDepth_p_dB = sigma_shadow_dB * Qinv(p_exceed/100)` | lognormal shadowing standard deviation and exceedance probability | Shadow-fade depth exceeded for `p_exceed` percent when shadowing is modeled as zero-mean Gaussian in dB. | BOOK-RAPPAPORT, BOOK-GOLDSMITH | Procedure |
+| LINK-161 | `ShadowLinkMargin_p = FadeMargin_dB - ShadowFadeDepth_p_dB` | available fade margin and shadow-fade depth | Remaining margin after reserving a lognormal shadowing percentile. | BOOK-RAPPAPORT, BOOK-GOLDSMITH | Seeded |
+| LINK-162 | `ShadowedPathLoss_p_dB = PL_d0_dB + 10*n_path*log10(d/d0) + ShadowFadeDepth_p_dB` | reference path loss, distance, path exponent, shadow percentile | Percentile log-distance path loss for a selected shadowing exceedance probability. | BOOK-RAPPAPORT | Seeded |
+| LINK-163 | `FrequencySelectivityRatio = SignalBandwidth / B_c_50` | signal bandwidth and coherence bandwidth | Engineering indicator for whether the channel is approximately flat or frequency selective over the signal bandwidth. | BOOK-RAPPAPORT, BOOK-GOLDSMITH | Seeded |
+| LINK-164 | `FrequencyFlatCondition = FrequencySelectivityRatio << 1` | signal bandwidth relative to coherence bandwidth | Qualitative flat-fading check; implementation should expose it as a warning/traffic-light output, not a hard universal threshold. | BOOK-RAPPAPORT, BOOK-GOLDSMITH | Procedure |
+| LINK-165 | `TimeSelectivityRatio = FrameDuration / T_c` | frame duration and coherence time | Indicator for whether the channel can be treated as quasi-static across a frame. | BOOK-GOLDSMITH | Seeded |
+| LINK-166 | `QuasiStaticFrameCondition = TimeSelectivityRatio << 1` | frame duration relative to coherence time | Qualitative block-fading validity check for frame-level link simulations. | BOOK-GOLDSMITH | Procedure |
+| LINK-167 | `CoherenceBlockSymbols ~= B_c_50 * T_c` | coherence bandwidth and coherence time | Approximate time-frequency coherence block size for interleaver, pilot, or adaptive-coding design. | BOOK-GOLDSMITH | Procedure |
+| LINK-168 | `DopplerSpreadTwoSided ~= 2*f_Dmax` | maximum Doppler shift | Approximate two-sided Doppler spread for isotropic mobile-scattering style models. | BOOK-RAPPAPORT, BOOK-GOLDSMITH | Seeded |
+| LINK-169 | `NormalizedDoppler = f_Dmax / R_s` | maximum Doppler shift and symbol rate | Doppler spread normalized to symbol rate; useful for receiver tracking and fading-simulation settings. | BOOK-RAPPAPORT, BOOK-GOLDSMITH | Seeded |
+| LINK-170 | `DelaySpreadISIRatio = sigma_tau / T_s` | RMS delay spread and symbol period | First-order indicator of intersymbol-interference risk from multipath delay spread. | BOOK-RAPPAPORT, BOOK-PROAKIS | Seeded |
+| LINK-171 | `CyclicPrefixMargin = T_cp - tau_max` | OFDM cyclic prefix and maximum excess delay | Remaining guard interval after covering the modeled maximum excess delay. | BOOK-PROAKIS, BOOK-GOLDSMITH | Seeded |
+| LINK-172 | `K_Rice_dB = 10log10(K_Rice)` | linear Rician K factor | Converts specular-to-diffuse Rician K factor into dB for UI and measurement comparison. | BOOK-RAPPAPORT, BOOK-GOLDSMITH | Seeded |
+| LINK-173 | `RayleighMedianPowerGain = ln(2)` | normalized Rayleigh power gain | Median normalized received power gain under Rayleigh fading. | BOOK-GOLDSMITH, BOOK-PROAKIS | Seeded |
+| LINK-174 | `RayleighMedianPowerFade_dB = 10log10(ln(2))` | normalized Rayleigh power gain | Median Rayleigh power fade relative to the average power, about -1.59 dB. | BOOK-GOLDSMITH | Seeded |
+| LINK-175 | `LCR_Rayleigh = sqrt(2*pi)*f_Dmax*rho*exp(-rho^2)` | normalized envelope threshold and Doppler shift | Rayleigh level-crossing rate for fade dynamics and outage burstiness estimates. | BOOK-RAPPAPORT, BOOK-GOLDSMITH | Procedure |
+| LINK-176 | `AFD_Rayleigh = (exp(rho^2)-1)/(sqrt(2*pi)*f_Dmax*rho)` | normalized envelope threshold and Doppler shift | Average fade duration for Rayleigh fading at a selected normalized threshold. | BOOK-RAPPAPORT, BOOK-GOLDSMITH | Procedure |
+| LINK-177 | `CompositeAvailability = product_l(LinkAvailability_l)` | serial link segment availabilities | End-to-end availability when all serial hops or segments must be simultaneously usable and segment outages are treated as independent. | BOOK-MARAL, ITU-P618 | Procedure |
+| LINK-178 | `CompositeOutage = 1 - CompositeAvailability` | end-to-end availability | End-to-end outage probability implied by serial-hop availability. | BOOK-MARAL | Seeded |
+| LINK-179 | `(C/N0)_multihop_linear^-1 = sum_l((C/N0)_l_linear^-1)` | independent hop carrier-to-noise-density terms | Multi-hop reciprocal `C/N0` degradation for independent regenerative-equivalent or transparent sections using a common reference. | BOOK-MARAL, BOOK-SKLAR | Procedure |
+| LINK-180 | `ISL_FSPL_dB = 20log10(4*pi*R_isl/lambda_isl)` | inter-satellite distance and wavelength | Free-space spreading loss for an inter-satellite link segment. | ITU-P525, BOOK-MARAL | Seeded |
+| LINK-181 | `CarrierPowerAllocationFraction_i = P_carrier_i_linear / sum_j(P_carrier_j_linear)` | non-equal carrier powers | Fraction of aggregate transponder RF power assigned to carrier `i`. | BOOK-MARAL | Seeded |
+| LINK-182 | `EIRP_sat_carrier_i_dBW = EIRP_sat_oper_dBW + 10log10(CarrierPowerAllocationFraction_i)` | operating EIRP and carrier allocation fraction | Per-carrier satellite EIRP for non-equal carrier allocation. | BOOK-MARAL | Seeded |
+
+## Modulation, Baseband, and Digital Communication
+
+| ID | Formula | Variables | Explanation | Source family | Status |
+| --- | --- | --- | --- | --- | --- |
+| BB-001 | `f_s >= 2 B` | `f_s`: sampling frequency; `B`: signal bandwidth | Nyquist sampling condition. | BOOK-SKLAR | Seeded |
+| BB-002 | `SNR_q_dB ~= 6.02 N + 1.76` | `N`: ADC bits | Ideal full-scale uniform quantization SNR for a sine wave. | BOOK-SKLAR | Seeded |
+| BB-003 | `R_pcm = f_s N n_ch` | `n_ch`: channel count | PCM source bit rate before framing/compression. | BOOK-SKLAR, IRIG/PCM practice | Seeded |
+| BB-004 | `M = 2^m` | `m`: bits per symbol | Modulation order relationship. | BOOK-SKLAR | Seeded |
+| BB-005 | `R_s = R_b / (m R_c)` | `R_s`: symbol rate; `R_b`: information bit rate; `R_c`: code rate | Symbol rate after coding and modulation. | BOOK-SKLAR, CCSDS-401 | Implemented |
+| BB-006 | `B_occ ~= (1 + alpha) R_s` | `alpha`: raised-cosine rolloff | Occupied bandwidth estimate for raised-cosine shaped signal. | BOOK-SKLAR, CCSDS-401 | Implemented |
+| BB-007 | `eta_s = R_info / B_occ` | `eta_s`: spectral efficiency bps/Hz | Measures useful information rate per Hz. | BOOK-SKLAR | Implemented |
+| BB-008 | `EVM_rms ~= 1/sqrt(SNR_linear)` | EVM as ratio | Approximate EVM-to-SNR relation for AWGN-dominated links. | BOOK-SKLAR | Seeded |
+| BB-009 | `BER_BPSK = Q(sqrt(2 Eb/N0))` | `Q`: Gaussian Q-function | Coherent BPSK BER in AWGN. | BOOK-SKLAR | Seeded |
+| BB-010 | `BER_QPSK ~= Q(sqrt(2 Eb/N0))` | Gray-coded QPSK | Coherent QPSK bit error approximation in AWGN. | BOOK-SKLAR | Seeded |
+| BB-011 | `SER_MPSK ~= 2 Q(sqrt(2 Es/N0) sin(pi/M))` | `M`: PSK order | M-PSK symbol error approximation. | BOOK-SKLAR | Seeded |
+| BB-012 | `BER_MQAM ~= 4/log2(M) (1-1/sqrt(M)) Q(sqrt(3 log2(M)/(M-1) Eb/N0))` | square M-QAM | Common high-SNR AWGN approximation. | BOOK-SKLAR | Seeded |
+| BB-013 | `PER = 1 - (1 - BER)^N` | `N`: packet/frame bits | Converts independent bit error probability to packet error probability. | BOOK-SKLAR | Seeded |
+| BB-014 | `BER ~= 1 - (1 - PER)^(1/N)` | `PER`: packet error rate | Inverts PER to average BER under independence assumption. | BOOK-SKLAR | Seeded |
+| BB-015 | `R_coded = R_info / R_c` | `R_c`: code rate | Encoded bit stream rate. | CCSDS-131, CCSDS-231 | Implemented |
+| BB-016 | `Latency_interleaver ~= depth * block_bits / R_info` | `depth`: interleaver depth | First-order interleaver latency estimate. | CCSDS-131, BOOK-SKLAR | Implemented |
+| BB-017 | `Processing gain = 10log10(R_chip / R_data)` | spread-spectrum rates | Direct-sequence spread-spectrum processing gain. | CCSDS-415, BOOK-SKLAR | Seeded |
+| BB-018 | `ConvOutSymbols = InfoBits / r_conv` | `r_conv`: 1/2, 2/3, 3/4, 5/6, or 7/8 | CCSDS TM convolutional encoder output symbols for the selected managed rate. | CCSDS-131 | Seeded |
+| BB-019 | `ConvExpansion = 1 / r_conv` | convolutional coding rate | Physical symbol expansion before modulation. Basic CCSDS convolutional coding is rate 1/2, K=7; punctured rates are higher. | CCSDS-131 | Seeded |
+| BB-020 | `RS_n = 2^J - 1` | `J=8` bits per R-S symbol | CCSDS TM Reed-Solomon codeword length in symbols; with J=8, `RS_n=255`. | CCSDS-131 | Seeded |
+| BB-021 | `RS_k = RS_n - 2E` | `E`: 8 or 16 symbols | CCSDS TM Reed-Solomon information symbols per codeword. Gives (255,239) for E=8 and (255,223) for E=16. | CCSDS-131 | Seeded |
+| BB-022 | `RS_CheckBits = 2 * E * I * J` | `I`: interleaving depth | Reed-Solomon check-symbol length for an interleaved codeblock. | CCSDS-131 | Seeded |
+| BB-023 | `RS_CodeblockBits = RS_n * I * J` | R-S codeword length and interleaving depth | Maximum interleaved Reed-Solomon codeblock length. | CCSDS-131 | Seeded |
+| BB-024 | `RS_InfoBits = (RS_k - q_rs) * I * J` | `q_rs`: virtual fill symbols per R-S codeword | Transmitted information-space bits after shortening by virtual fill. | CCSDS-131 | Seeded |
+| BB-025 | `RS_Efficiency = RS_InfoBits / RS_CodeblockBits` | R-S information and full codeblock bits | Coding efficiency including interleaving and virtual fill. | CCSDS-131 | Seeded |
+| BB-026 | `TurboCodewordBits = (k_turbo + 4) / r_turbo` | `r_turbo`: 1/2, 1/3, 1/4, or 1/6 | CCSDS TM Turbo codeword length including four trellis-termination bit times. | CCSDS-131 | Seeded |
+| BB-027 | `TurboTrueRate = k_turbo / TurboCodewordBits` | information bits and transmitted codeword bits | True rate is slightly below nominal rate because of trellis termination. | CCSDS-131 | Seeded |
+| BB-028 | `LDPC_EffectiveRate = k_ldpc / n_ldpc` | selected LDPC table row | Effective LDPC rate from the exact CCSDS table values. Nominal labels such as 7/8 should not be used to derive `n_ldpc` by algebra alone. | CCSDS-131 | Procedure |
+| BB-029 | `LDPC_StreamCodeblockBits = m_ldpc * n_ldpc` | `m_ldpc`: codewords per LDPC codeblock | Codeblock length for LDPC coding of a stream of Sync-Marked Transfer Frames. | CCSDS-131 | Seeded |
+| BB-030 | `LDPC_StreamInfoBits = m_ldpc * k_ldpc` | slice length and codeblock size | Information bits consumed by one stream-LDPC codeblock. | CCSDS-131 | Seeded |
+| BB-031 | `T_s = 1 / R_s` | symbol rate | Symbol period. | BOOK-SKLAR, BOOK-PROAKIS, DESCANSO-DSTSE | Seeded |
+| BB-032 | `T_b = 1 / R_b` | bit rate | Bit period. | BOOK-SKLAR, BOOK-PROAKIS | Seeded |
+| BB-033 | `E_b = S_data / R_b` | data-sideband power and bit rate | Received or transmitted energy per information bit, depending on the selected reference point. | BOOK-SKLAR, DESCANSO-DSTSE | Seeded |
+| BB-034 | `E_s = S_data / R_s` | data-sideband power and symbol rate | Energy per modulation symbol. | BOOK-SKLAR, BOOK-PROAKIS | Seeded |
+| BB-035 | `E_s/N0_dB = E_b/N0_dB + 10log10(m * R_c)` | bits per symbol and coding rate | Converts information-bit energy metric to coded modulation symbol metric. | BOOK-SKLAR, BOOK-PROAKIS | Seeded |
+| BB-036 | `E_b/N0_dB = C/N0_dBHz - 10log10(R_b)` | carrier-to-noise density and bit rate | Same relationship used by link-budget calculators, kept here as a baseband performance metric. | BOOK-SKLAR, DESCANSO-DSTSE | Seeded |
+| BB-037 | `C/N_dB = C/N0_dBHz - 10log10(B_n)` | receiver noise bandwidth | Carrier-to-noise ratio in a finite noise bandwidth. | BOOK-SKLAR, BOOK-HAYKIN | Seeded |
+| BB-038 | `SNR_linear = (E_b/N0) * (R_b / B_n)` | bit-energy metric and noise bandwidth | Relates bit-energy metric to measured SNR in bandwidth. | BOOK-SKLAR, BOOK-HAYKIN | Seeded |
+| BB-039 | `C = B * log2(1 + SNR_linear)` | bandwidth and SNR | Shannon-Hartley capacity upper bound. | BOOK-SKLAR, BOOK-HAYKIN | Seeded |
+| BB-040 | `eta_capacity = log2(1 + SNR_linear)` | SNR | Ideal spectral efficiency upper bound in bit/s/Hz. | BOOK-SKLAR, BOOK-HAYKIN | Seeded |
+| BB-041 | `SNR_required = 2^eta_s - 1` | target spectral efficiency | Shannon-limit SNR needed for a target spectral efficiency. | BOOK-SKLAR, BOOK-HAYKIN | Seeded |
+| BB-042 | `B_Nyquist_min = R_s / 2` | ideal zero-rolloff baseband signaling | Minimum one-sided baseband bandwidth for ideal Nyquist pulses. | BOOK-SKLAR, BOOK-PROAKIS | Seeded |
+| BB-043 | `B_RC_baseband = (1 + alpha) * R_s / 2` | raised-cosine rolloff | One-sided baseband raised-cosine bandwidth. | BOOK-SKLAR, BOOK-PROAKIS | Seeded |
+| BB-044 | `B_RC_passband ~= (1 + alpha) * R_s` | passband raised-cosine signal | Approximate occupied passband bandwidth for raised-cosine shaped digital modulation. | BOOK-SKLAR, CCSDS-401 | Seeded |
+| BB-045 | `samples_per_symbol = f_s / R_s` | sampling and symbol rates | Digital receiver/transmitter oversampling ratio. | BOOK-SKLAR, BOOK-HAYKIN | Seeded |
+| BB-046 | `Delta_q = V_FS / 2^N_bits` | full-scale quantizer range and ADC bits | Uniform quantizer step size. | BOOK-SKLAR, BOOK-HAYKIN | Seeded |
+| BB-047 | `sigma_q^2 = Delta_q^2 / 12` | quantizer step size | Uniform quantization-noise variance under high-resolution assumptions. | BOOK-SKLAR, BOOK-HAYKIN | Seeded |
+| BB-048 | `ENOB = (SNR_q_dB - 1.76) / 6.02` | quantization SNR | Effective number of bits from measured or target SNR. | BOOK-SKLAR, BOOK-HAYKIN | Seeded |
+| BB-049 | `PAPR_dB = 10log10(P_peak / P_avg)` | peak and average signal power | Peak-to-average power ratio, important for OFDM and saturated transmit chains. | BOOK-SKLAR | Seeded |
+| BB-050 | `MatchedFilterOutput_k = integral(r(t) * s_k(t) dt)` | received waveform and candidate signal | Correlation or matched-filter decision statistic for symbol detection. | BOOK-PROAKIS, DESCANSO-DSTSE | Procedure |
+| BB-051 | `P_e_binary = Q(sqrt(2*E_b/N0)) = 0.5*erfc(sqrt(E_b/N0))` | coherent antipodal binary signaling | Coherent BPSK/antipodal bit error probability in AWGN. | BOOK-PROAKIS, DESCANSO-DSTSE | Seeded |
+| BB-052 | `Q(x) = 0.5*erfc(x/sqrt(2))` | Gaussian Q-function | Relation between Gaussian Q-function and complementary error function. | BOOK-SKLAR, BOOK-PROAKIS | Seeded |
+| BB-053 | `P_b_DPSK = 0.5*exp(-E_b/N0)` | differential binary PSK | Noncoherent/differential binary PSK bit error probability in AWGN. | BOOK-SKLAR, BOOK-PROAKIS | Seeded |
+| BB-054 | `P_b_MFSK_noncoh ~= 0.5*exp(-E_b/(2*N0))` | binary orthogonal FSK approximation | First-cut noncoherent orthogonal binary FSK error approximation; exact M-ary expressions are table/procedure candidates. | BOOK-SKLAR, BOOK-PROAKIS | Procedure |
+| BB-055 | `Delta_f_subcarrier = 1 / T_u` | useful OFDM symbol duration | Orthogonal OFDM subcarrier spacing. | BOOK-SKLAR | Seeded |
+| BB-056 | `T_ofdm = T_u + T_cp` | useful symbol and cyclic prefix | Total OFDM symbol duration including cyclic prefix. | BOOK-SKLAR | Seeded |
+| BB-057 | `CP_Overhead = T_cp / (T_u + T_cp)` | cyclic prefix duration | OFDM cyclic-prefix overhead fraction. | BOOK-SKLAR | Seeded |
+| BB-058 | `OFDM_NetRate = N_data_subcarriers * bits_per_subcarrier * code_rate / T_ofdm` | OFDM subcarriers and coding | Net coded payload rate before pilots, framing, and higher-layer overhead. | BOOK-SKLAR | Seeded |
+| BB-059 | `PhaseError_rms = 2*pi*f_c*sigma_t` | carrier frequency and timing jitter | RMS phase error induced by timing jitter. | BOOK-SKLAR, BOOK-HAYKIN | Seeded |
+| BB-060 | `SNR_phase_limit ~= 1 / sigma_phase^2` | small phase jitter in radians | Approximate SNR limit from RMS phase noise/jitter. | BOOK-SKLAR, BOOK-HAYKIN | Procedure |
+| BB-061 | `FreqOffsetPhase = 2*pi*Delta_f*T_obs` | frequency offset and observation time | Phase rotation accumulated from carrier frequency offset. | BOOK-SKLAR, DESCANSO-DSTSE | Seeded |
+| BB-062 | `MIMO_C = log2(det(I_Nr + rho/Nt * H*H^H))` | channel matrix, SNR, antennas | Flat-fading MIMO capacity model with equal power allocation. | BOOK-SKLAR, BOOK-PROAKIS | Procedure |
+| BB-063 | `QPSK_I_bit_i = b_(2i); QPSK_Q_bit_i = b_(2i+1)` | serial bit stream and symbol index | CCSDS QPSK input splitting: even bits feed the I channel and odd bits feed the Q channel. | CCSDS-401 | Seeded |
+| BB-064 | `QPSKPhase_deg(I,Q) = {45,135,225,315} for IQ={00,10,11,01}` | I/Q bit pair | CCSDS QPSK phase-state convention with Gray-adjacent 90-degree phase errors. | CCSDS-401 | Seeded |
+| BB-065 | `PhaseImbalanceMargin_deg = PhaseLimit_deg - abs(PhaseImbalance_deg)` | modulator phase imbalance and selected limit | Compliance margin for RF or subcarrier modulator phase imbalance. Typical CCSDS 401 limits are 5 deg, 3 deg, or 2 deg depending on modulation family and section. | CCSDS-401 | Seeded |
+| BB-066 | `AmplitudeImbalanceMargin_dB = AmpLimit_dB - abs(AmplitudeImbalance_dB)` | modulator amplitude imbalance and selected limit | Compliance margin for RF or subcarrier modulator amplitude imbalance. CCSDS 401 gives 0.5 dB for many suppressed-carrier modulators and 0.2 dB for spacecraft subcarrier modulators. | CCSDS-401 | Seeded |
+| BB-067 | `SubcarrierRatio = f_sc / R_cs` | subcarrier frequency and coded symbol rate | Telemetry subcarrier frequency-to-coded-symbol-rate ratio for PCM/PSK/PM residual-carrier checks. | CCSDS-401 | Seeded |
+| BB-068 | `SubcarrierRatioError = abs(SubcarrierRatio - round(SubcarrierRatio))` | subcarrier ratio | Deviation from the integer subcarrier-ratio condition recommended by CCSDS 401. | CCSDS-401 | Seeded |
+| BB-069 | `CodedSymbolRateOffset_ppm = 1e6*(R_cs_meas - R_cs_nom)/R_cs_nom` | measured and nominal coded symbol rates | Converts coded-symbol-rate offset to ppm for suppressed-carrier telemetry stability checks. | CCSDS-401 | Seeded |
+| BB-070 | `SymbolRateOffsetMargin_ppm = OffsetLimit_ppm - abs(CodedSymbolRateOffset_ppm)` | ppm offset and CCSDS limit | Margin to the CCSDS 401 maximum coded-symbol-rate offset limit; the common suppressed-carrier telemetry limit is 100 ppm. | CCSDS-401 | Seeded |
+| BB-071 | `SymbolRateStabilityMargin = StabilityLimit - abs(Delta_R_cs/R_cs)` | fractional coded symbol rate variation | Short-term or long-term coded-symbol-rate stability margin. CCSDS 401 lists `1e-6` and `1e-5` reference limits for suppressed-carrier telemetry. | CCSDS-401 | Seeded |
+| BB-072 | `B_3dB = BTS * R_cs` | GMSK bandwidth-time product and coded symbol rate | Converts a GMSK or filtered-OQPSK `BTS` value to one-sided 3-dB filter bandwidth because `T_s=1/R_cs`. | CCSDS-401 | Seeded |
+| BB-073 | `SignalingEfficiency = R_source / R_chs` | source bit rate and channel symbol rate | CCSDS 401 high-rate telemetry signaling efficiency, useful for comparing bandwidth-efficient modulation options. | CCSDS-401 | Seeded |
+| BB-074 | `GroupDelayVariationFraction = tau_g_variation / T_s` | in-band group-delay variation and signal duration | Expresses channel group-delay variation as a fraction of symbol duration; CCSDS 401 high-rate EES text uses 10 percent as an acceptable reference value. | CCSDS-401 | Seeded |
+| BB-075 | `AMPMMargin_deg_per_dB = AMPM_Limit_deg_per_dB - AMPM_Slope_deg_per_dB` | amplifier AM/PM conversion slope | Margin to the CCSDS 401 high-rate modulation AM/PM slope limit, commonly 5 deg/dB unless receiver equalization is applied. | CCSDS-401 | Seeded |
+| BB-076 | `SubcarrierFrequencyOffsetMargin_Hz = OffsetFractionLimit*f_sc - abs(Delta_f_sc)` | subcarrier frequency and measured offset | Margin to telecommand or telemetry subcarrier frequency-offset limits such as `2e-4*f_sc` or 200 ppm. | CCSDS-401 | Seeded |
+| BB-077 | `R_chs = R_cs` | Proximity-1 channel and coded symbol rates | Proximity-1 Physical Layer relationship for the specified Bi-Phase-L or bypass modulation scheme. | CCSDS-211.1, ISO-21460 | Seeded |
+| BB-078 | `ProxRcsError = min(abs(R_cs - R_cs_allowed_i))` | selected coded symbol rate and allowed-rate table | Validation distance to the Proximity-1 Physical Layer discrete coded-symbol-rate set, 1000 through 4096000 symbols/s by powers of two. | CCSDS-211.1, ISO-21460 | Seeded |
+| BB-079 | `ChannelSymbolRateOffset = abs(R_chs_meas - R_chs_nom) / R_chs_nom` | measured and nominal channel symbol rates | Fractional channel-symbol-rate offset for Proximity-1 physical-layer acquisition/compliance checks. | CCSDS-211.1, ISO-21460 | Seeded |
+| BB-080 | `ProxChannelOffsetMargin = 0.001 - ChannelSymbolRateOffset` | channel-symbol-rate offset | Margin to the Proximity-1 physical-layer channel-symbol-rate offset limit of less than 0.1 percent. | CCSDS-211.1 | Seeded |
+| BB-081 | `ProxShortTermStabilityMargin = 0.01 - abs(Delta_R_chs/R_chs)` | short-term channel-symbol-rate variation | Margin to the Proximity-1 short-term channel-symbol-rate stability value of 1 percent. | CCSDS-211.1 | Seeded |
+| BB-082 | `ErrorVector_i = r_i - s_ref_i` | measured symbol and ideal reference symbol | Complex error vector for constellation quality measurements. | BOOK-SKLAR, BOOK-PROAKIS | Seeded |
+| BB-083 | `EVM_rms = sqrt(sum_i abs(ErrorVector_i)^2 / sum_i abs(s_ref_i)^2)` | error vectors and reference constellation symbols | RMS error vector magnitude normalized to the reference constellation energy. | BOOK-SKLAR, BOOK-PROAKIS | Seeded |
+| BB-084 | `MER_dB = -20log10(EVM_rms)` | RMS EVM ratio | Modulation error ratio derived from EVM. | BOOK-SKLAR, BOOK-HAYKIN | Seeded |
+| BB-085 | `EVM_total = sqrt(EVM_noise^2 + EVM_phase^2 + EVM_iq^2 + EVM_nonlinear^2 + ...)` | independent EVM contributors | RSS combination for independent implementation impairments. | BOOK-SKLAR, BOOK-HAYKIN | Procedure |
+| BB-086 | `Decision(r_i) = argmin_k abs(r_i - s_k)^2` | received symbol and constellation points | Nearest-neighbor hard decision rule in Euclidean signal space. | BOOK-PROAKIS, BOOK-SKLAR | Seeded |
+| BB-087 | `d_min = min_{i!=j} abs(s_i - s_j)` | constellation points | Minimum Euclidean constellation distance for uncoded detection and design comparisons. | BOOK-PROAKIS | Seeded |
+| BB-088 | `LLR_b(r)=ln(sum_{s in S_b0} exp(-abs(r-s)^2/N0) / sum_{s in S_b1} exp(-abs(r-s)^2/N0))` | received symbol, bit partitions, noise density | Exact AWGN soft-bit log-likelihood ratio for a constellation bit position. | BOOK-PROAKIS, BOOK-SKLAR | Procedure |
+| BB-089 | `LLR_maxlog_b(r)=(min_{s in S_b1} abs(r-s)^2 - min_{s in S_b0} abs(r-s)^2)/N0` | received symbol, bit partitions, noise density | Max-log approximation for soft demapping. | BOOK-PROAKIS, BOOK-SKLAR | Procedure |
+| BB-090 | `p_Nyquist(n*T_s)=1 if n=0 else 0` | pulse response sampled at symbol instants | Nyquist zero-ISI pulse condition. | BOOK-PROAKIS, BOOK-SKLAR | Seeded |
+| BB-091 | `H_RC(f)=piecewise(T_s, abs(f)<=f1; T_s/2*(1+cos(pi*T_s/alpha*(abs(f)-f1))), f1<abs(f)<=f2; 0 otherwise)` | `f1=(1-alpha)/(2*T_s)`, `f2=(1+alpha)/(2*T_s)` | Raised-cosine frequency response. | BOOK-PROAKIS, BOOK-SKLAR | Procedure |
+| BB-092 | `H_RRC(f)=sqrt(H_RC(f))` | raised-cosine response | Root-raised-cosine matched-filter response pair whose cascade gives raised-cosine shaping. | BOOK-PROAKIS, BOOK-SKLAR | Seeded |
+| BB-093 | `BT_loop = B_loop_Hz*T_s` | loop bandwidth and symbol period | Normalized synchronization-loop bandwidth in cycles per symbol. | BOOK-GARDNER, BOOK-MENGALI | Seeded |
+| BB-094 | `B_loop_Hz = omega_n/(4*pi)*(zeta + 1/(4*zeta))` | natural radian frequency and damping factor | Second-order loop noise-bandwidth approximation in hertz. | BOOK-GARDNER | Procedure |
+| BB-095 | `omega_n = 4*pi*B_loop_Hz/(zeta + 1/(4*zeta))` | loop bandwidth and damping factor | Natural radian frequency from loop noise bandwidth and damping factor. | BOOK-GARDNER | Seeded |
+| BB-096 | `T_settle_2pct ~= 4/(zeta*omega_n)` | damping factor and natural radian frequency | Approximate two-percent settling time for a second-order loop model. | BOOK-GARDNER | Seeded |
+| BB-097 | `M_overshoot = exp(-pi*zeta/sqrt(1-zeta^2))` | damping factor less than one | Step-response overshoot of an underdamped second-order loop approximation. | BOOK-GARDNER | Seeded |
+| BB-098 | `e_Gardner[k]=Re((y_{k-1/2}-y_{k+1/2})*conj(y_k))` | half-symbol-spaced matched-filter samples | Gardner timing-error detector form for two-samples-per-symbol timing recovery. | BOOK-MENGALI, BOOK-GARDNER | Procedure |
+| BB-099 | `e_MM[k]=Re(conj(a_hat_{k-1})*y_k - conj(a_hat_k)*y_{k-1})` | symbol samples and detected symbols | Mueller-Muller timing-error detector form for decision-directed timing recovery. | BOOK-MENGALI | Procedure |
+| BB-100 | `e_EL[k]=abs(y(t_k+Delta_EL))^2 - abs(y(t_k-Delta_EL))^2` | early and late samples around a timing hypothesis | Early-late timing-error detector energy difference. | BOOK-MENGALI, BOOK-GARDNER | Procedure |
+| BB-101 | `e_Costas_BPSK = I_k*Q_k` | in-phase and quadrature matched-filter outputs | BPSK Costas-loop phase detector near lock. | BOOK-GARDNER, BOOK-MENGALI | Procedure |
+| BB-102 | `theta_hat_MPSK = angle(sum_k r_k^M)/M` | M-PSK received symbols | Mth-power carrier-phase estimate that removes M-PSK data modulation under ideal assumptions. | BOOK-MENGALI, BOOK-PROAKIS | Procedure |
+| BB-103 | `DFL_Max = K_bch - 80` | DVB-S2 BCH information length | Maximum DVB-S2 baseband data-field length after the 80-bit BBHEADER. | CCSDS-131.3, ETSI-DVBS2 | Seeded |
+| BB-104 | `BBPaddingBits = max(0, K_bch - 80 - DFL)` | selected data-field length and BCH information length | Padding bits required to fill one DVB-S2 BBFRAME before BCH encoding. | CCSDS-131.3, ETSI-DVBS2 | Seeded |
+| BB-105 | `BBFrameBits = 80 + DFL + BBPaddingBits` | BBHEADER, data-field length, padding | DVB-S2 BBFRAME length delivered to the BCH encoder; normally equals `K_bch`. | CCSDS-131.3, ETSI-DVBS2 | Seeded |
+| BB-106 | `BCHParityBits = N_bch - K_bch` | BCH codeword and information lengths | BCH outer-code parity bits in a DVB-S2 FECFRAME. | CCSDS-131.3, ETSI-DVBS2 | Seeded |
+| BB-107 | `LDPCParityBits = N_ldpc - N_bch` | LDPC frame and BCH codeword lengths | LDPC inner-code parity bits appended after BCH encoding. | CCSDS-131.3, ETSI-DVBS2 | Seeded |
+| BB-108 | `DVB_FECFrameEfficiency = K_bch / N_ldpc` | BCH information length and LDPC frame length | FECFRAME coding efficiency for a selected DVB-S2 MODCOD row. | CCSDS-131.3, ETSI-DVBS2 | Seeded |
+| BB-109 | `DVB_FECFrameOverhead = (N_ldpc - K_bch) / K_bch` | BCH information length and LDPC frame length | FEC overhead relative to BBFRAME information capacity. | CCSDS-131.3, ETSI-DVBS2 | Seeded |
+| BB-110 | `DVB_ModulatedSymbols = N_ldpc / m` | LDPC frame length and bits per modulation symbol | Number of modulation symbols carrying one DVB-S2 FECFRAME. | CCSDS-131.3, ETSI-DVBS2 | Seeded |
+| BB-111 | `DVB_PLSLOTS = N_ldpc / (90*m)` | LDPC frame length and modulation order | DVB-S2 physical-layer slot count, with 90 modulation symbols per slot. | CCSDS-131.3, ETSI-DVBS2 | Seeded |
+| BB-112 | `DVB_PilotBlocks = PilotEnabled ? floor((DVB_PLSLOTS - 1)/16) : 0` | physical-layer slots and pilot mode | Number of 36-symbol pilot blocks inserted after each 16-slot group, excluding the end boundary. | CCSDS-131.3, ETSI-DVBS2 | Procedure |
+| BB-113 | `DVB_PLFrameSymbols = 90 + 90*DVB_PLSLOTS + 36*DVB_PilotBlocks` | PLHEADER, payload slots, pilot blocks | Total modulation symbols in one DVB-S2 PLFRAME. | CCSDS-131.3, ETSI-DVBS2 | Seeded |
+| BB-114 | `DVB_FrameDuration = DVB_PLFrameSymbols / R_sym` | PLFRAME symbols and symbol rate | Duration of one DVB-S2 physical-layer frame. | CCSDS-131.3, ETSI-DVBS2 | Seeded |
+| BB-115 | `DVB_PHYEfficiency_bpsym = DFL / DVB_PLFrameSymbols` | data-field bits and PLFRAME symbols | Net user-data efficiency in bits per transmitted modulation symbol for the selected PLFRAME. | CCSDS-131.3, ETSI-DVBS2 | Seeded |
+| BB-116 | `DVB_OccupiedBandwidth ~= (1 + alpha) * R_sym` | rolloff and symbol rate | First-order occupied bandwidth for DVB-S2 shaped transmission. | CCSDS-131.3, ETSI-DVBS2, BOOK-SKLAR | Seeded |
+| BB-117 | `DVB_SpectralEfficiency_bpsHz ~= DVB_PHYEfficiency_bpsym / (1 + alpha)` | physical-layer efficiency and rolloff | Net data spectral efficiency after PLFRAME overhead, pilots, and rolloff. | CCSDS-131.3, ETSI-DVBS2 | Seeded |
+| BB-118 | `DVB_NetBitRate = R_sym * DVB_PHYEfficiency_bpsym` | symbol rate and physical-layer efficiency | Net data-field bit rate for a selected DVB-S2 MODCOD and pilot setting. | CCSDS-131.3, ETSI-DVBS2 | Seeded |
+| BB-119 | `DVB_PLHeaderFraction = 90 / DVB_PLFrameSymbols` | PLHEADER and frame symbols | Fraction of PLFRAME symbols occupied by the DVB-S2 physical-layer header. | CCSDS-131.3, ETSI-DVBS2 | Seeded |
+| BB-120 | `DVB_PilotOverhead = 36*DVB_PilotBlocks / DVB_PLFrameSymbols` | pilot blocks and frame symbols | Fraction of PLFRAME symbols occupied by pilot blocks. | CCSDS-131.3, ETSI-DVBS2 | Seeded |
+| BB-121 | `P_s_coh_MPSK ~= 2*Q(sqrt(2*E_s/N0)*sin(pi/M))` | coherent M-PSK order and symbol energy | Union-bound/high-SNR symbol error approximation for coherent M-PSK in AWGN. | BOOK-SKLAR, BOOK-PROAKIS | Seeded |
+| BB-122 | `P_b_gray_MPSK ~= P_s_coh_MPSK / log2(M)` | Gray-coded M-PSK | Approximate bit error probability from symbol error probability when nearest-neighbor errors dominate. | BOOK-SKLAR, BOOK-PROAKIS | Procedure |
+| BB-123 | `P_s_square_MQAM ~= 1 - (1 - 2*(1-1/sqrt(M))*Q(sqrt(3*E_s/((M-1)*N0))))^2` | square M-QAM constellation | Approximate symbol error probability for square coherent M-QAM in AWGN. | BOOK-SKLAR, BOOK-PROAKIS | Seeded |
+| BB-124 | `P_b_square_MQAM ~= P_s_square_MQAM / log2(M)` | Gray-coded square M-QAM | Approximate bit error probability for square QAM when nearest-neighbor Gray errors dominate. | BOOK-SKLAR, BOOK-PROAKIS | Procedure |
+| BB-125 | `P_b_BFSK_coh = Q(sqrt(E_b/N0))` | coherent binary orthogonal FSK | Coherent orthogonal BFSK bit error probability in AWGN. | BOOK-SKLAR, BOOK-PROAKIS | Seeded |
+| BB-126 | `P_b_BFSK_noncoh = 0.5*exp(-E_b/(2*N0))` | noncoherent binary orthogonal FSK | Noncoherent orthogonal BFSK bit error probability in AWGN. | BOOK-SKLAR, BOOK-PROAKIS | Seeded |
+| BB-127 | `P_s_MFSK_noncoh = sum_{k=1}^{M-1}((-1)^(k+1)*C(M-1,k)/(k+1)*exp(-k*E_s/((k+1)*N0)))` | noncoherent orthogonal M-FSK | Exact series form for noncoherent orthogonal M-FSK symbol error probability in AWGN. | BOOK-SKLAR, BOOK-PROAKIS | Procedure |
+| BB-128 | `P_b_orthogonal_MFSK ~= (2^(m-1)/(2^m-1))*P_s_MFSK` | orthogonal M-FSK with equiprobable symbols | Converts orthogonal M-FSK symbol error probability to an average bit error approximation. | BOOK-SKLAR, BOOK-PROAKIS | Procedure |
+| BB-129 | `P_b_OOK_coh = Q(sqrt(E_b/(2*N0)))` | coherent on-off keying | Coherent OOK/ASK bit error probability under equal priors and optimum threshold assumptions. | BOOK-SKLAR, BOOK-PROAKIS | Seeded |
+| BB-130 | `P_b_OOK_noncoh ~= 0.5*exp(-E_b/(2*N0))` | noncoherent OOK envelope detection | Common first-cut noncoherent OOK bit error approximation in AWGN. | BOOK-SKLAR | Procedure |
+| BB-131 | `P_b_DQPSK_approx ~= Q(sqrt(2*E_b/N0)*sin(pi/4))` | differential QPSK | Approximate DQPSK bit error relationship using adjacent differential phase decisions. | BOOK-SKLAR, BOOK-PROAKIS | Procedure |
+| BB-132 | `P_b_BPSK_Rician ~= E_gamma[Q(sqrt(2*gamma_inst))]` | Rician instantaneous SNR distribution | Average coherent BPSK BER over a Rician fading channel as an expectation over the fading SNR distribution. | BOOK-GOLDSMITH, BOOK-PROAKIS | Procedure |
+| BB-133 | `P_b_BPSK_MRC_L = E[Q(sqrt(2*sum_{l=1}^{L_div} gamma_l))]` | independent diversity branch SNRs | Coherent BPSK BER with maximal-ratio combining expressed through combined instantaneous SNR. | BOOK-GOLDSMITH, BOOK-PROAKIS | Procedure |
+| BB-134 | `gamma_MRC = sum_{l=1}^{L_div} gamma_l` | diversity branch SNRs | Output SNR of ideal maximal-ratio combining for independent branches. | BOOK-GOLDSMITH | Seeded |
+| BB-135 | `gamma_SC = max_l(gamma_l)` | diversity branch SNRs | Output SNR of selection combining. | BOOK-GOLDSMITH | Seeded |
+| BB-136 | `P_out_MRC_rayleigh = 1 - exp(-gamma_th/gamma_bar)*sum_{k=0}^{L_div-1}(gamma_th/gamma_bar)^k/k!` | equal-average Rayleigh MRC branches | Outage probability for L-branch maximal-ratio combining in iid Rayleigh fading. | BOOK-GOLDSMITH | Procedure |
+| BB-137 | `P_out_SC_rayleigh = (1 - exp(-gamma_th/gamma_bar))^L_div` | equal-average Rayleigh selection combining branches | Outage probability for selection combining in iid Rayleigh fading. | BOOK-GOLDSMITH | Seeded |
+| BB-138 | `G_coding_dB = EbN0_uncoded_req_dB - EbN0_coded_req_dB` | same target error probability | Coding gain at a specified BER/FER target. | BOOK-SKLAR, BOOK-PROAKIS | Seeded |
+| BB-139 | `R_code = k_code / n_code` | block code dimensions | Generic block-code rate for an `(n,k)` code. | BOOK-SKLAR, BOOK-PROAKIS | Seeded |
+| BB-140 | `CanCorrectErrors = floor((d_min_code - 1)/2)` | code minimum Hamming distance | Error-correction capability of a block code under bounded-distance decoding. | BOOK-SKLAR, BOOK-PROAKIS | Seeded |
+| BB-141 | `CanDetectErrors = d_min_code - 1` | code minimum Hamming distance | Maximum number of symbol or bit errors guaranteed detectable by a block code. | BOOK-SKLAR, BOOK-PROAKIS | Seeded |
+| BB-142 | `P_BDD_correct = sum_{i=0}^{t_code} C(n_code,i) p_ch^i (1-p_ch)^(n_code-i)` | bounded-distance correction radius and channel error probability | Probability that a bounded-distance block decoder sees a correctable error pattern. | BOOK-SKLAR, BOOK-PROAKIS | Procedure |
+| BB-143 | `P_BDD_fail = 1 - P_BDD_correct` | bounded-distance correction probability | Block failure probability under independent channel symbol or bit errors and bounded-distance decoding. | BOOK-SKLAR, BOOK-PROAKIS | Procedure |
+| BB-144 | `P_RS_sym = 1 - (1 - BER_in)^J` | bit error probability and R-S symbol width | Converts independent input bit errors to Reed-Solomon symbol error probability. | BOOK-SKLAR, CCSDS-131 | Seeded |
+| BB-145 | `P_RS_codeword_fail = sum_{i=E+1}^{RS_n} C(RS_n,i) P_RS_sym^i (1-P_RS_sym)^(RS_n-i)` | R-S correction capability and symbol error probability | R-S codeword failure probability when more than `E` symbols in a codeword are in error. | BOOK-SKLAR, CCSDS-131 | Procedure |
+| BB-146 | `P_RS_interleaved_fail ~= 1 - (1 - P_RS_codeword_fail)^I` | interleaving depth and per-codeword failure probability | First-order failure probability for an interleaved group of R-S codewords. | BOOK-SKLAR, CCSDS-131 | Procedure |
+| BB-147 | `RS_BurstCorrectBits ~= E * I * J` | R-S symbol correction and interleaving depth | Approximate correctable burst length for symbol-aligned R-S interleaving. Alignment and decoder erasure handling can change the usable margin. | BOOK-SKLAR, CCSDS-131 | Seeded |
+| BB-148 | `RS_InterleaverFillLatency = RS_CodeblockBits / R_coded` | interleaved codeblock bits and coded bit rate | Time to fill one complete interleaved R-S codeblock before transmission or decoding. | BOOK-SKLAR, CCSDS-131 | Seeded |
+| BB-149 | `R_concat = r_inner * RS_InfoBits / RS_CodeblockBits` | inner code rate and R-S outer-code efficiency | Effective code rate for a concatenated inner code plus R-S outer code, excluding sync and framing overhead. | BOOK-SKLAR, CCSDS-131 | Seeded |
+| BB-150 | `P_pair_d = Q(sqrt(2*d*R_code*EbN0))` | Hamming distance `d` and information-bit `Eb/N0` | Pairwise error probability for a binary linear code over AWGN with coherent BPSK and soft-decision reference assumptions. | BOOK-PROAKIS, BOOK-SKLAR | Procedure |
+| BB-151 | `P_block_union <= sum_{d=d_min_code}^{n_code} A_d * P_pair_d` | code weight enumerator | Union bound on block error probability for a binary linear block code. | BOOK-PROAKIS, BOOK-SKLAR | Procedure |
+| BB-152 | `P_bit_union <= (1/k_code) * sum_d B_d * P_pair_d` | bit-weight enumerator | Union bound on bit error probability using information-bit weights. | BOOK-PROAKIS, BOOK-SKLAR | Procedure |
+| BB-153 | `P_conv_bit_union <= sum_{d=d_free}^{d_max} c_d * Q(sqrt(2*d*R_code*EbN0))` | convolutional code distance spectrum | Truncated union bound for convolutional-code bit error probability. | BOOK-PROAKIS, BOOK-SKLAR | Procedure |
+| BB-154 | `TracebackDepth ~= L_tb_factor * K_conv` | convolutional constraint length and decoder factor | Rule-of-thumb Viterbi traceback depth; common factors are about 5 to 10 constraint lengths depending on code and puncturing. | BOOK-SKLAR, BOOK-PROAKIS | Procedure |
+| BB-155 | `p_hard_BPSK = Q(sqrt(2*R_code*EbN0))` | information-bit `Eb/N0` and code rate | Hard-decision coded-bit crossover probability for BPSK when `Eb/N0` is referenced to information bits. | BOOK-SKLAR, BOOK-PROAKIS | Seeded |
+| BB-156 | `P_uncoded_block = 1 - (1 - p_ch)^n_code` | independent channel errors and block length | Probability that an uncoded or unchecked block contains at least one channel error. | BOOK-SKLAR, BOOK-PROAKIS | Seeded |
+| BB-157 | `LLR_BPSK = 2*y/sigma_n^2` | BPSK sample and AWGN variance | Soft-bit log-likelihood ratio for normalized antipodal BPSK in AWGN. | BOOK-PROAKIS, BOOK-SKLAR | Seeded |
+| BB-158 | `LLR_clip = min(max(LLR_BPSK, -LLR_max), LLR_max)` | decoder soft-input saturation limit | Clipped LLR used by fixed-point or bounded-metric soft-decision decoders. | BOOK-PROAKIS, BOOK-SKLAR | Procedure |
+| BB-159 | `sum_{i=0}^{t_code} C(n_code,i) <= 2^(n_code-k_code)` | block-code length, dimension, correction radius | Hamming bound for a perfect or feasible bounded-distance block code. | BOOK-SKLAR, BOOK-PROAKIS | Procedure |
+| BB-160 | `d_min_code <= n_code - k_code + 1` | block-code length and dimension | Singleton bound on minimum distance. MDS codes meet this bound; many practical codes do not. | BOOK-SKLAR, BOOK-PROAKIS | Seeded |
+| BB-161 | `f_s = samples_per_symbol * R_s` | oversampling ratio and symbol rate | Sampling rate required for a selected samples-per-symbol receiver or waveform generator. | BOOK-SKLAR, BOOK-MENGALI | Seeded |
+| BB-162 | `T_sample = 1/f_s` | sampling rate | Sample period used by digital receiver timing, NCO, and loop update calculations. | BOOK-SKLAR, BOOK-HAYKIN | Seeded |
+| BB-163 | `SamplesPerFrame = ceil(FrameDuration * f_s)` | frame duration and sampling rate | Number of receiver samples spanning a physical-layer frame or acquisition window. | BOOK-SKLAR, BOOK-MENGALI | Seeded |
+| BB-164 | `CFO_norm_sym = Delta_f / R_s` | carrier frequency offset and symbol rate | Carrier frequency offset normalized to symbols per second; useful for acquisition range and residual-error warnings. | BOOK-MENGALI, BOOK-GARDNER | Seeded |
+| BB-165 | `CFO_phase_per_symbol = 2*pi*Delta_f*T_s` | frequency offset and symbol period | Carrier phase rotation accumulated over one symbol. | BOOK-MENGALI, BOOK-PROAKIS | Seeded |
+| BB-166 | `CFO_phase_per_sample = 2*pi*Delta_f/f_s` | frequency offset and sampling rate | Carrier phase rotation accumulated per digital sample. | BOOK-MENGALI, BOOK-GARDNER | Seeded |
+| BB-167 | `TimingError_UI = tau_timing / T_s` | timing offset and symbol period | Timing offset expressed in unit intervals, which is easier to compare across symbol rates. | BOOK-MENGALI, BOOK-GARDNER | Seeded |
+| BB-168 | `TimingJitter_UI_rms = sigma_t / T_s` | RMS timing jitter and symbol period | RMS timing jitter expressed in unit intervals. | BOOK-MENGALI, BOOK-GARDNER | Seeded |
+| BB-169 | `sigma_sample_time = T_sample/sqrt(12)` | sample period | RMS timing uncertainty from uniform sample-epoch quantization. | BOOK-SKLAR, BOOK-MENGALI | Seeded |
+| BB-170 | `NCO_phase_inc = 2*pi*f_nco/f_s` | NCO frequency and sampling rate | Per-sample phase increment for a digital numerically controlled oscillator. | BOOK-GARDNER, BOOK-HAYKIN | Seeded |
+| BB-171 | `f_nco = NCO_phase_inc*f_s/(2*pi)` | NCO phase increment and sampling rate | Converts digital oscillator phase increment back to frequency. | BOOK-GARDNER, BOOK-HAYKIN | Seeded |
+| BB-172 | `T_update = N_update/f_s` | samples per loop update and sampling rate | Loop update interval for symbol-timing, carrier, or AGC loops that run every N samples. | BOOK-GARDNER, BOOK-MENGALI | Seeded |
+| BB-173 | `BT_update = B_loop_Hz*T_update` | loop bandwidth and update interval | Synchronization loop bandwidth normalized to the loop update cadence. | BOOK-GARDNER | Seeded |
+| BB-174 | `LoopCoefficients = LoopCoefficientDesign(B_loop_Hz, zeta, K_d, K_0, T_update)` | loop bandwidth, damping, detector and NCO gains | Placeholder for reviewed discrete-time second-order loop coefficient design; exact coefficients depend on loop architecture and normalization. | BOOK-GARDNER, BOOK-MENGALI | Procedure |
+| BB-175 | `theta_inst = atan2(Q_k, I_k)` | in-phase and quadrature symbol samples | Instantaneous carrier phase estimate from complex baseband samples. | BOOK-MENGALI, BOOK-PROAKIS | Seeded |
+| BB-176 | `PhaseErrorWrapped = wrapToPi(theta_meas - theta_ref)` | measured and reference phase | Phase error wrapped to the principal interval for carrier-loop and constellation diagnostics. | BOOK-GARDNER, BOOK-MENGALI | Procedure |
+| BB-177 | `SyncCorr[m] = sum_{i=0}^{N_sync-1} r_{m+i}*conj(s_sync_i)` | received samples and known sync sequence | Sliding complex correlation against a known synchronization marker or preamble. | BOOK-PROAKIS, BOOK-SKLAR | Procedure |
+| BB-178 | `SyncMetric[m] = abs(SyncCorr[m])^2/(sum_i abs(r_{m+i})^2 * sum_i abs(s_sync_i)^2)` | correlation and segment energies | Normalized sync correlation metric in the range 0 to 1 for acquisition displays. | BOOK-PROAKIS, BOOK-SKLAR | Procedure |
+| BB-179 | `SyncPeakMargin = SyncMetric_peak - SyncThreshold` | peak metric and threshold | Detection margin between the best synchronization metric and the selected acquisition threshold. | BOOK-SKLAR, BOOK-MENGALI | Seeded |
+| BB-180 | `SyncFalseAlarmThreshold = inverse_cdf_sync_metric(1-P_FA, N_sync, model)` | false-alarm target and sync length | Threshold selection from the chosen noise-only sync-metric distribution model. | BOOK-PROAKIS, BOOK-SKLAR | Procedure |
+
+## Telemetry, PCM, Space Packet, and Transfer Frames
+
+| ID | Formula | Variables | Explanation | Source family | Status |
+| --- | --- | --- | --- | --- | --- |
+| TM-001 | `MinorFrameBits = word_length * words_per_minor + sync_bits` | PCM frame terms | Minor-frame size including sync. | IRIG 106 Ch. 4, PCM practice | Implemented |
+| TM-002 | `R_bit = MinorFrameBits * minor_frame_rate` | `minor_frame_rate`: Hz | PCM stream bit rate. | IRIG 106 Ch. 4, PCM practice | Implemented |
+| TM-003 | `T_major = minor_frames_per_major / minor_frame_rate` | frame counts and rate | Major-frame period. | IRIG 106 Ch. 4, PCM practice | Implemented |
+| TM-004 | `FrameEfficiency = PayloadBits / TotalFrameBits` | payload and frame bits | PCM or transfer-frame useful fraction. | IRIG/CCSDS practice | Implemented |
+| TM-005 | `ParameterSampleRate = samples_per_major / T_major` | samples per major frame | Effective sample rate for a parameter. | IRIG 106 Ch. 4 | Implemented |
+| TM-006 | `PacketOverhead = HeaderBits + SecondaryHeaderBits + ErrorControlBits` | packet fields | Space packet overhead budget. | CCSDS-133 | Seeded |
+| TM-007 | `PacketEfficiency = UserDataBits / (UserDataBits + PacketOverhead)` | packet bits | Space packet efficiency. | CCSDS-133 | Seeded |
+| TM-008 | `TransferFrameEfficiency = DataFieldBits / TransferFrameBits` | frame field sizes | TM/AOS/USLP frame useful fraction. | CCSDS-132, CCSDS-732, CCSDS-732.1 | Procedure |
+| TM-009 | `VC_Throughput = LineRate * TransferFrameEfficiency * VC_share` | `VC_share`: virtual-channel allocation | Virtual channel payload throughput. | CCSDS-132, CCSDS-732 | Seeded |
+| TM-010 | `CADU_or_SMTF_Rate = TransferFrameRate * coded_frame_bits` | frame rate and coded length | Stream rate for coded/sync-marked frames. | CCSDS-131 | Procedure |
+| TM-011 | `RS_rate = k / n` | Reed-Solomon message/codeword symbols | Code rate for RS coding. Exact values come from selected CCSDS mode. | CCSDS-131 | Procedure |
+| TM-012 | `SyncOverhead = ASM_bits / (ASM_bits + frame_bits)` | attached sync marker bits | Attached sync marker overhead. | CCSDS-131 | Procedure |
+| TM-013 | `RandomizerOverhead = 0` | no added bits | CCSDS randomization changes bit pattern, not stream length. | CCSDS-131 | Seeded |
+| TM-014 | `StorageFillTime = StorageCapacityBits / GeneratedDataRate` | storage bits, data rate | On-board data storage fill time. | BOOK-SMAD | Seeded |
+| TM-015 | `TM_DataFieldOctets = TM_FrameOctets - 6 - SecondaryHeaderOctets - OCFOctets - FECFOctets` | TM transfer frame field lengths | TM data field length without SDLS. Secondary header, OCF, and FECF terms are zero when absent. | CCSDS-132 | Seeded |
+| TM-016 | `TM_SecondaryHeaderOctets = 1 + SecondaryHeaderDataOctets` | secondary header ID plus data field | TM secondary header length. The header is optional and up to 64 octets. | CCSDS-132 | Seeded |
+| TM-017 | `TM_SecondaryHeaderLengthField = TM_SecondaryHeaderOctets - 1` | 6-bit length field | Value encoded in the TM secondary header length subfield. | CCSDS-132 | Seeded |
+| TM-018 | `TM_OCFOverhead = 4 / TM_FrameOctets` | OCF present | Operational Control Field overhead for TM frames. | CCSDS-132 | Seeded |
+| TM-019 | `TM_FECFOverhead = 2 / TM_FrameOctets` | FECF present | Frame Error Control Field overhead for TM frames. | CCSDS-132 | Seeded |
+| TM-020 | `TM_SDLS_DataFieldOctets = TM_FrameOctets - 6 - SecondaryHeaderOctets - SecurityHeaderOctets - SecurityTrailerOctets - OCFOctets - FECFOctets` | SDLS security fields | TM data-field capacity when SDLS is used. | CCSDS-132, CCSDS-355 | Seeded |
+| TM-021 | `TM_FrameEfficiency = TM_DataFieldOctets / TM_FrameOctets` | useful data capacity | TM frame data-field efficiency before packet/idle effects. | CCSDS-132 | Seeded |
+| TM-022 | `FrameCountNext = (FrameCount + 1) mod 256` | master or virtual channel frame count | TM master-channel and virtual-channel frame counters are 8-bit modulo counters. | CCSDS-132 | Seeded |
+| TM-023 | `ASM_bits = 32 / r_turbo` | Turbo nominal code rate | CCSDS TM Turbo ASM length: 64, 96, 128, or 192 bits for rates 1/2, 1/3, 1/4, or 1/6. | CCSDS-131 | Seeded |
+| TM-024 | `ASM_bits = 32` | uncoded, convolutional, RS, concatenated, rate-7/8 TF-LDPC, or stream-LDPC | Common 32-bit Attached Sync Marker length. | CCSDS-131 | Seeded |
+| TM-025 | `ASM_bits = 64` | rate 1/2, 2/3, or 4/5 Transfer-Frame LDPC | Attached Sync Marker length for the lower-rate transfer-frame LDPC modes. | CCSDS-131 | Seeded |
+| TM-026 | `ASMOverhead = ASM_bits / (ASM_bits + coded_unit_bits)` | codeblock, codeword, or frame unit bits | Sync-marker overhead for the unit that ASM immediately precedes. | CCSDS-131 | Seeded |
+| TM-027 | `CADU_Bits_RS = ASM_bits + RS_CodeblockBits` | R-S codeblock plus ASM | Channel Access Data Unit size for a full R-S codeblock without virtual-fill shortening. | CCSDS-131 | Seeded |
+| TM-028 | `CADU_Bits_RS_Short = ASM_bits + (RS_n - q_rs) * I * J` | shortened R-S codeblock | CADU size when R-S virtual fill is not transmitted. | CCSDS-131 | Seeded |
+| TM-029 | `RS_TransferFrameOctets = (255 - 2E - q_rs) * I` | `E`, `q_rs`, `I` | Allowable transfer-frame length for R-S coding with octet compatibility. | CCSDS-131 | Seeded |
+| TM-030 | `RS_CodeblockOctets = (255 - q_rs) * I` | R-S virtual fill and interleaving | 32-bit compatibility requires this codeblock length to be a multiple of 4 octets. | CCSDS-131 | Procedure |
+| TM-031 | `TurboTransferFrameOctets in {223,446,892,1115}` | selected Turbo block size | CCSDS-validated transfer-frame lengths for Turbo coding. | CCSDS-131 | Seeded |
+| TM-032 | `TurboCADUBits = ASM_bits + TurboCodewordBits` | Turbo ASM plus codeword | Total transmitted synchronized Turbo unit length before modulation. | CCSDS-131 | Seeded |
+| TM-033 | `LDPC_TF_Octets in {128,512,892,2048}` | selected LDPC transfer-frame mode | Transfer-frame LDPC allows 892 octets for rate 7/8, and 128/512/2048 octets for rates 1/2, 2/3, and 4/5. | CCSDS-131 | Seeded |
+| TM-034 | `CSM_bits = 32` | stream-LDPC rate 7/8 | Code Synchronization Marker length for stream LDPC rate 7/8. | CCSDS-131 | Seeded |
+| TM-035 | `CSM_bits = 64` | stream-LDPC rates 1/2, 2/3, 4/5 | Code Synchronization Marker length for stream LDPC lower-rate modes. | CCSDS-131 | Seeded |
+| TM-036 | `StreamLDPC_UnitBits = CSM_bits + m_ldpc * n_ldpc` | stream-LDPC codeblock and CSM | Physical synchronized unit length for LDPC coding of an SMTF stream. | CCSDS-131 | Seeded |
+| TM-037 | `SMTF_Bits = ASM_bits + TransferFrameBits` | stream-LDPC Transfer Frame plus ASM | Sync-Marked Transfer Frame size before stream slicing. | CCSDS-131 | Seeded |
+| TM-038 | `RandomizerPeriodBits = 2^17 - 1 = 131071` | long pseudo-randomizer | CCSDS preferred TM pseudo-randomizer period. Randomization adds no bits. | CCSDS-131 | Seeded |
+| TM-039 | `LegacyRandomizerPeriodBits = 2^8 - 1 = 255` | short pseudo-randomizer | Backward-compatible randomizer period; standard warns about possible spectral lines. | CCSDS-131 | Seeded |
+| TM-040 | `RandomizedBit_i = DataBit_i xor PRN_i` | pseudo-random sequence | Randomizer operation for codeblock, codeword, or Transfer Frame bits after the ASM. | CCSDS-131 | Procedure |
+| TM-041 | `TM_MaxFrameOctets_StreamLDPC = 2048` | TM/AOS stream-LDPC | Maximum TM or AOS Transfer Frame length when LDPC is applied to a stream of SMTFs. | CCSDS-131 | Seeded |
+| TM-042 | `USLP_MaxFrameOctets_StreamLDPC = 65536` | USLP stream-LDPC | Maximum USLP Transfer Frame length when LDPC is applied to a stream of SMTFs. | CCSDS-131 | Seeded |
+| TM-043 | `SpacePacketPrimaryHeaderBits = 3+1+1+11+2+14+16 = 48` | Space Packet primary header fields | Sum of Packet Version Number, Packet Type, Secondary Header Flag, APID, Sequence Flags, Sequence Count, and Packet Data Length. | CCSDS-133 | Seeded |
+| TM-044 | `SpacePacketPrimaryHeaderOctets = 6` | primary header bits | Mandatory CCSDS Space Packet primary header size. | CCSDS-133 | Seeded |
+| TM-045 | `SpacePacketDataFieldOctets = PacketDataLength + 1` | Packet Data Length field | Packet Data Length stores one fewer than the Packet Data Field octet count. | CCSDS-133 | Seeded |
+| TM-046 | `SpacePacketOctets = SpacePacketPrimaryHeaderOctets + SpacePacketDataFieldOctets` | primary header and data field | Complete Space Packet length. | CCSDS-133 | Seeded |
+| TM-047 | `SpacePacketMinOctets = 7` | minimum data-field length | Minimum Space Packet size: 6-octet primary header plus at least 1 data-field octet. | CCSDS-133 | Seeded |
+| TM-048 | `SpacePacketMaxDataFieldOctets = 2^16 = 65536` | Packet Data Length field width | Maximum Packet Data Field size implied by the 16-bit length field. | CCSDS-133 | Seeded |
+| TM-049 | `SpacePacketMaxOctets = 6 + 65536 = 65542` | maximum data field and header | Maximum complete CCSDS Space Packet size. | CCSDS-133 | Seeded |
+| TM-050 | `SpacePacketUserDataOctets = SpacePacketDataFieldOctets - PacketSecondaryHeaderOctets` | packet data field and optional secondary header | Space Packet user-data capacity when a secondary header is present. | CCSDS-133 | Seeded |
+| TM-051 | `SpacePacketEfficiency = SpacePacketUserDataOctets / SpacePacketOctets` | packet user data and complete packet | User-data fraction of a Space Packet before transfer-frame overhead. | CCSDS-133 | Seeded |
+| TM-052 | `APIDCount = 2^11; IdleAPID = 2^11 - 1 = 2047` | APID field width | Application Process ID cardinality and the all-ones idle-packet APID. | CCSDS-133 | Seeded |
+| TM-053 | `PacketSequenceModulus = 2^14 = 16384` | Packet Sequence Count field width | Wrap modulus for the 14-bit Packet Sequence Count. | CCSDS-133 | Seeded |
+| TM-054 | `PacketSequenceNext = (PacketSequenceCount + 1) mod PacketSequenceModulus` | current packet sequence count | Per-APID packet sequence counter update. | CCSDS-133 | Seeded |
+| TM-055 | `PacketSegmentsNeeded = ceil(UserDataOctets / MaxUserDataPerPacketOctets)` | user data and selected packet capacity | First-order count of packets needed when a user data unit is split into Space Packets. | CCSDS-133 | Seeded |
+| TM-056 | `USLP_MCIDBits = 4 + 16 = 20` | TFVN and SCID | USLP Master Channel Identifier field width. | CCSDS-732.1 | Seeded |
+| TM-057 | `USLP_GVCIDBits = USLP_MCIDBits + 6 = 26` | MCID and VCID | USLP Global Virtual Channel Identifier field width. | CCSDS-732.1 | Seeded |
+| TM-058 | `USLP_GMAPIDBits = USLP_GVCIDBits + 4 = 30` | GVCID and MAP ID | USLP Global MAP Identifier field width. | CCSDS-732.1 | Seeded |
+| TM-059 | `USLP_SCIDCount = 2^16 = 65536` | SCID field width | Number of spacecraft identifiers representable in the USLP primary header. | CCSDS-732.1 | Seeded |
+| TM-060 | `USLP_VCIDCount = 2^6; USLP_UserVCIDCount = 63` | VCID field width | USLP has 64 VCID values; VCID 63 is reserved for Only Idle Data frames. | CCSDS-732.1 | Seeded |
+| TM-061 | `USLP_MAPIDCount = 2^4 = 16` | MAP ID field width | Number of MAP identifiers representable within a USLP virtual channel. | CCSDS-732.1 | Seeded |
+| TM-062 | `USLP_FrameOctets = USLP_FrameLengthCount + 1` | Frame Length field | USLP Frame Length count is one fewer than the total transfer-frame octets. | CCSDS-732.1 | Seeded |
+| TM-063 | `USLP_MaxFrameOctets = 2^16 = 65536` | Frame Length field width | Maximum USLP transfer-frame size before physical/coding constraints. | CCSDS-732.1 | Seeded |
+| TM-064 | `USLP_PrimaryHeaderBaseBits = 4+16+1+6+4+1+16+1+1+2+1+3 = 56` | non-truncated primary header fields before VCF Count | Fixed part of the non-truncated USLP Transfer Frame Primary Header. | CCSDS-732.1 | Seeded |
+| TM-065 | `USLP_VCFCountBits = 8 * USLP_VCFCountOctets` | selected VCF Count length code | VCF Count field length for the table-defined 0-to-7-octet count options. | CCSDS-732.1 | Seeded |
+| TM-066 | `USLP_PrimaryHeaderOctets = 7 + USLP_VCFCountOctets` | fixed header and VCF Count | Non-truncated USLP primary-header length. | CCSDS-732.1 | Seeded |
+| TM-067 | `USLP_VCFCountModulus = 2^(8*USLP_VCFCountOctets)` | VCF Count octets | Wrap modulus when a VCF Count is present. | CCSDS-732.1 | Seeded |
+| TM-068 | `USLP_VCFCountNext = (USLP_VCFCount + 1) mod USLP_VCFCountModulus` | VCF Count | Per-VC sequence-controlled or expedited frame counter update. | CCSDS-732.1 | Seeded |
+| TM-069 | `USLP_TruncatedPrimaryHeaderBits = 4+16+1+6+4+1 = 32` | first six primary-header fields | USLP truncated primary header contains only fields through the End of Frame Primary Header Flag. | CCSDS-732.1 | Seeded |
+| TM-070 | `USLP_TruncatedPrimaryHeaderOctets = 4` | truncated primary header bits | Length of the truncated USLP Transfer Frame Primary Header. | CCSDS-732.1 | Seeded |
+| TM-071 | `USLP_OCFOctets = 4 if OCF_Flag else 0` | OCF presence flag | Optional USLP Operational Control Field length. | CCSDS-732.1 | Seeded |
+| TM-072 | `USLP_FECFOctets = 2 if FECF_Present else 0` | managed FECF presence | Optional USLP Frame Error Control Field length. | CCSDS-732.1 | Seeded |
+| TM-073 | `USLP_TFDFOctets = USLP_FrameOctets - USLP_PrimaryHeaderOctets - InsertZoneOctets - USLP_OCFOctets - USLP_FECFOctets` | frame, primary header, insert zone, OCF, FECF | USLP Transfer Frame Data Field capacity without SDLS security fields. | CCSDS-732.1 | Seeded |
+| TM-074 | `USLP_SDLS_TFDFOctets = USLP_FrameOctets - USLP_PrimaryHeaderOctets - SecurityHeaderOctets - InsertZoneOctets - SecurityTrailerOctets - USLP_OCFOctets - USLP_FECFOctets` | SDLS security fields and optional frame fields | USLP Transfer Frame Data Field capacity when SDLS is used. | CCSDS-732.1, CCSDS-355 | Seeded |
+| TM-075 | `USLP_TFDFHeaderOctets = 1 + (2 if FHP_LVOP_Present else 0)` | TFDZ construction rule, UPID, optional pointer | USLP TFDF Header length: mandatory 3-bit rule plus 5-bit UPID, with optional 16-bit FHP/LVOP. | CCSDS-732.1 | Seeded |
+| TM-076 | `USLP_TFDZOctets = USLP_TFDFOctets - USLP_TFDFHeaderOctets` | TFDF and TFDF Header | Data-zone capacity for user data, packets, SDUs, protocol commands, or idle data. | CCSDS-732.1 | Seeded |
+| TM-077 | `USLP_FrameEfficiency = USLP_TFDZOctets / USLP_FrameOctets` | TFDZ and complete frame | USLP data-zone fraction after primary header, optional fields, and TFDF Header. | CCSDS-732.1 | Seeded |
+| TM-078 | `USLP_TFDFHeaderOverhead = USLP_TFDFHeaderOctets / USLP_FrameOctets` | TFDF Header and frame | TFDF Header overhead fraction. | CCSDS-732.1 | Seeded |
+| TM-079 | `USLP_OCFOverhead = 4 / USLP_FrameOctets` | OCF present | OCF overhead fraction when present. | CCSDS-732.1 | Seeded |
+| TM-080 | `USLP_FECFOverhead = 2 / USLP_FrameOctets` | FECF present | FECF overhead fraction when present. | CCSDS-732.1 | Seeded |
+| TM-081 | `USLP_PointerAllOnes = 2^16 - 1 = 65535` | First Header / Last Valid Octet Pointer width | All-ones FHP/LVOP value used for the standard's special pointer cases. | CCSDS-732.1 | Seeded |
+| TM-082 | `USLP_OID_VCID = 2^6 - 1 = 63` | VCID field width | Reserved VCID for Only Idle Data Transfer Frames. | CCSDS-732.1 | Seeded |
+| TM-083 | `USLP_OID_MAPID = 0` | MAP ID field | MAP ID required for OID Transfer Frames. | CCSDS-732.1 | Seeded |
+| TM-084 | `USLP_FixedTFDZIdleOctets = USLP_TFDZOctets - ValidDataOctets` | fixed TFDZ and valid data | Idle octets needed to complete a partially filled fixed-length TFDZ. | CCSDS-732.1 | Seeded |
+| TM-085 | `USLP_SegmentsNeeded = ceil(SDUOctets / USLP_MaxTFDZOctetsForSAP)` | SDU size and selected SAP TFDZ capacity | First-order number of USLP frames required to transport a segmented SDU. | CCSDS-732.1 | Seeded |
+| TM-086 | `AOS_PrimaryHeaderOctets = 6` | fixed AOS primary header | Mandatory AOS Transfer Frame Primary Header length. | CCSDS-732 | Seeded |
+| TM-087 | `AOS_GVCIDBits = 2 + 8 + 6 = 16` | TFVN, SCID, VCID | AOS Global Virtual Channel Identifier field width. | CCSDS-732 | Seeded |
+| TM-088 | `AOS_VCIDCount = 2^6 = 64` | VCID field width | Number of AOS virtual channel identifiers representable in one spacecraft channel. | CCSDS-732 | Seeded |
+| TM-089 | `AOS_VCFrameCountModulus = 2^24` | VC frame count field width | Wrap modulus for the AOS 24-bit Virtual Channel Frame Count. | CCSDS-732 | Seeded |
+| TM-090 | `AOS_VCFrameCountNext = (AOS_VCFrameCount + 1) mod AOS_VCFrameCountModulus` | current virtual-channel frame count | Per-VC frame counter update for sequence-controlled AOS frames. | CCSDS-732 | Seeded |
+| TM-091 | `AOS_SignalingBits = 1 + 1 + 2 + 4 = 8` | replay flag, VC frame count cycle flag, spare bits, VC frame count cycle | AOS signaling field width at the end of the primary header. | CCSDS-732 | Seeded |
+| TM-092 | `AOS_OCFOctets = 4 if OCF_Flag else 0` | OCF presence flag | Optional AOS Operational Control Field length. | CCSDS-732 | Seeded |
+| TM-093 | `AOS_FECFOctets = 2 if FECF_Present else 0` | managed FECF presence | Optional AOS Frame Error Control Field length. | CCSDS-732 | Seeded |
+| TM-094 | `AOS_DataFieldOctets = AOS_FrameOctets - AOS_PrimaryHeaderOctets - AOS_InsertZoneOctets - AOS_OCFOctets - AOS_FECFOctets` | frame length and optional AOS fields | AOS Transfer Frame Data Field capacity before service-specific headers. | CCSDS-732 | Seeded |
+| TM-095 | `AOS_M_PDU_HeaderOctets = 2` | M_PDU service | AOS Multiplexing Protocol Data Unit header length containing the First Header Pointer. | CCSDS-732 | Seeded |
+| TM-096 | `AOS_M_PDU_PacketZoneOctets = AOS_DataFieldOctets - AOS_M_PDU_HeaderOctets` | AOS data field and M_PDU header | Packet-zone capacity for AOS packet service after the 2-octet M_PDU header. | CCSDS-732 | Seeded |
+| TM-097 | `AOS_VCA_SDU_Octets = AOS_DataFieldOctets` | AOS data field | Virtual Channel Access service data unit capacity when the complete data field is delivered as a VCA_SDU. | CCSDS-732 | Seeded |
+| TM-098 | `AOS_SDLS_DataFieldOctets = AOS_FrameOctets - AOS_PrimaryHeaderOctets - AOS_InsertZoneOctets - SecurityHeaderOctets - SecurityTrailerOctets - AOS_OCFOctets - AOS_FECFOctets` | SDLS security fields and optional AOS fields | AOS data-field capacity when SDLS security fields are present. | CCSDS-732, CCSDS-355 | Seeded |
+| TM-099 | `AOS_FrameEfficiency = AOS_DataFieldOctets / AOS_FrameOctets` | AOS data field and total frame | AOS data-field fraction after primary header, Insert Zone, OCF, and FECF. | CCSDS-732 | Seeded |
+| TM-100 | `AOS_PacketServiceEfficiency = AOS_M_PDU_PacketZoneOctets / AOS_FrameOctets` | packet zone and complete frame | AOS packet-service payload-zone fraction before packet-level overhead. | CCSDS-732 | Seeded |
+
+## Telecommand and Uplink Commanding
+
+| ID | Formula | Variables | Explanation | Source family | Status |
+| --- | --- | --- | --- | --- | --- |
+| TC-001 | `FrameBits = CommandBits + HeaderBits + CRCBits + SecurityBits` | TC frame fields | Simplified TC frame length budget. | CCSDS-232 | Implemented |
+| TC-002 | `FrameTime = FrameBits / UplinkRate` | uplink rate bps | Time to radiate one command frame. | CCSDS-232 | Implemented |
+| TC-003 | `TotalCommandTime = N_repeat * FrameTime + max(0,N_repeat-1) * GuardTime` | repeat count and guard time | Command transmission duration with repeats. | CCSDS-231, CCSDS-232 | Implemented |
+| TC-004 | `EffectiveCommandThroughput = CommandBits / TotalCommandTime` | useful bits and total time | Useful command throughput. | CCSDS-232 | Implemented |
+| TC-005 | `CommandOverhead = 1 - CommandBits / FrameBits` | useful/total bits | TC frame overhead fraction. | CCSDS-232 | Implemented |
+| TC-006 | `CLTUOverhead = (CLTU_bits - TransferFrameBits) / CLTU_bits` | CLTU bits | CLTU overhead from start/tail/fill/coding. Exact composition is mode-dependent. | CCSDS-231 | Procedure |
+| TC-007 | `BCH_rate = k / n` | BCH block parameters | TC BCH code rate. Exact selected block parameters must come from CCSDS table. | CCSDS-231 | Procedure |
+| TC-008 | `LDPC_rate = k / n` | LDPC block parameters | Short TC LDPC code rate. Exact selected code parameters from standard. | CCSDS-231 | Procedure |
+| TC-009 | `AuthenticationOverhead = AuthTagBits / (FrameBits + AuthTagBits)` | security tag length | Data-link or application security overhead. | CCSDS-355, mission security design | Seeded |
+| TC-010 | `RequiredUplinkRate = CommandBits / RequiredDeliveryTime / efficiency` | delivery target | Inverts command throughput for uplink planning. | CCSDS-232, BOOK-SMAD | Seeded |
+| TC-011 | `TC_FrameOctets = FrameLengthCount + 1` | 10-bit TC frame length count | TC primary header length count conversion. | CCSDS-232 | Seeded |
+| TC-012 | `TC_DataFieldOctets = TC_FrameOctets - 5 - FECFOctets` | TC primary header and optional FECF | TC transfer-frame data-field capacity without SDLS. | CCSDS-232 | Seeded |
+| TC-013 | `TC_MaxDataFieldOctets = 1019 - FECFOctets` | `FECFOctets`: 0 or 2 | TC data field maximum: 1019 octets without FECF, 1017 octets with FECF. | CCSDS-232 | Seeded |
+| TC-014 | `SegmentUserDataOctets = TC_DataFieldOctets - 1` | segment header present | User data capacity when the 1-octet TC Segment Header is used. | CCSDS-232 | Seeded |
+| TC-015 | `TC_SDLS_DataFieldOctets = TC_FrameOctets - 5 - SegmentHeaderOctets - SecurityHeaderOctets - SecurityTrailerOctets - FECFOctets` | Type-D frame with SDLS | TC data-field capacity when SDLS is used. Type-C frames do not carry SDLS fields. | CCSDS-232, CCSDS-355 | Seeded |
+| TC-016 | `FECF = [(X^16 M(X)) + (X^(n-16) L(X))] mod G(X)` | `G(X)=X^16+X^12+X^5+1`; `L(X)=sum(X^i,i=0..15)` | 16-bit FECF CRC used by TM and TC transfer frames when FECF is present. | CCSDS-132, CCSDS-232 | Procedure |
+| TC-017 | `BCH_Codewords = ceil(TransferFrameBits / 56)` | 56 information bits per BCH codeword | Number of TC BCH codewords required for transfer frames plus fill. | CCSDS-231 | Seeded |
+| TC-018 | `BCH_FillBits = (56 - (TransferFrameBits mod 56)) mod 56` | fill pattern is alternating 0/1 | BCH fill needed to complete an integral number of 56-bit information groups. | CCSDS-231 | Seeded |
+| TC-019 | `BCH_CLTU_Bits = 16 + 64 * BCH_Codewords + 64` | start sequence, BCH codewords, tail sequence | Total CLTU size when BCH coding is used. | CCSDS-231 | Seeded |
+| TC-020 | `BCH_TransmittedRate = 56 / 64` | information bits per transmitted BCH codeword | Effective transmitted BCH codeword payload fraction including the appended filler bit. | CCSDS-231 | Seeded |
+| TC-021 | `LDPC_Codewords = ceil(TransferFrameBits / k_ldpc)` | `k_ldpc`: 64 or 256 | Number of LDPC codewords required for transfer frames plus fill. | CCSDS-231 | Seeded |
+| TC-022 | `LDPC_FillBits = (k_ldpc - (TransferFrameBits mod k_ldpc)) mod k_ldpc` | fill before encoding | LDPC fill needed to complete an integral number of information blocks. | CCSDS-231 | Seeded |
+| TC-023 | `LDPC_CLTU_Bits = 64 + n_ldpc * LDPC_Codewords + TailBits` | start sequence, LDPC codewords, optional tail | Total CLTU size when LDPC coding is used. `TailBits` is 0 or 128 for LDPC(128,64), and 0 for LDPC(512,256). | CCSDS-231 | Seeded |
+| TC-024 | `RepeatedCLTUBits = Repetitions * CLTU_Bits` | repetitions parameter | Radiated CLTU bit count for repeated transfer. | CCSDS-231 | Seeded |
+| TC-025 | `CLTU_Duration = CLTU_Bits / ChannelSymbolRate` | channel symbol/bit rate after coding | First-order CLTU transmission duration. | CCSDS-231 | Seeded |
+| TC-026 | `COP1_FrameSequenceModulus = 2^8 = 256` | COP-1 Frame Sequence Number width | Wrap modulus for COP-1 `N(S)`, `V(S)`, `V(R)`, `N(R)`, and `NN(R)` arithmetic. | CCSDS-232.1 | Seeded |
+| TC-027 | `COP1_NextVS = (V_S + 1) mod 256` | transmitter frame sequence number | FOP-1 increments `V(S)` after inserting it into the `N(S)` field of a Type-AD Transfer Frame. | CCSDS-232.1 | Seeded |
+| TC-028 | `COP1_OutstandingADFrames = (V_S - NN_R) mod 256` | `V(S)` and oldest unacknowledged frame | Count of Type-AD frames transmitted ahead of the oldest unacknowledged frame. | CCSDS-232.1 | Seeded |
+| TC-029 | `COP1_FOPWindowOpen = COP1_OutstandingADFrames < K` | FOP sliding-window width | FOP-1 may transmit a new Type-AD FDU only while the outstanding sequence distance is within the FOP sliding window. | CCSDS-232.1 | Procedure |
+| TC-030 | `1 <= K <= min(PW,255)` | FOP and FARM positive-window widths | Managed-parameter constraint for `FOP_Sliding_Window_Width`; `K` may never exceed 255. | CCSDS-232.1 | Seeded |
+| TC-031 | `COP1_T1_Min = t_send_lower + T_max_frame_tx + tau_forward + t_farm_lower + t_clcw_sample + T_clcw_tx + tau_return + t_clcw_extract` | COP-1 timer-delay components | Minimum normal-operation `T1_Initial` budget for one VC, following the standard's listed delay components. | CCSDS-232.1 | Seeded |
+| TC-032 | `T_max_frame_tx = MaxCLTUBits / UplinkBitRate` | maximum-length transfer frame with CLTU/coding bits | Serial transmission time term used inside the `T1_Initial` budget. | CCSDS-232.1, CCSDS-231 | Seeded |
+| TC-033 | `COP1_RoundTripLightTime = tau_forward + tau_return` | forward and return one-way light times | Propagation part of the COP-1 acknowledgement loop, including relay paths when present. | CCSDS-232.1, BOOK-SMAD | Seeded |
+| TC-034 | `COP1_AttemptsRemaining = Transmission_Limit - Transmission_Count` | FOP-1 transmission counters | Remaining transmissions before the first frame on the Sent_Queue reaches the managed transmission limit. | CCSDS-232.1 | Seeded |
+| TC-035 | `COP1_RetransmissionAllowed = Transmission_Count < Transmission_Limit` | transmission count and limit | Condition for timer-triggered recovery before an Alert or Suspend action. | CCSDS-232.1 | Procedure |
+| TC-036 | `COP1_FirstFrameMaxTransmissions = Transmission_Limit` | managed transmission limit | Maximum number of transmissions of the first frame on the Sent_Queue, including the first transmission. | CCSDS-232.1 | Seeded |
+| TC-037 | `COP1_WaitQueueCapacityFDUs = 1` | FOP-1 Wait_Queue | Maximum number of Type-AD FDUs held in the FOP-1 Wait_Queue. | CCSDS-232.1 | Seeded |
+| TC-038 | `COP1_GoBackN_RetransmitFrames = SentQueueLength` | unacknowledged Sent_Queue frames | Go-back-N retransmission resends all unacknowledged Type-A Transfer Frames on the VC. | CCSDS-232.1 | Seeded |
+| TC-039 | `COP1_FARM_W_Range = even W, 2 <= W <= 254` | retransmission-allowed FARM window | FARM sliding-window total width constraint when Type-AD retransmission is allowed. | CCSDS-232.1 | Seeded |
+| TC-040 | `COP1_FARM_PW = COP1_FARM_NW = W/2` | FARM total, positive, and negative windows | Positive and negative FARM window widths for normal retransmission-allowed COP-1 operation. | CCSDS-232.1 | Seeded |
+| TC-041 | `COP1_FARM_LockoutSpan = 256 - W` | frame sequence modulus and FARM window | Sequence-number span outside the FARM sliding window. | CCSDS-232.1 | Seeded |
+| TC-042 | `COP1_PositiveWindowOffset = (N_S - V_R) mod 256` | received frame sequence and receiver expected sequence | Sequence distance from expected frame into the positive side of the FARM window. | CCSDS-232.1 | Seeded |
+| TC-043 | `COP1_InPositiveWindow = 0 <= COP1_PositiveWindowOffset <= PW - 1` | positive-window offset and width | FARM positive-window test; `N(S)=V(R)` is the accept case, larger positive offsets are discarded and set Retransmit. | CCSDS-232.1 | Procedure |
+| TC-044 | `COP1_NegativeWindowOffset = (V_R - N_S) mod 256` | receiver expected sequence and received frame sequence | Sequence distance from expected frame into the negative side of the FARM window. | CCSDS-232.1 | Seeded |
+| TC-045 | `COP1_InNegativeWindow = 1 <= COP1_NegativeWindowOffset <= NW` | negative-window offset and width | FARM negative-window test for duplicate or late retransmitted Type-AD frames that are discarded without additional action. | CCSDS-232.1 | Procedure |
+| TC-046 | `COP1_InLockoutArea = not (COP1_InPositiveWindow or COP1_InNegativeWindow)` | FARM window tests | FARM lockout-area condition; lockout frames are discarded and set the Lockout Flag. | CCSDS-232.1 | Procedure |
+| TC-047 | `CLCW_ReportRate = 1 / CLCW_ReportingPeriod` | FARM managed reporting period | CLCW status reporting cadence for COP-1 acknowledgement and flow-control visibility. | CCSDS-232.1 | Seeded |
+| TC-048 | `COP1_BD_MaxTransmissions = 1` | Type-BD expedited service | Type-BD frames do not use the COP-1 timer or Transmission_Count and are transmitted once. | CCSDS-232.1 | Seeded |
+| TC-049 | `PLOP_TotalDuration = T_acquisition + T_idle_leader + T_cltu_radiate + T_idle_trailer` | PLOP phase durations | Total physical-layer operation duration around one CLTU, including acquisition and idle guard portions. | CCSDS-231 | Procedure |
+| TC-050 | `T_cltu_radiate = CLTU_Bits / UplinkRate` | CLTU size and uplink bit rate | CLTU radiation time as the physical-layer component inside a PLOP operation. | CCSDS-231 | Seeded |
+| TC-051 | `PLOP_Efficiency = TransferFrameBits / (UplinkRate * PLOP_TotalDuration)` | useful transfer-frame bits and physical duration | Useful TC transfer-frame efficiency over the full PLOP transmission window. | CCSDS-231, CCSDS-232 | Seeded |
+| TC-052 | `PLOP_OverheadTime = PLOP_TotalDuration - T_cltu_radiate` | PLOP duration and CLTU radiation time | Acquisition, idle, and guard time not spent radiating the CLTU body. | CCSDS-231 | Seeded |
+| TC-053 | `TC_RadiatedBits = Repetitions * CLTU_Bits` | CLTU repetitions | Radiated CLTU bit count for repeated CLTU operation, excluding inter-repetition idle or gap time. | CCSDS-231 | Seeded |
+| TC-054 | `TC_RepeatedPLOPDuration = Repetitions * PLOP_TotalDuration + max(0,Repetitions-1) * T_repeat_gap` | repetitions, PLOP duration, and gap | Physical time for repeated CLTU transmission including gaps between repeated PLOP operations. | CCSDS-231 | Procedure |
+| TC-055 | `TC_CommandRadiationEfficiency = TransferFrameBits / (UplinkRate * TC_RepeatedPLOPDuration)` | useful bits and repeated physical duration | Useful TC transfer-frame efficiency including PLOP overhead and repeated transmissions. | CCSDS-231, CCSDS-232 | Seeded |
+| TC-056 | `COP1_ACKLatencyBudget = T_max_frame_tx + tau_forward + t_farm_lower + t_clcw_sample + T_clcw_tx + tau_return + t_clcw_extract` | acknowledgement path terms | COP-1 acknowledgement latency budget excluding the sending lower-layer delay term. | CCSDS-232.1 | Seeded |
+| TC-057 | `COP1_T1_Margin = T1_Initial - COP1_T1_Min` | configured timer and minimum timer budget | Margin between configured FOP timer and the minimum round-trip/control-loop budget. | CCSDS-232.1 | Seeded |
+| TC-058 | `COP1_TimeoutRate = 1 / T1_Initial` | FOP timer | Maximum timeout cadence if the queue remains unacknowledged and the timer repeatedly expires. | CCSDS-232.1 | Seeded |
+| TC-059 | `COP1_MaxRecoveryTransmissions = SentQueueLength * COP1_AttemptsRemaining` | sent queue length and remaining attempts | Upper-bound count of additional Type-AD frame transmissions before limit exhaustion under go-back-N recovery. | CCSDS-232.1 | Procedure |
+| TC-060 | `COP1_RecoveryDuration = COP1_MaxRecoveryTransmissions * T_max_frame_tx` | recovery transmissions and frame time | Serial radiation-time upper bound for recovery retransmissions. | CCSDS-232.1 | Procedure |
+| TC-061 | `COP1_SentQueueOccupancy = SentQueueLength / K` | sent queue length and FOP window width | Fraction of the FOP sliding window occupied by unacknowledged Type-AD frames. | CCSDS-232.1 | Seeded |
+| TC-062 | `COP1_WindowRemaining = max(0,K - COP1_OutstandingADFrames)` | FOP window and outstanding frames | Number of additional Type-AD frames that may enter the window. | CCSDS-232.1 | Seeded |
+| TC-063 | `COP1_WaitQueueFull = WaitQueueLength >= COP1_WaitQueueCapacityFDUs` | wait queue length and capacity | Whether the FOP Wait_Queue blocks another Type-AD FDU. | CCSDS-232.1 | Seeded |
+| TC-064 | `COP1_AckedFrames = (N_R - NN_R) mod 256` | CLCW next expected and oldest unacknowledged | Number of oldest Sent_Queue frames acknowledged by a valid CLCW `N(R)`. | CCSDS-232.1 | Procedure |
+| TC-065 | `COP1_NewNNR = N_R` | accepted CLCW `N(R)` | New `NN(R)` after processing a valid acknowledgement report. | CCSDS-232.1 | Procedure |
+| TC-066 | `COP1_TimerRestartNeeded = SentQueueLength_after_ack > 0` | post-ack Sent_Queue state | Whether the T1 timer remains needed after acknowledged frames are removed. | CCSDS-232.1 | Procedure |
+| TC-067 | `COP1_TypeADGoodput ~= TransferFrameBits * (1 - PER_TC) / (T_max_frame_tx + ExpectedRetransmissionOverhead)` | frame error probability and retransmission overhead | First-order Type-AD useful goodput when COP recovery overhead is summarized. | CCSDS-232.1, BOOK-SKLAR | Procedure |
+| TC-068 | `COP1_AbortCondition = Transmission_Count >= Transmission_Limit and timeout_or_retransmit_request` | transmission counter and recovery event flag | Condition that triggers the selected Timeout_Type recovery or alert path rather than another retransmission. | CCSDS-232.1 | Procedure |
+
+## Ranging, Doppler, Tracking, and External Measurement
+
+| ID | Formula | Variables | Explanation | Source family | Status |
+| --- | --- | --- | --- | --- | --- |
+| TRK-001 | `t_oneway = R / c` | `R`: range m | One-way propagation delay. | CCSDS-414.1, DSN-810-005 | Implemented |
+| TRK-002 | `t_roundtrip = 2R / c` | range m | Two-way light time. | CCSDS-414.1, DSN-810-005 | Implemented |
+| TRK-003 | `R = c t_roundtrip / 2` | measured two-way time | Converts round-trip delay to range. | CCSDS-414.1 | Seeded |
+| TRK-004 | `RangeResolution ~= c / (2 R_chip)` | `R_chip`: chip rate Hz | PN ranging resolution estimate. | CCSDS-414.1 | Implemented |
+| TRK-005 | `UnambiguousRange ~= c N_code / (2 R_chip)` | `N_code`: PN code length | PN code unambiguous range. | CCSDS-414.1 | Implemented |
+| TRK-006 | `RangeError ~= c sigma_t / 2` | `sigma_t`: timing error s | Timing error converted to two-way range error. | CCSDS-414.1 | Implemented |
+| TRK-007 | `f_D = -f_c v_r / c` | `v_r`: radial relative velocity | One-way Doppler shift. Sign convention must be explicit. | CCSDS-401, DSN-810-005 | Implemented |
+| TRK-008 | `v_r = -c f_D / f_c` | measured Doppler | Radial velocity estimate from Doppler. | DSN-810-005 | Seeded |
+| TRK-009 | `Delta_f_osc = f_c * ppm * 1e-6` | oscillator tolerance ppm | Frequency-source error. | CCSDS-401, DSN-810-005 | Implemented |
+| TRK-010 | `Delta_f_total = |f_D| + |Delta_f_osc| + Delta_f_misc` | error terms Hz | Guard-band sizing total frequency uncertainty. | CCSDS-401 | Implemented |
+| TRK-011 | `GuardMargin = GuardBand - Delta_f_total` | Hz | Frequency guard margin. | CCSDS-401 | Implemented |
+| TRK-012 | `Delta_tau = (b dot s) / c` | `b`: baseline vector; `s`: source unit vector | Delta-DOR geometric delay core relationship. | DSN-810-005 | Seeded |
+| TRK-013 | `sigma_theta ~= c sigma_tau / |b_perp|` | delay error and projected baseline | Approximate angular error from delay error. | DSN-810-005 | Seeded |
+| TRK-014 | `P_r = P_t G_t G_r lambda^2 sigma / ((4pi)^3 R^4 L)` | radar cross-section `sigma` | Monostatic radar range equation. | BOOK-BALANIS | Seeded |
+| TRK-015 | `P_r = P_t G_t G_r lambda^2 sigma / ((4pi)^3 R_t^2 R_r^2 L)` | bistatic ranges | Bistatic radar-style external measurement power. | BOOK-BALANIS | Seeded |
+| TRK-016 | `L_br = 103.4 + 20 log10(f_MHz) + 40 log10(d_km) - 10 log10(sigma)` | `sigma`: radar cross-section m^2 | ITU-R P.525 radar free-space basic transmission loss for common-antenna radar. | ITU-P525 | Seeded |
+| TRK-017 | `Fchip_S = l_pn * f_S_MHz / (128 * 2^k_pn)` | S-band uplink, CCSDS 414.1 table 3-1 | PN ranging uplink chip rate for S-band. `Fchip` is in Mchip/s; `k_pn`/`l_pn` are implementation aliases for the standard's `k`/`l` selectors. | CCSDS-414.1 | Seeded |
+| TRK-018 | `Fchip_X = l_pn * (221/749) * f_X_MHz / (128 * 2^k_pn)` | X-band uplink, table 3-1 | PN ranging uplink chip rate for X-band. | CCSDS-414.1 | Seeded |
+| TRK-019 | `Fchip_Ka = l_pn * (221/3599) * f_Ka_MHz / (128 * 2^k_pn)` | Ka-band uplink, table 3-1 | PN ranging uplink chip rate for Ka-band. | CCSDS-414.1 | Seeded |
+| TRK-020 | `Tacq = Tacq_ref / 10^((PrN0_dBHz - PrN0_ref_dBHz)/10)` | acquisition reference table | PN ranging acquisition-time scaling. Regenerative tables use 30 dB-Hz references; transparent station table uses 10 dB-Hz. | CCSDS-414.1 | Procedure |
+| TRK-021 | `DelayStabilityLimit = max(1/(30 Fchip), 20 ns)` | `Fchip`: chip/s | On-board or transparent ranging-delay stability bound. | CCSDS-414.1 | Seeded |
+| TRK-022 | `DelayCalibrationLimit = max(1/(500 Fchip), 1 ns)` | `Fchip`: chip/s | Transponder delay calibration accuracy bound. | CCSDS-414.1 | Seeded |
+| TRK-023 | `JitterTotal_RSS = sqrt(sum(jitter_i^2))` | independent jitter components | End-to-end ranging jitter combination by root-sum-square. | CCSDS-414.1 | Seeded |
+| TRK-024 | `rho_vec = r_sc - r_site` | spacecraft and station position vectors | Topocentric line-of-sight vector from station to spacecraft. | DESCANSO-DSTSE, BOOK-VALLADO | Seeded |
+| TRK-025 | `rho = norm(rho_vec)` | `rho_vec` | Geometric station-to-spacecraft range before media/equipment corrections. | DESCANSO-DSTSE, BOOK-VALLADO | Seeded |
+| TRK-026 | `rho_dot = dot(rho_vec, v_sc - v_site) / rho` | relative state vectors | Line-of-sight range rate used by Doppler observables. | DESCANSO-DSTSE, BOOK-VALLADO | Seeded |
+| TRK-027 | `f_R = f_T * sqrt((1 - beta)/(1 + beta))` | `beta = v_r/c` | Relativistic one-way received frequency for pure line-of-sight motion. | DESCANSO-DSTSE | Seeded |
+| TRK-028 | `f_D_oneway ~= -f_T * rho_dot / c` | low-speed line-of-sight motion | First-order one-way Doppler observable. | DESCANSO-DSTSE | Seeded |
+| TRK-029 | `f_D_twoway ~= -2 * f_ref * rho_dot / c` | coherent round-trip approximation | First-order two-way Doppler shift for a coherent turnaround when uplink/downlink ratios are collapsed into a reference frequency. | DESCANSO-DSTSE, DSN-810-005 | Seeded |
+| TRK-030 | `rho_dot_oneway ~= -c * f_D / f_T` | one-way Doppler | Converts one-way Doppler frequency to line-of-sight velocity. | DESCANSO-DSTSE | Seeded |
+| TRK-031 | `rho_dot_twoway ~= -c * f_D / (2 f_ref)` | two-way Doppler | Converts coherent two-way Doppler to line-of-sight velocity under the same first-order approximation. | DESCANSO-DSTSE, DSN-810-005 | Seeded |
+| TRK-032 | `sigma_rhodot_oneway = c * sigma_f / f_T` | Doppler frequency standard deviation | Velocity uncertainty propagated from one-way Doppler frequency uncertainty. | DESCANSO-DSTSE | Seeded |
+| TRK-033 | `sigma_rhodot_twoway = c * sigma_f / (2 f_ref)` | Doppler frequency standard deviation | Velocity uncertainty propagated from coherent two-way Doppler uncertainty. | DESCANSO-DSTSE | Seeded |
+| TRK-034 | `DeltaPhi = 2*pi*(N_end - N_start + n_end - n_start)` | Doppler counter and resolver counts | Phase increment over a Doppler sampling interval. | DESCANSO-DSTSE | Seeded |
+| TRK-035 | `f_D_biased_avg = DeltaPhi / (2*pi*T_i)` | sampling interval `T_i` | Average biased Doppler frequency from accumulated phase count. | DESCANSO-DSTSE | Seeded |
+| TRK-036 | `f_D_avg = f_D_biased_avg - f_B` | bias frequency `f_B` | Unbiased average Doppler frequency after removing the MDA bias oscillator. | DESCANSO-DSTSE | Seeded |
+| TRK-037 | `cycles_D = f_D_avg * T_i` | Doppler average and count time | Integrated Doppler cycle count over the sampling interval. | DESCANSO-DSTSE | Seeded |
+| TRK-038 | `sigma_phase_sample = 2*pi*f_D_biased*sigma_Ti` | sample-time error | Phase error from Doppler sampling-epoch uncertainty. | DESCANSO-DSTSE | Seeded |
+| TRK-039 | `sigma_phase_quant = 2*pi*f_D_biased*T_clock/sqrt(12)` | resolver clock period | RMS phase quantization error for a uniform resolver time quantization. | DESCANSO-DSTSE | Seeded |
+| TRK-040 | `sigma_tau_sine^2 = T_range^2 * N0 / (64 * T_corr * P_ranging)` | sine-wave/filtered ranging | Strong-signal delay-estimate variance for the DSN filtered ranging case. | DESCANSO-DSTSE | Seeded |
+| TRK-041 | `sigma_R_oneway = c * sigma_tau` | one-way delay standard deviation | Converts one-way group-delay uncertainty to distance uncertainty. | DESCANSO-DSTSE | Seeded |
+| TRK-042 | `sigma_R_twoway = c * sigma_tau / 2` | two-way group-delay standard deviation | Converts round-trip group-delay uncertainty to one-way range uncertainty. | DESCANSO-DSTSE | Seeded |
+| TRK-043 | `RTPT = D_meas - BIAS_sc - BIAS_dss - Z_correction` | measured delay and hardware corrections | DSN round-trip propagation time after spacecraft and station delay corrections. | DESCANSO-DSTSE, DSN-810-005 | Seeded |
+| TRK-044 | `R_corrected = c * RTPT / 2` | corrected round-trip propagation time | Corrected one-way geometric range from DSN round-trip group delay. | DESCANSO-DSTSE | Seeded |
+| TRK-045 | `RangeResidual = RangeObserved - RangeComputed` | observed and modeled range | Orbit-determination residual for range measurements. | DESCANSO-DSTSE, BOOK-VALLADO | Seeded |
+| TRK-046 | `DopplerResidual = DopplerObserved - DopplerComputed` | observed and modeled Doppler | Orbit-determination residual for Doppler measurements. | DESCANSO-DSTSE, BOOK-VALLADO | Seeded |
+| TRK-047 | `sigma_q = sqrt(sum((dq_dxi * sigma_xi)^2))` | independent error sources | Radiometric design-control-table RSS uncertainty propagation. | DESCANSO-DSTSE | Seeded |
+| TRK-048 | `DeltaRange12 = rho_1 - rho_2` | simultaneous station ranges | Differenced range from two tracking stations. | DESCANSO-DSTSE | Seeded |
+| TRK-049 | `sin(delta) ~= DeltaRange12 / D_baseline` | small-angle geometry | Declination-like estimate from north-south differenced ranging geometry. | DESCANSO-DSTSE | Seeded |
+| TRK-050 | `tau_g = dot(b, s) / c` | baseline and source unit vector | VLBI/DOR geometric group delay. | DESCANSO-DSTSE | Seeded |
+| TRK-051 | `DeltaTau_DOR = dot(b, s_sc - s_qso) / c` | spacecraft and quasar directions | Delta-DOR differential delay after alternating spacecraft and quasar observations. | DESCANSO-DSTSE | Seeded |
+| TRK-052 | `DelayResolution_VLBI ~= 1 / (2 * B_span)` | spanned bandwidth | First-null scale for wideband group-delay resolution. | DESCANSO-DSTSE | Seeded |
+| TRK-053 | `sigma_theta_DDOR ~= c * sigma_DeltaTau / norm(b_perp)` | differential delay uncertainty | Angular uncertainty estimate from projected VLBI baseline. | DESCANSO-DSTSE | Seeded |
+| TRK-054 | `Rmax_mono = (P_t*G_t*G_r*lambda^2*sigma / ((4*pi)^3*S_min*L))^(1/4)` | radar link terms | Monostatic radar maximum range for a minimum detectable received power. | BOOK-BALANIS, ITU-P525 | Seeded |
+| TRK-055 | `SNR_radar = P_r / (k*T_sys*B_n)` | received radar echo and receiver noise | Radar echo signal-to-noise ratio. | BOOK-BALANIS | Seeded |
+| TRK-056 | `RangeResolution_pulse = c*tau_p/2` | pulse width | Basic pulse radar range resolution. | BOOK-BALANIS | Seeded |
+| TRK-057 | `RangeResolution_bw = c/(2*B_waveform)` | waveform bandwidth | Bandwidth-limited range resolution for compressed or wideband ranging waveforms. | BOOK-BALANIS, DESCANSO-DSTSE | Seeded |
+| TRK-058 | `R_unamb = c/(2*PRF)` | pulse repetition frequency | Monostatic pulsed-radar unambiguous range. | BOOK-BALANIS | Seeded |
+| TRK-059 | `DopplerResolution = 1/T_coh` | coherent integration time | Doppler-bin resolution for coherent processing. | BOOK-BALANIS, BOOK-SKLAR | Seeded |
+| TRK-060 | `VelocityResolution_mono = lambda/(2*T_coh)` | monostatic radar wavelength | Radial-velocity resolution from Doppler resolution. | BOOK-BALANIS | Seeded |
+| TRK-061 | `VelocityUnamb_mono = lambda*PRF/4` | pulse repetition frequency | First-order unambiguous radial velocity for pulsed monostatic radar. | BOOK-BALANIS | Seeded |
+| TRK-062 | `rho_L_residual = PCN0_DL / B_L` | residual carrier `P_C/N0`, loop bandwidth | DSN residual-carrier loop signal-to-noise ratio. | DSN-810-005-202 | Seeded |
+| TRK-063 | `rho_L_residual_nrz = PCN0_DL / (B_L * (1 + 2*EsN0))` | direct NRZ telemetry on residual carrier | Residual-carrier loop SNR including direct-modulation telemetry sideband loss. | DSN-810-005-202 | Seeded |
+| TRK-064 | `rho_L_bpsk = PTN0_DL * S_L / B_L` | total downlink power-to-noise density and squaring loss | Suppressed-carrier BPSK Costas-loop signal-to-noise ratio. | DSN-810-005-202 | Seeded |
+| TRK-065 | `S_L = EsN0^2 / (1 + 2*EsN0)` | symbol energy-to-noise density | Suppressed-carrier BPSK Costas-loop squaring loss. | DSN-810-005-202 | Seeded |
+| TRK-066 | `rho_L_margin_dB = rho_L_dB - rho_L_min_dB` | `rho_L_min_dB`: mode threshold | Carrier-loop lock margin against DSN recommended minima. | DSN-810-005-202 | Seeded |
+| TRK-067 | `sigma_f_oneway = f_C * sigma_V / c` | range-rate standard deviation | Converts one-way Doppler range-rate error to frequency error. | DSN-810-005-202 | Seeded |
+| TRK-068 | `sigma_f_twoway = 2*f_C * sigma_V / c` | two-way or three-way range-rate error | Converts coherent two-way/three-way range-rate error to Doppler frequency error. | DSN-810-005-202 | Seeded |
+| TRK-069 | `sigma_V_total = sqrt(sigma_VN^2 + sigma_VF^2 + sigma_VS^2)` | thermal, frequency-source, scintillation terms | DSN Doppler range-rate error root-sum-square model. | DSN-810-005-202 | Seeded |
+| TRK-070 | `Idata = abs(n_zero - n_one) / (n_zero + n_one)` | telemetry symbol counts | Direct-modulation data imbalance. | DSN-810-005-202 | Seeded |
+| TRK-071 | `sigma_VI_oneway ~= c*theta_t*Idata*B_L / (sqrt(24)*pi*f_C)` | direct BPSK imbalance | One-way Doppler error from data imbalance. | DSN-810-005-202 | Seeded |
+| TRK-072 | `sigma_VI_twoway ~= c*theta_t*Idata*B_L / (2*sqrt(24)*pi*f_C)` | direct BPSK imbalance | Two-way/three-way Doppler error from data imbalance. | DSN-810-005-202 | Seeded |
+| TRK-073 | `sigma_VN_oneway^2 = 2*(c/(2*pi*f_C*T_Doppler))^2 / rho_L` | thermal noise and count time | One-way Doppler range-rate variance from downlink thermal noise. | DSN-810-005-202 | Seeded |
+| TRK-074 | `sigma_VF_oneway ~= c*sigma_y(T_Doppler)` | Allan deviation | One-way Doppler range-rate error from frequency-source instability when the loop passes the source phase noise. | DSN-810-005-202 | Seeded |
+| TRK-075 | `sigma_phi_total = sqrt(sigma_phiN^2 + sigma_phiF^2 + sigma_phiS^2)` | carrier-loop phase-error terms | Carrier phase-error RSS model; separate from Doppler measurement error. | DSN-810-005-202 | Seeded |
+| TRK-076 | `TwoWayDelay_S = 2*RU/f_S` | S-band uplink carrier | DSN range-unit conversion to two-way time delay for S-band uplink. | DSN-810-005-203, DSN-810-005-214 | Seeded |
+| TRK-077 | `TwoWayDelay_X = (749/221) * 2*RU/f_X` | X-band uplink carrier | DSN range-unit conversion to two-way time delay for X-band uplink. | DSN-810-005-203, DSN-810-005-214 | Seeded |
+| TRK-078 | `TwoWayDelay_K = (2407/221) * 2*RU/f_K` | K-band uplink carrier | DSN range-unit conversion to two-way time delay for K-band uplink. | DSN-810-005-203, DSN-810-005-214 | Seeded |
+| TRK-079 | `TwoWayDelay_Ka = (3599/221) * 2*RU/f_Ka` | Ka-band uplink carrier | DSN range-unit conversion to two-way time delay for Ka-band uplink. | DSN-810-005-203, DSN-810-005-214 | Seeded |
+| TRK-080 | `f_n = 2^(-n) * f_0` | sequential ranging component number | Sequential-ranging component frequency. | DSN-810-005-203 | Seeded |
+| TRK-081 | `AmbiguityRange_n = c / (2*f_n)` | component frequency | A-priori one-way range ambiguity tolerance for a periodic range component. | DSN-810-005-203 | Seeded |
+| TRK-082 | `f_RC_seq = 2^(-7-n_RC) * BandFactor * f_uplink` | uplink band and range-clock component | Sequential-ranging range-clock frequency. `BandFactor` is 1, 221/749, 221/2407, or 221/3599 for S/X/K/Ka uplink. | DSN-810-005-203 | Seeded |
+| TRK-083 | `SeqCycleTime = T1 + 3 + (n_L - n_RC)*(T2 + 1)` | sequential-ranging timing choices | Cycle time for one sequential-ranging measurement. | DSN-810-005-203 | Seeded |
+| TRK-084 | `sigma_rhoN_seq = c / (sqrt(32)*pi*f_RC_seq*sqrt(T1*PRN0))` | range-clock integration and ranging `Pr/N0` | Sequential-ranging thermal-noise range error for sinewave range clock. | DSN-810-005-203 | Seeded |
+| TRK-085 | `T1_required_seq = c^2 / (32*pi^2*f_RC_seq^2*PRN0*sigma_rhoN_target^2)` | target thermal range error | Required range-clock integration time for sequential-ranging thermal-noise target. | DSN-810-005-203 | Seeded |
+| TRK-086 | `sigma_rho_seq = sqrt(sigma_rhoN_seq^2 + sigma_rhoTCT^2)` | thermal and TCT jitter terms | Sequential-ranging range error including Time Code Translator jitter. | DSN-810-005-203 | Seeded |
+| TRK-087 | `sigma_tau_seq = 2*sigma_rho_seq / c` | one-way range error | Sequential-ranging two-way delay standard deviation. | DSN-810-005-203 | Seeded |
+| TRK-088 | `N_C = n_L - n_RC` | last and range-clock component numbers | Number of ambiguity-resolving components in sequential ranging. | DSN-810-005-203 | Seeded |
+| TRK-089 | `P_acq_seq = (0.5 + 0.5*erf(sqrt(T2*PRN0)))^N_C` | ambiguity component integration | Sequential-ranging probability of acquisition. | DSN-810-005-203 | Seeded |
+| TRK-090 | `f_chip_DSN = BandFactor * (A_over_B) * f_uplink` | PN ranging chip-rate factor | DSN PN chip rate for S/X/K/Ka uplinks using the module 214 band factor. | DSN-810-005-214, CCSDS-414.1 | Seeded |
+| TRK-091 | `A_over_B = l_CR / (128 * 2^k_CR)` | PN chip-rate selectors | Rational chip-rate factor used by DSN module 214. | DSN-810-005-214, CCSDS-414.1 | Seeded |
+| TRK-092 | `f_RC_PN = f_chip_DSN / 2` | PN chip rate | PN range-clock frequency. | DSN-810-005-214, CCSDS-414.1 | Seeded |
+| TRK-093 | `c_n(i) = 2*b_n(i) - 1` | binary component code bit | Converts PN component-code bits to bipolar chips. | DSN-810-005-214 | Seeded |
+| TRK-094 | `b_n_periodic(i) = b_n(i mod lambda_n)` | finite PN component code | Periodic extension of a component code. | DSN-810-005-214 | Seeded |
+| TRK-095 | `L_PN = product(lambda_n) = 1009470` | six DSN/CCSDS component-code lengths | Composite PN range-code period. | DSN-810-005-214, CCSDS-414.1 | Seeded |
+| TRK-096 | `PN_AmbiguityResolution = c*L_PN/(4*f_RC_PN)` | PN code period and range clock | One-way ambiguity resolution of the DSN/T4B/T2B PN range code family. | DSN-810-005-214 | Seeded |
+| TRK-097 | `sigma_rho_PN = c / (f_RC_PN*A_c*R_1*sqrt(32*pi^2*T_PN*PRN0))` | PN code, correlation loss, integration | PN-ranging thermal-noise range error. | DSN-810-005-214 | Seeded |
+| TRK-098 | `sigma_RR = sqrt(sigma_rho_PN^2 + sigma_UL^2)` | downlink and uplink-regeneration terms | Regenerative PN ranging total range error. | DSN-810-005-214 | Seeded |
+| TRK-099 | `sigma_UL = c/(4*pi*R_1*f_RC_PN) * sqrt(B_RL/(PRPT_UL*PTN0_UL))` | uplink range-clock tracking loop | Uplink thermal-noise range error term for regenerative PN ranging. | DSN-810-005-214 | Seeded |
+| TRK-100 | `P_acq_PN = product(P_n for n=2..6)` | component-code acquisition probabilities | PN range-code probability of acquisition. | DSN-810-005-214 | Seeded |
+| TRK-101 | `A_c = abs(sinc(2*Delta_f_RC*T_PN))` | non-coherent range-clock frequency mismatch | PN non-coherent correlation amplitude loss. | DSN-810-005-214 | Seeded |
+| TRK-102 | `SNR_post = n_channels * SNR_CH` | comparable VLBI channels | Post-correlation SNR from multiple similar VLBI channels. | DSN-810-005-211 | Seeded |
+| TRK-103 | `sigma_path_VLBI = c/(2*pi*SNR_post*BW_obs)` | post-correlation SNR and observation bandwidth | VLBI path-length error from correlation delay measurement. | DSN-810-005-211 | Seeded |
+| TRK-104 | `BW_RMS = sqrt(sum((f_CH - f_AVG)^2)/n_channels)` | channel center frequencies | RMS synthesized bandwidth for wideband VLBI. | DSN-810-005-211 | Seeded |
+| TRK-105 | `s_DOR(t) = sqrt(2*P_T)*sin(2*pi*f_c*t + theta_d(t) + theta_1*sin(2*pi*f_1*t) + theta_2*sin(2*pi*f_2*t))` | carrier, telemetry, and DOR tones | Delta-DOR downlink signal model with one or two sinusoidal DOR tones. | DSN-810-005-210 | Seeded |
+| TRK-106 | `B_span_DOR_single = 2*f_DOR` | one sinusoidal DOR tone | Spanned bandwidth between the lower and upper fundamental harmonics of one DOR tone. | DSN-810-005-210 | Seeded |
+| TRK-107 | `DelayAmbiguity_DOR = 1/B_span_DOR` | spanned bandwidth | Differential group-delay ambiguity spacing for DOR tone geometry. | DSN-810-005-210 | Seeded |
+| TRK-108 | `rho_vec = r_sc - r_site` | spacecraft and station state vectors | Topocentric station-to-spacecraft vector in the selected inertial or Earth-fixed frame. | BOOK-VALLADO, DESCANSO-DSTSE | Seeded |
+| TRK-109 | `rho_geom = norm(rho_vec)` | topocentric vector | Geometric station-to-spacecraft range before media, clock, and hardware corrections. | BOOK-VALLADO, DESCANSO-DSTSE | Seeded |
+| TRK-110 | `rho_hat = rho_vec / rho_geom` | topocentric vector and range | Unit line-of-sight vector used by range-rate, angle, and measurement-partial calculations. | BOOK-VALLADO | Seeded |
+| TRK-111 | `rho_dot = dot(rho_hat, v_sc - v_site)` | line-of-sight unit vector and relative velocity | Geometric range rate from projected relative velocity. | BOOK-VALLADO, DSN-810-005-202 | Seeded |
+| TRK-112 | `Az = atan2(rho_E, rho_N)` | ENU topocentric components | Ground-station azimuth angle from local east and north components. | BOOK-VALLADO, BOOK-SMAD | Seeded |
+| TRK-113 | `El = atan2(rho_U, sqrt(rho_E^2 + rho_N^2))` | ENU topocentric components | Ground-station elevation angle from local up and horizontal range. | BOOK-VALLADO, BOOK-SMAD | Seeded |
+| TRK-114 | `AngularSeparation = acos(dot(s_1,s_2))` | two source or pointing unit vectors | Angular separation between spacecraft/quasar, beam pointing, or two tracked objects. | BOOK-VALLADO, DESCANSO-DSTSE | Seeded |
+| TRK-115 | `LOSAngularRate = norm(cross(rho_vec,rho_dot_vec)) / rho_geom^2` | topocentric vector and relative velocity vector | Apparent line-of-sight angular rate for antenna tracking and external measurement planning. | BOOK-VALLADO, BOOK-SMAD | Seeded |
+| TRK-116 | `OneWayLightTimeModel = rho_geom / c` | geometric range | First-order one-way light-time model before iterative transmit/receive epoch correction. | BOOK-VALLADO, DESCANSO-DSTSE | Seeded |
+| TRK-117 | `TwoWayLightTimeModel = tau_uplink + tau_downlink` | uplink and downlink light-time legs | Two-way coherent tracking light time as the sum of uplink and downlink path times. | DSN-810-005, DESCANSO-DSTSE | Procedure |
+| TRK-118 | `f_downlink_coherent = k_turnaround * f_uplink` | spacecraft turnaround ratio and uplink frequency | Ideal coherent downlink frequency before Doppler, oscillator, and transponder imperfections. | DSN-810-005-202, DSN-810-005-203 | Seeded |
+| TRK-119 | `Doppler2WayObserved = f_uplink - f_downlink/k_turnaround` | uplink and received downlink frequencies | DSN-style two-way Doppler observable using a coherent turnaround ratio; sign convention must be explicit in the UI. | DSN-810-005-202 | Procedure |
+| TRK-120 | `Doppler3WayObserved = f_tx_station - f_rx_station/k_turnaround` | transmitting and receiving station frequency references | Three-way Doppler observable when uplink and downlink are handled by different stations or frequency references. | DSN-810-005-202 | Procedure |
+| TRK-121 | `RangeWeight = 1 / sigma_range^2` | range standard deviation | Scalar least-squares weight for a range observation with independent Gaussian error. | BOOK-VALLADO, JCGM-100 | Seeded |
+| TRK-122 | `DopplerWeight = 1 / sigma_doppler^2` | Doppler standard deviation | Scalar least-squares weight for a Doppler observation with independent Gaussian error. | BOOK-VALLADO, JCGM-100 | Seeded |
+| TRK-123 | `NormalizedResidual_i = residual_i / sigma_i` | observation residual and standard deviation | Normalized residual for outlier screening and mixed-measurement comparison. | BOOK-VALLADO, JCGM-100 | Seeded |
+| TRK-124 | `ChiSquare = sum_i(NormalizedResidual_i^2)` | normalized residuals | Weighted residual chi-square statistic for an observation batch. | BOOK-VALLADO, JCGM-100 | Seeded |
+| TRK-125 | `WeightedRMSResidual = sqrt(ChiSquare / N_obs)` | chi-square and observation count | Unit-weight RMS residual for a weighted tracking-data fit. | BOOK-VALLADO | Seeded |
+| TRK-126 | `H = partial h(x) / partial x` | observation model and state vector | Linearized measurement sensitivity/design matrix for orbit determination. | BOOK-VALLADO | Procedure |
+| TRK-127 | `W_obs = R_obs^-1` | observation covariance matrix | Observation weight matrix from measurement covariance. | BOOK-VALLADO, JCGM-100 | Seeded |
+| TRK-128 | `NormalMatrix = H^T * W_obs * H` | design matrix and weight matrix | Normal matrix for a batch least-squares orbit-determination update. | BOOK-VALLADO | Seeded |
+| TRK-129 | `P_state = inv(NormalMatrix)` | normal matrix | Formal state covariance from the inverse normal matrix when the linearized model is well conditioned. | BOOK-VALLADO | Procedure |
+| TRK-130 | `StateStdDev_j = sqrt(P_state[j,j])` | state covariance diagonal | One-sigma formal uncertainty of an estimated state or parameter component. | BOOK-VALLADO, JCGM-100 | Seeded |
+| TRK-131 | `PositionUncertainty3D = sqrt(sigma_x^2 + sigma_y^2 + sigma_z^2)` | position-component standard deviations | RSS three-dimensional position uncertainty summary. | BOOK-VALLADO, JCGM-100 | Seeded |
+| TRK-132 | `FusedObservableSigma = 1 / sqrt(sum_i(1/sigma_i^2))` | independent same-observable uncertainties | Standard deviation after inverse-variance fusion of independent measurements of the same quantity. | JCGM-100, BOOK-VALLADO | Seeded |
+
+## System-Level Mission and Operations Budgets
+
+| ID | Formula | Variables | Explanation | Source family | Status |
+| --- | --- | --- | --- | --- | --- |
+| SYS-001 | `DataVolume = DataRate * Duration` | bits and seconds | Data produced or downlinked during a period. | BOOK-SMAD | Seeded |
+| SYS-002 | `RequiredContactTime = DataVolume / NetDownlinkRate` | bits, bps | Contact time needed to empty data volume. | BOOK-SMAD | Seeded |
+| SYS-003 | `NetDownlinkRate = LineRate * coding_eff * frame_eff * protocol_eff` | efficiency factors | System-level net payload rate. | CCSDS-131, CCSDS-132, CCSDS-732 | Seeded |
+| SYS-004 | `StorageMargin = StorageCapacity - DataGenerated + DataDownlinked` | bits | Storage closure over an operations period. | BOOK-SMAD | Seeded |
+| SYS-005 | `EnergyPerBit = P_tx / R_b` | W and bps | Transmit energy per bit at hardware level. | BOOK-SKLAR, BOOK-SMAD | Seeded |
+| SYS-006 | `DutyCycle = OnTime / Period` | seconds | RF or payload duty cycle. | BOOK-SMAD | Seeded |
+| SYS-007 | `AveragePower = Sum(P_i * duty_i)` | power states | Power budget average over a period. | BOOK-SMAD | Seeded |
+| SYS-008 | `RequiredAntennaDiameter = lambda/pi * sqrt(G/eta)` | target gain and efficiency | Inverts parabolic gain for antenna sizing. | BOOK-BALANIS | Seeded |
+| SYS-009 | `RequiredDataRate = DataVolume / AvailableContactTime` | bits and seconds | Downlink rate needed for operations plan. | BOOK-SMAD | Seeded |
+| SYS-010 | `AvailabilityMargin = FadeMargin - FadeDepth(p)` | percentile fade depth | Availability-driven fade closure. | ITU-P618 | Procedure |
+| SYS-011 | `GeneratedBits = sum_i(SourceRate_i * DutyCycle_i * PlanningPeriod)` | payload/source rates and duty cycles | Data generated over an operations planning period by multiple sources. | BOOK-SMAD, NASA-SST-COMM | Seeded |
+| SYS-012 | `UsableContactTime = max(0, ScheduledContactTime - AcquisitionTime - PointingSettleTime - ProtocolSetupTime)` | scheduled window and overhead times | Contact time remaining for useful data transfer after setup overheads. | BOOK-SMAD, NASA-SST-COMM | Seeded |
+| SYS-013 | `PassCapacityBits = NetDownlinkRate * UsableContactTime` | net rate and usable pass duration | Useful payload capacity of one contact opportunity. | BOOK-SMAD, NASA-SST-COMM | Seeded |
+| SYS-014 | `DownlinkCapacityBits = sum_j(NetDownlinkRate_j * UsableContactTime_j * LinkAvailability_j)` | per-contact rate, duration, and availability | Aggregate downlink capacity across scheduled contacts. | BOOK-SMAD, NASA-SST-COMM | Seeded |
+| SYS-015 | `StorageEndBits = StorageStartBits + GeneratedBits - DownlinkedBits` | storage state and data flows | Recorder balance at the end of a planning interval. | BOOK-SMAD | Seeded |
+| SYS-016 | `StoragePeakMarginBits = StorageCapacityBits - max_t(StorageUsedBits(t))` | storage capacity and time history | Worst-case recorder margin over a schedule. | BOOK-SMAD | Procedure |
+| SYS-017 | `ContactEfficiency = UsableContactTime / ScheduledContactTime` | contact duration and overhead | Fraction of a scheduled contact used for payload transfer. | BOOK-SMAD | Seeded |
+| SYS-018 | `PassesRequired = ceil(DataVolume / PassCapacityBits)` | data volume and per-pass capacity | Minimum number of similar contacts needed to downlink a data volume. | BOOK-SMAD | Seeded |
+| SYS-019 | `RequiredNetRate = DataVolume / sum_j(UsableContactTime_j)` | data volume and total usable contact time | Net user rate needed over known contact windows. | BOOK-SMAD | Seeded |
+| SYS-020 | `RequiredLineRate = RequiredNetRate / LayeredEfficiency` | net rate and protocol/coding efficiency | Physical line rate needed after frame, coding, protocol, and security overhead. | CCSDS SLS, BOOK-SMAD | Seeded |
+| SYS-021 | `TargetDownlinkBits = NetDownlinkRate * AvailableContactTime - HeaderBits` | net rate, time, and overhead | Payload bit budget available inside a contact after fixed overhead. | BOOK-SMAD, CCSDS SLS | Seeded |
+| SYS-022 | `RequiredCompressionRatio = UncompressedBits / TargetDownlinkBits` | raw volume and contact bit budget | Compression ratio required to fit a data set into an available downlink opportunity. | BOOK-SMAD, CCSDS-121, CCSDS-122, CCSDS-123 | Seeded |
+| SYS-023 | `QueueDrainTime = QueueBits / NetDownlinkRate` | queued data and net downlink rate | Time to empty an onboard downlink queue at a fixed useful rate. | BOOK-SMAD | Seeded |
+| SYS-024 | `EnergyUsed = sum_i(Power_i * Duration_i)` | power states and durations | Energy consumed by scheduled spacecraft states. | BOOK-SMAD | Seeded |
+| SYS-025 | `BatteryDepthOfDischarge = EnergyUsed / BatteryCapacityEnergy` | consumed energy and battery capacity | First-order depth-of-discharge estimate for a schedule segment. | BOOK-SMAD | Seeded |
+| SYS-026 | `AverageGeneratedRate = GeneratedBits / PlanningPeriod` | generated volume and period | Average data-production rate over a planning interval. | BOOK-SMAD | Seeded |
+| SYS-027 | `RecorderTurnoverTime = StorageCapacityBits / AverageGeneratedRate` | storage capacity and generation rate | Time to fill the recorder if no downlink occurs. | BOOK-SMAD | Seeded |
+| SYS-028 | `ContactUtilization = DataVolume / DownlinkCapacityBits` | demanded volume and scheduled capacity | Fraction of scheduled downlink capacity consumed by a demand set. | BOOK-SMAD | Seeded |
+| SYS-029 | `ScienceReturnFraction = DownlinkedScienceBits / GeneratedScienceBits` | science data generated and returned | System-level science return metric for operations trade studies. | BOOK-SMAD, NASA-SST-COMM | Seeded |
+| SYS-030 | `CommandRoundTripLightTime = 2*Range/c` | range and speed of light | First-order two-way light-time relevant to command-response operations. | DSN-810-005, BOOK-SMAD | Seeded |
+| SYS-031 | `ContactWindowDuration = t_LOS - t_AOS` | loss-of-signal and acquisition-of-signal times | Gross duration of one visibility/contact window. | BOOK-SMAD, BOOK-VALLADO | Seeded |
+| SYS-032 | `UsableTrackTime = max(0, ContactWindowDuration - T_acq - T_slew_settle - T_handover_guard - T_config)` | contact overhead terms | Track time remaining after acquisition, slew/settle, handover guard, and configuration overhead. | BOOK-SMAD, NASA-SST-SOA | Seeded |
+| SYS-033 | `ContactDataMarginBits = PassCapacityBits - ContactDemandBits` | pass capacity and demand | Per-contact data-capacity margin before recorder-level carryover. | BOOK-SMAD | Seeded |
+| SYS-034 | `ContactCapacityMarginFraction = ContactDataMarginBits / ContactDemandBits` | margin and demand | Fractional per-contact data margin relative to demanded bits. | NASA-SE-HANDBOOK, BOOK-SMAD | Seeded |
+| SYS-035 | `BacklogNext = max(0, BacklogStart + GeneratedBits - DownlinkedBits)` | data queue state and flows | Downlink backlog after one planning interval. | BOOK-SMAD, NASA-SST-SOA | Seeded |
+| SYS-036 | `BacklogGrowthRate = AverageGeneratedRate - AverageDownlinkRate` | average generation and downlink rates | First-order queue growth or drain rate over a planning period. | BOOK-SMAD | Seeded |
+| SYS-037 | `DataLatency = t_downlink_complete - t_data_generated` | data generation and return times | Latency from data acquisition to complete ground return. | BOOK-SMAD, NASA-SST-SOA | Seeded |
+| SYS-038 | `MaxDataLatency = max_i(DataLatency_i)` | latency samples | Worst-case data-return latency over a schedule or product set. | BOOK-SMAD | Seeded |
+| SYS-039 | `LatencyMargin = LatencyRequirement - MaxDataLatency` | latency requirement and achieved latency | Remaining margin against a data-return latency requirement. | NASA-SE-HANDBOOK, BOOK-SMAD | Seeded |
+| SYS-040 | `ScheduleSlack = LatestFinishTime - EarliestFinishTime` | schedule window bounds | Time slack available before a task or data-return deadline. | NASA-SE-HANDBOOK, BOOK-SMAD | Seeded |
+| SYS-041 | `PassSuccessProbability = LinkAvailability * GroundStationAvailability * SpacecraftModeAvailability` | independent pass success factors | First-order probability that a planned pass can complete under independent availability assumptions. | BOOK-SMAD, NASA-SE-HANDBOOK | Procedure |
+| SYS-042 | `ExpectedDownlinkBits = sum_j(PassCapacityBits_j * PassSuccessProbability_j)` | pass capacities and success probabilities | Expected returned bits over a set of planned contacts. | BOOK-SMAD, NASA-SST-SOA | Seeded |
+| SYS-043 | `ExpectedScienceReturnFraction = ExpectedDownlinkBits / GeneratedScienceBits` | expected returned bits and generated science volume | Expected science-return fraction after pass success probability. | BOOK-SMAD, NASA-SST-SOA | Seeded |
+| SYS-044 | `OperationsAvailability = Product_k(SubsystemAvailability_k)` | required subsystem availabilities | Serial-system availability when every required subsystem must be available. | NASA-SE-HANDBOOK | Procedure |
+| SYS-045 | `ResourceMargin = ResourceCapacity - ResourceRequired` | resource capacity and requirement | Generic absolute margin for power, memory, mass, contact time, or data volume. | NASA-SE-HANDBOOK | Seeded |
+| SYS-046 | `ResourceMarginPercent = 100*ResourceMargin/ResourceRequired` | absolute margin and requirement | Percent margin relative to the required resource. | NASA-SE-HANDBOOK | Seeded |
+| SYS-047 | `PowerMargin = PowerAvailable - PowerRequired` | available and required power | Power budget margin for a mode, pass, or planning interval. | NASA-SE-HANDBOOK, BOOK-SMAD | Seeded |
+| SYS-048 | `EnergyBalance = EnergyGenerated + EnergyStart - EnergyUsed - EnergyReserve` | generated, initial, used, and reserve energy | Energy balance after preserving a required reserve. | BOOK-SMAD, NASA-SST-SOA | Seeded |
+| SYS-049 | `BatterySOCNext = clamp(BatterySOCStart + (EnergyGenerated - EnergyUsed)/BatteryCapacityEnergy, 0, 1)` | battery state and energy flows | First-order battery state of charge after a schedule segment. | BOOK-SMAD, NASA-SST-SOA | Procedure |
+| SYS-050 | `ThermalDissipationMargin = RadiatorCapacity - DissipatedPower` | radiator capacity and dissipated power | Thermal rejection margin for an operating mode. | BOOK-SMAD, NASA-SE-HANDBOOK | Seeded |
+| SYS-051 | `ModeEnergy = ModePower * ModeDuration` | mode power and duration | Energy consumed by one scheduled spacecraft or payload mode. | BOOK-SMAD | Seeded |
+| SYS-052 | `ModeDataGenerated = ModeDataRate * ModeDuration` | mode data rate and duration | Data generated by one scheduled payload or housekeeping mode. | BOOK-SMAD | Seeded |
+| SYS-053 | `AverageModeDutyCycle_i = SumDuration_i / PlanningPeriod` | accumulated mode duration and period | Duty cycle of mode `i` over the operations planning interval. | BOOK-SMAD | Seeded |
+| SYS-054 | `StationLoadFactor = ScheduledTrackTime / StationAvailableTime` | scheduled and available station time | Ground-station loading factor for schedule feasibility. | BOOK-SMAD, DSN-810-005 | Seeded |
+| SYS-055 | `StationConflict = overlap(ContactWindow_a, ContactWindow_b) > 0 and same_station` | contact windows and station assignment | Boolean conflict check for two contacts sharing the same station resource. | BOOK-SMAD | Procedure |
+| SYS-056 | `GroundReturnCompleteness = DownlinkedBits / GeneratedBits` | generated and returned bits | Fraction of generated data returned to ground, independent of science prioritization. | BOOK-SMAD, NASA-SST-SOA | Seeded |
+| SYS-057 | `PriorityWeightedReturn = sum_i(PriorityWeight_i * DownlinkedBits_i) / sum_i(PriorityWeight_i * GeneratedBits_i)` | product priorities and data volumes | Priority-weighted data return metric for operations trade studies. | BOOK-SMAD | Procedure |
+| SYS-058 | `CommandResponseLatency = CommandRoundTripLightTime + OnboardCommandProcessingTime + GroundProcessingTime` | light time and processing delays | Expected time from command transmission to observable response availability. | DSN-810-005, BOOK-SMAD | Seeded |
+| SYS-059 | `AutonomyCoverageTime = StoredCommandDuration + SafeModeHoldTime` | stored command timeline and safe-mode hold | Time the spacecraft can continue planned/safe operations without new ground commands. | NASA-SE-HANDBOOK, BOOK-SMAD | Seeded |
+| SYS-060 | `OperationsClosureScore = min(StoragePeakMarginBits/StorageCapacityBits, PowerMargin/PowerRequired, LatencyMargin/LatencyRequirement)` | normalized storage, power, and latency margins | Conservative scalar summary of system closure bottleneck; UI should also show each contributing margin separately. | NASA-SE-HANDBOOK, BOOK-SMAD | Procedure |
+| SYS-061 | `SolarArrayPower_BOL = SolarConstant_W_m2 * A_array * eta_cell * eta_pack * cos(theta_sun) * eta_pointing` | solar flux, array area, cell/pack efficiencies, sun angle, pointing factor | Beginning-of-life solar-array output for a first-order mission power budget. | NASA-SST-SOA, BOOK-SMAD | Seeded |
+| SYS-062 | `SolarArrayPower_EOL = SolarArrayPower_BOL * (1 - DegradationFraction_EOL)` | beginning-of-life power and end-of-life degradation | End-of-life solar-array power after mission degradation allowance. | NASA-SST-SOA, BOOK-SMAD | Seeded |
+| SYS-063 | `SunlitEnergyGenerated = SolarArrayPower_EOL * T_sunlit * eta_pcu` | end-of-life solar-array power, sunlit duration, power-conditioning efficiency | Generated electrical energy during the sunlit part of an orbit or planning interval. | NASA-SST-SOA, BOOK-SMAD | Seeded |
+| SYS-064 | `EclipseLoadEnergy = P_eclipse_load * T_eclipse` | eclipse load power and eclipse duration | Energy that must be supplied by storage during eclipse. | NASA-SST-SOA, BOOK-SMAD | Seeded |
+| SYS-065 | `BatteryRequiredEnergy = (EclipseLoadEnergy + ContingencyEnergy) / (eta_discharge * DOD_allowed)` | eclipse energy, contingency, discharge efficiency, allowed depth of discharge | Required battery stored energy capacity for eclipse plus contingency without exceeding the allowed DOD. | NASA-SST-SOA, BOOK-SMAD | Seeded |
+| SYS-066 | `BatteryCapacity_Ah = BatteryRequiredEnergy_Wh / BusVoltage_V` | required battery energy and bus voltage | Ampere-hour battery capacity corresponding to the energy requirement at the selected bus voltage. | NASA-SST-SOA, BOOK-SMAD | Seeded |
+| SYS-067 | `BatteryRechargeEnergy = EclipseLoadEnergy / (eta_charge * eta_discharge)` | eclipse energy and charge/discharge efficiencies | Sunlit recharge energy needed to restore eclipse discharge after battery round-trip losses. | NASA-SST-SOA, BOOK-SMAD | Seeded |
+| SYS-068 | `ChargeTimeRequired = BatteryRechargeEnergy / max(SolarArrayPower_EOL - P_sunlit_load, epsilon_power)` | recharge energy, end-of-life solar power, sunlit load | Time needed to recharge the battery using excess sunlit array power; denominator must be positive in a valid design. | NASA-SST-SOA, BOOK-SMAD | Procedure |
+| SYS-069 | `OrbitEnergyBalance = SunlitEnergyGenerated - SunlitLoadEnergy - EclipseLoadEnergy - BatteryReserveEnergy` | generated, sunlit load, eclipse load, reserve energy | Orbit-level energy closure after preserving the required storage reserve. | NASA-SST-SOA, BOOK-SMAD | Seeded |
+| SYS-070 | `ArrayAreaRequired = P_required_EOL / (SolarConstant_W_m2 * eta_cell * eta_pack * cos(theta_sun) * eta_pointing * (1 - DegradationFraction_EOL))` | required EOL power and solar-array performance terms | Solar-array area needed to deliver an end-of-life power requirement. | NASA-SST-SOA, BOOK-SMAD | Seeded |
+| SYS-071 | `LoadAveragePower = sum_i(P_load_i * DutyCycle_i)` | load powers and duty cycles | Average spacecraft load power across mission modes or scheduled states. | NASA-SST-SOA, BOOK-SMAD | Seeded |
+| SYS-072 | `PeakPowerMargin = PowerAvailablePeak - sum_i(P_peak_i)` | peak available power and simultaneous peak loads | Peak-power margin for worst-case simultaneous loads. | NASA-SE-HANDBOOK, BOOK-SMAD | Seeded |
+| SYS-073 | `BatteryCycleDOD = EclipseLoadEnergy / BatteryCapacityEnergy` | eclipse energy and battery energy capacity | Per-cycle depth of discharge imposed by one eclipse or high-load interval. | NASA-SST-SOA, BOOK-SMAD | Seeded |
+| SYS-074 | `BatteryDODMargin = DOD_allowed - BatteryCycleDOD` | allowed and achieved depth of discharge | Remaining DOD margin for cycle-life and storage-health checks. | NASA-SST-SOA, BOOK-SMAD | Seeded |
+| SYS-075 | `RadiatorHeatRejected = epsilon_rad * sigma_SB * A_rad * (T_rad_K^4 - T_space_K^4)` | emissivity, Stefan-Boltzmann constant, radiator area, radiator and space temperatures | Radiative heat rejection from a radiator surface to space. | NASA-SST-SOA, BOOK-SMAD | Seeded |
+| SYS-076 | `RadiatorAreaRequired = Q_reject / (epsilon_rad * sigma_SB * (T_rad_K^4 - T_space_K^4))` | heat to reject, emissivity, radiator temperature, space background | Radiator area required for a specified heat-rejection load. | NASA-SST-SOA, BOOK-SMAD | Seeded |
+| SYS-077 | `RadiatorMargin = RadiatorHeatRejected - Q_dissipated` | heat rejection capacity and dissipated heat | Thermal rejection margin for the selected radiator and operating case. | NASA-SST-SOA, NASA-SE-HANDBOOK | Seeded |
+| SYS-078 | `EquilibriumTemperature_K = ((Q_absorbed + Q_internal)/(epsilon_rad * sigma_SB * A_rad) + T_space_K^4)^(1/4)` | absorbed heat, internal heat, radiator properties, space background | First-order radiative equilibrium temperature for a spacecraft surface or lumped node. | NASA-SST-SOA, BOOK-SMAD | Seeded |
+| SYS-079 | `SolarHeatAbsorbed = alpha_solar * SolarConstant_W_m2 * A_sun_view * F_sun` | solar absorptivity, solar flux, sun-facing area, view factor | Absorbed direct solar heat load. | NASA-SST-SOA, BOOK-SMAD | Seeded |
+| SYS-080 | `PlanetIRHeatAbsorbed = epsilon_IR * IR_planet_W_m2 * A_planet_view * F_planet` | infrared emissivity/absorptivity, planet IR flux, viewed area, view factor | Absorbed planetary infrared heat load. | NASA-SST-SOA, BOOK-SMAD | Seeded |
+| SYS-081 | `AlbedoHeatAbsorbed = alpha_solar * Albedo * SolarConstant_W_m2 * A_albedo_view * F_albedo` | solar absorptivity, albedo, solar flux, albedo-viewed area, view factor | Absorbed reflected solar heat load from a planet. | NASA-SST-SOA, BOOK-SMAD | Seeded |
+| SYS-082 | `ThermalCapacitance = m_component * c_p` | component mass and specific heat | Lumped thermal capacitance for transient temperature estimates. | NASA-SST-SOA, BOOK-SMAD | Seeded |
+| SYS-083 | `TemperatureRate = (Q_in - Q_out) / (m_component * c_p)` | net heat rate, mass, specific heat | First-order transient temperature rate for a lumped component. | NASA-SST-SOA, BOOK-SMAD | Seeded |
+| SYS-084 | `HeaterDutyCycle = clamp((Q_required_heat - Q_internal)/P_heater_available, 0, 1)` | required heat, internal heat, available heater power | Heater duty cycle required to maintain a cold-case thermal target. | NASA-SST-SOA, BOOK-SMAD | Procedure |
+| SYS-085 | `ThermalLimitMargin = min(T_hot_limit_K - T_hot_case_K, T_cold_case_K - T_cold_limit_K)` | hot/cold predicted temperatures and allowable limits | Worst-side temperature margin across hot and cold thermal cases. | NASA-SST-SOA, NASA-SE-HANDBOOK | Seeded |
+
+## Optical / Laser Communication Extensions
+
+| ID | Formula | Variables | Explanation | Source family | Status |
+| --- | --- | --- | --- | --- | --- |
+| OPT-001 | `theta_div ~= K lambda / D_t` | optical aperture and wavelength | Diffraction-limited beam divergence approximation. | DESCANSO optical references, BOOK-BALANIS | Seeded |
+| OPT-002 | `E_photon = h f = h c / lambda` | Planck constant, optical frequency | Photon energy for photon-counting link budgets. | General physics, optical comm references | Seeded |
+| OPT-003 | `N_photons = P_r / E_photon` | received optical power | Photon arrival rate. | Optical communication engineering | Seeded |
+| OPT-004 | `L_point_opt ~= 4.343 * (theta_error/sigma_beam)^2` | Gaussian beam approximation | Optical pointing loss under Gaussian-beam assumptions. | DESCANSO optical references | Procedure |
+| OPT-005 | `G_opt = eta_opt*(pi*D/lambda)^2` | optical aperture diameter and efficiency | Diffraction-limited optical telescope gain in the same aperture-gain family as RF dishes. | DESCANSO-OPTICAL, BOOK-BALANIS | Seeded |
+| OPT-006 | `L_opt_ratio = G_t_opt*G_r_opt*(lambda/(4*pi*R))^2*eta_tx*eta_rx*eta_atmos*eta_point` | optical gains, range, and loss factors | First-order optical link transmission factor from transmitter optical power to collected/detected optical power. | DESCANSO-OPTICAL | Seeded |
+| OPT-007 | `P_r_opt = P_t_opt*L_opt_ratio` | transmitted optical power and optical link factor | Received optical power after telescope gains and selected optical losses. | DESCANSO-OPTICAL | Seeded |
+| OPT-008 | `K_s = eta_QE*P_r_opt*T_slot/E_photon` | quantum efficiency, received power, slot width | Mean detected signal photons or photoelectrons in a PPM signal slot. | DESCANSO-OPTICAL | Seeded |
+| OPT-009 | `K_b = eta_QE*P_bg*T_slot/E_photon + DCR*T_slot` | background optical power and dark-count rate | Mean background plus detector dark counts per slot. | DESCANSO-OPTICAL | Seeded |
+| OPT-010 | `R_b_PPM = log2(M_PPM)/(M_PPM*T_slot)` | PPM order and slot width | Uncoded M-PPM information bit rate. | DESCANSO-OPTICAL | Seeded |
+| OPT-011 | `T_slot = log2(M_PPM)/(M_PPM*R_b)` | PPM order and target bit rate | Slot width required for an uncoded M-PPM bit rate. | DESCANSO-OPTICAL | Seeded |
+| OPT-012 | `PPM_PAPR ~= M_PPM` | PPM modulation order | Peak-to-average optical power ratio for one-pulse-per-frame M-PPM. | DESCANSO-OPTICAL | Seeded |
+| OPT-013 | `rho_photon = log2(M_PPM)/K_s` | PPM order and signal photons per symbol | Photon efficiency in bits per detected signal photon for uncoded M-PPM. | DESCANSO-OPTICAL | Seeded |
+| OPT-014 | `Pav_photons_per_slot = K_s/M_PPM` | signal photons per PPM symbol and order | Average signal photons per slot for M-PPM. | DESCANSO-OPTICAL | Seeded |
+| OPT-015 | `Pr_poisson(k;K) = K^k*exp(-K)/k!` | photon-count mean and detected count | Poisson photon-count probability mass function used for direct detection. | DESCANSO-OPTICAL | Seeded |
+| OPT-016 | `f(k|0)=Pr_poisson(k;K_b); f(k|1)=Pr_poisson(k;K_s+K_b)` | background and signal photon counts | Binary slot count distributions for OOK or PPM signal/no-signal slots. | DESCANSO-OPTICAL | Seeded |
+| OPT-017 | `Pb_OOK_Kb0 = 0.5*exp(-K_s)` | mean signal photons, no background | Direct-detection OOK bit error probability on a background-free Poisson channel. | DESCANSO-OPTICAL | Seeded |
+| OPT-018 | `Ps_PPM_Kb0 = (M_PPM-1)*exp(-K_s)/M_PPM` | PPM order and signal photons | M-PPM symbol error probability on a background-free Poisson channel. | DESCANSO-OPTICAL | Seeded |
+| OPT-019 | `Pb_PPM = M_PPM/(2*(M_PPM-1))*Ps_PPM` | PPM symbol error probability | Converts equally likely M-PPM symbol errors to bit error probability. | DESCANSO-OPTICAL | Seeded |
+| OPT-020 | `P_beacon_req = (h*c/lambda)*N_pe_frame*F_frame/(G_t_opt*(lambda/(4*pi*R))^2*G_r_opt*eta_QE*eta_atmos*eta_ATP*eta_trans)` | acquisition frame requirement and optical link factors | Required uplink beacon power to deliver a target number of signal photoelectrons per tracking frame. | DESCANSO-OPTICAL | Procedure |
+| OPT-021 | `P_sky = L_lambda*A_R_opt*Omega_FOV*Delta_lambda*eta_R` | sky radiance, effective receiver area, FOV solid angle, optical bandpass, receive efficiency | Diffuse sky-background optical power collected inside the detector field of view. | DESCANSO-OPTICAL, ITU-P1814 | Seeded |
+| OPT-022 | `P_point = H_lambda*A_R_opt*Delta_lambda*eta_R` | point-source spectral irradiance, receiver area, bandpass, receive efficiency | Background optical power from a stellar or planetary point source in the receiver field of view. | DESCANSO-OPTICAL | Seeded |
+| OPT-023 | `Omega_FOV_small ~= pi*(theta_FOV/2)^2` | circular full-angle field of view | Small-angle solid angle for a circular detector field stop or pixel footprint. | DESCANSO-OPTICAL, BOOK-BALANIS | Seeded |
+| OPT-024 | `theta_FOV_diff ~= 2.44*lambda/D_r` | wavelength and receive aperture diameter | Diffraction-limited receive field-of-view or Airy-disk angular scale. | DESCANSO-OPTICAL, BOOK-BALANIS | Seeded |
+| OPT-025 | `D_n(r_sep) = C_n2*r_sep^(2/3)` | refractive-index structure parameter and separation | Refractive-index structure function in the inertial range of optical turbulence. | DESCANSO-OPTICAL | Procedure |
+| OPT-026 | `k_opt = 2*pi/lambda` | optical wavelength | Optical wave number for turbulence and scintillation calculations. | DESCANSO-OPTICAL, ITU-P1814 | Seeded |
+| OPT-027 | `r0 = 1.67*(sec(zeta_zenith)*k_opt^2*integral(C_n2(h_path) dh_path))^(-3/5)` | zenith angle, optical wave number, refractive-index profile | Fried atmospheric coherence diameter for a downlink plane-wave path. | DESCANSO-OPTICAL | Procedure |
+| OPT-028 | `theta_seeing ~= lambda/r0` | wavelength and Fried parameter | Atmospheric seeing angular broadening caused by turbulence. | DESCANSO-OPTICAL | Seeded |
+| OPT-029 | `spot_diff_diameter ~= 2.44*f_opt*lambda/D_r` | focal length, wavelength, receive aperture | Diffraction-limited focal-plane spot diameter. | DESCANSO-OPTICAL, BOOK-BALANIS | Seeded |
+| OPT-030 | `spot_seeing_diameter ~= 2.44*f_opt*lambda/r0` | focal length, wavelength, Fried parameter | Atmosphere-limited focal-plane spot diameter; ratio to diffraction-limited size is approximately `D_r/r0`. | DESCANSO-OPTICAL | Seeded |
+| OPT-031 | `K_s_array = sum_i_in_S K_s_i` | selected detector elements and signal counts | Signal photoelectron count collected by a selected detector-array subset. | DESCANSO-OPTICAL | Procedure |
+| OPT-032 | `K_b_array = sum_i_in_S K_b_i` | selected detector elements and background counts | Background and dark-count total for the same detector-array subset. | DESCANSO-OPTICAL | Procedure |
+| OPT-033 | `DetectorSet_opt = argmin_S P_SE(K_s_array(S), K_b_array(S), M_PPM)` | candidate detector subsets and PPM error model | Adaptive detector-array selection objective for turbulence-distorted focal-plane spots. | DESCANSO-OPTICAL | Procedure |
+| OPT-034 | `M_link_FSO_dB = P_e_dBm - S_r_dBm - A_geo_dB - A_atmo_dB - A_scint_dB - A_system_dB` | emitter power, receiver sensitivity, geometric/atmospheric/scintillation/system losses | ITU-R P.1814 terrestrial FSO link margin accounting. | ITU-P1814 | Seeded |
+| OPT-035 | `A_geo_dB = max(0, 10log10(S_d/Scapture))` | beam footprint and receiver capture surface | Geometrical attenuation from beam spreading; clipped at zero when the receiver captures the full beam. | ITU-P1814 | Seeded |
+| OPT-036 | `S_d = pi*(d_km*theta_mrad)^2/4` | path distance and beam divergence | Transmit-beam surface area at receiver range using P.1814 km/mrad units. | ITU-P1814 | Seeded |
+| OPT-037 | `gamma_atmo = gamma_clear_air + gamma_excess` | clear-air and excess attenuation components | Specific atmospheric attenuation decomposition for FSO absorption and scattering. | ITU-P1814 | Seeded |
+| OPT-038 | `gamma_sp = K_VIS/V_km` | visibility and measurement-method coefficient | Visibility-to-specific-attenuation relationship for suspended particles near the visible reference window. | ITU-P1814 | Seeded |
+| OPT-039 | `V_T2 = ln(0.02)/ln(0.05)*V_T5 ~= 1.31*V_T5` | visibility thresholds | Converts WMO/MOR 5 percent threshold visibility to the 2 percent threshold used by P.1814 wavelength models. | ITU-P1814 | Seeded |
+| OPT-040 | `gamma_sp_lambda = (17/V_km)*(0.55/lambda_um)^q_VIS` | visibility, optical wavelength, particle-size exponent | P.1814 suspended-particle specific attenuation for 0.4 to 1.55 um. | ITU-P1814 | Seeded |
+| OPT-041 | `q_VIS = piecewise(1.6 if V_km>50; 1.3 if 6<V_km<=50; 0.16*V_km+0.34 if 1<=V_km<=6; V_km-0.5 if 0.5<=V_km<1; 0 if V_km<0.5)` | visibility in km | Particle-size exponent used in the P.1814 visibility/wavelength attenuation model. | ITU-P1814 | Procedure |
+| OPT-042 | `A_clear_air_dB = gamma_clear_air*L_km` | clear-air specific attenuation and path length | Clear-air FSO path attenuation for links within the P.1814 validity range. | ITU-P1814 | Seeded |
+| OPT-043 | `A_sp_dB = gamma_sp*L_km` | suspended-particle specific attenuation and path length | Suspended-particle path attenuation before rain/fog statistical corrections. | ITU-P1814 | Seeded |
+| OPT-044 | `sigma_chi2_dB2 = 23.17*k_opt^(7/6)*C_n2*L_m^(11/6)` | optical wave number, turbulence strength, path length | Weak-turbulence log-amplitude scintillation variance for a plane wave. | ITU-P1814 | Procedure |
+| OPT-045 | `A_scint_dB ~= 2*sqrt(sigma_chi2_dB2)` | log-amplitude scintillation variance | P.1814 engineering scintillation attenuation allowance for weak turbulence. | ITU-P1814 | Seeded |
+| OPT-046 | `P_radiated_sun = 1200*cos(pi/2 - El_sun)` | solar elevation angle | Approximate solar radiated power incident on a horizontal surface in the P.1814 ambient-light model. | ITU-P1814 | Seeded |
+| OPT-047 | `F_solar = 8.97e-13*lambda_nm^5 - 4.65e-9*lambda_nm^4 + 9.37e-6*lambda_nm^3 - 9.067e-3*lambda_nm^2 + 4.05*lambda_nm - 5.70` | optical wavelength in nm | P.1814 polynomial fit for solar spectral power versus wavelength. | ITU-P1814 | Procedure |
+| OPT-048 | `P_solar = F_solar*P_radiated_sun*Scapture*W_receiver/100` | solar spectral factor, capture area, receiver optical bandwidth | Ambient solar power entering an FSO receiver when solar conjunction or near-axis sunlight is relevant. | ITU-P1814 | Seeded |
+| OPT-049 | `f_optical = c/lambda` | optical wavelength | Converts wavelength to optical carrier frequency. | CCSDS-141, DESCANSO-OPTICAL | Seeded |
+| OPT-050 | `lambda = c/f_optical` | optical carrier frequency | Converts optical frequency to wavelength. | CCSDS-141, DESCANSO-OPTICAL | Seeded |
+| OPT-051 | `Delta_f_optical ~= c*Delta_lambda/lambda^2` | small wavelength spacing around `lambda` | First-order wavelength-to-frequency spacing conversion for optical channels or filter bandwidths. | CCSDS-141, General physics | Seeded |
+| OPT-052 | `tau_coh ~= 1/(pi*Delta_nu_laser)` | laser linewidth | First-order coherence-time estimate for a Lorentzian optical linewidth. | CCSDS-141, optical comm references | Seeded |
+| OPT-053 | `L_coh ~= c*tau_coh/n_medium` | coherence time and optical medium index | Coherence length corresponding to a linewidth-limited source. | CCSDS-141, optical comm references | Seeded |
+| OPT-054 | `R_slot = 1/T_slot` | optical slot width | Optical slot rate for OOK/PPM-style direct-detection signaling. | CCSDS-141, CCSDS-142 | Seeded |
+| OPT-055 | `R_b_OOK = R_code*R_slot` | binary OOK slot rate and code rate | Coded or net bit rate for one binary optical decision per slot. | CCSDS-141, BOOK-SKLAR | Seeded |
+| OPT-056 | `OOK_DutyCycle = T_pulse/T_ook_symbol` | optical pulse width and OOK symbol duration | Duty cycle of a pulsed OOK optical waveform. | CCSDS-141 | Seeded |
+| OPT-057 | `P_peak_OOK = P_avg_OOK/OOK_DutyCycle` | average optical power and duty cycle | Peak optical power required for a pulsed OOK average-power target. | CCSDS-141, DESCANSO-OPTICAL | Seeded |
+| OPT-058 | `PPM_FrameSlots = M_PPM + GuardSlots` | PPM order and guard slots | Total slots in one PPM symbol frame when guard slots are inserted. | CCSDS-142, DESCANSO-OPTICAL | Seeded |
+| OPT-059 | `PPM_FrameDuration = PPM_FrameSlots*T_slot` | PPM frame slots and slot width | Duration of one guarded PPM symbol frame. | CCSDS-142, DESCANSO-OPTICAL | Seeded |
+| OPT-060 | `R_b_PPM_coded = R_code*log2(M_PPM)/PPM_FrameDuration` | code rate, PPM order, and guarded frame duration | Net coded information bit rate for guarded M-PPM. | CCSDS-142, DESCANSO-OPTICAL | Seeded |
+| OPT-061 | `PPM_DutyCycle = PulseSlots/PPM_FrameSlots` | pulse slots per symbol frame | Optical duty cycle for one or more pulse slots per guarded PPM symbol. | CCSDS-142 | Seeded |
+| OPT-062 | `P_peak_PPM = P_avg_PPM/PPM_DutyCycle` | average optical power and PPM duty cycle | Peak optical power implied by a PPM average-power constraint. | CCSDS-142, DESCANSO-OPTICAL | Seeded |
+| OPT-063 | `RepeatedPPMSlots = SymbolRepeats*PPM_FrameSlots` | symbol repetition count and guarded frame slots | Slot count after symbol repetition for acquisition robustness or coding/synchronization support. | CCSDS-142 | Seeded |
+| OPT-064 | `SCPPM_InputBits = TransferFrameBits + CRCBits + TerminationBits` | transfer frame, CRC, and trellis termination | Input block size entering a serially concatenated PPM coding chain. | CCSDS-142 | Seeded |
+| OPT-065 | `SCPPM_CodeBits = SCPPM_InputBits/r_scppm_outer` | outer code rate | Encoded bit count after the outer code in an SCPPM-style optical coding chain. | CCSDS-142 | Procedure |
+| OPT-066 | `SCPPM_PPMSymbols = ceil(SCPPM_CodeBits/log2(M_PPM))` | coded bits and PPM order | Number of PPM symbols needed to map coded bits into PPM positions. | CCSDS-142 | Seeded |
+| OPT-067 | `SCPPM_TransmittedSlots = SCPPM_PPMSymbols*(M_PPM+GuardSlots)*SymbolRepeats` | PPM symbol count, guard slots, and repetition | Total transmitted optical slots after guarded PPM mapping and symbol repetition. | CCSDS-142 | Seeded |
+| OPT-068 | `SCPPM_SlotEfficiency = TransferFrameBits/SCPPM_TransmittedSlots` | useful frame bits and transmitted slots | Useful transfer-frame bits per transmitted optical slot before photon-count and channel losses. | CCSDS-142 | Seeded |
+| OPT-069 | `RSPC_CodeSymbols = n_rs_row*n_rs_col` | row and column R-S code lengths | Code-symbol count in a two-dimensional Reed-Solomon product code block. | CCSDS-142.10, BOOK-SKLAR | Seeded |
+| OPT-070 | `RSPC_InfoSymbols = k_rs_row*k_rs_col` | row and column R-S information lengths | Information-symbol count in a Reed-Solomon product code block. | CCSDS-142.10, BOOK-SKLAR | Seeded |
+| OPT-071 | `RSPC_Rate = (k_rs_row*k_rs_col)/(n_rs_row*n_rs_col)` | product-code dimensions | Overall code rate of a rectangular Reed-Solomon product code. | CCSDS-142.10, BOOK-SKLAR | Seeded |
+| OPT-072 | `RSPC_ParitySymbols = n_rs_row*n_rs_col - k_rs_row*k_rs_col` | product-code dimensions | Total parity/check symbols in a Reed-Solomon product code block. | CCSDS-142.10, BOOK-SKLAR | Seeded |
+| OPT-073 | `RSPC_BlockDuration = RSPC_CodeSymbols*J_rs/R_slot` | product-code symbols, symbol bits, and optical slot rate | Time to transmit one Reed-Solomon product code block when symbols are serialized onto optical slots. | CCSDS-142.10 | Seeded |
+
+## Orbit, Geometry, Coverage, and Contact
+
+| ID | Formula | Variables | Explanation | Source family | Status |
+| --- | --- | --- | --- | --- | --- |
+| ORB-001 | `r = R_e + h` | `r`: orbital radius; `R_e`: Earth radius; `h`: altitude | Circular-orbit radius from altitude. | BOOK-SMAD, BOOK-VALLADO | Seeded |
+| ORB-002 | `n = sqrt(mu / a^3)` | `n`: mean motion rad/s; `mu`: gravitational parameter; `a`: semi-major axis | Keplerian mean motion. | BOOK-VALLADO, BOOK-BATE | Seeded |
+| ORB-003 | `T = 2 pi sqrt(a^3 / mu)` | `T`: orbital period | Keplerian orbital period. | BOOK-VALLADO, BOOK-BATE | Seeded |
+| ORB-004 | `v_c = sqrt(mu / r)` | `v_c`: circular velocity | Circular-orbit speed. | BOOK-VALLADO, BOOK-BATE | Seeded |
+| ORB-005 | `rho = sqrt(r^2 + R_e^2 - 2 r R_e cos(psi))` | `rho`: slant range; `psi`: geocentric angle | Ground-station to spacecraft slant range for spherical Earth geometry. | BOOK-SMAD, BOOK-VALLADO | Seeded |
+| ORB-006 | `sin(E) = (r cos(psi) - R_e) / rho` | `E`: elevation angle | Elevation angle from central angle and slant range. | BOOK-SMAD, BOOK-VALLADO | Seeded |
+| ORB-007 | `cos(psi_h) = R_e / r` | `psi_h`: horizon central angle | Geometric horizon for zero elevation. Add minimum elevation by modified geometry. | BOOK-SMAD, BOOK-VALLADO | Seeded |
+| ORB-008 | `ground_range = R_e psi` | `psi`: central angle rad | Surface ground range from central angle. | BOOK-SMAD | Seeded |
+| ORB-009 | `visible_fraction ~= psi_h / pi` | circular orbit approximation | Rough single-station visibility fraction for equatorial simplification. | BOOK-SMAD | Seeded |
+| ORB-010 | `contact_time ~= visible_fraction * T` | visibility fraction and period | First-cut pass duration estimate. Replace with propagated AOS/LOS for production. | BOOK-SMAD | Seeded |
+| ORB-011 | `range_rate = dot(rho_vector, v_rel) / |rho_vector|` | relative position and velocity | Line-of-sight range-rate for Doppler/ranging. | BOOK-VALLADO, DSN-810-005 | Seeded |
+| ORB-012 | `az = atan2(east, north)` | topocentric ENU components | Azimuth from topocentric vector. | BOOK-VALLADO | Seeded |
+| ORB-013 | `el = asin(up / rho)` | topocentric up component | Elevation from topocentric vector. | BOOK-VALLADO | Seeded |
+| ORB-014 | `rho = sqrt(east^2 + north^2 + up^2)` | topocentric vector | Slant range from ENU components. | BOOK-VALLADO | Seeded |
+| ORB-015 | `Doppler_rate = -f_c / c * d(v_r)/dt` | radial acceleration | Doppler rate from range acceleration. | DSN-810-005, BOOK-VALLADO | Seeded |
+| ORB-016 | `Antenna_slew_rate ~= sqrt((daz/dt)^2 + (del/dt)^2)` | az/el angular rates | Ground antenna tracking-rate sizing approximation. | DSN-810-005, BOOK-SMAD | Seeded |
+| ORB-017 | `epsilon = v^2/2 - mu/r = -mu/(2*a)` | speed, radius, gravitational parameter | Specific orbital energy for a two-body conic orbit. | BOOK-VALLADO, BOOK-BATE | Seeded |
+| ORB-018 | `v = sqrt(mu*(2/r - 1/a))` | radius and semi-major axis | Vis-viva speed for elliptic, parabolic, or hyperbolic conic motion. | BOOK-VALLADO, BOOK-BATE | Seeded |
+| ORB-019 | `h_vec = r_vec x v_vec; h = norm(h_vec)` | inertial position and velocity | Specific angular momentum vector and magnitude. | BOOK-VALLADO, BOOK-BATE | Seeded |
+| ORB-020 | `e_vec = (v_vec x h_vec)/mu - r_vec/r` | state vector and angular momentum | Eccentricity vector from Cartesian state. | BOOK-VALLADO, BOOK-BATE | Seeded |
+| ORB-021 | `p = h^2/mu = a*(1-e^2)` | angular momentum, semi-major axis, eccentricity | Semilatus rectum relation for a Keplerian conic. | BOOK-VALLADO, BOOK-BATE | Seeded |
+| ORB-022 | `r_orbit = p/(1 + e*cos(nu))` | semilatus rectum, eccentricity, true anomaly | Radius as a function of true anomaly. | BOOK-VALLADO, BOOK-BATE | Seeded |
+| ORB-023 | `r_p = a*(1-e); r_a = a*(1+e)` | semi-major axis and eccentricity | Perigee/periapsis and apogee/apoapsis radii for an ellipse. | BOOK-VALLADO, BOOK-BATE | Seeded |
+| ORB-024 | `N_phi = a_E / sqrt(1 - e_E^2*sin(phi)^2)` | ellipsoid semi-major axis, eccentricity, latitude | Prime vertical radius of curvature for WGS-84-style geodetic coordinates. | IERS, NAVIPEDIA | Seeded |
+| ORB-025 | `x_site=(N_phi+h_site)*cos(phi)*cos(lon); y_site=(N_phi+h_site)*cos(phi)*sin(lon); z_site=(N_phi*(1-e_E^2)+h_site)*sin(phi)` | geodetic latitude, longitude, height | Convert a ground station from geodetic coordinates to Earth-fixed Cartesian coordinates. | IERS, NAVIPEDIA | Seeded |
+| ORB-026 | `rho_ecef = r_sat_ecef - r_site_ecef` | satellite and station ECEF positions | Earth-fixed topocentric relative-position vector before ENU rotation. | BOOK-VALLADO, NAVIPEDIA | Seeded |
+| ORB-027 | `east=-sin(lon)*dx+cos(lon)*dy; north=-sin(phi)*cos(lon)*dx-sin(phi)*sin(lon)*dy+cos(phi)*dz; up=cos(phi)*cos(lon)*dx+cos(phi)*sin(lon)*dy+sin(phi)*dz` | ECEF relative vector and station geodetic coordinates | Transform a station-centered ECEF relative vector into local ENU components. | NAVIPEDIA, IERS | Seeded |
+| ORB-028 | `el = atan2(up, sqrt(east^2+north^2)); az = atan2(east,north); rho = sqrt(east^2+north^2+up^2)` | local ENU vector | Horizon coordinates used by antenna pointing and access checks. | BOOK-VALLADO, NAVIPEDIA | Seeded |
+| ORB-029 | `r_ecef ~= R3(theta_GMST) * r_eci` | inertial vector and Earth rotation angle | First-order ECI-to-ECEF rotation; high-precision products require IERS precession, nutation, polar motion, and Earth-orientation parameters. | IERS, CELESTRAK | Procedure |
+| ORB-030 | `cos(psi_Emin) = (R_e/r)*cos(E_min)^2 + sin(E_min)*sqrt(1 - (R_e/r)^2*cos(E_min)^2)` | orbit radius and minimum elevation | Spherical-Earth central angle to the access boundary for a minimum elevation mask. | BOOK-SMAD, BOOK-VALLADO | Seeded |
+| ORB-031 | `rho_Emin = sqrt(r^2 - R_e^2*cos(E_min)^2) - R_e*sin(E_min)` | orbit radius and minimum elevation | Slant range at the minimum-elevation access boundary. | BOOK-SMAD, BOOK-VALLADO | Seeded |
+| ORB-032 | `coverage_radius = R_e * psi_Emin` | Earth radius and access half-angle | Ground footprint radius for a circular-orbit spherical-Earth approximation. | BOOK-SMAD | Seeded |
+| ORB-033 | `AccessFlag = (el >= E_min) and (rho <= RangeMax)` | elevation mask and range limit | Binary visibility/access condition for schedule filtering. | BOOK-SMAD, BOOK-VALLADO | Procedure |
+| ORB-034 | `PassDurationApprox = 2*psi_Emin / abs(omega_rel)` | access half-angle and apparent angular rate | First-order pass-duration estimate before full orbit propagation. | BOOK-SMAD | Procedure |
+| ORB-035 | `GroundTrackShiftPerOrbit = omega_E * T` | Earth rotation rate and orbital period | Longitude shift of Earth under the orbit between consecutive revolutions, before nodal regression corrections. | BOOK-VALLADO, BOOK-SMAD | Seeded |
+| ORB-036 | `lat_ss = asin(sin(i)*sin(u))` | inclination and argument of latitude | Subsatellite latitude for a circular orbit in a simple inertial-to-rotating geometry. | BOOK-VALLADO | Seeded |
+| ORB-037 | `lon_ss = atan2(cos(i)*sin(u), cos(u)) - theta_GMST` | inclination, argument of latitude, Earth rotation | Subsatellite longitude for a circular orbit before longitude normalization and perturbation corrections. | BOOK-VALLADO | Procedure |
+| ORB-038 | `Omega_dot_J2 = -1.5*J2*n*(R_e/p)^2*cos(i)` | J2, mean motion, semilatus rectum, inclination | Secular right-ascension-of-ascending-node regression from Earth's oblateness. | BOOK-VALLADO, BOOK-SMAD | Seeded |
+| ORB-039 | `omega_dot_J2 = 0.75*J2*n*(R_e/p)^2*(5*cos(i)^2 - 1)` | J2 and orbit elements | Secular argument-of-perigee drift from J2. | BOOK-VALLADO, BOOK-BATE | Seeded |
+| ORB-040 | `M_dot_J2 = n + 0.75*J2*n*(R_e/p)^2*sqrt(1-e^2)*(3*cos(i)^2 - 1)` | J2 and orbit elements | First-order secular mean-anomaly rate including J2 correction. | BOOK-VALLADO | Procedure |
+| ORB-041 | `cos(i_sunsync) = -Omega_dot_target / (1.5*J2*n*(R_e/p)^2)` | target nodal precession rate | Sun-synchronous inclination estimate from required nodal precession. | BOOK-VALLADO, BOOK-SMAD | Procedure |
+| ORB-042 | `T_nodal ~= 2*pi/(M_dot_J2 + omega_dot_J2)` | corrected mean-anomaly and perigee rates | Approximate nodal/argument-of-latitude period used by repeating-ground-track checks. | BOOK-VALLADO | Procedure |
+| ORB-043 | `Delta_lambda_node = (omega_E - Omega_dot_J2)*T_nodal` | Earth rotation and nodal regression | Longitude spacing between successive ascending-node crossings. | BOOK-VALLADO, CELESTRAK | Seeded |
+| ORB-044 | `RepeatGroundTrackError = abs(N_orbits*Delta_lambda_node - 2*pi*N_days)` | repeat cycle integers | Closure error for a candidate repeat-ground-track cycle. | BOOK-VALLADO, BOOK-SMAD | Procedure |
+| ORB-045 | `M_anom(t) = M0 + n*(t - t0)` | epoch mean anomaly and mean motion | Two-body mean anomaly propagation from an epoch. | BOOK-VALLADO, BOOK-BATE | Seeded |
+| ORB-046 | `M_anom = E_anom - e*sin(E_anom)` | eccentric anomaly and eccentricity | Kepler's equation for elliptical orbits. | BOOK-VALLADO, BOOK-BATE | Procedure |
+| ORB-047 | `tan(nu/2) = sqrt((1+e)/(1-e))*tan(E_anom/2)` | eccentric and true anomaly | Converts eccentric anomaly to true anomaly for an elliptic orbit. | BOOK-VALLADO, BOOK-BATE | Seeded |
+| ORB-048 | `g_access(t) = el(t) - E_min` | propagated elevation and elevation mask | Access event function; AOS/LOS occur at roots of `g_access(t)` with opposite crossing directions. | BOOK-VALLADO, BOOK-SMAD | Procedure |
+| ORB-049 | `AOS_Time = root(g_access(t)=0, d(el)/dt>0)` | access event function | Acquisition-of-signal time as an upward elevation-mask crossing. | BOOK-VALLADO, BOOK-SMAD | Procedure |
+| ORB-050 | `LOS_Time = root(g_access(t)=0, d(el)/dt<0)` | access event function | Loss-of-signal time as a downward elevation-mask crossing. | BOOK-VALLADO, BOOK-SMAD | Procedure |
+| ORB-051 | `MaxElevationTime = root(d(el)/dt=0, d2(el)/dt2<0)` | elevation time history | Time of maximum elevation during a pass. | BOOK-VALLADO, BOOK-SMAD | Procedure |
+| ORB-052 | `Delta_v1_H = sqrt(mu/r1)*(sqrt(2*r2/(r1+r2)) - 1)` | initial and final circular radii | First impulse of a coplanar Hohmann transfer from radius `r1` to `r2`. | BOOK-VALLADO, BOOK-BATE | Seeded |
+| ORB-053 | `Delta_v2_H = sqrt(mu/r2)*(1 - sqrt(2*r1/(r1+r2)))` | initial and final circular radii | Second impulse circularizing a coplanar Hohmann transfer. Sign convention assumes raising transfer; use magnitude for cost. | BOOK-VALLADO, BOOK-BATE | Seeded |
+| ORB-054 | `Delta_v_H_total = abs(Delta_v1_H) + abs(Delta_v2_H)` | Hohmann impulses | Total two-impulse Hohmann transfer delta-v. | BOOK-VALLADO, BOOK-BATE | Seeded |
+| ORB-055 | `T_Hohmann = pi*sqrt(((r1+r2)/2)^3/mu)` | Hohmann transfer semi-major axis | Time of flight for a half-ellipse Hohmann transfer. | BOOK-VALLADO, BOOK-BATE | Seeded |
+| ORB-056 | `Delta_v_plane = 2*v*sin(Delta_i/2)` | speed and inclination change | Pure plane-change delta-v at constant speed. | BOOK-VALLADO, BOOK-BATE | Seeded |
+| ORB-057 | `Delta_v_combined = sqrt(v_before^2 + v_after^2 - 2*v_before*v_after*cos(Delta_i))` | pre/post maneuver speeds and plane change | Combined speed-change and plane-change impulse magnitude. | BOOK-VALLADO, BOOK-BATE | Seeded |
+
+## Data Compression and Source Coding
+
+| ID | Formula | Variables | Explanation | Source family | Status |
+| --- | --- | --- | --- | --- | --- |
+| COMP-001 | `CR = UncompressedBits / CompressedBits` | `CR`: compression ratio | Measures achieved compression. | CCSDS-121, CCSDS-122, CCSDS-123 | Seeded |
+| COMP-002 | `CompressedBits = UncompressedBits / CR + HeaderBits` | compressed payload and headers | Data-volume reduction including packet/header overhead. | CCSDS-121, CCSDS-122, CCSDS-123 | Seeded |
+| COMP-003 | `CompressedRate = SourceRate / CR` | rates in bps | First-order compressed bit rate. | CCSDS-121, BOOK-SMAD | Seeded |
+| COMP-004 | `NetCompressedRate = (SourceBits / CR + HeaderBits) / Duration` | source data and duration | Net downlink/storage rate after compression overhead. | CCSDS-121, CCSDS-122 | Seeded |
+| COMP-005 | `bpp = Bits / PixelCount` | image bits and pixels | Bits per pixel for image compression. | CCSDS-122, CCSDS-123 | Seeded |
+| COMP-006 | `bpsample = Bits / SampleCount` | sample count | Bits per sample for instrument compression. | CCSDS-121, CCSDS-123 | Seeded |
+| COMP-007 | `H = -sum(p_i log2(p_i))` | `p_i`: symbol probabilities | Entropy lower bound for lossless coding. | BOOK-SKLAR | Seeded |
+| COMP-008 | `L_avg = sum(p_i l_i)` | codeword lengths | Average code length. | BOOK-SKLAR | Seeded |
+| COMP-009 | `CodingEfficiency = H / L_avg` | entropy and average length | Source-code efficiency. | BOOK-SKLAR | Seeded |
+| COMP-010 | `Residual = Sample - Predictor(SampleHistory)` | predictor output | Predictive coding residual. CCSDS predictor details are procedure/table dependent. | CCSDS-121, CCSDS-123 | Procedure |
+| COMP-011 | `QuantizedResidual = round(Residual / q)` | quantization step `q` | Near-lossless residual quantization skeleton. | CCSDS-123 | Procedure |
+| COMP-012 | `PacketizedCompressedBits = CompressedDataBits + PacketOverheadBits` | source packet overhead | Compressed stream inserted into source packets. | CCSDS-121, CCSDS-122, CCSDS-123 | Procedure |
+| COMP-013 | `StorageGain = 1 - CompressedBits / UncompressedBits` | storage reduction | Fractional storage saving. | CCSDS-121, BOOK-SMAD | Seeded |
+| COMP-014 | `DownlinkTimeSaved = DataVolume/Rate - CompressedBits/Rate` | volume and downlink rate | Contact-time saving from compression. | BOOK-SMAD, CCSDS-121 | Seeded |
+| COMP-015 | `InputBlocks = ceil(InputSamples / J)` | input sample count and CCSDS 121 block size | Number of `J`-sample input blocks; padding is used when the input sequence is not an integer number of blocks. | CCSDS-121 | Seeded |
+| COMP-016 | `PaddingSamples = (J - (InputSamples mod J)) mod J` | input sample count and block size | Samples appended to align a CCSDS 121 input sequence to full blocks; zero-valued preprocessed padding minimizes coded output. | CCSDS-121 | Seeded |
+| COMP-017 | `ReferenceSampleCount = ceil(InputBlocks / r)` | input blocks and reference interval | Count of uncoded reference samples when predictive preprocessing requires one reference at the first block of each `r`-block interval. | CCSDS-121 | Seeded |
+| COMP-018 | `ReferenceSampleBits = ReferenceSampleCount * n` | reference samples and sample resolution | Output bit budget for uncoded CCSDS 121 reference samples placed in the corresponding CDS. | CCSDS-121 | Seeded |
+| COMP-019 | `xhat_i = x_i if reference sample else x_(i-1)` | unit-delay predictor state | CCSDS 121 unit-delay predictor; the first sample in a reference interval predicts itself. | CCSDS-121 | Procedure |
+| COMP-020 | `Delta_i = x_i - xhat_i` | sample and predicted sample | Prediction error entering the CCSDS 121 prediction-error mapper. | CCSDS-121 | Seeded |
+| COMP-021 | `theta_i = min(xhat_i - x_min, x_max - xhat_i)` | predictor value and sample range | CCSDS 121 mapper threshold for the allowed prediction-error range. | CCSDS-121 | Seeded |
+| COMP-022 | `delta_i = 2*Delta_i if 0 <= Delta_i <= theta_i; -2*Delta_i - 1 if -theta_i <= Delta_i < 0; theta_i + abs(Delta_i) otherwise` | prediction error and mapper threshold | Nonnegative mapped prediction error for CCSDS 121 entropy coding. | CCSDS-121 | Procedure |
+| COMP-023 | `x_min = 0; x_max = 2^n - 1` | unsigned sample resolution | Unsigned CCSDS 121 `n`-bit sample range. | CCSDS-121 | Seeded |
+| COMP-024 | `x_min = -2^(n-1); x_max = 2^(n-1) - 1` | signed sample resolution | Signed CCSDS 121 `n`-bit sample range. | CCSDS-121 | Seeded |
+| COMP-025 | `FSCodewordBits(v) = v + 1` | fundamental-sequence value | Fundamental Sequence codeword length: `v` zeros followed by one `1`. | CCSDS-121 | Seeded |
+| COMP-026 | `SplitMSB_i = floor(delta_i / 2^k); SplitLSB_i = delta_i mod 2^k` | mapped sample and split parameter | CCSDS 121 split-sample decomposition; the MSB value is FS-coded and the `k` LSBs are sent uncoded. | CCSDS-121 | Seeded |
+| COMP-027 | `SplitUncodedBits = k * EncodedSamplesInBlock` | split parameter and coded sample count | Uncoded LSB field length for a split-sample CDS; use `J-1` when a reference sample occupies the first sample. | CCSDS-121 | Seeded |
+| COMP-028 | `gamma_j = (delta_(2*j-1)+delta_(2*j))*(delta_(2*j-1)+delta_(2*j)+1)/2 + delta_(2*j)` | paired mapped samples | CCSDS 121 second-extension transform for each pair of preprocessed samples; use `delta_1=0` when the first block sample is a reference sample. | CCSDS-121 | Seeded |
+| COMP-029 | `ZeroBlockSegments = ceil(BlocksInReferenceInterval / 64)` | blocks in a reference interval | CCSDS 121 zero-block option partitions each reference interval into 64-block segments, except possibly the last segment. | CCSDS-121 | Seeded |
+| COMP-030 | `NoCompressionCDSBits = IDBits + J*n` | ID field, block size, sample resolution | Coded Data Set size when CCSDS 121 no-compression is selected for a whole preprocessed block. | CCSDS-121 | Seeded |
+| COMP-031 | `SelectedCodeOption = argmin_option(EncodedBits_option + IDBits_option)` | candidate option bit lengths | CCSDS 121 single-block code-option selection; zero-block has priority for all-zero runs and tie-breaking prefers no-compression, then second-extension, then smallest `k`. | CCSDS-121 | Procedure |
+| COMP-032 | `ImageSamples3D = N_x * N_y * N_z` | cross-track, frame/line, and spectral-band counts | Sample count for a multispectral or hyperspectral image cube. | CCSDS-123, CCSDS-120.2 | Seeded |
+| COMP-033 | `ImageRawBits3D = N_x * N_y * N_z * D` | image dimensions and bit depth | Raw data volume for a `D`-bit multispectral/hyperspectral image cube. | CCSDS-123, CCSDS-120.2 | Seeded |
+| COMP-034 | `s_hat_z(t) = floor(s_tilde_z(t) / 2)` | scaled predicted sample | CCSDS 123 predicted sample derived from the integer scaled predicted sample; `s_tilde` has one extra bit of resolution. | CCSDS-123, CCSDS-120.2 | Seeded |
+| COMP-035 | `PredictionErrorScaled_z(t) = 2*s_z(t) - s_tilde_z(t)` | current sample and scaled predictor | Scaled prediction error used by the CCSDS 123 predictor explanation. | CCSDS-123, CCSDS-120.2 | Seeded |
+| COMP-036 | `QuantizerStep_z(t) = 2*m_z(t) + 1` | per-sample maximum error value | Uniform near-lossless quantizer step size that guarantees reconstruction error no larger than `m_z(t)`. | CCSDS-123, CCSDS-120.2 | Seeded |
+| COMP-037 | `m_z(t) = a_z` | band-specific absolute error limit | CCSDS 123 absolute-error-limit mode for near-lossless compression. | CCSDS-123, CCSDS-120.2 | Seeded |
+| COMP-038 | `m_z(t) = 0` | lossless mode | Lossless CCSDS 123 setting for every band and sample. | CCSDS-123, CCSDS-120.2 | Seeded |
+| COMP-039 | `ErrorLimitUpdatePeriodFrames = 2^u` | error-limit update exponent | Periodic error-limit update interval for CCSDS 123 near-lossless compression. | CCSDS-123, CCSDS-120.2 | Seeded |
+| COMP-040 | `CompressedImageRate = CompressedImageBits / AcquisitionDuration` | compressed image size and acquisition time | Payload image data rate after compression for storage/downlink sizing. | CCSDS-122, CCSDS-123, BOOK-SMAD | Seeded |
+
+## Protocol, Security, and Space Link Overhead Extensions
+
+| ID | Formula | Variables | Explanation | Source family | Status |
+| --- | --- | --- | --- | --- | --- |
+| PROTO-001 | `ProtocolEfficiency = UserDataBits / (UserDataBits + HeaderBits + TrailerBits)` | protocol field bits | Generic protocol-layer efficiency. | CCSDS-132, CCSDS-232, CCSDS-732, CCSDS-732.1 | Seeded |
+| PROTO-002 | `LayeredEfficiency = prod(eta_i)` | per-layer efficiencies | Combined efficiency across packet, frame, coding, and security layers. | CCSDS SLS, BOOK-SMAD | Seeded |
+| PROTO-003 | `NetUserRate = PhysicalRate * LayeredEfficiency` | physical line rate and efficiency | User payload rate after protocol/coding overhead. | CCSDS SLS | Seeded |
+| PROTO-004 | `IdleFraction = IdleBits / TotalFrameBits` | idle/fill data bits | Idle insertion cost in scheduled links. | CCSDS-132, CCSDS-732, CCSDS-732.1 | Seeded |
+| PROTO-005 | `FillOverhead = FillBits / (PayloadBits + FillBits)` | fill bits | Fill overhead when transfer data does not align to frame/codeblock boundaries. | CCSDS-131, CCSDS-231 | Procedure |
+| PROTO-006 | `SecurityEfficiency = PlaintextBits / (PlaintextBits + IVBits + AuthTagBits + PaddingBits)` | security overhead fields | Security overhead for authenticated/encrypted data links. | CCSDS-355, CCSDS-232, CCSDS-732.1 | Seeded |
+| PROTO-007 | `ReplayWindowMemory = WindowSize * SequenceNumberBytes` | replay protection fields | Ground/space memory sizing for anti-replay tracking. | CCSDS-355 | Seeded |
+| PROTO-008 | `ARQGoodput = PayloadBits * (1-PER) / TransactionTime` | packet/frame error rate | First-order goodput with retransmissions omitted. | CCSDS COP, BOOK-SKLAR | Seeded |
+| PROTO-009 | `ExpectedTransmissions = 1 / (1 - PER)` | frame error probability | Expected attempts for independent retransmission trials. | BOOK-SKLAR, CCSDS COP | Seeded |
+| PROTO-010 | `ARQGoodput ~= PayloadBits / (FrameTime * ExpectedTransmissions + AckDelay)` | ARQ timing | Stop-and-wait style goodput estimate. | CCSDS COP, BOOK-SKLAR | Seeded |
+| PROTO-011 | `ProxNetRate = ProxPhysicalRate * ProxCodingEfficiency * ProxFrameEfficiency` | Proximity-1 factors | Relay/lander proximity link net rate. | CCSDS-211.0, CCSDS-211.1, CCSDS-211.2 | Seeded |
+| PROTO-012 | `MultiplexedRate_i = NetRate * Allocation_i` | allocation fraction | Virtual-channel or service allocation rate. | CCSDS-132, CCSDS-732, CCSDS-732.1 | Seeded |
+| PROTO-013 | `PLTU_Bits = 24 + TransferFrameBits + 32` | Proximity ASM, Transfer Frame, CRC-32 | Proximity-1 Link Transmission Unit size. The 24-bit ASM pattern is `FAF320`; the trailer is a 32-bit CRC. | CCSDS-211.2 | Seeded |
+| PROTO-014 | `PLTU_OverheadBits = ASM_Bits + CRC32_Bits = 56` | Proximity ASM and CRC-32 fields | Fixed PLTU synchronization and CRC overhead before channel coding. | CCSDS-211.2 | Seeded |
+| PROTO-015 | `PLTU_Efficiency = TransferFrameBits / PLTU_Bits` | transfer-frame and PLTU sizes | Transfer-frame fraction of a Proximity-1 PLTU. | CCSDS-211.2 | Seeded |
+| PROTO-016 | `ProxIdleRepeats = ceil(ProxIdleBits / 32)` | idle/acquisition/tail idle bits | Repetitions of the Proximity-1 idle PN sequence `352EF853`, which is 32 bits long. | CCSDS-211.2 | Seeded |
+| PROTO-017 | `ProxAcquisitionBits = ceil(Acquisition_Idle_Duration * Rd)` | acquisition-idle duration and data rate | Acquisition sequence bit budget before the first PLTU. | CCSDS-211.2 | Seeded |
+| PROTO-018 | `ProxTailBits = ceil(Tail_Idle_Duration * Rd)` | tail-idle duration and data rate | Tail sequence bit budget after the last PLTU. | CCSDS-211.2 | Seeded |
+| PROTO-019 | `ProxRdError = min(abs(Rd - Rd_allowed_i))` | selected data rate and allowed-rate table | Validation distance to the Proximity-1 discrete `Rd` set: 1000 through 2048000 bit/s by powers of two. LDPC true rates require the data-link annex table. | CCSDS-211.2 | Seeded |
+| PROTO-020 | `R_cs_uncoded = Rd` | Proximity-1 uncoded option | Coded-symbol stream rate for the no-coding option. | CCSDS-211.2 | Seeded |
+| PROTO-021 | `R_cs_conv = 2*Rd; ProxConvSymbols = 2*InputBits` | Proximity-1 rate-1/2 convolutional code | Coded-symbol rate and symbol expansion for the non-punctured constraint-length-7 convolutional code. | CCSDS-211.2 | Seeded |
+| PROTO-022 | `ProxLDPCBlocks = ceil(InputBits / 1024)` | PLTU plus idle bitstream | Number of fixed-length Proximity-1 LDPC message blocks after PLTU construction and idle insertion. | CCSDS-211.2 | Seeded |
+| PROTO-023 | `ProxLDPCCodewordBits = 2048; ProxLDPCCodeRate = 1024/2048` | LDPC message block and codeword size | Proximity-1 LDPC uses the CCSDS rate-1/2 `(n=2048,k=1024)` code. | CCSDS-211.2 | Seeded |
+| PROTO-024 | `ProxLDPCOutputBits = ProxLDPCBlocks * (64 + 2048)` | CSM plus LDPC codeword | Coded stream size when a 64-bit Codeword Sync Marker immediately precedes each LDPC codeword. CSM pattern is `034776C7272895B0`. | CCSDS-211.2 | Seeded |
+| PROTO-025 | `ProxLDPCEfficiency = 1024 / (2048 + 64)` | LDPC message, codeword, and CSM bits | Physical stream efficiency of Proximity-1 LDPC before PLTU/idle/frame-layer overhead. | CCSDS-211.2 | Seeded |
+| PROTO-026 | `RandomizedCodewordBit_i = LDPCCodewordBit_i xor PN_(i mod 255)` | LDPC codeword and pseudo-random sequence | Proximity-1 LDPC codeword randomization; the CSM itself is not randomized and the all-ones generator resets each codeword. | CCSDS-211.2 | Procedure |
+| PROTO-027 | `ProxV3HeaderBits = 2+1+1+2+10+1+3+1+11+8 = 40` | Version-3 transfer-frame header fields | Sum of the mandatory Proximity-1 Version-3 Transfer Frame header fields: TFVN, QoS, PDU type, DFC ID, SCID, PCID, Port ID, source/destination, frame length, and frame sequence number. | CCSDS-211.0, ISO-22663 | Seeded |
+| PROTO-028 | `ProxV3HeaderOctets = ProxV3HeaderBits / 8 = 5` | Version-3 transfer-frame header bits | Fixed Version-3 Transfer Frame header length. | CCSDS-211.0, ISO-22663 | Seeded |
+| PROTO-029 | `ProxV3DataFieldOctets = ProxV3FrameOctets - 5` | complete frame and fixed header | Proximity-1 Version-3 Transfer Frame data-field capacity for a selected frame size. | CCSDS-211.0, ISO-22663 | Seeded |
+| PROTO-030 | `ProxV3MaxDataFieldOctets = 2048 - 5 = 2043` | maximum Version-3 frame length | Maximum Version-3 Transfer Frame data-field capacity before PLTU ASM/CRC and channel-coding overhead. | CCSDS-211.0, ISO-22663 | Seeded |
+| PROTO-031 | `ProxV3FrameEfficiency = ProxV3DataFieldOctets / ProxV3FrameOctets` | data field and complete transfer frame | Data-field fraction of a Proximity-1 Version-3 Transfer Frame. | CCSDS-211.0, ISO-22663 | Seeded |
+| PROTO-032 | `ProxV3TotalWithPLTUOverheadBits = 8*ProxV3FrameOctets + 56` | Version-3 frame and PLTU overhead | Transfer frame plus Proximity-1 ASM and CRC-32 overhead before optional channel coding. | CCSDS-211.0, CCSDS-211.2 | Seeded |
+| PROTO-033 | `ProxV3NetFrameEfficiency = 8*ProxV3DataFieldOctets / ProxV3TotalWithPLTUOverheadBits` | data field, transfer frame, ASM, CRC | Useful data-field fraction after fixed Version-3 header plus PLTU ASM/CRC overhead, before idle and coding. | CCSDS-211.0, CCSDS-211.2 | Seeded |
+| PROTO-034 | `ProxFrameSequenceModulus = 2^8 = 256` | frame sequence number width | Wrap modulus for the 8-bit Proximity-1 frame sequence number. | CCSDS-211.0, ISO-22663 | Seeded |
+| PROTO-035 | `ProxSCIDCount = 2^10; ProxPortCount = 2^3; ProxPCIDCount = 2` | SCID, Port ID, PCID field widths | Addressing/multiplexing cardinalities implied by the Version-3 header field widths. | CCSDS-211.0, ISO-22663 | Seeded |
+
+## Measurement, Unit, and RF Lab Conversions
+
+| ID | Formula | Variables | Explanation | Source family | Status |
+| --- | --- | --- | --- | --- | --- |
+| MEAS-001 | `P_dBW = 10 log10(P_W)` | `P_W`: power in watts | Watt to dBW. | General RF engineering | Seeded |
+| MEAS-002 | `P_dBm = 10 log10(P_mW)` | `P_mW`: power in milliwatts | Milliwatt to dBm. | General RF engineering | Seeded |
+| MEAS-003 | `P_dBm = P_dBW + 30` | dB powers | dBW/dBm conversion. | General RF engineering | Seeded |
+| MEAS-004 | `P_W = 10^(P_dBW/10)` | dBW | dBW to watts. | General RF engineering | Seeded |
+| MEAS-005 | `ratio_dB = 10 log10(P2/P1)` | power ratio | Power ratio in dB. | General RF engineering | Seeded |
+| MEAS-006 | `voltage_dB = 20 log10(V2/V1)` | equal impedances assumed | Voltage ratio in dB. | General RF engineering | Seeded |
+| MEAS-007 | `P = V_rms^2 / Z` | `V_rms`: RMS voltage; `Z`: RF/load impedance | RF power from RMS voltage. | General RF engineering | Seeded |
+| MEAS-008 | `V_rms = sqrt(P Z)` | power and RF/load impedance | RMS voltage from RF power. | General RF engineering | Seeded |
+| MEAS-009 | `PFD = EIRP / (4 pi R^2)` | power flux density W/m^2 | Power flux density at range. | ITU-P525, BOOK-MARAL | Seeded |
+| MEAS-010 | `PFD_dBW_m2 = EIRP_dBW - 10log10(4 pi R^2)` | dB form | PFD in dBW/m^2. | ITU-P525, BOOK-MARAL | Seeded |
+| MEAS-011 | `PSD_dBW_Hz = P_dBW - 10log10(B)` | bandwidth `B` | Power spectral density. | General RF engineering | Seeded |
+| MEAS-012 | `CN0_from_CNR = C/N + 10log10(B_n)` | measured C/N and bandwidth | Converts measured carrier-to-noise ratio to C/N0. | BOOK-SKLAR, DSN-810-005 | Seeded |
+| MEAS-013 | `u_c(y)^2 = sum_i sum_j (df/dx_i)(df/dx_j) u(x_i,x_j)` | input estimates, sensitivity coefficients, and covariance terms | General law of propagation of uncertainty for a result derived from several measured or calibrated inputs. | JCGM-100, NIST-TN1297, DESCANSO-DSTSE | Seeded |
+| MEAS-014 | `u_c(y) = sqrt(sum_i ((df/dx_i) u(x_i))^2)` | independent input uncertainties | RSS form for independent inputs; useful for quick RF lab budgets, link-margin budgets, and radiometric error cards. | JCGM-100, NIST-TN1297 | Seeded |
+| MEAS-015 | `U = k_coverage * u_c(y)` | coverage factor and combined standard uncertainty | Expanded uncertainty interval for reporting calibrated or measured quantities. | JCGM-100, NIST-TN1297 | Seeded |
+| MEAS-016 | `u_x_dB ~= (10/ln(10)) * u_x/x` | power-like linear quantity | Small-signal conversion from relative standard uncertainty to dB uncertainty for power, loss, gain, temperature, or rate ratios. | JCGM-100, NIST-TN1297, General RF engineering | Seeded |
+| MEAS-017 | `u_x/x ~= (ln(10)/10) * u_x_dB` | power-like dB uncertainty | Converts a small dB standard uncertainty back to relative linear uncertainty. | JCGM-100, NIST-TN1297, General RF engineering | Seeded |
+| MEAS-018 | `u_V_dB ~= (20/ln(10)) * u_V/V` | voltage-like quantity | Small-signal dB uncertainty for voltage, field strength, or amplitude ratios. | JCGM-100, NIST-TN1297, General RF engineering | Seeded |
+| MEAS-019 | `u_sum_dB = sqrt(sum_i u_i_dB^2)` | independent dB add/subtract terms | Standard uncertainty of a dB budget made from independent gains, losses, and margins. | JCGM-100, NIST-TN1297 | Seeded |
+| MEAS-020 | `u_mean = s_sample / sqrt(N_samples)` | sample standard deviation and sample count | Type-A standard uncertainty of a repeated-measurement mean. | JCGM-100, NIST-TN1297 | Seeded |
+| MEAS-021 | `s_sample = sqrt(sum_i (x_i - x_bar)^2/(N_samples - 1))` | repeated observations | Sample standard deviation for RF lab repeatability and calibration runs. | JCGM-100, NIST-TN1297 | Seeded |
+| MEAS-022 | `u_Te_yfactor = sqrt((dTe_dY u_Y)^2 + (dTe_dThot u_Thot)^2 + (dTe_dTcold u_Tcold)^2)` | Y-factor and load temperature uncertainties | Uncertainty propagation for receiver equivalent-noise-temperature calibration. | JCGM-100, NIST-TN1297, BOOK-SKLAR, DSN-810-005 | Seeded |
+| MEAS-023 | `dTe_dY=(T_cold-T_hot)/(Y-1)^2; dTe_dThot=1/(Y-1); dTe_dTcold=-Y/(Y-1)` | Y-factor equivalent-noise-temperature equation derivatives | Sensitivity coefficients used by the Y-factor uncertainty row. | JCGM-100, NIST-TN1297, BOOK-SKLAR | Procedure |
+| MEAS-024 | `Y = 10^(Y_dB/10)` | hot/cold power ratio in dB | Converts measured Y-factor from dB before applying receiver-temperature and uncertainty formulas. | BOOK-SKLAR, DSN-810-005, General RF engineering | Seeded |
+| MEAS-025 | `u_GT_dB = sqrt(u_G_dB^2 + ((10/ln(10)) u_Tsys/T_sys)^2)` | antenna gain and system-temperature uncertainties | Standard uncertainty of receiver figure of merit `G/T` in dB/K. | JCGM-100, NIST-TN1297, DSN-810-005 | Seeded |
+| MEAS-026 | `u_N0_dBHz = (10/ln(10)) * u_Tsys/T_sys` | system temperature uncertainty | Noise-density uncertainty induced by system-temperature uncertainty when Boltzmann constant is exact for the scenario. | JCGM-100, NIST-TN1297, BOOK-SKLAR | Seeded |
+| MEAS-027 | `u_CN0_dBHz = sqrt(u_EIRP_dB^2 + u_GT_dB^2 + u_Ltotal_dB^2)` | EIRP, G/T, and total path/loss uncertainties | Link-budget uncertainty for carrier-to-noise-density outputs when dB inputs are independent. | JCGM-100, NIST-TN1297, DESCANSO-DSTSE | Seeded |
+| MEAS-028 | `u_EbN0_dB = sqrt(u_CN0_dBHz^2 + u_Rb_dB^2)` | C/N0 and bit-rate uncertainties | Propagates link-budget uncertainty into `Eb/N0`. | JCGM-100, NIST-TN1297, BOOK-SKLAR | Seeded |
+| MEAS-029 | `u_Margin_dB = sqrt(u_AvailableEbN0_dB^2 + u_RequiredEbN0_dB^2)` | available and required Eb/N0 uncertainties | Standard uncertainty of a link margin, including measurement/model uncertainty on both sides of the comparison. | JCGM-100, NIST-TN1297, DESCANSO-DSTSE | Seeded |
+| MEAS-030 | `BER_hat = ErrorBits / TestBits` | observed bit errors and tested bits | Point estimate of bit error rate from a counted test interval. | BOOK-SKLAR, NIST-SEMATECH | Seeded |
+| MEAS-031 | `u_BER_hat = sqrt(BER_hat*(1-BER_hat)/TestBits)` | binomial BER estimate | Large-sample standard uncertainty of the observed BER proportion. | NIST-SEMATECH, BOOK-SKLAR | Seeded |
+| MEAS-032 | `BER_upper_zero = 1 - alpha_tail^(1/TestBits); BER_upper_95 ~= 3/TestBits` | zero observed errors and one-sided tail probability | Exact zero-error binomial upper bound and common 95% rule-of-three approximation for BER tests. | NIST-SEMATECH, BOOK-SKLAR | Seeded |
+| MEAS-033 | `TestBits_95_zero ~= 3/BER_target` | target BER with zero observed errors | Approximate tested-bit count required to demonstrate a BER target with 95% confidence under the zero-error rule-of-three. | NIST-SEMATECH, BOOK-SKLAR | Seeded |
+| MEAS-034 | `BER_CP_L = BetaInv(alpha_ci/2; ErrorBits, TestBits-ErrorBits+1)` | `ErrorBits>0`; otherwise lower bound is 0 | Clopper-Pearson lower confidence bound for a measured BER proportion. | NIST-SEMATECH, BOOK-SKLAR | Procedure |
+| MEAS-035 | `BER_CP_U = BetaInv(1-alpha_ci/2; ErrorBits+1, TestBits-ErrorBits)` | `ErrorBits<TestBits`; otherwise upper bound is 1 | Clopper-Pearson upper confidence bound for a measured BER proportion. | NIST-SEMATECH, BOOK-SKLAR | Procedure |
+| MEAS-036 | `WilsonCenter = (BER_hat + z_alpha2^2/(2 TestBits))/(1 + z_alpha2^2/TestBits)` | Wilson score interval terms | Wilson interval center for BER or any binary pass/fail proportion. | NIST-SEMATECH | Seeded |
+| MEAS-037 | `WilsonHalfWidth = z_alpha2*sqrt(BER_hat*(1-BER_hat)/TestBits + z_alpha2^2/(4 TestBits^2))/(1 + z_alpha2^2/TestBits)` | Wilson score interval terms | Wilson interval half-width; `WilsonCenter +/- WilsonHalfWidth` gives bounded confidence limits. | NIST-SEMATECH | Seeded |
+| MEAS-038 | `TestBits_zero_exact = ceil(ln(alpha_tail)/ln(1-BER_target))` | zero-error test, one-sided confidence | Exact bit count needed to make a zero-error BER test upper bound no larger than the target. | NIST-SEMATECH, BOOK-SKLAR | Seeded |
+| MEAS-039 | `BER_TestDuration = TestBits / R_b` | tested bits and bit rate | Time required to accumulate a BER test sample at a selected bit rate. | BOOK-SKLAR, General RF engineering | Seeded |
+| MEAS-040 | `ExpectedErrorBits = BER_assumed * TestBits` | assumed BER and tested bits | Expected number of bit errors during a test interval. | NIST-SEMATECH, BOOK-SKLAR | Seeded |
+| MEAS-041 | `SigmaErrorBits = sqrt(TestBits*BER_assumed*(1-BER_assumed))` | binomial error count | Standard deviation of counted bit errors for a given assumed BER. | NIST-SEMATECH, BOOK-SKLAR | Seeded |
+| MEAS-042 | `P_zero_errors = (1-BER_assumed)^TestBits` | assumed BER and tested bits | Probability of observing no bit errors if the true BER equals the assumed value. | NIST-SEMATECH, BOOK-SKLAR | Seeded |
+| MEAS-043 | `P_errors_le_E = sum_{k=0}^{E_accept} C(TestBits,k) BER_assumed^k (1-BER_assumed)^(TestBits-k)` | allowed error count | Probability that a BER test passes an allowed-error threshold under an assumed true BER. | NIST-SEMATECH, BOOK-SKLAR | Procedure |
+| MEAS-044 | `BER_TestPass = BER_CP_U <= BER_required` | exact upper confidence bound and requirement | Acceptance rule for a BER demonstration using the upper confidence bound rather than the point estimate. | NIST-SEMATECH | Procedure |
+| MEAS-045 | `FER_hat = ErrorFrames / TestFrames` | observed bad frames and tested frames | Point estimate of frame error rate from counted frame failures. | NIST-SEMATECH, BOOK-SKLAR | Seeded |
+| MEAS-046 | `FER_upper_zero = 1 - alpha_tail^(1/TestFrames); FER_upper_95 ~= 3/TestFrames` | zero observed frame errors | Zero-failure upper confidence bound for frame error rate. | NIST-SEMATECH, BOOK-SKLAR | Seeded |
+| MEAS-047 | `TestFrames_zero_exact = ceil(ln(alpha_tail)/ln(1-FER_target))` | target FER and zero frame errors | Exact frame count needed for a zero-failure FER demonstration. | NIST-SEMATECH, BOOK-SKLAR | Seeded |
+| MEAS-048 | `FER_TestDuration = TestFrames * FrameBits / R_b` | tested frames, frame size, bit rate | Time required to accumulate a frame-error-rate test sample. | BOOK-SKLAR, CCSDS SLS | Seeded |
+| MEAS-049 | `BER_upper_from_FER = 1 - (1-FER_upper)^(1/FrameBits)` | independent bit errors within a frame | Converts a frame-error upper bound to an equivalent per-bit upper bound under the independence assumption. | BOOK-SKLAR, NIST-SEMATECH | Seeded |
+| MEAS-050 | `EbN0_BPSK_from_BER = 0.5*(Qinv(BER_hat))^2` | coherent BPSK/QPSK AWGN estimate | Estimates the uncoded AWGN `Eb/N0` implied by an observed BER point estimate. | BOOK-SKLAR, BOOK-PROAKIS | Seeded |
+| MEAS-051 | `EbN0_BPSK_from_BER_dB = 10log10(EbN0_BPSK_from_BER)` | linear `Eb/N0` estimate | dB form of the measured-BER implied `Eb/N0`. | BOOK-SKLAR, BOOK-PROAKIS | Seeded |
+| MEAS-052 | `ImplementationLoss_dB = EbN0_measured_req_dB - EbN0_theory_req_dB` | measured and theoretical required `Eb/N0` | Difference between measured demodulator/coding performance and the theoretical reference at the same BER/FER target. | BOOK-SKLAR, BOOK-PROAKIS, CCSDS SLS | Seeded |
+| MEAS-053 | `MeasuredCodingGain_dB = EbN0_uncoded_req_dB - EbN0_coded_measured_req_dB` | uncoded and coded measured requirements | Coding gain derived from measured or table-backed required `Eb/N0` at the same target error probability. | BOOK-SKLAR, BOOK-PROAKIS, CCSDS SLS | Seeded |
+| MEAS-054 | `x_time = phi_rad/(2*pi*f0)` | phase error and nominal frequency | Converts carrier phase error to equivalent time error. | NIST-SP1065, NIST-TF-AZ | Seeded |
+| MEAS-055 | `phi_rad = 2*pi*f0*x_time` | time error and nominal frequency | Converts clock or carrier time error to phase error. | NIST-SP1065, BOOK-SKLAR | Seeded |
+| MEAS-056 | `y_frac = (f_meas - f0)/f0` | measured and nominal frequencies | Fractional frequency offset. | NIST-SP1065, NIST-TF-AZ | Seeded |
+| MEAS-057 | `ybar_k(m) = (x_time[k+m] - x_time[k])/(m*tau0)` | time-error samples and averaging factor | Average fractional frequency over averaging time `tau=m*tau0` from time-error data. | NIST-SP1065 | Seeded |
+| MEAS-058 | `Delta_f_Hz = y_frac*f0` | fractional frequency offset and nominal frequency | Absolute frequency offset corresponding to a fractional frequency offset. | NIST-SP1065, NIST-TF-AZ | Seeded |
+| MEAS-059 | `x_holdover(t) = x0 + y0*t + 0.5*D_y*t^2` | initial time offset, frequency offset, drift rate | First-order holdover time-error growth with linear fractional-frequency drift. | NIST-SP1065, BOOK-VALLADO | Seeded |
+| MEAS-060 | `HoldoverTimeMargin_s = TimeErrorLimit_s - abs(x_holdover(t))` | allowed time error and predicted holdover error | Time-transfer or command-timing holdover margin. | NIST-SP1065, DSN-810-005 | Seeded |
+| MEAS-061 | `AVAR_y(tau) = (1/(2*(M-1))) * sum_{i=1}^{M-1}(ybar_{i+1} - ybar_i)^2` | `M` adjacent fractional-frequency averages | Allan variance from adjacent frequency averages at averaging time `tau`. | NIST-SP1065 | Procedure |
+| MEAS-062 | `ADEV_y(tau) = sqrt(AVAR_y(tau))` | Allan variance | Allan deviation, the common oscillator frequency-stability statistic. | NIST-SP1065, NIST-TF-AZ | Seeded |
+| MEAS-063 | `AVAR_x(tau0) = (1/(2*tau0^2*(N-2))) * sum_{i=1}^{N-2}(x_{i+2}-2*x_{i+1}+x_i)^2` | equally spaced time-error samples | Allan variance from time-error data at basic averaging time `tau0`. | NIST-SP1065 | Procedure |
+| MEAS-064 | `OADEV_x(m*tau0) = sqrt((1/(2*m^2*tau0^2*(N-2*m))) * sum_{i=1}^{N-2*m}(x_{i+2m}-2*x_{i+m}+x_i)^2)` | time-error samples and averaging factor | Overlapping Allan deviation from time-error data for improved confidence at longer averaging times. | NIST-SP1065 | Procedure |
+| MEAS-065 | `MVAR_x(m*tau0) = (1/(2*m^2*tau^2*(N-3*m+1))) * sum_i (sum_{j=i}^{i+m-1}(x_{j+2*m}-2*x_{j+m}+x_j))^2` | time-error samples and averaging factor | Modified Allan variance structure; use reviewed helper code for indexing and confidence intervals. | NIST-SP1065 | Procedure |
+| MEAS-066 | `MDEV_y(tau) = sqrt(MVAR_x(tau))` | modified Allan variance | Modified Allan deviation, useful for separating white and flicker phase-noise processes. | NIST-SP1065, NIST-TF-AZ | Procedure |
+| MEAS-067 | `TDEV(tau) = tau*MDEV_y(tau)/sqrt(3)` | modified Allan deviation and averaging time | Time deviation statistic derived from modified Allan deviation. | NIST-SP1065, NIST-TF-AZ | Seeded |
+| MEAS-068 | `HVAR_x(tau0) = (1/(6*tau0^2*(N-3))) * sum_{i=1}^{N-3}(x_{i+3}-3*x_{i+2}+3*x_{i+1}-x_i)^2` | equally spaced time-error samples | Hadamard variance from time-error data, less sensitive to linear frequency drift than Allan variance. | NIST-SP1065 | Procedure |
+| MEAS-069 | `HDEV_y(tau) = sqrt(HVAR_y(tau))` | Hadamard variance | Hadamard deviation for oscillator stability with drift robustness. | NIST-SP1065 | Procedure |
+| MEAS-070 | `MTIE(T_obs) = max_{windows T_obs}(max(x_time)-min(x_time))` | time-error samples within each observation window | Maximum time interval error over an observation interval. | NIST-SP1065, NIST-TF-AZ | Procedure |
+| MEAS-071 | `TIE_i = x_time_i - x_ref_i` | measured time and reference time | Time interval error relative to the selected reference timescale or timing pulse. | NIST-TF-AZ | Seeded |
+| MEAS-072 | `sigma_range_oneway = c*sigma_x_time` | RMS time error | One-way range uncertainty caused by clock/time-transfer uncertainty. | DSN-810-005, NIST-SP1065 | Seeded |
+| MEAS-073 | `sigma_range_twoway = c*sigma_x_time/2` | RMS round-trip time error | Two-way range uncertainty when the measured round-trip time error is divided by two for one-way range. | DSN-810-005, NIST-SP1065 | Seeded |
+| MEAS-074 | `sigma_Doppler_clock_Hz = f_carrier*sigma_y_tau` | carrier frequency and fractional-frequency stability | Doppler frequency uncertainty contribution from oscillator fractional-frequency stability at averaging time `tau`. | DSN-810-005, NIST-SP1065 | Seeded |
+| MEAS-075 | `sigma_rangedot_clock = c*sigma_Doppler_clock_Hz/f_carrier` | Doppler frequency uncertainty and carrier frequency | One-way range-rate uncertainty equivalent of clock-driven Doppler uncertainty. | DSN-810-005, NIST-SP1065 | Seeded |
+| MEAS-076 | `sigma_phi_rad = sqrt(2*integral_{f1}^{f2} L_linear(f) df)` | single-sideband phase noise integrated over offset band | RMS phase jitter from integrated single-sideband phase-noise density. | NIST-SP1065, ADI-MT008 | Procedure |
+| MEAS-077 | `sigma_t_jitter = sigma_phi_rad/(2*pi*f0)` | RMS phase jitter and nominal frequency | RMS time jitter corresponding to integrated phase jitter. | NIST-SP1065, ADI-MT008 | Seeded |
+| MEAS-078 | `ClockStabilityMargin = y_limit_tau - sigma_y_tau` | allowed fractional-frequency stability and measured/estimated stability | Margin between a stability requirement and Allan-deviation-like measured stability at the same averaging time. | NIST-SP1065, NIST-TF-AZ | Seeded |
+
+## Current App Coverage Summary
+
+Implemented formulas are concentrated in:
+
+- RF-008, RF-010, RF-019
+- LINK-001 to LINK-004 and LINK-008
+- BB-005 to BB-007, BB-015, BB-016
+- TM-001 to TM-005
+- TC-001 to TC-005
+- TRK-001, TRK-002, TRK-004 to TRK-011
+- SYS-011 to SYS-018, SYS-041 to SYS-050, and SYS-061 to SYS-085 are partly implemented through the categorized system calculators for mission closure, spacecraft power/battery, and spacecraft thermal/radiator budgets.
+
+High-value missing groups:
+
+1. Antenna sizing and receiver noise cascade.
+2. ITU-R propagation and availability.
+3. TM/TC/AOS/USLP frame overhead from CCSDS tables.
+4. CCSDS coding modes and MODCOD tables.
+5. External measurement: Delta-DOR, radar-style range equation, angular error.
+6. Remaining system-level depth: detailed battery life/degradation data, hot/cold thermal-case libraries, schedule import/export, and contact/station validation examples.
+7. Compression, Proximity-1 relay links, contact geometry, and RF measurement conversions.

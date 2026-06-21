@@ -1,6 +1,6 @@
 import 'package:flutter_test/flutter_test.dart';
-import 'package:life_log/modules/expense/expense_record_model.dart';
-import 'package:life_log/modules/project/project_model.dart';
+import 'package:life_log/features/expense/data/expense_record_model.dart';
+import 'package:life_log/features/project/data/project_model.dart';
 
 void main() {
   test('ExpenseRecord monthly total supports today dashboard aggregation', () {

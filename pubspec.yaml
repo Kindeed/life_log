@@ -15,7 +15,7 @@ publish_to: 'none' # Remove this line if you wish to publish to pub.dev
 # Read more about iOS versioning at
 # https://developer.apple.com/library/archive/documentation/General/Reference/InfoPlistKeyReference/Articles/CoreFoundationKeys.html
 # of the product and file versions while build-number is used as the build suffix.
-version: 1.4.11+17
+version: 1.4.14+20
 
 environment:
   sdk: ^3.10.4
@@ -29,30 +29,30 @@ environment:
 dependencies:
   flutter:
     sdk: flutter
+  flutter_localizations:
+    sdk: flutter
 
   # --- 核心积木 ---
-  # 1. 瑞士军刀 (路由+状态管理+依赖注入)
-  get: 4.7.3
-
-  # 2. 本地数据库 (极速、纯离线)
+  # 1. 本地数据库 (极速、纯离线)
   isar: ^3.1.0
   isar_flutter_libs: ^3.1.0 # Isar 的底层支持库
 
-  # 3. 路径获取 (为了把数据库存到手机正确的位置)
+  # 2. 路径获取 (为了把数据库存到手机正确的位置)
   path_provider: ^2.1.2
   path: ^1.8.3
+  crypto: ^3.0.6
 
 
-  # 4. 日历组件 (纯Dart编写，不依赖谷歌)
-  table_calendar: ^3.1.0
+  # 3. 日历组件 (纯Dart编写，不依赖谷歌)
+  table_calendar: ^3.2.0
 
-  # 5. 屏幕适配 (保证字体在不同手机上看起来舒服)
+  # 4. 屏幕适配 (保证字体在不同手机上看起来舒服)
   flutter_screenutil: ^5.9.0
   
   # 6. 图标库 (可选，为了更好看的图标)
   cupertino_icons: ^1.0.8
 
-  intl: ^0.19.0
+  intl: ^0.20.2
   lunar: ^1.7.8
 
   # --- 7. 照片/文件系统 ---
@@ -73,6 +73,11 @@ dependencies:
   photo_manager: ^3.9.0
   package_info_plus: ^8.1.2
   fl_chart: ^0.70.2
+  flutter_math_fork: ^0.7.4
+  flutter_bloc: ^9.1.1
+  equatable: ^2.0.8
+  get_it: ^9.2.1
+  go_router: ^17.3.0
 
 dev_dependencies:
   flutter_test:
