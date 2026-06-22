@@ -3,6 +3,15 @@
 Use this document when asking Gemini, Claude, or another UI design assistant to
 propose LifeLog interface changes.
 
+Start from the UI Contract Pack:
+
+- `docs/ui/ui-contract.md`
+- `docs/ui/component-catalog.md`
+
+The current primary information architecture is Today / Records / Projects.
+Design work should use mock state from `presentation/fixtures/` before touching
+live Cubit integration.
+
 ## Non-negotiable Constraints
 
 - Build for Flutter with the existing Material 3 theme in `lib/common/theme`.

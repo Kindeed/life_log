@@ -63,5 +63,20 @@ void main() {
         expect(source, isNot(contains("toStringAsFixed(1)}h")));
       },
     );
+
+    test(
+      'routes secondary work to Records and caps recent records at three',
+      () {
+        final source = File(
+          'lib/features/today/presentation/today_view.dart',
+        ).readAsStringSync();
+
+        expect(source, contains('ProfileActionButton'));
+        expect(source, contains('TabsDestination.records'));
+        expect(source, isNot(contains('TabsDestination.finance')));
+        expect(source, contains('entries.take(3)'));
+        expect(source, isNot(contains('entries.take(7)')));
+      },
+    );
   });
 }

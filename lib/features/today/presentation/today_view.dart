@@ -19,6 +19,7 @@ import 'package:life_log/features/subscription/presentation/subscription_today_c
 import 'package:life_log/features/work_log/domain/entities/work_log_entry.dart';
 import 'package:life_log/features/work_log/presentation/work_log_editor_launcher.dart';
 import 'package:life_log/features/work_log/presentation/work_log_today_cubit.dart';
+import 'package:life_log/features/shell/presentation/profile_action_button.dart';
 import 'package:life_log/features/shell/presentation/tabs_controller.dart';
 
 class TodayView extends StatelessWidget {
@@ -56,7 +57,10 @@ class _TodayContent extends StatelessWidget {
     final today = DateTime(now.year, now.month, now.day);
 
     return Scaffold(
-      appBar: AppBar(title: const Text('今天')),
+      appBar: AppBar(
+        title: const Text('今天'),
+        actions: const [ProfileActionButton()],
+      ),
       body: SafeArea(
         child: RefreshIndicator(
           onRefresh: () async {
@@ -296,7 +300,7 @@ class _PendingCard extends StatelessWidget {
               const Spacer(),
               TextButton(
                 onPressed: () =>
-                    TabsScope.of(context).goTo(TabsDestination.finance),
+                    TabsScope.of(context).goTo(TabsDestination.records),
                 child: const Text('查看全部'),
               ),
             ],
@@ -532,7 +536,7 @@ class _RecentLogs extends StatelessWidget {
       );
     }
     return Column(
-      children: entries.take(7).map((log) {
+      children: entries.take(3).map((log) {
         return Padding(
           padding: EdgeInsets.only(bottom: 10.h),
           child: AppCard(

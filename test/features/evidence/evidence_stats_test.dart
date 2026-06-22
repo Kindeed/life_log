@@ -256,7 +256,8 @@ void main() {
         expect(fileStore.copiedSourcePaths, ['C:/tmp/ticket.pdf']);
         expect(fileStore.copiedSourceExtensions, ['pdf']);
         expect(localDataSource.addedEvidence, [same(evidence)]);
-        expect(syncGateway.pushedEvidence, [same(evidence)]);
+        expect(syncGateway.syncRequests, [same(evidence)]);
+        expect(syncGateway.syncReasons, ['evidence-save']);
       },
     );
 
@@ -277,7 +278,7 @@ void main() {
         await repository.saveEvidence(evidence);
 
         expect(localDataSource.addedEvidence, [same(evidence)]);
-        expect(syncGateway.pushedEvidence, isEmpty);
+        expect(syncGateway.syncRequests, isEmpty);
       },
     );
 
@@ -301,7 +302,7 @@ void main() {
         expect(localDataSource.markDeletedIds, [17]);
         expect(fileStore.deletedEvidence, [same(deleted)]);
         expect(localDataSource.purgedIds, [17]);
-        expect(syncGateway.deletedEvidence, isEmpty);
+        expect(syncGateway.syncRequests, isEmpty);
       },
     );
 
@@ -323,7 +324,8 @@ void main() {
         await repository.deleteEvidence(18);
 
         expect(localDataSource.markDeletedIds, [18]);
-        expect(syncGateway.deletedEvidence, [same(deleted)]);
+        expect(syncGateway.syncRequests, [same(deleted)]);
+        expect(syncGateway.syncReasons, ['evidence-delete']);
         expect(fileStore.deletedEvidence, [same(deleted)]);
         expect(localDataSource.purgedIds, [18]);
       },
@@ -693,20 +695,18 @@ final class _EvidenceLocalDataSourceSpy implements EvidenceLocalDataSource {
 final class _EvidenceSyncGatewaySpy implements EvidenceSyncGateway {
   @override
   final bool isAvailable;
-  final List<ExpenseEvidence> pushedEvidence = [];
-  final List<ExpenseEvidence> deletedEvidence = [];
+  final List<ExpenseEvidence> syncRequests = [];
+  final List<String> syncReasons = [];
 
   _EvidenceSyncGatewaySpy({required this.isAvailable});
 
   @override
-  Future<bool> deleteEvidence(ExpenseEvidence evidence) async {
-    deletedEvidence.add(evidence);
-    return true;
-  }
-
-  @override
-  Future<bool> pushEvidence(ExpenseEvidence evidence) async {
-    pushedEvidence.add(evidence);
+  Future<bool> requestSync(
+    ExpenseEvidence evidence, {
+    required String reason,
+  }) async {
+    syncRequests.add(evidence);
+    syncReasons.add(reason);
     return true;
   }
 }

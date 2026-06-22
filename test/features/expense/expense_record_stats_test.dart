@@ -215,7 +215,8 @@ void main() {
       expect(saved, same(record));
       expect(record.syncId, isNotEmpty);
       expect(localDataSource.addedRecords, [same(record)]);
-      expect(syncGateway.pushedRecords, [same(record)]);
+      expect(syncGateway.syncRequests, [same(record)]);
+      expect(syncGateway.syncReasons, ['expense-record-save']);
     });
 
     test('routes project names through the injected project linker', () async {
@@ -280,7 +281,7 @@ void main() {
         await repository.saveExpenseRecord(record);
 
         expect(localDataSource.addedRecords, [same(record)]);
-        expect(syncGateway.pushedRecords, isEmpty);
+        expect(syncGateway.syncRequests, isEmpty);
       },
     );
 
@@ -299,7 +300,7 @@ void main() {
 
       expect(localDataSource.markDeletedIds, [17]);
       expect(localDataSource.purgedIds, [17]);
-      expect(syncGateway.deletedRecords, isEmpty);
+      expect(syncGateway.syncRequests, isEmpty);
     });
 
     test(
@@ -318,7 +319,8 @@ void main() {
         await repository.deleteExpenseRecord(18);
 
         expect(localDataSource.markDeletedIds, [18]);
-        expect(syncGateway.deletedRecords, [same(deleted)]);
+        expect(syncGateway.syncRequests, [same(deleted)]);
+        expect(syncGateway.syncReasons, ['expense-record-delete']);
         expect(localDataSource.purgedIds, [18]);
       },
     );
@@ -625,20 +627,18 @@ final class _ExpenseRecordLocalDataSourceSpy
 final class _ExpenseRecordSyncGatewaySpy implements ExpenseRecordSyncGateway {
   @override
   final bool isAvailable;
-  final List<ExpenseRecord> pushedRecords = [];
-  final List<ExpenseRecord> deletedRecords = [];
+  final List<ExpenseRecord> syncRequests = [];
+  final List<String> syncReasons = [];
 
   _ExpenseRecordSyncGatewaySpy({required this.isAvailable});
 
   @override
-  Future<bool> deleteExpenseRecord(ExpenseRecord record) async {
-    deletedRecords.add(record);
-    return true;
-  }
-
-  @override
-  Future<bool> pushExpenseRecord(ExpenseRecord record) async {
-    pushedRecords.add(record);
+  Future<bool> requestSync(
+    ExpenseRecord record, {
+    required String reason,
+  }) async {
+    syncRequests.add(record);
+    syncReasons.add(reason);
     return true;
   }
 }

@@ -1,26 +1,24 @@
-import 'package:life_log/common/services/sync_service.dart';
 import 'package:life_log/core/di/service_locator.dart';
+import 'package:life_log/core/sync/sync_scheduler.dart';
 import 'package:life_log/features/project/data/project_model.dart';
 
 abstract interface class ProjectSyncGateway {
   bool get isAvailable;
-  Future<bool> pushProject(Project project);
-  Future<bool> deleteProject(Project project);
+  Future<bool> requestSync(Project project, {required String reason});
 }
 
 final class ServiceLocatorProjectSyncGateway implements ProjectSyncGateway {
   const ServiceLocatorProjectSyncGateway();
 
   @override
-  bool get isAvailable => serviceLocator.isRegistered<SyncService>();
+  bool get isAvailable => serviceLocator.isRegistered<SyncScheduler>();
 
   @override
-  Future<bool> deleteProject(Project project) {
-    return serviceLocator<SyncService>().deleteProject(project);
-  }
-
-  @override
-  Future<bool> pushProject(Project project) {
-    return serviceLocator<SyncService>().pushProject(project);
+  Future<bool> requestSync(Project project, {required String reason}) {
+    return serviceLocator<SyncScheduler>().requestSync(
+      reason: reason,
+      entityName: 'project',
+      entityKey: project.syncId ?? project.id.toString(),
+    );
   }
 }

@@ -55,15 +55,25 @@ void main() {
       final source = File(
         'lib/common/services/sync_service.dart',
       ).readAsStringSync();
+      final adapter = File(
+        'lib/features/evidence/sync/evidence_attachment_sync_adapter.dart',
+      );
 
       expect(
         source,
         contains("_evidenceAttachmentsTable = 'evidence_attachments'"),
       );
+      expect(adapter.existsSync(), isTrue);
+      expect(source, contains('EvidenceAttachmentSyncAdapter('));
+      expect(
+        adapter.readAsStringSync(),
+        contains('SyncAdapter<EvidenceAttachment>'),
+      );
       expect(source, contains('_syncPendingEvidenceAttachments('));
       expect(source, contains('_uploadEvidenceAttachment('));
       expect(source, contains('_deleteEvidenceAttachment('));
       expect(source, contains('getPendingEvidenceAttachmentsForSync('));
+      expect(source, contains('syncAttachment: _syncEvidenceAttachment'));
       expect(source, contains('markEvidenceAttachmentUploaded('));
       expect(source, isNot(contains('_uploadEvidenceFile(')));
       expect(
@@ -72,6 +82,16 @@ void main() {
         reason:
             'Evidence deletion must confirm the remote attachment row before Storage deletion.',
       );
+    });
+
+    test('DbService can merge remote evidence attachment rows', () {
+      final source = File('lib/common/db/db_service.dart').readAsStringSync();
+
+      expect(source, contains('syncRemoteEvidenceAttachmentToLocal('));
+      expect(source, contains('getEvidenceAttachmentBySyncId('));
+      expect(source, contains("data['evidence_sync_id']"));
+      expect(source, contains("data['remote_storage_path']"));
+      expect(source, contains("data['upload_state']"));
     });
 
     test('Supabase migration creates remote evidence attachments table', () {

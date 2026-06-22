@@ -22,6 +22,7 @@ import 'package:life_log/core/db/isar_database.dart';
 import 'package:life_log/core/di/service_locator.dart';
 import 'package:life_log/core/routing/app_router.dart';
 import 'package:life_log/core/routing/app_routes.dart';
+import 'package:life_log/core/sync/sync_scheduler.dart';
 import 'package:life_log/features/evidence/evidence_feature_di.dart';
 import 'package:life_log/features/expense/expense_feature_di.dart';
 import 'package:life_log/features/photo/photo_feature_di.dart';
@@ -30,6 +31,7 @@ import 'package:life_log/features/profile/profile_feature_di.dart';
 import 'package:life_log/features/project/project_feature_di.dart';
 import 'package:life_log/features/shell/presentation/tabs_view.dart';
 import 'package:life_log/features/subscription/subscription_feature_di.dart';
+import 'package:life_log/features/sync_center/sync_center_feature_di.dart';
 import 'package:life_log/features/work_log/work_log_feature_di.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
@@ -119,6 +121,7 @@ void _configureFeatureDependencies() {
   configurePhotoFeatureDependencies();
   configureEvidenceFeatureDependencies();
   configureProfileFeatureDependencies();
+  configureSyncCenterFeatureDependencies();
 }
 
 void _registerCoreRuntimeServices({
@@ -158,6 +161,11 @@ void _registerCoreRuntimeServices({
   }
   if (syncService != null && !serviceLocator.isRegistered<SyncService>()) {
     serviceLocator.registerSingleton<SyncService>(syncService);
+  }
+  if (syncService != null && !serviceLocator.isRegistered<SyncScheduler>()) {
+    serviceLocator.registerSingleton<SyncScheduler>(
+      SyncScheduler(runSync: syncService.syncAll),
+    );
   }
 }
 

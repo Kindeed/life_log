@@ -21,6 +21,7 @@ import 'package:life_log/features/profile/presentation/views/data_management_vie
 import 'package:life_log/features/profile/presentation/views/developer_view.dart';
 import 'package:life_log/features/statistics/presentation/statistics_controller.dart';
 import 'package:life_log/features/statistics/presentation/statistics_view.dart';
+import 'package:life_log/features/sync_center/presentation/sync_center_view.dart';
 import 'package:life_log/features/telemetry_calc/presentation/telemetry_calc_view.dart';
 
 class ProfileView extends StatefulWidget {
@@ -81,6 +82,14 @@ class _ProfileViewState extends State<ProfileView> {
                       subtitle: '备份、恢复、本地数据安全',
                       onTap: () =>
                           _openProfilePage(context, const DataManagementView()),
+                    ),
+                    _SettingsTile(
+                      icon: Icons.sync_problem_rounded,
+                      iconColor: semantic.warning,
+                      title: '同步状态',
+                      subtitle: '冲突、失败任务、附件同步状态',
+                      onTap: () =>
+                          _openProfilePage(context, const SyncCenterView()),
                     ),
                   ],
                 ),

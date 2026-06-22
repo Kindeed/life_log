@@ -5,9 +5,16 @@ import 'package:flutter_test/flutter_test.dart';
 void main() {
   group('cloud sync idempotency policy', () {
     test('cloud push creates use upsert by user and sync id', () {
-      final source = File(
-        'lib/common/services/sync_service.dart',
-      ).readAsStringSync();
+      final adapterPaths = [
+        'lib/features/work_log/sync/work_log_sync_adapter.dart',
+        'lib/features/subscription/sync/subscription_sync_adapter.dart',
+        'lib/features/project/sync/project_sync_adapter.dart',
+        'lib/features/expense/sync/expense_record_sync_adapter.dart',
+        'lib/features/evidence/sync/evidence_sync_adapter.dart',
+      ];
+      final source = adapterPaths
+          .map((path) => File(path).readAsStringSync())
+          .join('\n');
 
       expect(
         RegExp(r'\.insert\(\s*data\s*\)').hasMatch(source),

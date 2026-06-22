@@ -141,8 +141,5 @@ final class _FakeWorkLogSyncGateway implements WorkLogSyncGateway {
   bool get isAvailable => true;
 
   @override
-  Future<bool> deleteWorkLog(WorkLog log) async => true;
-
-  @override
-  Future<bool> pushWorkLog(WorkLog log) async => true;
+  Future<bool> requestSync(WorkLog log, {required String reason}) async => true;
 }

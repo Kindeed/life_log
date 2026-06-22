@@ -6,6 +6,7 @@ import 'package:isar/isar.dart';
 import 'package:life_log/core/db/isar_database.dart';
 import 'package:life_log/core/di/service_locator.dart';
 import 'package:life_log/core/sync/sync_conflict_model.dart';
+import 'package:life_log/core/sync/sync_queue_record.dart';
 import 'package:life_log/common/db/local_data_migration_batch.dart';
 import 'package:life_log/common/db/local_data_migration_summary.dart';
 import 'package:life_log/features/subscription/data/subscription_dao.dart';
@@ -38,6 +39,7 @@ class DbService {
     LocalDataMigrationBatchSchema,
     EvidenceAttachmentSchema,
     SyncConflictRecordSchema,
+    SyncQueueRecordSchema,
   ];
 
   late Isar isar; // 数据库实例
@@ -920,6 +922,82 @@ class DbService {
                   item.uploadState == EvidenceAttachmentUploadState.deleted),
         )
         .toList();
+  }
+
+  Future<EvidenceAttachment?> getEvidenceAttachmentBySyncId(
+    String syncId,
+  ) async {
+    return isar.evidenceAttachments.filter().syncIdEqualTo(syncId).findFirst();
+  }
+
+  Future<void> syncRemoteEvidenceAttachmentToLocal(
+    Map<String, dynamic> data,
+  ) async {
+    final remoteSyncId = _parseRemoteString(data['sync_id']);
+    final evidenceSyncId = _parseRemoteString(data['evidence_sync_id']);
+    if (remoteSyncId == null || evidenceSyncId == null) return;
+
+    final remoteDeletedAt = data['deleted_at'] == null
+        ? null
+        : _parseRemoteDateTime(data['deleted_at']);
+    await isar.writeTxn(() async {
+      final existing = await isar.evidenceAttachments
+          .filter()
+          .syncIdEqualTo(remoteSyncId)
+          .findFirst();
+
+      if (remoteDeletedAt != null) {
+        if (existing != null) {
+          await isar.evidenceAttachments.delete(existing.id);
+        }
+        return;
+      }
+
+      final now = DateTime.now().toUtc();
+      final item = existing ?? EvidenceAttachment();
+      item
+        ..ownerUserId = currentOwnerUserId
+        ..syncId = remoteSyncId
+        ..evidenceSyncId = evidenceSyncId
+        ..remoteStoragePath = _parseRemoteString(data['remote_storage_path'])
+        ..originalFileName =
+            _parseRemoteString(data['original_file_name']) ??
+            _parseRemoteString(data['remote_storage_path']) ??
+            'attachment'
+        ..contentHash = _parseRemoteString(data['content_hash'])
+        ..sizeBytes = _parseRemoteInt(data['size_bytes'])
+        ..mimeType = _parseRemoteString(data['mime_type'])
+        ..uploadState = EvidenceAttachmentUploadState.values.firstWhere(
+          (value) => value.name == _parseRemoteString(data['upload_state']),
+          orElse: () => EvidenceAttachmentUploadState.uploaded,
+        )
+        ..uploadedAt = data['uploaded_at'] == null
+            ? null
+            : _parseRemoteDateTime(data['uploaded_at'])
+        ..deletedAt = null
+        ..failureMessage = null
+        ..createdAt = existing?.createdAt ?? now
+        ..updatedAt = data['updated_at'] == null
+            ? now
+            : _parseRemoteDateTime(data['updated_at'], fallback: now);
+      await isar.evidenceAttachments.put(item);
+
+      final evidence = await isar.expenseEvidences
+          .filter()
+          .syncIdEqualTo(evidenceSyncId)
+          .findFirst();
+      final remoteStoragePath = item.remoteStoragePath;
+      if (evidence != null &&
+          remoteStoragePath != null &&
+          remoteStoragePath.trim().isNotEmpty) {
+        evidence
+          ..remoteStoragePath = remoteStoragePath
+          ..fileName ??= item.originalFileName
+          ..mimeType ??= item.mimeType
+          ..uploadedAt ??= item.uploadedAt;
+        await isar.expenseEvidences.put(evidence);
+      }
+    });
   }
 
   Future<void> markEvidenceAttachmentUploading(EvidenceAttachment attachment) {

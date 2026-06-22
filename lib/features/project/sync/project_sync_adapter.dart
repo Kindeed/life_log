@@ -3,7 +3,7 @@ import 'package:life_log/common/utils/sync_id_generator.dart';
 import 'package:life_log/common/utils/sync_id_policy.dart';
 import 'package:life_log/core/sync/sync_adapter.dart';
 import 'package:life_log/core/sync/sync_conflict.dart';
-import 'package:life_log/core/sync/sync_cursor_store.dart';
+import 'package:life_log/core/sync/sync_pull_page.dart';
 import 'package:life_log/features/project/data/project_model.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
@@ -36,34 +36,30 @@ final class ProjectSyncAdapter implements SyncAdapter<Project> {
     SyncPullRequest request,
   ) async {
     final rows = <Map<String, dynamic>>[];
-    var start = 0;
+    var pullPage = SyncPullPage.start(
+      cursor: request.mode == SyncMode.incremental ? request.cursor : null,
+      pageSize: pageSize,
+    );
 
     while (true) {
       dynamic query = client.from(tableName).select().eq('user_id', userId);
-      final cursor = request.mode == SyncMode.incremental
-          ? request.cursor
-          : null;
-      if (cursor != null) {
-        query = query.gte('updated_at', cursor.updatedAt.toIso8601String());
-      }
+      query = pullPage.applyTo(query);
 
       final page = await query
           .order('updated_at', ascending: true)
           .order('id', ascending: true)
-          .range(start, start + pageSize - 1);
+          .limit(pullPage.pageSize);
       final pageRows = (page as List)
           .cast<Map>()
           .map((row) => Map<String, dynamic>.from(row))
           .toList();
 
-      if (cursor == null) {
-        rows.addAll(pageRows);
-      } else {
-        rows.addAll(pageRows.where((row) => _isAfterCursor(row, cursor)));
-      }
+      rows.addAll(pageRows.where(pullPage.isAfterCursor));
 
-      if (pageRows.length < pageSize) break;
-      start += pageSize;
+      if (pageRows.length < pullPage.pageSize) break;
+      final nextCursor = SyncPullPage.cursorFromRow(pageRows.last);
+      if (nextCursor == null) break;
+      pullPage = pullPage.advance(nextCursor);
     }
 
     return rows;
@@ -208,17 +204,6 @@ final class ProjectSyncAdapter implements SyncAdapter<Project> {
       remoteUpdatedAt: _parseRemoteDateTime(remote?['updated_at']),
       message: '$message: ${entity.remoteId}',
     );
-  }
-
-  bool _isAfterCursor(Map<String, dynamic> row, SyncCursor cursor) {
-    final updatedAt = _parseRemoteDateTime(row['updated_at']);
-    final rowId = _parseRemoteInt(row['id']);
-    final cursorRowId = int.tryParse(cursor.rowId);
-    if (updatedAt == null || rowId == null || cursorRowId == null) {
-      return true;
-    }
-    if (updatedAt.isAfter(cursor.updatedAt)) return true;
-    return updatedAt.isAtSameMomentAs(cursor.updatedAt) && rowId > cursorRowId;
   }
 
   void _applySyncResult(Project entity, Map<String, dynamic> response) {

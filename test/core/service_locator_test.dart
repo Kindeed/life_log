@@ -52,13 +52,14 @@ void main() {
 
       expect(appEntry, contains('registerSingleton<AuthService>'));
       expect(appEntry, contains('registerSingleton<SyncService>'));
+      expect(appEntry, contains('registerSingleton<SyncScheduler>'));
 
       for (final source in syncGatewaySources) {
         expect(source, isNot(contains("package:get/get.dart")));
         expect(source, isNot(contains('Get.isRegistered<SyncService>')));
         expect(source, isNot(contains('SyncService.to')));
-        expect(source, contains('serviceLocator.isRegistered<SyncService>'));
-        expect(source, contains('serviceLocator<SyncService>()'));
+        expect(source, contains('serviceLocator.isRegistered<SyncScheduler>'));
+        expect(source, contains('serviceLocator<SyncScheduler>()'));
       }
       for (final source in [profileDi, profileAdapter, evidenceFileActions]) {
         expect(source, isNot(contains('Get.isRegistered<SyncService>')));

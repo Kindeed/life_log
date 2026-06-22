@@ -4,7 +4,7 @@ Last updated: 2026-06-21
 
 ## Current Versions
 
-- Local schema version: `2026062101`
+- Local schema version: `2026062102`
 - Sync protocol version: `2`
 - Minimum supported app version: `1.4.19+25`
 - Minimum supported sync protocol version: `2`
@@ -32,3 +32,13 @@ the row id boundary.
 Evidence file synchronization runs through the `EvidenceAttachment` queue. Storage
 objects are uploaded before remote attachment rows, and Storage deletion is delayed
 until the remote attachment delete row is confirmed.
+
+Remote `evidence_attachments` rows are pulled and merged through
+`EvidenceAttachmentSyncAdapter`. Evidence row file fields remain compatibility
+fields, but attachment metadata is the primary cross-device file source.
+
+## Retry Queue Policy
+
+Failed adapter pushes record retry state in Isar-backed `SyncQueueRecord` rows.
+The retry queue persists `entityName`, `entityKey`, `attemptCount`,
+`nextAttemptAt`, `lastAttemptAt`, and `lastError` across app restarts.

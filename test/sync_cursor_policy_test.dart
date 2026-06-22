@@ -77,19 +77,29 @@ void main() {
         'lib/features/project/sync/project_sync_adapter.dart',
         'lib/features/expense/sync/expense_record_sync_adapter.dart',
         'lib/features/evidence/sync/evidence_sync_adapter.dart',
+        'lib/features/evidence/sync/evidence_attachment_sync_adapter.dart',
       ];
+      final pullPage = File(
+        'lib/core/sync/sync_pull_page.dart',
+      ).readAsStringSync();
 
       for (final path in adapterPaths) {
         final source = File(path).readAsStringSync();
-        expect(source, contains("query.gte('updated_at'"), reason: path);
+        expect(source, contains('SyncPullPage'), reason: path);
+        expect(source, contains('pullPage.applyTo(query)'), reason: path);
         expect(
           source,
           contains(".order('updated_at', ascending: true)"),
           reason: path,
         );
         expect(source, contains(".order('id', ascending: true)"), reason: path);
-        expect(source, contains('rowId > cursorRowId'), reason: path);
+        expect(source, contains('.limit(pullPage.pageSize)'), reason: path);
+        expect(source, contains('pullPage.isAfterCursor'), reason: path);
       }
+      expect(pullPage, contains("query.lte('updated_at'"));
+      expect(pullPage, contains('updated_at.gt.'));
+      expect(pullPage, contains('id.gt.'));
+      expect(pullPage, contains('isAfterCursor'));
     });
   });
 }

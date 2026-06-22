@@ -49,7 +49,10 @@ class SubscriptionRepository {
 
     // 2. 云端同步
     try {
-      final success = await _syncGateway.pushSubscription(sub);
+      final success = await _syncGateway.requestSync(
+        sub,
+        reason: 'subscription-save',
+      );
       if (!success) {
         LogService.to.error('SubscriptionRepository', '云端同步未完成，保留待同步状态');
       }
@@ -68,7 +71,10 @@ class SubscriptionRepository {
       } else if (!_syncGateway.isAvailable) {
         LogService.to.info('SubscriptionRepository', '本地模式：跳过云端删除');
       } else {
-        final success = await _syncGateway.deleteSubscription(sub);
+        final success = await _syncGateway.requestSync(
+          sub,
+          reason: 'subscription-delete',
+        );
         if (success) {
           await _localDataSource.purgeDeletedSubscription(id);
         }
@@ -90,7 +96,10 @@ class SubscriptionRepository {
 
     for (final sub in changed) {
       try {
-        final success = await _syncGateway.pushSubscription(sub);
+        final success = await _syncGateway.requestSync(
+          sub,
+          reason: 'subscription-reorder',
+        );
         if (!success) {
           LogService.to.error(
             'SubscriptionRepository',

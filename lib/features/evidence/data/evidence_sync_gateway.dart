@@ -1,26 +1,24 @@
-import 'package:life_log/common/services/sync_service.dart';
 import 'package:life_log/core/di/service_locator.dart';
+import 'package:life_log/core/sync/sync_scheduler.dart';
 import 'package:life_log/features/evidence/data/evidence_model.dart';
 
 abstract interface class EvidenceSyncGateway {
   bool get isAvailable;
-  Future<bool> pushEvidence(ExpenseEvidence evidence);
-  Future<bool> deleteEvidence(ExpenseEvidence evidence);
+  Future<bool> requestSync(ExpenseEvidence evidence, {required String reason});
 }
 
 final class ServiceLocatorEvidenceSyncGateway implements EvidenceSyncGateway {
   const ServiceLocatorEvidenceSyncGateway();
 
   @override
-  bool get isAvailable => serviceLocator.isRegistered<SyncService>();
+  bool get isAvailable => serviceLocator.isRegistered<SyncScheduler>();
 
   @override
-  Future<bool> deleteEvidence(ExpenseEvidence evidence) {
-    return serviceLocator<SyncService>().deleteEvidence(evidence);
-  }
-
-  @override
-  Future<bool> pushEvidence(ExpenseEvidence evidence) {
-    return serviceLocator<SyncService>().pushEvidence(evidence);
+  Future<bool> requestSync(ExpenseEvidence evidence, {required String reason}) {
+    return serviceLocator<SyncScheduler>().requestSync(
+      reason: reason,
+      entityName: 'evidence',
+      entityKey: evidence.syncId ?? evidence.id.toString(),
+    );
   }
 }

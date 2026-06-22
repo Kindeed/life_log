@@ -1,12 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:life_log/common/theme/app_motion.dart';
 import 'package:life_log/core/di/service_locator.dart';
-import 'package:life_log/features/subscription/presentation/subscription_view.dart';
+import 'package:life_log/features/timeline/presentation/timeline_view.dart';
 import 'package:life_log/features/today/presentation/today_view.dart';
-import 'package:life_log/features/work_log/presentation/work_log_view.dart';
 
 import 'package:life_log/features/photo/presentation/photo_view.dart';
-import 'package:life_log/features/profile/presentation/profile_view.dart';
 import 'tabs_controller.dart';
 
 class TabsView extends StatefulWidget {
@@ -27,24 +25,14 @@ class _TabsViewState extends State<TabsView> {
       icon: Icons.today_outlined,
     ),
     _TabDestination(
-      label: '工时',
-      selectedIcon: Icons.calendar_today_rounded,
-      icon: Icons.calendar_today_outlined,
-    ),
-    _TabDestination(
-      label: '财务',
-      selectedIcon: Icons.account_balance_wallet_rounded,
-      icon: Icons.account_balance_wallet_outlined,
+      label: '记录',
+      selectedIcon: Icons.view_timeline_rounded,
+      icon: Icons.view_timeline_outlined,
     ),
     _TabDestination(
       label: '项目',
       selectedIcon: Icons.folder_rounded,
       icon: Icons.folder_outlined,
-    ),
-    _TabDestination(
-      label: '我的',
-      selectedIcon: Icons.person_rounded,
-      icon: Icons.person_outline_rounded,
     ),
   ];
 
@@ -96,10 +84,8 @@ class _TabsViewState extends State<TabsView> {
                         onPageChanged: controller.changePage,
                         children: const [
                           _KeepAliveTabPage(child: TodayView()),
-                          _KeepAliveTabPage(child: WorkLogView()),
-                          _KeepAliveTabPage(child: SubscriptionView()),
+                          _KeepAliveTabPage(child: TimelineView()),
                           _KeepAliveTabPage(child: PhotoView()),
-                          _KeepAliveTabPage(child: ProfileView()),
                         ],
                       ),
                     ),

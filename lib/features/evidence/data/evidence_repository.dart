@@ -67,7 +67,10 @@ class EvidenceRepository {
     }
 
     try {
-      final success = await _syncGateway.pushEvidence(evidence);
+      final success = await _syncGateway.requestSync(
+        evidence,
+        reason: 'evidence-save',
+      );
       if (!success) {
         LogService.to.error('EvidenceRepository', '云端同步未完成，保留待同步状态');
       }
@@ -87,7 +90,10 @@ class EvidenceRepository {
       } else if (!_syncGateway.isAvailable) {
         LogService.to.info('EvidenceRepository', '本地模式：跳过云端删除');
       } else {
-        final success = await _syncGateway.deleteEvidence(evidence);
+        final success = await _syncGateway.requestSync(
+          evidence,
+          reason: 'evidence-delete',
+        );
         if (success) {
           await _fileStore.deleteEvidenceFile(evidence);
           await _localDataSource.purgeDeletedEvidence(id);

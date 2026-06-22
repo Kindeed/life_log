@@ -59,7 +59,10 @@ class ProjectRepository {
     }
 
     try {
-      final success = await _syncGateway.pushProject(project);
+      final success = await _syncGateway.requestSync(
+        project,
+        reason: 'project-save',
+      );
       if (!success) {
         LogService.to.error('ProjectRepository', '云端同步未完成，保留待同步状态');
       }
@@ -78,7 +81,10 @@ class ProjectRepository {
       } else if (!_syncGateway.isAvailable) {
         LogService.to.info('ProjectRepository', '本地模式：跳过云端删除');
       } else {
-        final success = await _syncGateway.deleteProject(deleted);
+        final success = await _syncGateway.requestSync(
+          deleted,
+          reason: 'project-delete',
+        );
         if (success) {
           await _localDataSource.purgeDeletedProject(project.id);
         }

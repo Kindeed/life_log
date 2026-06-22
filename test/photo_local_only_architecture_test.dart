@@ -40,15 +40,18 @@ void main() {
       );
     });
 
-    test('SyncService cloud table inventory is exact', () {
-      final source = File(
-        'lib/common/services/sync_service.dart',
-      ).readAsStringSync();
-      final tablePattern = RegExp(
-        r"static const String _[A-Za-z]+Table = '([^']+)';",
-      );
+    test('SyncAdapter cloud table inventory is exact', () {
+      final adapterSources = [
+        'lib/features/work_log/sync/work_log_sync_adapter.dart',
+        'lib/features/subscription/sync/subscription_sync_adapter.dart',
+        'lib/features/project/sync/project_sync_adapter.dart',
+        'lib/features/expense/sync/expense_record_sync_adapter.dart',
+        'lib/features/evidence/sync/evidence_sync_adapter.dart',
+        'lib/features/evidence/sync/evidence_attachment_sync_adapter.dart',
+      ].map((path) => File(path).readAsStringSync()).join('\n');
+      final tablePattern = RegExp(r"tableName => '([^']+)';");
       final tables = tablePattern
-          .allMatches(source)
+          .allMatches(adapterSources)
           .map((match) => match.group(1)!)
           .toSet();
 
@@ -130,6 +133,7 @@ void main() {
           'syncRemoteSubscriptionToLocal',
           'syncRemoteEvidenceRowsToLocal',
           'syncRemoteEvidenceToLocal',
+          'syncRemoteEvidenceAttachmentToLocal',
           'syncRemoteExpenseRecordsToLocal',
           'syncRemoteExpenseRecordToLocal',
           'syncRemoteProjectsToLocal',

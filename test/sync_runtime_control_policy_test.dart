@@ -11,7 +11,8 @@ void main() {
           'lib/common/services/sync_service.dart',
         ).readAsStringSync();
 
-        expect(source, contains('InMemorySyncQueue'));
+        expect(source, contains('IsarSyncQueue'));
+        expect(source, isNot(contains('InMemorySyncQueue()')));
         expect(source, contains('pauseSync()'));
         expect(source, contains('resumeSync()'));
         expect(source, contains('cancelSync()'));

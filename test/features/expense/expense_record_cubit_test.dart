@@ -123,6 +123,20 @@ void main() {
       );
     });
 
+    test('routes one-time expenses through the Records timeline surface', () {
+      final timelineView = File(
+        'lib/features/timeline/presentation/timeline_view.dart',
+      ).readAsStringSync();
+
+      expect(timelineView, contains('ExpenseRecordCubit'));
+      expect(timelineView, contains('ExpenseRecordEntry'));
+      expect(timelineView, contains('TimelineFilter.expense'));
+      expect(timelineView, contains('_ExpenseRecordTimeline'));
+      expect(timelineView, isNot(contains('ExpenseRecordController')));
+      expect(timelineView, isNot(contains('expense_record_model.dart')));
+      expect(timelineView, isNot(contains('DbService')));
+    });
+
     test('retires the legacy ExpenseRecordController runtime path', () {
       final controller = File(
         'lib/modules/expense/expense_record_controller.dart',

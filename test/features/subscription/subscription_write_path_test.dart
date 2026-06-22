@@ -214,7 +214,8 @@ void main() {
 
       expect(subscription.sortIndex, 2);
       expect(localDataSource.addedSubscriptions, [same(subscription)]);
-      expect(syncGateway.pushedSubscriptions, [same(subscription)]);
+      expect(syncGateway.syncRequests, [same(subscription)]);
+      expect(syncGateway.syncReasons, ['subscription-save']);
     });
 
     test(
@@ -239,7 +240,8 @@ void main() {
         await repository.deleteSubscription(17);
 
         expect(localDataSource.markDeletedIds, [17]);
-        expect(syncGateway.deletedSubscriptions, [same(deleted)]);
+        expect(syncGateway.syncRequests, [same(deleted)]);
+        expect(syncGateway.syncReasons, ['subscription-delete']);
         expect(localDataSource.purgedIds, [17]);
       },
     );
@@ -269,7 +271,8 @@ void main() {
       await repository.reorderSubscriptions([first, second]);
 
       expect(localDataSource.reorderedSubscriptions.single, [first, second]);
-      expect(syncGateway.pushedSubscriptions, [same(second)]);
+      expect(syncGateway.syncRequests, [same(second)]);
+      expect(syncGateway.syncReasons, ['subscription-reorder']);
     });
 
     test(
@@ -583,20 +586,18 @@ final class _SubscriptionLocalDataSourceSpy
 final class _SubscriptionSyncGatewaySpy implements SubscriptionSyncGateway {
   @override
   final bool isAvailable;
-  final List<Subscription> pushedSubscriptions = [];
-  final List<Subscription> deletedSubscriptions = [];
+  final List<Subscription> syncRequests = [];
+  final List<String> syncReasons = [];
 
   _SubscriptionSyncGatewaySpy({required this.isAvailable});
 
   @override
-  Future<bool> deleteSubscription(Subscription subscription) async {
-    deletedSubscriptions.add(subscription);
-    return true;
-  }
-
-  @override
-  Future<bool> pushSubscription(Subscription subscription) async {
-    pushedSubscriptions.add(subscription);
+  Future<bool> requestSync(
+    Subscription subscription, {
+    required String reason,
+  }) async {
+    syncRequests.add(subscription);
+    syncReasons.add(reason);
     return true;
   }
 }

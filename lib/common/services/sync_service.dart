@@ -2,21 +2,19 @@ import 'dart:async';
 import 'dart:io';
 
 import 'package:flutter/widgets.dart';
-import 'package:life_log/features/subscription/data/subscription_model.dart';
-import 'package:life_log/features/work_log/data/work_log_model.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:get_storage/get_storage.dart';
 import 'package:path_provider/path_provider.dart';
-import 'package:life_log/features/project/data/project_model.dart';
 import 'package:life_log/features/evidence/data/evidence_attachment_model.dart';
 import 'package:life_log/features/evidence/data/evidence_model.dart';
+import 'package:life_log/features/evidence/sync/evidence_attachment_sync_adapter.dart';
 import 'package:life_log/features/evidence/sync/evidence_sync_adapter.dart';
-import 'package:life_log/features/expense/data/expense_record_model.dart';
 import 'package:life_log/features/expense/sync/expense_record_sync_adapter.dart';
 import 'package:life_log/features/project/sync/project_sync_adapter.dart';
 import 'package:life_log/features/subscription/sync/subscription_sync_adapter.dart';
 import 'package:life_log/features/work_log/sync/work_log_sync_adapter.dart';
 import 'package:life_log/core/sync/get_storage_sync_cursor_store.dart';
+import 'package:life_log/core/sync/isar_sync_queue.dart';
 import 'package:life_log/core/sync/isar_sync_conflict_store.dart';
 import 'package:life_log/core/sync/sync_adapter.dart';
 import 'package:life_log/core/sync/sync_engine.dart';
@@ -26,12 +24,11 @@ import '../db/db_service.dart';
 import '../services/auth_service.dart';
 import '../services/log_service.dart';
 import '../utils/sync_id_generator.dart';
-import '../utils/sync_id_policy.dart';
 
 class SyncService {
   final _client = Supabase.instance.client;
   final _storage = GetStorage();
-  final _syncQueue = InMemorySyncQueue();
+  late final _syncQueue = IsarSyncQueue(_dbService.database);
   static const _evidenceBucket = 'evidence-files';
   Future<bool>? _activeSync;
   Future<void>? _bootstrapSyncFuture;
@@ -41,12 +38,7 @@ class SyncService {
   VoidCallback? _authListener;
   bool _syncPaused = false;
   bool _syncCancelRequested = false;
-  static const String _workLogsTable = 'work_logs';
-  static const String _subscriptionsTable = 'subscriptions';
-  static const String _projectsTable = 'projects';
-  static const String _expenseEvidenceTable = 'expense_evidence';
   static const String _evidenceAttachmentsTable = 'evidence_attachments';
-  static const String _expenseRecordsTable = 'expense_records';
 
   AuthService? get _authService => serviceLocator.isRegistered<AuthService>()
       ? serviceLocator<AuthService>()
@@ -64,9 +56,6 @@ class SyncService {
   }
 
   String newSyncId() => SyncIdGenerator.newSyncId();
-
-  String _ensureSyncId(String? current) =>
-      ensureSyncId(current, generator: newSyncId);
 
   void pauseSync() {
     _syncPaused = true;
@@ -94,168 +83,6 @@ class SyncService {
     final authService = _authService;
     if (authService == null) return;
     unawaited(authService.handleSessionExpired(error, source: source));
-  }
-
-  int? _parseRemoteInt(dynamic value) {
-    if (value is int) return value;
-    if (value is num) return value.toInt();
-    if (value is String) return int.tryParse(value);
-    return null;
-  }
-
-  DateTime? _parseRemoteDateTime(dynamic value) {
-    if (value is DateTime) return value.toUtc();
-    if (value is String) return DateTime.tryParse(value)?.toUtc();
-    return value == null ? null : DateTime.tryParse(value.toString())?.toUtc();
-  }
-
-  String? _parseRemoteString(dynamic value) {
-    if (value == null) return null;
-    if (value is String) return value;
-    return value.toString();
-  }
-
-  int _requireRemoteId(Map<String, dynamic> response, String entityName) {
-    final id = _parseRemoteInt(response['id']);
-    if (id == null) {
-      throw StateError('$entityName sync response is missing a valid id');
-    }
-    return id;
-  }
-
-  Future<void> _refreshRemoteWorkLog(WorkLog log) async {
-    final user = _currentUser;
-    if (user == null || log.remoteId == null) return;
-
-    final remote = await _client
-        .from(_workLogsTable)
-        .select()
-        .eq('id', log.remoteId!)
-        .eq('user_id', user.id)
-        .maybeSingle();
-    if (remote != null) {
-      await _dbService.syncRemoteLogToLocal(remote);
-    }
-  }
-
-  Future<void> _refreshRemoteSubscription(Subscription sub) async {
-    final user = _currentUser;
-    if (user == null || sub.remoteId == null) return;
-
-    final remote = await _client
-        .from(_subscriptionsTable)
-        .select()
-        .eq('id', sub.remoteId!)
-        .eq('user_id', user.id)
-        .maybeSingle();
-    if (remote != null) {
-      await _dbService.syncRemoteSubscriptionToLocal(remote);
-    }
-  }
-
-  Future<void> _refreshRemoteProject(Project project) async {
-    final user = _currentUser;
-    if (user == null || project.remoteId == null) return;
-
-    final remote = await _client
-        .from(_projectsTable)
-        .select()
-        .eq('id', project.remoteId!)
-        .eq('user_id', user.id)
-        .maybeSingle();
-    if (remote != null) {
-      await _dbService.syncRemoteProjectToLocal(remote);
-    }
-  }
-
-  Future<void> _refreshRemoteEvidence(ExpenseEvidence evidence) async {
-    final user = _currentUser;
-    if (user == null || evidence.remoteId == null) return;
-
-    final remote = await _client
-        .from(_expenseEvidenceTable)
-        .select()
-        .eq('id', evidence.remoteId!)
-        .eq('user_id', user.id)
-        .maybeSingle();
-    if (remote != null) {
-      await _dbService.syncRemoteEvidenceToLocal(remote);
-    }
-  }
-
-  Future<void> _refreshRemoteExpenseRecord(ExpenseRecord record) async {
-    final user = _currentUser;
-    if (user == null || record.remoteId == null) return;
-
-    final remote = await _client
-        .from(_expenseRecordsTable)
-        .select()
-        .eq('id', record.remoteId!)
-        .eq('user_id', user.id)
-        .maybeSingle();
-    if (remote != null) {
-      await _dbService.syncRemoteExpenseRecordToLocal(remote);
-    }
-  }
-
-  void _applyWorkLogSyncResult(WorkLog log, Map<String, dynamic> response) {
-    log.remoteId = _requireRemoteId(response, 'WorkLog');
-    log.syncId = _parseRemoteString(response['sync_id']) ?? log.syncId;
-    log.remoteVersion = _parseRemoteInt(response['version']) ?? 0;
-    log.remoteUpdatedAt = _parseRemoteDateTime(response['updated_at']);
-    log.syncedAt = DateTime.now();
-    log.isDirty = false;
-    log.pendingDelete = false;
-  }
-
-  void _applySubscriptionSyncResult(
-    Subscription sub,
-    Map<String, dynamic> response,
-  ) {
-    sub.remoteId = _requireRemoteId(response, 'Subscription');
-    sub.syncId = _parseRemoteString(response['sync_id']) ?? sub.syncId;
-    sub.remoteVersion = _parseRemoteInt(response['version']) ?? 0;
-    sub.remoteUpdatedAt = _parseRemoteDateTime(response['updated_at']);
-    sub.syncedAt = DateTime.now();
-    sub.isDirty = false;
-    sub.pendingDelete = false;
-  }
-
-  void _applyProjectSyncResult(Project project, Map<String, dynamic> response) {
-    project.remoteId = _requireRemoteId(response, 'Project');
-    project.syncId = _parseRemoteString(response['sync_id']) ?? project.syncId;
-    project.remoteVersion = _parseRemoteInt(response['version']) ?? 0;
-    project.remoteUpdatedAt = _parseRemoteDateTime(response['updated_at']);
-    project.syncedAt = DateTime.now();
-    project.isDirty = false;
-    project.pendingDelete = false;
-  }
-
-  void _applyEvidenceSyncResult(
-    ExpenseEvidence evidence,
-    Map<String, dynamic> response,
-  ) {
-    evidence.remoteId = _requireRemoteId(response, 'ExpenseEvidence');
-    evidence.syncId =
-        _parseRemoteString(response['sync_id']) ?? evidence.syncId;
-    evidence.remoteVersion = _parseRemoteInt(response['version']) ?? 0;
-    evidence.remoteUpdatedAt = _parseRemoteDateTime(response['updated_at']);
-    evidence.syncedAt = DateTime.now();
-    evidence.isDirty = false;
-    evidence.pendingDelete = false;
-  }
-
-  void _applyExpenseRecordSyncResult(
-    ExpenseRecord record,
-    Map<String, dynamic> response,
-  ) {
-    record.remoteId = _requireRemoteId(response, 'ExpenseRecord');
-    record.syncId = _parseRemoteString(response['sync_id']) ?? record.syncId;
-    record.remoteVersion = _parseRemoteInt(response['version']) ?? 0;
-    record.remoteUpdatedAt = _parseRemoteDateTime(response['updated_at']);
-    record.syncedAt = DateTime.now();
-    record.isDirty = false;
-    record.pendingDelete = false;
   }
 
   void start() {
@@ -332,379 +159,6 @@ class SyncService {
         '$reason sync bootstrap failed: $e',
         stackTrace,
       );
-    }
-  }
-
-  // --- Work Log Sync ---
-
-  /// Push a single WorkLog to Supabase
-  Future<bool> pushWorkLog(WorkLog log) async {
-    if (!_isLoggedIn) return false;
-
-    if (log.pendingDelete) {
-      if (log.remoteId == null) {
-        await _dbService.purgeDeletedLog(log.id);
-        return true;
-      }
-      final success = await deleteWorkLog(log);
-      if (success) {
-        await _dbService.purgeDeletedLog(log.id);
-      }
-      return success;
-    }
-
-    try {
-      final user = _currentUser!;
-      final syncId = _ensureSyncId(log.syncId);
-      log.syncId = syncId;
-      final data = {
-        'user_id': user.id,
-        'local_id': log.id,
-        'date': log.date.toIso8601String(),
-        'type': log.type.name,
-        'duration': log.overtimeHours,
-        'project_name': log.type == LogType.businessTrip
-            ? log.location
-            : null, // Reuse location as project/loc
-        'transport': log.transport,
-        'expenses': log.expenses,
-        'is_reimbursed': log.isReimbursed,
-        'notes': log.note,
-        'deleted_at': null,
-        'updated_at': DateTime.now().toUtc().toIso8601String(),
-        'sync_id': syncId,
-      };
-
-      final operation = log.remoteId == null ? 'insert' : 'update';
-
-      if (log.remoteId != null) {
-        // Update
-        var query = _client
-            .from(_workLogsTable)
-            .update(data)
-            .eq('id', log.remoteId!)
-            .eq('user_id', user.id);
-        if (log.remoteVersion > 0) {
-          query = query.eq('version', log.remoteVersion);
-        }
-        final response = await query
-            .select('id, sync_id, version, updated_at')
-            .maybeSingle();
-        if (response == null) {
-          await _refreshRemoteWorkLog(log);
-          throw StateError(
-            'Remote WorkLog update conflict or not found: ${log.remoteId}',
-          );
-        }
-        _applyWorkLogSyncResult(log, response);
-        await _dbService.updateWorkLogRemoteId(log);
-      } else {
-        // Insert
-        final response = await _client
-            .from(_workLogsTable)
-            .upsert(data, onConflict: 'user_id,sync_id')
-            .select('id, sync_id, version, updated_at')
-            .single();
-
-        // Update local remoteId
-        _applyWorkLogSyncResult(log, response);
-        await _dbService.updateWorkLogRemoteId(log);
-      }
-      LogService.to.info('Sync', 'WorkLog $operation success: ${log.id}');
-      return true;
-    } catch (e, stackTrace) {
-      _handlePossibleSessionExpired(e, 'push WorkLog');
-      LogService.to.error(
-        'Sync',
-        'Push WorkLog failed localId=${log.id} remoteId=${log.remoteId}: $e',
-        stackTrace,
-      );
-      // Keep isDirty = true
-      return false;
-    }
-  }
-
-  /// Delete a WorkLog from Supabase
-  Future<bool> deleteWorkLog(WorkLog log) async {
-    if (!_isLoggedIn) return false;
-    if (log.remoteId == null) return true;
-
-    try {
-      final user = _currentUser!;
-      var query = _client
-          .from(_workLogsTable)
-          .update({
-            'deleted_at': DateTime.now().toUtc().toIso8601String(),
-            'updated_at': DateTime.now().toUtc().toIso8601String(),
-          })
-          .eq('id', log.remoteId!)
-          .eq('user_id', user.id);
-      if (log.remoteVersion > 0) {
-        query = query.eq('version', log.remoteVersion);
-      }
-      final response = await query
-          .select('id, sync_id, version, updated_at')
-          .maybeSingle();
-      if (response == null) {
-        await _refreshRemoteWorkLog(log);
-        throw StateError(
-          'Remote WorkLog delete conflict or not found: ${log.remoteId}',
-        );
-      }
-      _applyWorkLogSyncResult(log, response);
-      LogService.to.info('Sync', 'WorkLog delete success: ${log.remoteId}');
-      return true;
-    } catch (e, stackTrace) {
-      _handlePossibleSessionExpired(e, 'delete WorkLog');
-      LogService.to.error(
-        'Sync',
-        'Delete WorkLog failed localId=${log.id} remoteId=${log.remoteId}: $e',
-        stackTrace,
-      );
-      // Queue for retry?
-      return false;
-    }
-  }
-
-  // --- Subscription Sync ---
-
-  Future<bool> pushSubscription(Subscription sub) async {
-    if (!_isLoggedIn) return false;
-
-    if (sub.pendingDelete) {
-      if (sub.remoteId == null) {
-        await _dbService.purgeDeletedSubscription(sub.id);
-        return true;
-      }
-      final success = await deleteSubscription(sub);
-      if (success) {
-        await _dbService.purgeDeletedSubscription(sub.id);
-      }
-      return success;
-    }
-
-    try {
-      final user = _currentUser!;
-      final syncId = _ensureSyncId(sub.syncId);
-      sub.syncId = syncId;
-      final data = {
-        'user_id': user.id,
-        'local_id': sub.id,
-        'name': sub.name,
-        'price': sub.price,
-        'cycle': sub.cycle.name,
-        'anchor_date': sub.anchorDate?.toIso8601String(),
-        'next_due_date': sub.nextPaymentDate.toIso8601String(),
-        'start_date': sub.nextPaymentDate
-            .toIso8601String(), // Using nextPaymentDate as the date anchor
-        'end_date': sub.endDate?.toIso8601String(),
-        'status': sub.status.name,
-        'reminder_days': sub.reminderDays,
-        'description': sub.note,
-        'sort_index': sub.sortIndex,
-        'deleted_at': null,
-        'updated_at': DateTime.now().toUtc().toIso8601String(),
-        'sync_id': syncId,
-      };
-
-      final operation = sub.remoteId == null ? 'insert' : 'update';
-
-      if (sub.remoteId != null) {
-        var query = _client
-            .from(_subscriptionsTable)
-            .update(data)
-            .eq('id', sub.remoteId!)
-            .eq('user_id', user.id);
-        if (sub.remoteVersion > 0) {
-          query = query.eq('version', sub.remoteVersion);
-        }
-        final response = await query
-            .select('id, sync_id, version, updated_at')
-            .maybeSingle();
-        if (response == null) {
-          await _refreshRemoteSubscription(sub);
-          throw StateError(
-            'Remote Subscription update conflict or not found: ${sub.remoteId}',
-          );
-        }
-        _applySubscriptionSyncResult(sub, response);
-        await _dbService.updateSubscriptionRemoteId(sub);
-      } else {
-        final response = await _client
-            .from(_subscriptionsTable)
-            .upsert(data, onConflict: 'user_id,sync_id')
-            .select('id, sync_id, version, updated_at')
-            .single();
-
-        _applySubscriptionSyncResult(sub, response);
-        await _dbService.updateSubscriptionRemoteId(sub);
-      }
-      LogService.to.info('Sync', 'Subscription $operation success: ${sub.id}');
-      return true;
-    } catch (e, stackTrace) {
-      _handlePossibleSessionExpired(e, 'push Subscription');
-      LogService.to.error(
-        'Sync',
-        'Push Subscription failed localId=${sub.id} remoteId=${sub.remoteId}: $e',
-        stackTrace,
-      );
-      return false;
-    }
-  }
-
-  Future<bool> pushProject(Project project) async {
-    if (!_isLoggedIn) return false;
-
-    if (project.pendingDelete) {
-      if (project.remoteId == null) {
-        await _dbService.purgeDeletedProject(project.id);
-        return true;
-      }
-      final success = await deleteProject(project);
-      if (success) {
-        await _dbService.purgeDeletedProject(project.id);
-      }
-      return success;
-    }
-
-    try {
-      final user = _currentUser!;
-      final syncId = _ensureSyncId(project.syncId);
-      project.syncId = syncId;
-      final data = {
-        'user_id': user.id,
-        'local_id': project.id,
-        'name': project.name,
-        'status': project.status.name,
-        'deleted_at': null,
-        'updated_at': DateTime.now().toUtc().toIso8601String(),
-        'created_at': project.createdAt.toUtc().toIso8601String(),
-        'sync_id': syncId,
-      };
-
-      final operation = project.remoteId == null ? 'insert' : 'update';
-      if (project.remoteId != null) {
-        var query = _client
-            .from(_projectsTable)
-            .update(data)
-            .eq('id', project.remoteId!)
-            .eq('user_id', user.id);
-        if (project.remoteVersion > 0) {
-          query = query.eq('version', project.remoteVersion);
-        }
-        final response = await query
-            .select('id, sync_id, version, updated_at')
-            .maybeSingle();
-        if (response == null) {
-          await _refreshRemoteProject(project);
-          throw StateError(
-            'Remote Project update conflict or not found: ${project.remoteId}',
-          );
-        }
-        _applyProjectSyncResult(project, response);
-        await _dbService.updateProjectRemoteId(project);
-      } else {
-        final response = await _client
-            .from(_projectsTable)
-            .upsert(data, onConflict: 'user_id,sync_id')
-            .select('id, sync_id, version, updated_at')
-            .single();
-        _applyProjectSyncResult(project, response);
-        await _dbService.updateProjectRemoteId(project);
-      }
-      LogService.to.info('Sync', 'Project $operation success: ${project.id}');
-      return true;
-    } catch (e, stackTrace) {
-      _handlePossibleSessionExpired(e, 'push Project');
-      LogService.to.error(
-        'Sync',
-        'Push Project failed localId=${project.id} remoteId=${project.remoteId}: $e',
-        stackTrace,
-      );
-      return false;
-    }
-  }
-
-  Future<bool> deleteProject(Project project) async {
-    if (!_isLoggedIn) return false;
-    if (project.remoteId == null) return true;
-
-    try {
-      final user = _currentUser!;
-      var query = _client
-          .from(_projectsTable)
-          .update({
-            'deleted_at': DateTime.now().toUtc().toIso8601String(),
-            'updated_at': DateTime.now().toUtc().toIso8601String(),
-          })
-          .eq('id', project.remoteId!)
-          .eq('user_id', user.id);
-      if (project.remoteVersion > 0) {
-        query = query.eq('version', project.remoteVersion);
-      }
-      final response = await query
-          .select('id, sync_id, version, updated_at')
-          .maybeSingle();
-      if (response == null) {
-        await _refreshRemoteProject(project);
-        throw StateError(
-          'Remote Project delete conflict or not found: ${project.remoteId}',
-        );
-      }
-      _applyProjectSyncResult(project, response);
-      LogService.to.info('Sync', 'Project delete success: ${project.remoteId}');
-      return true;
-    } catch (e, stackTrace) {
-      _handlePossibleSessionExpired(e, 'delete Project');
-      LogService.to.error(
-        'Sync',
-        'Delete Project failed localId=${project.id} remoteId=${project.remoteId}: $e',
-        stackTrace,
-      );
-      return false;
-    }
-  }
-
-  Future<bool> deleteSubscription(Subscription sub) async {
-    if (!_isLoggedIn) return false;
-    if (sub.remoteId == null) return true;
-
-    try {
-      final user = _currentUser!;
-      var query = _client
-          .from(_subscriptionsTable)
-          .update({
-            'deleted_at': DateTime.now().toUtc().toIso8601String(),
-            'updated_at': DateTime.now().toUtc().toIso8601String(),
-          })
-          .eq('id', sub.remoteId!)
-          .eq('user_id', user.id);
-      if (sub.remoteVersion > 0) {
-        query = query.eq('version', sub.remoteVersion);
-      }
-      final response = await query
-          .select('id, sync_id, version, updated_at')
-          .maybeSingle();
-      if (response == null) {
-        await _refreshRemoteSubscription(sub);
-        throw StateError(
-          'Remote Subscription delete conflict or not found: ${sub.remoteId}',
-        );
-      }
-      _applySubscriptionSyncResult(sub, response);
-      LogService.to.info(
-        'Sync',
-        'Subscription delete success: ${sub.remoteId}',
-      );
-      return true;
-    } catch (e, stackTrace) {
-      _handlePossibleSessionExpired(e, 'delete Subscription');
-      LogService.to.error(
-        'Sync',
-        'Delete Subscription failed localId=${sub.id} remoteId=${sub.remoteId}: $e',
-        stackTrace,
-      );
-      return false;
     }
   }
 
@@ -831,6 +285,13 @@ class SyncService {
     }
   }
 
+  Future<bool> _syncEvidenceAttachment(EvidenceAttachment attachment) {
+    return attachment.uploadState == EvidenceAttachmentUploadState.deleted ||
+            attachment.deletedAt != null
+        ? _deleteEvidenceAttachment(attachment)
+        : _uploadEvidenceAttachment(attachment);
+  }
+
   Future<bool> _syncPendingEvidenceAttachments({String? evidenceSyncId}) async {
     final pending = await _dbService.getPendingEvidenceAttachmentsForSync();
     var success = true;
@@ -840,14 +301,18 @@ class SyncService {
         continue;
       }
 
-      final pushed =
-          attachment.uploadState == EvidenceAttachmentUploadState.deleted ||
-              attachment.deletedAt != null
-          ? await _deleteEvidenceAttachment(attachment)
-          : await _uploadEvidenceAttachment(attachment);
+      final pushed = await _syncEvidenceAttachment(attachment);
       success = pushed && success;
     }
     return success;
+  }
+
+  Future<void> downloadEvidenceAttachment(EvidenceAttachment attachment) async {
+    final evidence = await _dbService.getEvidenceBySyncId(
+      attachment.evidenceSyncId,
+    );
+    if (evidence == null) return;
+    await downloadEvidenceFile(evidence);
   }
 
   Future<void> downloadEvidenceFile(ExpenseEvidence evidence) async {
@@ -877,264 +342,6 @@ class SyncService {
     await File(localPath).writeAsBytes(bytes);
     evidence.localFilePath = localPath;
     await _dbService.updateEvidenceRemoteId(evidence);
-  }
-
-  Future<bool> pushEvidence(ExpenseEvidence evidence) async {
-    if (!_isLoggedIn) return false;
-
-    if (evidence.pendingDelete) {
-      if (evidence.remoteId == null) {
-        await _dbService.purgeDeletedEvidence(evidence.id);
-        return true;
-      }
-      final success = await deleteEvidence(evidence);
-      if (success) {
-        await _dbService.purgeDeletedEvidence(evidence.id);
-      }
-      return success;
-    }
-
-    try {
-      final user = _currentUser!;
-      final syncId = _ensureSyncId(evidence.syncId);
-      evidence.syncId = syncId;
-      await _dbService.ensureEvidenceAttachmentForEvidence(evidence);
-
-      final data = {
-        'user_id': user.id,
-        'local_id': evidence.id,
-        'project_name': evidence.projectName,
-        'project_sync_id': evidence.projectSyncId,
-        'evidence_date': evidence.evidenceDate.toIso8601String(),
-        'amount': evidence.amount,
-        'currency': evidence.currency,
-        'category': evidence.category.name,
-        'status': evidence.status.name,
-        'merchant': evidence.merchant,
-        'note': evidence.note,
-        'remote_storage_path': evidence.remoteStoragePath,
-        'file_name': evidence.fileName,
-        'mime_type': evidence.mimeType,
-        'uploaded_at': evidence.uploadedAt?.toIso8601String(),
-        'trip_date': evidence.tripDate?.toIso8601String(),
-        'deleted_at': null,
-        'updated_at': DateTime.now().toUtc().toIso8601String(),
-        'sync_id': syncId,
-      };
-
-      final operation = evidence.remoteId == null ? 'insert' : 'update';
-      if (evidence.remoteId != null) {
-        var query = _client
-            .from(_expenseEvidenceTable)
-            .update(data)
-            .eq('id', evidence.remoteId!)
-            .eq('user_id', user.id);
-        if (evidence.remoteVersion > 0) {
-          query = query.eq('version', evidence.remoteVersion);
-        }
-        final response = await query
-            .select('id, sync_id, version, updated_at')
-            .maybeSingle();
-        if (response == null) {
-          await _refreshRemoteEvidence(evidence);
-          throw StateError(
-            'Remote Evidence update conflict or not found: ${evidence.remoteId}',
-          );
-        }
-        _applyEvidenceSyncResult(evidence, response);
-        await _dbService.updateEvidenceRemoteId(evidence);
-      } else {
-        final response = await _client
-            .from(_expenseEvidenceTable)
-            .upsert(data, onConflict: 'user_id,sync_id')
-            .select('id, sync_id, version, updated_at')
-            .single();
-        _applyEvidenceSyncResult(evidence, response);
-        await _dbService.updateEvidenceRemoteId(evidence);
-      }
-      LogService.to.info('Sync', 'Evidence $operation success: ${evidence.id}');
-      return await _syncPendingEvidenceAttachments(evidenceSyncId: syncId);
-    } catch (e, stackTrace) {
-      _handlePossibleSessionExpired(e, 'push Evidence');
-      LogService.to.error(
-        'Sync',
-        'Push Evidence failed localId=${evidence.id} remoteId=${evidence.remoteId} storage=${evidence.remoteStoragePath}: $e',
-        stackTrace,
-      );
-      return false;
-    }
-  }
-
-  Future<bool> deleteEvidence(ExpenseEvidence evidence) async {
-    if (!_isLoggedIn) return false;
-    if (evidence.remoteId == null) return true;
-
-    try {
-      final user = _currentUser!;
-      var query = _client
-          .from(_expenseEvidenceTable)
-          .update({
-            'deleted_at': DateTime.now().toUtc().toIso8601String(),
-            'updated_at': DateTime.now().toUtc().toIso8601String(),
-          })
-          .eq('id', evidence.remoteId!)
-          .eq('user_id', user.id);
-      if (evidence.remoteVersion > 0) {
-        query = query.eq('version', evidence.remoteVersion);
-      }
-      final response = await query
-          .select('id, sync_id, version, updated_at')
-          .maybeSingle();
-      if (response == null) {
-        await _refreshRemoteEvidence(evidence);
-        throw StateError(
-          'Remote Evidence delete conflict or not found: ${evidence.remoteId}',
-        );
-      }
-      await _dbService.queueEvidenceAttachmentDeleteForEvidence(evidence);
-      _applyEvidenceSyncResult(evidence, response);
-      LogService.to.info(
-        'Sync',
-        'Evidence delete success: ${evidence.remoteId}',
-      );
-      return await _syncPendingEvidenceAttachments(
-        evidenceSyncId: evidence.syncId,
-      );
-    } catch (e, stackTrace) {
-      _handlePossibleSessionExpired(e, 'delete Evidence');
-      LogService.to.error(
-        'Sync',
-        'Delete Evidence failed localId=${evidence.id} remoteId=${evidence.remoteId} storage=${evidence.remoteStoragePath}: $e',
-        stackTrace,
-      );
-      return false;
-    }
-  }
-
-  // --- Expense Record Sync ---
-
-  Future<bool> pushExpenseRecord(ExpenseRecord record) async {
-    if (!_isLoggedIn) return false;
-
-    if (record.pendingDelete) {
-      if (record.remoteId == null) {
-        await _dbService.purgeDeletedExpenseRecord(record.id);
-        return true;
-      }
-      final success = await deleteExpenseRecord(record);
-      if (success) {
-        await _dbService.purgeDeletedExpenseRecord(record.id);
-      }
-      return success;
-    }
-
-    try {
-      final user = _currentUser!;
-      final syncId = _ensureSyncId(record.syncId);
-      record.syncId = syncId;
-      final data = {
-        'user_id': user.id,
-        'local_id': record.id,
-        'expense_date': record.expenseDate.toIso8601String(),
-        'amount': record.amount,
-        'currency': record.currency,
-        'category': record.category.name,
-        'merchant': record.merchant,
-        'note': record.note,
-        'project_name': record.projectName,
-        'project_sync_id': record.projectSyncId,
-        'deleted_at': null,
-        'updated_at': DateTime.now().toUtc().toIso8601String(),
-        'sync_id': syncId,
-      };
-
-      final operation = record.remoteId == null ? 'insert' : 'update';
-      if (record.remoteId != null) {
-        var query = _client
-            .from(_expenseRecordsTable)
-            .update(data)
-            .eq('id', record.remoteId!)
-            .eq('user_id', user.id);
-        if (record.remoteVersion > 0) {
-          query = query.eq('version', record.remoteVersion);
-        }
-        final response = await query
-            .select('id, sync_id, version, updated_at')
-            .maybeSingle();
-        if (response == null) {
-          await _refreshRemoteExpenseRecord(record);
-          throw StateError(
-            'Remote ExpenseRecord update conflict or not found: ${record.remoteId}',
-          );
-        }
-        _applyExpenseRecordSyncResult(record, response);
-        await _dbService.updateExpenseRecordRemoteId(record);
-      } else {
-        final response = await _client
-            .from(_expenseRecordsTable)
-            .upsert(data, onConflict: 'user_id,sync_id')
-            .select('id, sync_id, version, updated_at')
-            .single();
-        _applyExpenseRecordSyncResult(record, response);
-        await _dbService.updateExpenseRecordRemoteId(record);
-      }
-      LogService.to.info(
-        'Sync',
-        'ExpenseRecord $operation success: ${record.id}',
-      );
-      return true;
-    } catch (e, stackTrace) {
-      _handlePossibleSessionExpired(e, 'push ExpenseRecord');
-      LogService.to.error(
-        'Sync',
-        'Push ExpenseRecord failed localId=${record.id} remoteId=${record.remoteId}: $e',
-        stackTrace,
-      );
-      return false;
-    }
-  }
-
-  Future<bool> deleteExpenseRecord(ExpenseRecord record) async {
-    if (!_isLoggedIn) return false;
-    if (record.remoteId == null) return true;
-
-    try {
-      final user = _currentUser!;
-      var query = _client
-          .from(_expenseRecordsTable)
-          .update({
-            'deleted_at': DateTime.now().toUtc().toIso8601String(),
-            'updated_at': DateTime.now().toUtc().toIso8601String(),
-          })
-          .eq('id', record.remoteId!)
-          .eq('user_id', user.id);
-      if (record.remoteVersion > 0) {
-        query = query.eq('version', record.remoteVersion);
-      }
-      final response = await query
-          .select('id, sync_id, version, updated_at')
-          .maybeSingle();
-      if (response == null) {
-        await _refreshRemoteExpenseRecord(record);
-        throw StateError(
-          'Remote ExpenseRecord delete conflict or not found: ${record.remoteId}',
-        );
-      }
-      _applyExpenseRecordSyncResult(record, response);
-      LogService.to.info(
-        'Sync',
-        'ExpenseRecord delete success: ${record.remoteId}',
-      );
-      return true;
-    } catch (e, stackTrace) {
-      _handlePossibleSessionExpired(e, 'delete ExpenseRecord');
-      LogService.to.error(
-        'Sync',
-        'Delete ExpenseRecord failed localId=${record.id} remoteId=${record.remoteId}: $e',
-        stackTrace,
-      );
-      return false;
-    }
   }
 
   // --- Pull Everything ---
@@ -1232,6 +439,13 @@ class SyncService {
                   );
                 },
                 downloadEvidenceFile: downloadEvidenceFile,
+              ),
+              EvidenceAttachmentSyncAdapter(
+                client: _client,
+                dbService: _dbService,
+                userId: user.id,
+                syncAttachment: _syncEvidenceAttachment,
+                downloadAttachment: downloadEvidenceAttachment,
               ),
             ],
             cursorStore: GetStorageSyncCursorStore(

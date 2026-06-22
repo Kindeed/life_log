@@ -1,6 +1,6 @@
 import 'package:flutter/widgets.dart';
 
-enum TabsDestination { today, work, finance, project, profile }
+enum TabsDestination { today, records, project }
 
 class TabsController extends ChangeNotifier {
   int _currentIndex = 0;

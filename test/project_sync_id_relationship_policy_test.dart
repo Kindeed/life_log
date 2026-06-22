@@ -52,16 +52,17 @@ void main() {
       final expenseAdapter = File(
         'lib/features/expense/sync/expense_record_sync_adapter.dart',
       ).readAsStringSync();
-      final syncService = File(
-        'lib/common/services/sync_service.dart',
-      ).readAsStringSync();
       final dbService = File(
         'lib/common/db/db_service.dart',
       ).readAsStringSync();
 
-      for (final source in [evidenceAdapter, expenseAdapter, syncService]) {
+      for (final source in [evidenceAdapter, expenseAdapter]) {
         expect(source, contains("'project_sync_id'"));
       }
+      expect(
+        File('lib/common/services/sync_service.dart').readAsStringSync(),
+        isNot(contains("'project_sync_id'")),
+      );
       expect(dbService, contains("data['project_sync_id']"));
       expect(dbService, contains('projectSyncId'));
     });

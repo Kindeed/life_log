@@ -35,9 +35,6 @@ void main() {
         'lib/common/db/db_service.dart': [
           'features/expense/data/expense_record_model.dart',
         ],
-        'lib/common/services/sync_service.dart': [
-          'features/expense/data/expense_record_model.dart',
-        ],
         'lib/common/utils/record_validators.dart': [
           'features/expense/data/expense_record_model.dart',
         ],
@@ -89,6 +86,16 @@ void main() {
           );
         }
       }
+
+      final syncService = File(
+        'lib/common/services/sync_service.dart',
+      ).readAsStringSync();
+      expect(
+        syncService,
+        isNot(contains('features/expense/data/expense_record_model.dart')),
+        reason:
+            'SyncService should orchestrate adapters, not import entity models for direct expense pushes.',
+      );
 
       final bindingSource = File(
         'lib/common/bindings/tabs_binding.dart',

@@ -1,10 +1,28 @@
+import 'dart:ffi';
+import 'dart:io';
+
 import 'package:flutter_test/flutter_test.dart';
+import 'package:isar/isar.dart';
+import 'package:life_log/common/db/db_service.dart';
+import 'package:life_log/core/db/isar_database.dart';
+import 'package:life_log/core/sync/isar_sync_queue.dart';
 import 'package:life_log/core/sync/sync_adapter.dart';
 import 'package:life_log/core/sync/sync_cursor_store.dart';
 import 'package:life_log/core/sync/sync_engine.dart';
 import 'package:life_log/core/sync/sync_queue.dart';
 
 void main() {
+  final isarLibraryPath = _isarLibraryPath();
+  final isarSkip = isarLibraryPath != null
+      ? false
+      : 'isar.dll is not available in this test environment. '
+            'Set ISAR_DLL_PATH or place it at D:\\Tool\\Isar\\isar.dll.';
+
+  setUpAll(() async {
+    if (isarLibraryPath == null) return;
+    await Isar.initializeIsarCore(libraries: {Abi.current(): isarLibraryPath});
+  });
+
   group('SyncQueue backoff', () {
     test('failed pushes are delayed until their retry time', () async {
       final events = <String>[];
@@ -57,6 +75,47 @@ void main() {
       expect(summary.cancelled, isTrue);
       expect(events, ['pull']);
     });
+
+    test('IsarSyncQueue keeps retry backoff after queue rebuild', () async {
+      final tempDir = await Directory.systemTemp.createTemp(
+        'life_log_sync_queue_test_',
+      );
+      final database = await IsarDatabase.open(
+        schemas: DbService.schemas,
+        directory: tempDir.path,
+        name: 'sync_queue_${DateTime.now().microsecondsSinceEpoch}',
+      );
+      final clock = _MutableClock(DateTime.utc(2026, 6, 21));
+
+      try {
+        final queue = IsarSyncQueue(
+          database,
+          clock: clock,
+          baseDelay: const Duration(minutes: 1),
+        );
+        await queue.recordFailure('work_log', 'sync-1', error: 'offline');
+
+        final rebuilt = IsarSyncQueue(
+          database,
+          clock: clock,
+          baseDelay: const Duration(minutes: 1),
+        );
+
+        expect(await rebuilt.canAttempt('work_log', 'sync-1'), isFalse);
+        expect((await rebuilt.peek('work_log', 'sync-1'))?.attemptCount, 1);
+
+        clock.now = DateTime.utc(2026, 6, 21, 0, 1, 1);
+        expect(await rebuilt.canAttempt('work_log', 'sync-1'), isTrue);
+
+        await rebuilt.recordSuccess('work_log', 'sync-1');
+        expect(await rebuilt.peek('work_log', 'sync-1'), isNull);
+      } finally {
+        await database.isar.close(deleteFromDisk: true);
+        if (await tempDir.exists()) {
+          await tempDir.delete(recursive: true);
+        }
+      }
+    }, skip: isarSkip);
   });
 }
 
@@ -105,4 +164,12 @@ final class _QueueAdapter
 
   @override
   String syncQueueKey(String entity) => 'entity-1';
+}
+
+String? _isarLibraryPath() {
+  final envPath = Platform.environment['ISAR_DLL_PATH'];
+  if (envPath != null && File(envPath).existsSync()) return envPath;
+  const fallback = 'D:\\Tool\\Isar\\isar.dll';
+  if (File(fallback).existsSync()) return fallback;
+  return null;
 }

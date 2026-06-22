@@ -144,7 +144,8 @@ void main() {
       expect(project.syncId, isNotEmpty);
       expect(project.isDirty, isTrue);
       expect(local.addedProjects, [project]);
-      expect(sync.pushedProjects, [project]);
+      expect(sync.syncRequests, [project]);
+      expect(sync.syncReasons, ['project-save']);
     });
 
     test(
@@ -169,8 +170,7 @@ void main() {
         await repository.deleteProject(localOnlyDeleted);
 
         expect(ensured, same(cleanRemote));
-        expect(sync.pushedProjects, isEmpty);
-        expect(sync.deletedProjects, isEmpty);
+        expect(sync.syncRequests, isEmpty);
         expect(local.purgedIds, [8]);
       },
     );
@@ -231,20 +231,15 @@ final class _ProjectLocalDataSourceFake implements ProjectLocalDataSource {
 final class _ProjectSyncGatewayFake implements ProjectSyncGateway {
   @override
   final bool isAvailable;
-  final List<Project> pushedProjects = [];
-  final List<Project> deletedProjects = [];
+  final List<Project> syncRequests = [];
+  final List<String> syncReasons = [];
 
   _ProjectSyncGatewayFake({this.isAvailable = false});
 
   @override
-  Future<bool> deleteProject(Project project) async {
-    deletedProjects.add(project);
-    return true;
-  }
-
-  @override
-  Future<bool> pushProject(Project project) async {
-    pushedProjects.add(project);
+  Future<bool> requestSync(Project project, {required String reason}) async {
+    syncRequests.add(project);
+    syncReasons.add(reason);
     return true;
   }
 }

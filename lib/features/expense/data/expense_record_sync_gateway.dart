@@ -1,11 +1,10 @@
-import 'package:life_log/common/services/sync_service.dart';
 import 'package:life_log/core/di/service_locator.dart';
+import 'package:life_log/core/sync/sync_scheduler.dart';
 import 'package:life_log/features/expense/data/expense_record_model.dart';
 
 abstract interface class ExpenseRecordSyncGateway {
   bool get isAvailable;
-  Future<bool> pushExpenseRecord(ExpenseRecord record);
-  Future<bool> deleteExpenseRecord(ExpenseRecord record);
+  Future<bool> requestSync(ExpenseRecord record, {required String reason});
 }
 
 final class ServiceLocatorExpenseRecordSyncGateway
@@ -13,15 +12,14 @@ final class ServiceLocatorExpenseRecordSyncGateway
   const ServiceLocatorExpenseRecordSyncGateway();
 
   @override
-  bool get isAvailable => serviceLocator.isRegistered<SyncService>();
+  bool get isAvailable => serviceLocator.isRegistered<SyncScheduler>();
 
   @override
-  Future<bool> deleteExpenseRecord(ExpenseRecord record) {
-    return serviceLocator<SyncService>().deleteExpenseRecord(record);
-  }
-
-  @override
-  Future<bool> pushExpenseRecord(ExpenseRecord record) {
-    return serviceLocator<SyncService>().pushExpenseRecord(record);
+  Future<bool> requestSync(ExpenseRecord record, {required String reason}) {
+    return serviceLocator<SyncScheduler>().requestSync(
+      reason: reason,
+      entityName: 'expense_record',
+      entityKey: record.syncId ?? record.id.toString(),
+    );
   }
 }

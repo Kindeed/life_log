@@ -22,6 +22,7 @@ import 'package:life_log/features/expense/domain/entities/expense_record_entry.d
 import 'package:life_log/features/expense/presentation/expense_record_cubit.dart';
 import 'package:life_log/features/project/domain/entities/project_entry.dart';
 import 'package:life_log/features/project/presentation/project_cubit.dart';
+import 'package:life_log/features/shell/presentation/profile_action_button.dart';
 import 'package:life_log/features/photo/domain/entities/photo_entry.dart';
 import 'package:life_log/features/photo/presentation/photo_cubit.dart';
 import 'package:life_log/features/photo/presentation/create_project_sheet.dart';
@@ -74,6 +75,7 @@ class _PhotoViewState extends State<PhotoView> {
             tooltip: "刷新",
             onPressed: _reloadProjectOverview,
           ),
+          const ProfileActionButton(),
         ],
       ),
       floatingActionButton: FloatingActionButton.extended(

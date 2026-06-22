@@ -84,10 +84,10 @@ class WorkLogRepository {
     // 1. 本地存储 (包含产生 dirty/remoteId)
     await _localDataSource.addLog(log);
 
-    _pushWorkLogInBackground(log);
+    _requestWorkLogSyncInBackground(log, reason: 'work-log-save');
   }
 
-  void _pushWorkLogInBackground(WorkLog log) {
+  void _requestWorkLogSyncInBackground(WorkLog log, {required String reason}) {
     if (!_syncGateway.isAvailable) {
       LogService.to.info('WorkLogRepository', '本地模式：跳过云端同步');
       return;
@@ -97,12 +97,15 @@ class WorkLogRepository {
       return;
     }
 
-    unawaited(_pushWorkLogSafely(log));
+    unawaited(_requestWorkLogSyncSafely(log, reason: reason));
   }
 
-  Future<void> _pushWorkLogSafely(WorkLog log) async {
+  Future<void> _requestWorkLogSyncSafely(
+    WorkLog log, {
+    required String reason,
+  }) async {
     try {
-      final success = await _syncGateway.pushWorkLog(log);
+      final success = await _syncGateway.requestSync(log, reason: reason);
       if (!success) {
         LogService.to.error('WorkLogRepository', '云端同步未完成，保留待同步状态');
       }
@@ -128,7 +131,10 @@ class WorkLogRepository {
       } else if (!_syncGateway.isAvailable) {
         LogService.to.info('WorkLogRepository', '本地模式：跳过云端删除');
       } else {
-        final success = await _syncGateway.deleteWorkLog(log);
+        final success = await _syncGateway.requestSync(
+          log,
+          reason: 'work-log-delete',
+        );
         if (success) {
           await _localDataSource.purgeDeletedLog(target.id);
         }

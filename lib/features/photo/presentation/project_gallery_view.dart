@@ -56,7 +56,7 @@ class _ProjectGalleryViewState extends State<ProjectGalleryView>
     photoCubit = serviceLocator<PhotoCubit>()..start();
     evidenceCubit = serviceLocator<EvidenceCubit>()..start();
     expenseCubit = serviceLocator<ExpenseRecordCubit>()..start();
-    _tabController = TabController(length: 3, vsync: this);
+    _tabController = TabController(length: 5, vsync: this);
     _tabController.addListener(_handleTabChanged);
   }
 
@@ -99,6 +99,8 @@ class _ProjectGalleryViewState extends State<ProjectGalleryView>
                       bottom: TabBar(
                         controller: _tabController,
                         tabs: const [
+                          Tab(icon: Icon(Icons.dashboard_outlined), text: '概览'),
+                          Tab(icon: Icon(Icons.timeline_rounded), text: '时间线'),
                           Tab(
                             icon: Icon(Icons.photo_library_rounded),
                             text: '照片',
@@ -182,15 +184,18 @@ class _ProjectGalleryViewState extends State<ProjectGalleryView>
                                       onPressed: _showDeleteProjectDialog,
                                       tooltip: "删除项目",
                                     ),
-                                  IconButton(
-                                    icon: const Icon(
-                                      Icons.checklist_rtl_rounded,
+                                  if (_tabController.index == 2)
+                                    IconButton(
+                                      icon: const Icon(
+                                        Icons.checklist_rtl_rounded,
+                                      ),
+                                      onPressed: () {
+                                        setState(
+                                          () => _isMultiSelectMode = true,
+                                        );
+                                      },
+                                      tooltip: "选择模式",
                                     ),
-                                    onPressed: () {
-                                      setState(() => _isMultiSelectMode = true);
-                                    },
-                                    tooltip: "选择模式",
-                                  ),
                                 ],
                               );
                             },
@@ -200,6 +205,31 @@ class _ProjectGalleryViewState extends State<ProjectGalleryView>
                     body: TabBarView(
                       controller: _tabController,
                       children: [
+                        BlocBuilder<ExpenseRecordCubit, ExpenseRecordState>(
+                          bloc: expenseCubit,
+                          builder: (context, expenseState) {
+                            return _buildProjectOverview(
+                              projectState,
+                              photoState,
+                              evidenceState,
+                              expenseState,
+                              textSecondary,
+                              theme,
+                            );
+                          },
+                        ),
+                        BlocBuilder<ExpenseRecordCubit, ExpenseRecordState>(
+                          bloc: expenseCubit,
+                          builder: (context, expenseState) {
+                            return _buildProjectTimeline(
+                              photoState,
+                              evidenceState,
+                              expenseState,
+                              textSecondary,
+                              theme,
+                            );
+                          },
+                        ),
                         Builder(
                           builder: (_) {
                             final projectPhotos = photoState.entriesForProject(
@@ -400,7 +430,7 @@ class _ProjectGalleryViewState extends State<ProjectGalleryView>
                             label: _addActionLabel,
                             icon: _addActionIcon,
                             color: Theme.of(context).colorScheme.primary,
-                            visible: true,
+                            visible: _tabController.index >= 2,
                             onPressed: _runCurrentAddAction,
                           ),
                   ),
@@ -415,17 +445,22 @@ class _ProjectGalleryViewState extends State<ProjectGalleryView>
 
   void _handleTabChanged() {
     if (mounted) {
-      setState(() {});
+      setState(() {
+        if (_tabController.index != 2) {
+          _isMultiSelectMode = false;
+          _selectedPhotoIds.clear();
+        }
+      });
     }
   }
 
   String get _addActionLabel {
     switch (_tabController.index) {
-      case 1:
+      case 3:
         return "添加凭证";
-      case 2:
+      case 4:
         return "添加支出";
-      case 0:
+      case 2:
       default:
         return "添加照片";
     }
@@ -433,11 +468,11 @@ class _ProjectGalleryViewState extends State<ProjectGalleryView>
 
   IconData get _addActionIcon {
     switch (_tabController.index) {
-      case 1:
+      case 3:
         return Icons.receipt_long_rounded;
-      case 2:
+      case 4:
         return Icons.payments_rounded;
-      case 0:
+      case 2:
       default:
         return Icons.add_photo_alternate_rounded;
     }
@@ -445,17 +480,17 @@ class _ProjectGalleryViewState extends State<ProjectGalleryView>
 
   void _runCurrentAddAction() {
     switch (_tabController.index) {
-      case 1:
+      case 3:
         _showEvidenceAddActions();
         break;
-      case 2:
+      case 4:
         openExpenseRecordEditorPage(
           context,
           initialProjectName: widget.projectName,
           onSavedOrDeleted: expenseCubit.loadEntries,
         );
         break;
-      case 0:
+      case 2:
       default:
         _showAddPhotoActions();
         break;
@@ -588,6 +623,180 @@ class _ProjectGalleryViewState extends State<ProjectGalleryView>
     }
   }
 
+  Widget _buildProjectOverview(
+    ProjectState projectState,
+    PhotoState photoState,
+    EvidenceState evidenceState,
+    ExpenseRecordState expenseState,
+    Color textSecondary,
+    ThemeData theme,
+  ) {
+    final project = projectState.entryNamed(widget.projectName);
+    final projectPhotos = photoState.entriesForProject(widget.projectName);
+    final evidenceItems = evidenceState.entriesForProject(widget.projectName);
+    final expenseItems = expenseState.entriesForProject(widget.projectName);
+    final pendingEvidenceAmount = evidenceItems
+        .where((item) => item.status != EvidenceEntryStatus.reimbursed)
+        .fold<double>(0, (sum, item) => sum + (item.amount ?? 0));
+    final expenseTotal = expenseItems.fold<double>(
+      0,
+      (sum, item) => sum + item.amount,
+    );
+
+    return ListView(
+      padding: EdgeInsets.all(16.w),
+      children: [
+        Card(
+          child: Padding(
+            padding: EdgeInsets.all(16.w),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  widget.projectName,
+                  style: theme.textTheme.titleLarge?.copyWith(
+                    fontWeight: FontWeight.w800,
+                  ),
+                ),
+                SizedBox(height: 8.h),
+                Text(
+                  project?.label ?? '未归档',
+                  style: TextStyle(color: textSecondary),
+                ),
+              ],
+            ),
+          ),
+        ),
+        SizedBox(height: 12.h),
+        GridView.count(
+          crossAxisCount: 2,
+          crossAxisSpacing: 10.w,
+          mainAxisSpacing: 10.h,
+          shrinkWrap: true,
+          physics: const NeverScrollableScrollPhysics(),
+          childAspectRatio: 2.3,
+          children: [
+            _ProjectMetricTile(
+              icon: Icons.photo_library_rounded,
+              label: '照片',
+              value: projectPhotos.length.toString(),
+            ),
+            _ProjectMetricTile(
+              icon: Icons.receipt_long_rounded,
+              label: '凭证',
+              value: evidenceItems.length.toString(),
+            ),
+            _ProjectMetricTile(
+              icon: Icons.payments_rounded,
+              label: '支出',
+              value: formatMoney(expenseTotal),
+            ),
+            _ProjectMetricTile(
+              icon: Icons.assignment_late_outlined,
+              label: '待报销',
+              value: formatMoney(pendingEvidenceAmount),
+            ),
+          ],
+        ),
+        SizedBox(height: 12.h),
+        Card(
+          child: ListTile(
+            leading: const Icon(Icons.insights_rounded),
+            title: const Text('最近活动'),
+            subtitle: Text(
+              _latestProjectActivity(
+                projectPhotos,
+                evidenceItems,
+                expenseItems,
+              ),
+              style: TextStyle(color: textSecondary),
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildProjectTimeline(
+    PhotoState photoState,
+    EvidenceState evidenceState,
+    ExpenseRecordState expenseState,
+    Color textSecondary,
+    ThemeData theme,
+  ) {
+    final items = <_ProjectTimelineItem>[
+      ...photoState
+          .entriesForProject(widget.projectName)
+          .map(
+            (entry) => _ProjectTimelineItem(
+              date: entry.createdAt,
+              type: '照片',
+              title: entry.description?.trim().isNotEmpty == true
+                  ? entry.description!.trim()
+                  : entry.fileName,
+              subtitle: entry.deviceName ?? '项目照片',
+              icon: Icons.photo_library_rounded,
+            ),
+          ),
+      ...evidenceState
+          .entriesForProject(widget.projectName)
+          .map(
+            (entry) => _ProjectTimelineItem(
+              date: entry.evidenceDate,
+              type: '凭证',
+              title: entry.merchant?.trim().isNotEmpty == true
+                  ? entry.merchant!.trim()
+                  : entry.category.label,
+              subtitle:
+                  '${entry.status.label} · ${formatMoney(entry.amount ?? 0)}',
+              icon: Icons.receipt_long_rounded,
+            ),
+          ),
+      ...expenseState
+          .entriesForProject(widget.projectName)
+          .map(
+            (entry) => _ProjectTimelineItem(
+              date: entry.expenseDate,
+              type: '支出',
+              title: entry.merchant?.trim().isNotEmpty == true
+                  ? entry.merchant!.trim()
+                  : entry.category.label,
+              subtitle:
+                  '${entry.category.label} · ${formatMoney(entry.amount)}',
+              icon: Icons.payments_rounded,
+            ),
+          ),
+    ]..sort((a, b) => b.date.compareTo(a.date));
+
+    if (items.isEmpty) {
+      return Center(
+        child: Text('此项目暂无活动', style: TextStyle(color: textSecondary)),
+      );
+    }
+
+    return ListView.separated(
+      padding: EdgeInsets.all(12.w),
+      itemCount: items.length,
+      separatorBuilder: (_, _) => SizedBox(height: 10.h),
+      itemBuilder: (context, index) {
+        final item = items[index];
+        return ListTile(
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(12),
+          ),
+          tileColor: theme.cardColor,
+          leading: Icon(item.icon),
+          title: Text(item.title, maxLines: 1, overflow: TextOverflow.ellipsis),
+          subtitle: Text(
+            '${formatDateYmd(item.date)} · ${item.type} · ${item.subtitle}',
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+          ),
+        );
+      },
+    );
+  }
+
   Widget _buildEvidenceList(
     List<EvidenceEntry> items,
     Color textSecondary,
@@ -712,4 +921,84 @@ class _ProjectGalleryViewState extends State<ProjectGalleryView>
       manualSubtitle: "没有图片时再补充文字",
     );
   }
+}
+
+class _ProjectMetricTile extends StatelessWidget {
+  final IconData icon;
+  final String label;
+  final String value;
+
+  const _ProjectMetricTile({
+    required this.icon,
+    required this.label,
+    required this.value,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    return Card(
+      child: Padding(
+        padding: const EdgeInsets.all(12),
+        child: Row(
+          children: [
+            Icon(icon, color: theme.colorScheme.primary),
+            const SizedBox(width: 10),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Text(
+                    value,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: theme.textTheme.titleMedium?.copyWith(
+                      fontWeight: FontWeight.w800,
+                    ),
+                  ),
+                  Text(
+                    label,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: TextStyle(color: theme.colorScheme.onSurfaceVariant),
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _ProjectTimelineItem {
+  final DateTime date;
+  final String type;
+  final String title;
+  final String subtitle;
+  final IconData icon;
+
+  const _ProjectTimelineItem({
+    required this.date,
+    required this.type,
+    required this.title,
+    required this.subtitle,
+    required this.icon,
+  });
+}
+
+String _latestProjectActivity(
+  List<PhotoEntry> photos,
+  List<EvidenceEntry> evidences,
+  List<ExpenseRecordEntry> expenses,
+) {
+  final dates = <DateTime>[
+    ...photos.map((entry) => entry.createdAt),
+    ...evidences.map((entry) => entry.evidenceDate),
+    ...expenses.map((entry) => entry.expenseDate),
+  ]..sort((a, b) => b.compareTo(a));
+  if (dates.isEmpty) return '暂无照片、凭证或支出';
+  return formatDateYmd(dates.first);
 }

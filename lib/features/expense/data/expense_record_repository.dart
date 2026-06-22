@@ -54,7 +54,10 @@ class ExpenseRecordRepository {
     }
 
     try {
-      final success = await _syncGateway.pushExpenseRecord(record);
+      final success = await _syncGateway.requestSync(
+        record,
+        reason: 'expense-record-save',
+      );
       if (!success) {
         LogService.to.error('ExpenseRecordRepository', '云端同步未完成，保留待同步状态');
       }
@@ -78,7 +81,10 @@ class ExpenseRecordRepository {
       return;
     }
 
-    final success = await _syncGateway.deleteExpenseRecord(record);
+    final success = await _syncGateway.requestSync(
+      record,
+      reason: 'expense-record-delete',
+    );
     if (success) {
       await _localDataSource.purgeDeletedExpenseRecord(id);
     }

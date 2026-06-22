@@ -1,11 +1,10 @@
-import 'package:life_log/common/services/sync_service.dart';
 import 'package:life_log/core/di/service_locator.dart';
+import 'package:life_log/core/sync/sync_scheduler.dart';
 import 'package:life_log/features/subscription/data/subscription_model.dart';
 
 abstract interface class SubscriptionSyncGateway {
   bool get isAvailable;
-  Future<bool> pushSubscription(Subscription subscription);
-  Future<bool> deleteSubscription(Subscription subscription);
+  Future<bool> requestSync(Subscription subscription, {required String reason});
 }
 
 final class ServiceLocatorSubscriptionSyncGateway
@@ -13,15 +12,17 @@ final class ServiceLocatorSubscriptionSyncGateway
   const ServiceLocatorSubscriptionSyncGateway();
 
   @override
-  bool get isAvailable => serviceLocator.isRegistered<SyncService>();
+  bool get isAvailable => serviceLocator.isRegistered<SyncScheduler>();
 
   @override
-  Future<bool> deleteSubscription(Subscription subscription) {
-    return serviceLocator<SyncService>().deleteSubscription(subscription);
-  }
-
-  @override
-  Future<bool> pushSubscription(Subscription subscription) {
-    return serviceLocator<SyncService>().pushSubscription(subscription);
+  Future<bool> requestSync(
+    Subscription subscription, {
+    required String reason,
+  }) {
+    return serviceLocator<SyncScheduler>().requestSync(
+      reason: reason,
+      entityName: 'subscription',
+      entityKey: subscription.syncId ?? subscription.id.toString(),
+    );
   }
 }

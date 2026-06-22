@@ -11,20 +11,20 @@ void main() {
       final legacyView = File(
         'lib/modules/subscription/subscription_view.dart',
       );
-      final tabsView = File(
-        'lib/features/shell/presentation/tabs_view.dart',
+      final timelineView = File(
+        'lib/features/timeline/presentation/timeline_view.dart',
       ).readAsStringSync();
 
       expect(featureView.existsSync(), isTrue);
       expect(legacyView.existsSync(), isFalse);
       expect(
-        tabsView,
+        timelineView,
         contains(
           'package:life_log/features/subscription/presentation/subscription_view.dart',
         ),
       );
       expect(
-        tabsView,
+        timelineView,
         isNot(contains('../subscription/subscription_view.dart')),
       );
     });
