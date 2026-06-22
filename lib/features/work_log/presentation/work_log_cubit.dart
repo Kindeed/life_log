@@ -8,6 +8,7 @@ import 'package:life_log/features/work_log/application/load_work_log_month.dart'
 import 'package:life_log/features/work_log/application/watch_work_log_entries.dart';
 import 'package:life_log/features/work_log/domain/entities/work_log_entry.dart';
 import 'package:life_log/features/work_log/domain/entities/work_log_month_snapshot.dart';
+import 'package:life_log/features/work_log/presentation/work_log_day_metadata.dart';
 
 enum WorkLogStatus { initial, loading, ready, failure }
 
@@ -19,6 +20,7 @@ final class WorkLogState extends Equatable {
   final DateTime selectedDay;
   final WorkLogCalendarSpan calendarSpan;
   final Map<DateTime, List<WorkLogEntry>> entriesByDay;
+  final Map<DateTime, WorkLogDayMetadata> dayMetadataByDay;
   final WorkLogMonthSummary summary;
   final AppFailure? failure;
 
@@ -28,6 +30,7 @@ final class WorkLogState extends Equatable {
     required this.selectedDay,
     required this.calendarSpan,
     required this.entriesByDay,
+    required this.dayMetadataByDay,
     required this.summary,
     this.failure,
   });
@@ -40,6 +43,7 @@ final class WorkLogState extends Equatable {
       selectedDay: today,
       calendarSpan: WorkLogCalendarSpan.month,
       entriesByDay: const {},
+      dayMetadataByDay: const {},
       summary: WorkLogMonthSummary.empty,
     );
   }
@@ -48,12 +52,17 @@ final class WorkLogState extends Equatable {
     return entriesByDay[dateOnlyLocal(day)] ?? const [];
   }
 
+  WorkLogDayMetadata? metadataForDay(DateTime day) {
+    return dayMetadataByDay[dateOnlyLocal(day)];
+  }
+
   WorkLogState copyWith({
     WorkLogStatus? status,
     DateTime? focusedDay,
     DateTime? selectedDay,
     WorkLogCalendarSpan? calendarSpan,
     Map<DateTime, List<WorkLogEntry>>? entriesByDay,
+    Map<DateTime, WorkLogDayMetadata>? dayMetadataByDay,
     WorkLogMonthSummary? summary,
     AppFailure? failure,
     bool clearFailure = false,
@@ -64,6 +73,7 @@ final class WorkLogState extends Equatable {
       selectedDay: selectedDay ?? this.selectedDay,
       calendarSpan: calendarSpan ?? this.calendarSpan,
       entriesByDay: entriesByDay ?? this.entriesByDay,
+      dayMetadataByDay: dayMetadataByDay ?? this.dayMetadataByDay,
       summary: summary ?? this.summary,
       failure: clearFailure ? null : failure ?? this.failure,
     );
@@ -76,6 +86,7 @@ final class WorkLogState extends Equatable {
     selectedDay,
     calendarSpan,
     entriesByDay,
+    dayMetadataByDay,
     summary,
     failure,
   ];
@@ -85,6 +96,7 @@ final class WorkLogCubit extends Cubit<WorkLogState> {
   final LoadWorkLogMonth _loadMonth;
   final WatchWorkLogEntries _watchEntries;
   StreamSubscription<void>? _entriesSubscription;
+  DateTime? _loadedMonth;
 
   WorkLogCubit({
     required LoadWorkLogMonth loadMonth,
@@ -111,6 +123,7 @@ final class WorkLogCubit extends Cubit<WorkLogState> {
     if (isClosed) return;
     result.when(
       success: (snapshot) {
+        _loadedMonth = DateTime(snapshot.month.year, snapshot.month.month);
         emit(
           state.copyWith(
             status: WorkLogStatus.ready,
@@ -119,6 +132,7 @@ final class WorkLogCubit extends Cubit<WorkLogState> {
             clearFailure: true,
           ),
         );
+        _prefetchVisibleDayMetadata(state.focusedDay);
       },
       failure: (failure) {
         emit(state.copyWith(status: WorkLogStatus.failure, failure: failure));
@@ -127,28 +141,94 @@ final class WorkLogCubit extends Cubit<WorkLogState> {
   }
 
   void selectDay(DateTime selected, DateTime focused) {
+    final nextFocused = dateOnlyLocal(focused);
     emit(
       state.copyWith(
         status: state.status == WorkLogStatus.initial
             ? WorkLogStatus.ready
             : state.status,
         selectedDay: dateOnlyLocal(selected),
-        focusedDay: dateOnlyLocal(focused),
+        focusedDay: nextFocused,
       ),
     );
+    _loadFocusedMonthIfNeeded(nextFocused);
   }
 
   void changeFocusedDay(DateTime focused) {
-    emit(state.copyWith(focusedDay: dateOnlyLocal(focused)));
+    final nextFocused = dateOnlyLocal(focused);
+    emit(state.copyWith(focusedDay: nextFocused));
+    _loadFocusedMonthIfNeeded(nextFocused);
   }
 
   void changeCalendarSpan(WorkLogCalendarSpan span) {
     emit(state.copyWith(calendarSpan: span));
+    _prefetchVisibleDayMetadata(state.focusedDay);
   }
 
   @override
   Future<void> close() async {
     await _entriesSubscription?.cancel();
     return super.close();
+  }
+
+  void _loadFocusedMonthIfNeeded(DateTime focused) {
+    final loadedMonth = _loadedMonth;
+    if (loadedMonth != null &&
+        loadedMonth.year == focused.year &&
+        loadedMonth.month == focused.month) {
+      return;
+    }
+    unawaited(loadFocusedMonth());
+  }
+
+  void _prefetchVisibleDayMetadata(DateTime focused) {
+    final missingDays = _visibleDaysFor(focused, state.calendarSpan)
+        .where((day) => !state.dayMetadataByDay.containsKey(day))
+        .toList(growable: false);
+    if (missingDays.isEmpty) return;
+    unawaited(_loadDayMetadata(missingDays));
+  }
+
+  Future<void> _loadDayMetadata(List<DateTime> days) async {
+    await Future<void>.delayed(Duration.zero);
+    if (isClosed) return;
+
+    final additions = <DateTime, WorkLogDayMetadata>{};
+    for (final day in days) {
+      additions[day] = buildWorkLogDayMetadata(day);
+    }
+    if (isClosed || additions.isEmpty) return;
+
+    emit(
+      state.copyWith(
+        dayMetadataByDay: Map<DateTime, WorkLogDayMetadata>.unmodifiable({
+          ...state.dayMetadataByDay,
+          ...additions,
+        }),
+      ),
+    );
+  }
+
+  List<DateTime> _visibleDaysFor(DateTime focused, WorkLogCalendarSpan span) {
+    final localFocused = dateOnlyLocal(focused);
+    final start = switch (span) {
+      WorkLogCalendarSpan.week => localFocused.subtract(
+        Duration(days: localFocused.weekday - DateTime.monday),
+      ),
+      WorkLogCalendarSpan.month =>
+        DateTime(localFocused.year, localFocused.month).subtract(
+          Duration(
+            days:
+                DateTime(localFocused.year, localFocused.month).weekday -
+                DateTime.monday,
+          ),
+        ),
+    };
+    final count = span == WorkLogCalendarSpan.month ? 42 : 7;
+    return List<DateTime>.generate(
+      count,
+      (index) => dateOnlyLocal(start.add(Duration(days: index))),
+      growable: false,
+    );
   }
 }

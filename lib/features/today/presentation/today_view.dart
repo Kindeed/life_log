@@ -300,8 +300,8 @@ class _PendingCard extends StatelessWidget {
               const Spacer(),
               TextButton(
                 onPressed: () =>
-                    TabsScope.of(context).goTo(TabsDestination.records),
-                child: const Text('查看全部'),
+                    TabsScope.of(context).goTo(TabsDestination.subscription),
+                child: const Text('查看订阅'),
               ),
             ],
           ),

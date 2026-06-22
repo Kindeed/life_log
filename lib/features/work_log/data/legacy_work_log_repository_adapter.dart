@@ -16,6 +16,12 @@ final class LegacyWorkLogRepositoryAdapter implements WorkLogRepositoryPort {
   }
 
   @override
+  Future<List<WorkLogEntry>> getEntriesByMonth(DateTime month) async {
+    final logs = await _repository.getLogsByMonth(month);
+    return logs.map((log) => log.toWorkLogEntry()).toList(growable: false);
+  }
+
+  @override
   Future<WorkLogEditDraft?> getEditDraft(int id) async {
     final logs = await _repository.getAllLogs();
     for (final log in logs) {

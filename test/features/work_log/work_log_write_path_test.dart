@@ -247,6 +247,10 @@ final class _WritePathRepository implements WorkLogRepositoryPort {
   Future<List<WorkLogEntry>> getAllEntries() async => const [];
 
   @override
+  Future<List<WorkLogEntry>> getEntriesByMonth(DateTime month) async =>
+      const [];
+
+  @override
   Future<WorkLogEditDraft?> getEditDraft(int id) async => editDraft;
 
   @override
@@ -281,6 +285,15 @@ final class _LegacyRepositorySpy extends WorkLogRepository {
 
   @override
   Future<List<WorkLog>> getAllLogs() async => storedLogs;
+
+  @override
+  Future<List<WorkLog>> getLogsByMonth(DateTime month) async {
+    return storedLogs
+        .where(
+          (log) => log.date.year == month.year && log.date.month == month.month,
+        )
+        .toList(growable: false);
+  }
 
   @override
   Future<void> saveLog(WorkLog log) async {

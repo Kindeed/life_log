@@ -22,7 +22,6 @@ import 'package:life_log/features/expense/domain/entities/expense_record_entry.d
 import 'package:life_log/features/expense/presentation/expense_record_cubit.dart';
 import 'package:life_log/features/project/domain/entities/project_entry.dart';
 import 'package:life_log/features/project/presentation/project_cubit.dart';
-import 'package:life_log/features/shell/presentation/profile_action_button.dart';
 import 'package:life_log/features/photo/domain/entities/photo_entry.dart';
 import 'package:life_log/features/photo/presentation/photo_cubit.dart';
 import 'package:life_log/features/photo/presentation/create_project_sheet.dart';
@@ -68,14 +67,13 @@ class _PhotoViewState extends State<PhotoView> {
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text("项目资料"),
+        title: const Text("项目"),
         actions: [
           IconButton(
             icon: const Icon(Icons.refresh_rounded),
             tooltip: "刷新",
             onPressed: _reloadProjectOverview,
           ),
-          const ProfileActionButton(),
         ],
       ),
       floatingActionButton: FloatingActionButton.extended(
@@ -384,6 +382,7 @@ class _ProjectOverview extends StatelessWidget {
           SizedBox(height: 10.h),
           AppFilterChipBar<PhotoProjectSortMode>(
             value: sortMode,
+            columns: 3,
             onChanged: onSortModeChanged,
             items: const [
               AppFilterChipItem(

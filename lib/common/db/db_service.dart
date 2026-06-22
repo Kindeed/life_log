@@ -2,6 +2,7 @@ import 'dart:io';
 
 import 'package:crypto/crypto.dart';
 import 'package:flutter/foundation.dart';
+import 'package:get_storage/get_storage.dart';
 import 'package:isar/isar.dart';
 import 'package:life_log/core/db/isar_database.dart';
 import 'package:life_log/core/di/service_locator.dart';
@@ -29,6 +30,9 @@ import '../utils/sync_id_policy.dart';
 // import '../services/sync_service.dart'; // Removed cyclic dependency
 
 class DbService {
+  static const _startupMaintenanceVersion = 1;
+  static const _startupMaintenanceVersionKey = 'db_startup_maintenance_version';
+
   static List<CollectionSchema<dynamic>> get schemas => [
     WorkLogSchema,
     SubscriptionSchema,
@@ -50,6 +54,7 @@ class DbService {
   late ExpenseRecordDao _expenseRecordDao;
   late EvidenceDao _evidenceDao;
   bool _isInitialized = false;
+  Future<void>? _startupMaintenanceInFlight;
 
   String? get currentOwnerUserId => serviceLocator.isRegistered<AuthService>()
       ? serviceLocator<AuthService>().userId
@@ -414,7 +419,7 @@ class DbService {
   }
 
   // --- 1. 初始化数据库 (开门) ---
-  Future<DbService> init() async {
+  Future<DbService> init({bool runStartupMaintenance = false}) async {
     // 获取手机里专门存文档的路径
     final dir = await getApplicationDocumentsDirectory();
 
@@ -425,7 +430,9 @@ class DbService {
     );
     _bindDatabase(openedDatabase);
 
-    await _backfillRecordAuditTimestamps();
+    if (runStartupMaintenance) {
+      await this.runStartupMaintenance(force: true);
+    }
 
     _isInitialized = true;
     return this;
@@ -452,6 +459,32 @@ class DbService {
     _projectDao = ProjectDao(database);
     _expenseRecordDao = ExpenseRecordDao(database);
     _evidenceDao = EvidenceDao(database);
+  }
+
+  Future<void> runStartupMaintenance({bool force = false}) {
+    final active = _startupMaintenanceInFlight;
+    if (active != null) return active;
+
+    late final Future<void> maintenance;
+    maintenance = _runStartupMaintenance(force: force).whenComplete(() {
+      if (identical(_startupMaintenanceInFlight, maintenance)) {
+        _startupMaintenanceInFlight = null;
+      }
+    });
+    _startupMaintenanceInFlight = maintenance;
+    return maintenance;
+  }
+
+  Future<void> _runStartupMaintenance({required bool force}) async {
+    final storage = GetStorage();
+    final completedVersion = storage.read(_startupMaintenanceVersionKey);
+    if (!force && completedVersion == _startupMaintenanceVersion) return;
+
+    await _backfillRecordAuditTimestamps();
+    await storage.write(
+      _startupMaintenanceVersionKey,
+      _startupMaintenanceVersion,
+    );
   }
 
   Future<void> _backfillRecordAuditTimestamps() async {

@@ -14,8 +14,8 @@ final class LoadWorkLogMonth {
   Future<AppResult<WorkLogMonthSnapshot>> call(DateTime month) async {
     try {
       final localMonth = dateOnlyLocal(month);
-      final entries = await _repository.getAllEntries();
-      final entriesByDay = entries.inMonth(localMonth).groupedByLocalDate();
+      final entries = await _repository.getEntriesByMonth(localMonth);
+      final entriesByDay = entries.groupedByLocalDate();
 
       final sortedDays = entriesByDay.keys.toList()..sort();
       final sortedEntriesByDay = <DateTime, List<WorkLogEntry>>{

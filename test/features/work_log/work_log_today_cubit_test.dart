@@ -172,6 +172,18 @@ final class _FakeWorkLogRepository implements WorkLogRepositoryPort {
   }
 
   @override
+  Future<List<WorkLogEntry>> getEntriesByMonth(DateTime month) async {
+    final activeError = error;
+    if (activeError != null) throw activeError;
+    return entries
+        .where(
+          (entry) =>
+              entry.date.year == month.year && entry.date.month == month.month,
+        )
+        .toList(growable: false);
+  }
+
+  @override
   Future<WorkLogEditDraft?> getEditDraft(int id) async => null;
 
   @override
@@ -210,6 +222,16 @@ final class _WatchableWorkLogRepository implements WorkLogRepositoryPort {
   Future<List<WorkLogEntry>> getAllEntries() async {
     getAllEntriesCallCount += 1;
     return _entries;
+  }
+
+  @override
+  Future<List<WorkLogEntry>> getEntriesByMonth(DateTime month) async {
+    return _entries
+        .where(
+          (entry) =>
+              entry.date.year == month.year && entry.date.month == month.month,
+        )
+        .toList(growable: false);
   }
 
   @override

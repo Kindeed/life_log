@@ -5,7 +5,7 @@ import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:life_log/common/theme/app_colors.dart';
 import 'package:life_log/common/theme/theme_extensions.dart';
 import 'package:life_log/features/work_log/domain/entities/work_log_entry.dart';
-import 'package:lunar/lunar.dart';
+import 'package:life_log/features/work_log/presentation/work_log_day_metadata.dart';
 import 'package:table_calendar/table_calendar.dart';
 
 class DayCell extends StatelessWidget {
@@ -14,6 +14,7 @@ class DayCell extends StatelessWidget {
   final DateTime selectedDay;
   final CalendarFormat calendarFormat;
   final WorkLogEntry? event;
+  final WorkLogDayMetadata? metadata;
   final bool isDark;
   final Color textPrimary;
 
@@ -24,6 +25,7 @@ class DayCell extends StatelessWidget {
     required this.selectedDay,
     required this.calendarFormat,
     this.event,
+    this.metadata,
     required this.isDark,
     required this.textPrimary,
   });
@@ -32,14 +34,9 @@ class DayCell extends StatelessWidget {
   Widget build(BuildContext context) {
     final isSelected = isSameDay(day, selectedDay);
     final isToday = isSameDay(day, DateTime.now());
-    final lunar = Lunar.fromDate(day);
-    final festivals = lunar.getFestivals();
-    final jieQi = lunar.getJieQi();
-    final holiday = HolidayUtil.getHoliday(
-      '${day.year}-${day.month.toString().padLeft(2, '0')}-${day.day.toString().padLeft(2, '0')}',
-    );
 
-    final status = _dayStatus(context, lunar, festivals, jieQi);
+    final status = _dayStatus(context, metadata);
+    final holidayIsWork = metadata?.holidayIsWork;
     var bottomText = status.text;
     var bottomColor = status.color;
     var bottomWeight = FontWeight.normal;
@@ -116,7 +113,7 @@ class DayCell extends StatelessWidget {
         child: LayoutBuilder(
           builder: (context, constraints) {
             final compact = constraints.maxHeight < 42;
-            final topPadding = holiday != null
+            final topPadding = holidayIsWork != null
                 ? (compact ? 4.0 : 7.h)
                 : (compact ? 2.0 : 3.h);
             final bottomPadding = compact ? 2.0 : 3.h;
@@ -203,7 +200,7 @@ class DayCell extends StatelessWidget {
                     ),
                   ),
                 ),
-                if (holiday != null)
+                if (holidayIsWork != null)
                   Positioned(
                     top: 0,
                     right: 0,
@@ -213,7 +210,7 @@ class DayCell extends StatelessWidget {
                         vertical: compact ? 0 : 1.h,
                       ),
                       decoration: BoxDecoration(
-                        color: holiday.isWork()
+                        color: holidayIsWork
                             ? colorScheme.surfaceContainerHighest
                             : colorScheme.errorContainer,
                         borderRadius: const BorderRadius.only(
@@ -221,10 +218,10 @@ class DayCell extends StatelessWidget {
                         ),
                       ),
                       child: Text(
-                        holiday.isWork() ? "班" : "休",
+                        holidayIsWork ? "班" : "休",
                         style: TextStyle(
                           fontSize: math.min(7.5.sp, compact ? 6.5 : 7.5.sp),
-                          color: holiday.isWork()
+                          color: holidayIsWork
                               ? colorScheme.onSurfaceVariant
                               : colorScheme.onErrorContainer,
                           fontWeight: FontWeight.bold,
@@ -243,21 +240,25 @@ class DayCell extends StatelessWidget {
 
   _DayCellStatus _dayStatus(
     BuildContext context,
-    Lunar lunar,
-    List<String> festivals,
-    String jieQi,
+    WorkLogDayMetadata? metadata,
   ) {
-    if (jieQi.isNotEmpty) {
+    if (metadata == null) {
       return _DayCellStatus(
-        text: jieQi,
+        text: '',
+        color: Theme.of(context).colorScheme.onSurfaceVariant,
+      );
+    }
+    if (metadata.kind == WorkLogDayMetadataKind.solarTerm) {
+      return _DayCellStatus(
+        text: metadata.text,
         color: AppColors.primaryBlue.withValues(alpha: 0.7),
       );
     }
-    if (festivals.isNotEmpty) {
-      return _DayCellStatus(text: festivals[0], color: AppColors.green);
+    if (metadata.kind == WorkLogDayMetadataKind.festival) {
+      return _DayCellStatus(text: metadata.text, color: AppColors.green);
     }
     return _DayCellStatus(
-      text: lunar.getDayInChinese(),
+      text: metadata.text,
       color: Theme.of(context).colorScheme.onSurfaceVariant,
     );
   }

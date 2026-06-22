@@ -1,5 +1,32 @@
 # Changelog
 
+## [1.4.20] - 2026-06-22
+
+### Android 发布与过度设计削减
+
+#### 新增 (Added)
+- 应用版本升级到 `1.4.20+26`。
+- 新增公式库生成器路径回归测试，防止生成数据再次写入已退休的 `lib/modules/telemetry_calc` 路径。
+
+#### 变更 (Changed)
+- 项目发布目标收敛为 Android APK，移除未维护的 iOS、macOS、Linux、Windows 和 Web 模板目录。
+- 移除 Web 占位入口，`lib/main.dart` 直接进入移动端应用入口。
+- 移除未使用的直接依赖 `permission_handler`、`geolocator`、`http`、`fl_chart`、`image`，保留仍由其他插件传递使用的依赖。
+- `flutter_launcher_icons` 只生成 Android 图标，不再声明 iOS 图标输出。
+- WorkLog 首屏按月份读取并缓存日历元数据，减少启动后首屏构建压力。
+- 主导航和筛选控件继续收敛到更稳定的四栏结构与固定网格布局。
+
+#### 修复 (Fixed)
+- 修复 `tool/generate_formula_library.dart` 仍写入旧 module 路径的问题，避免重新生成后运行时公式库数据保持陈旧。
+- 修复启动维护任务阻塞首帧的问题，数据库初始化后将数据维护移动到首帧后执行。
+
+#### 验证 (Validation)
+- `flutter pub get --enforce-lockfile` 通过。
+- `flutter test` 通过，当前环境为 `468 passed`。
+- `flutter analyze` 通过。
+- `git diff --check` 通过。
+- `flutter build apk --debug --no-pub` 通过。
+
 ## [1.4.19] - 2026-06-21
 
 ### 架构现代化与同步协议重构

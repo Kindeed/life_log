@@ -65,14 +65,16 @@ void main() {
     );
 
     test(
-      'routes secondary work to Records and caps recent records at three',
+      'routes secondary work to current primary destinations and caps recents',
       () {
         final source = File(
           'lib/features/today/presentation/today_view.dart',
         ).readAsStringSync();
 
         expect(source, contains('ProfileActionButton'));
-        expect(source, contains('TabsDestination.records'));
+        expect(source, contains('TabsDestination.subscription'));
+        expect(source, contains('TabsDestination.project'));
+        expect(source, isNot(contains('TabsDestination.records')));
         expect(source, isNot(contains('TabsDestination.finance')));
         expect(source, contains('entries.take(3)'));
         expect(source, isNot(contains('entries.take(7)')));

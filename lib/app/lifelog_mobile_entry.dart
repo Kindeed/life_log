@@ -111,6 +111,9 @@ Future<void> _bootstrap() async {
   logService.info('Startup', '启动应用');
   _appStarted = true;
   runApp(const MyApp());
+  WidgetsBinding.instance.addPostFrameCallback((_) {
+    unawaited(_runStartupMaintenance(dbService, logService));
+  });
 }
 
 void _configureFeatureDependencies() {
@@ -122,6 +125,19 @@ void _configureFeatureDependencies() {
   configureEvidenceFeatureDependencies();
   configureProfileFeatureDependencies();
   configureSyncCenterFeatureDependencies();
+}
+
+Future<void> _runStartupMaintenance(
+  DbService dbService,
+  LogService logService,
+) async {
+  try {
+    logService.info('Startup', '启动后维护任务开始');
+    await dbService.runStartupMaintenance();
+    logService.info('Startup', '启动后维护任务完成');
+  } catch (error, stackTrace) {
+    logService.error('Startup', '启动后维护任务失败: $error', stackTrace);
+  }
 }
 
 void _registerCoreRuntimeServices({

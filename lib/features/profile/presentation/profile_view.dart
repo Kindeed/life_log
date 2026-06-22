@@ -51,7 +51,7 @@ class _ProfileViewState extends State<ProfileView> {
     final semantic = Theme.of(context).semanticColors;
 
     return Scaffold(
-      appBar: AppBar(title: const Text('我的')),
+      appBar: AppBar(title: const Text('设置')),
       body: SafeArea(
         child: ConstrainedPage(
           child: SingleChildScrollView(

@@ -51,7 +51,7 @@ class _SubscriptionContent extends StatelessWidget {
       builder: (context, state) {
         final visibleEntries = state.visibleEntries;
         return AppListPage(
-          title: "财务",
+          title: "订阅",
           isEmpty: visibleEntries.isEmpty,
           empty: const AppEmptyState(
             icon: Icons.subscriptions_outlined,
@@ -300,6 +300,7 @@ class _SubscriptionOverview extends StatelessWidget {
             title: "分类",
             child: AppFilterChipBar<SubscriptionFilter>(
               value: state.filter,
+              columns: 2,
               onChanged: cubit.setFilter,
               items: const [
                 AppFilterChipItem(value: SubscriptionFilter.all, label: "全部"),
@@ -326,6 +327,7 @@ class _SubscriptionOverview extends StatelessWidget {
             title: "排序",
             child: AppFilterChipBar<SubscriptionSortMode>(
               value: state.sortMode,
+              columns: 3,
               onChanged: cubit.setSortMode,
               items: const [
                 AppFilterChipItem(

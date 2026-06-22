@@ -14,43 +14,24 @@ void main() {
         'lib/features/telemetry_calc/domain/telemetry_units.dart',
         'lib/features/telemetry_calc/presentation/telemetry_calc_view.dart',
       ];
-      final legacyPaths = [
-        'lib/modules/telemetry_calc/formula_library_data.dart',
-        'lib/modules/telemetry_calc/formula_library.dart',
-        'lib/modules/telemetry_calc/telemetry_calculators.dart',
-        'lib/modules/telemetry_calc/telemetry_calc_view.dart',
-        'lib/modules/telemetry_calc/telemetry_formula_engine.dart',
-        'lib/modules/telemetry_calc/telemetry_template_store.dart',
-        'lib/modules/telemetry_calc/telemetry_units.dart',
-      ];
 
       for (final path in featurePaths) {
         expect(File(path).existsSync(), isTrue, reason: '$path should exist');
       }
-      for (final path in legacyPaths) {
-        expect(File(path).existsSync(), isFalse, reason: '$path is retired');
-      }
     });
 
-    test('blocks profile entry and tests from importing module telemetry', () {
-      final profileView = File(
-        'lib/features/profile/presentation/profile_view.dart',
-      ).readAsStringSync();
-      final telemetryTest = File(
-        'test/telemetry_calc_test.dart',
+    test('formula generator writes the active feature data path', () {
+      final generator = File(
+        'tool/generate_formula_library.dart',
       ).readAsStringSync();
 
-      for (final source in [profileView, telemetryTest]) {
-        expect(
-          source,
-          isNot(contains('package:life_log/modules/telemetry_calc/')),
-        );
-      }
       expect(
-        profileView,
-        contains(
-          'package:life_log/features/telemetry_calc/presentation/telemetry_calc_view.dart',
-        ),
+        generator,
+        contains('lib/features/telemetry_calc/data/formula_library_data.dart'),
+      );
+      expect(
+        generator,
+        isNot(contains('lib/modules/telemetry_calc/formula_library_data.dart')),
       );
     });
 

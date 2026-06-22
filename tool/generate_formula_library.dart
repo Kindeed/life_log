@@ -44,7 +44,7 @@ void main() {
   buffer.writeln('];');
 
   File(
-    'lib/modules/telemetry_calc/formula_library_data.dart',
+    'lib/features/telemetry_calc/data/formula_library_data.dart',
   ).writeAsStringSync(buffer.toString());
   stdout.writeln(
     'Generated ${formulas.length} formulas and ${variables.length} variables.',

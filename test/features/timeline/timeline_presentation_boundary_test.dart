@@ -42,7 +42,7 @@ void main() {
     });
 
     test(
-      'keeps Finance out of the primary shell and inside record filters',
+      'keeps Records as a retired secondary surface outside primary shell',
       () {
         final tabsView = File(
           'lib/features/shell/presentation/tabs_view.dart',
@@ -51,8 +51,11 @@ void main() {
           'lib/features/timeline/presentation/timeline_view.dart',
         ).readAsStringSync();
 
+        expect(tabsView, isNot(contains("label: '记录'")));
+        expect(tabsView, isNot(contains('TimelineView()')));
         expect(tabsView, isNot(contains("label: '财务'")));
-        expect(tabsView, isNot(contains('SubscriptionView()')));
+        expect(tabsView, contains("label: '订阅'"));
+        expect(tabsView, contains('SubscriptionView()'));
         expect(timeline, contains('SubscriptionView()'));
         expect(timeline, contains("static const title = '记录'"));
         expect(timeline, contains('title: const Text(TimelineView.title)'));

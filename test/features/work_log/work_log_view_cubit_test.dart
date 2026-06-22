@@ -40,7 +40,7 @@ void main() {
     await tester.pumpWidget(_workLogHarness(const WorkLogView()));
     await tester.pump();
 
-    expect(repository.getAllEntriesCallCount, 1);
+    expect(repository.getEntriesByMonthCallCount, 1);
     expect(find.text('正在加载工时'), findsOneWidget);
     expect(find.byType(WorkLogView), findsOneWidget);
     expect(serviceLocator.isRegistered<WorkLogCubit>(), isTrue);
@@ -170,7 +170,7 @@ void main() {
     await tester.pumpWidget(_workLogHarness(const WorkLogView()));
     await tester.pumpAndSettle();
 
-    expect(repository.getAllEntriesCallCount, 1);
+    expect(repository.getEntriesByMonthCallCount, 1);
 
     await tester.tap(find.text('记工时'));
     await tester.pumpAndSettle();
@@ -178,7 +178,7 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(repository.savedEntries.length, 1);
-    expect(repository.getAllEntriesCallCount, 2);
+    expect(repository.getEntriesByMonthCallCount, 2);
   });
 
   testWidgets('detail delete action uses feature command before refresh', (
@@ -213,7 +213,7 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(repository.deletedIds, [7]);
-    expect(repository.getAllEntriesCallCount, greaterThanOrEqualTo(2));
+    expect(repository.getEntriesByMonthCallCount, greaterThanOrEqualTo(2));
   });
 
   test('WorkLog add edit routes do not use GetX route helpers', () {
@@ -334,6 +334,7 @@ Widget _workLogHarness(Widget child) {
 final class _PendingWorkLogRepository implements WorkLogRepositoryPort {
   final Completer<List<WorkLogEntry>> _entriesCompleter = Completer();
   var getAllEntriesCallCount = 0;
+  var getEntriesByMonthCallCount = 0;
 
   void complete(List<WorkLogEntry> entries) {
     if (!_entriesCompleter.isCompleted) {
@@ -344,6 +345,12 @@ final class _PendingWorkLogRepository implements WorkLogRepositoryPort {
   @override
   Future<List<WorkLogEntry>> getAllEntries() {
     getAllEntriesCallCount++;
+    return _entriesCompleter.future;
+  }
+
+  @override
+  Future<List<WorkLogEntry>> getEntriesByMonth(DateTime month) {
+    getEntriesByMonthCallCount++;
     return _entriesCompleter.future;
   }
 
@@ -372,6 +379,16 @@ final class _ReadyWorkLogRepository implements WorkLogRepositoryPort {
   Future<List<WorkLogEntry>> getAllEntries() async => entries;
 
   @override
+  Future<List<WorkLogEntry>> getEntriesByMonth(DateTime month) async {
+    return entries
+        .where(
+          (entry) =>
+              entry.date.year == month.year && entry.date.month == month.month,
+        )
+        .toList(growable: false);
+  }
+
+  @override
   Future<WorkLogEditDraft?> getEditDraft(int id) async => null;
 
   @override
@@ -390,11 +407,23 @@ final class _ReadyWorkLogRepository implements WorkLogRepositoryPort {
 final class _SavingWorkLogRepository implements WorkLogRepositoryPort {
   final savedEntries = <WorkLogEntry>[];
   var getAllEntriesCallCount = 0;
+  var getEntriesByMonthCallCount = 0;
 
   @override
   Future<List<WorkLogEntry>> getAllEntries() async {
     getAllEntriesCallCount++;
     return savedEntries;
+  }
+
+  @override
+  Future<List<WorkLogEntry>> getEntriesByMonth(DateTime month) async {
+    getEntriesByMonthCallCount++;
+    return savedEntries
+        .where(
+          (entry) =>
+              entry.date.year == month.year && entry.date.month == month.month,
+        )
+        .toList(growable: false);
   }
 
   @override
@@ -418,6 +447,7 @@ final class _SavingWorkLogRepository implements WorkLogRepositoryPort {
 final class _DeletingWorkLogRepository implements WorkLogRepositoryPort {
   final deletedIds = <int>[];
   var getAllEntriesCallCount = 0;
+  var getEntriesByMonthCallCount = 0;
   List<WorkLogEntry> _entries;
 
   _DeletingWorkLogRepository(this._entries);
@@ -426,6 +456,17 @@ final class _DeletingWorkLogRepository implements WorkLogRepositoryPort {
   Future<List<WorkLogEntry>> getAllEntries() async {
     getAllEntriesCallCount++;
     return _entries;
+  }
+
+  @override
+  Future<List<WorkLogEntry>> getEntriesByMonth(DateTime month) async {
+    getEntriesByMonthCallCount++;
+    return _entries
+        .where(
+          (entry) =>
+              entry.date.year == month.year && entry.date.month == month.month,
+        )
+        .toList(growable: false);
   }
 
   @override

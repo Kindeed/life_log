@@ -4,6 +4,8 @@ import 'package:life_log/features/work_log/domain/entities/work_log_entry.dart';
 abstract interface class WorkLogRepositoryPort {
   Future<List<WorkLogEntry>> getAllEntries();
 
+  Future<List<WorkLogEntry>> getEntriesByMonth(DateTime month);
+
   Future<WorkLogEditDraft?> getEditDraft(int id);
 
   Future<void> normalizeDuplicateDays();

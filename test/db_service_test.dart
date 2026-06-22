@@ -122,6 +122,23 @@ void main() {
     expect(await db.getAllEvidence(), isEmpty);
     expect(await db.isar.expenseEvidences.get(id), isNull);
   }, skip: isarSkip);
+
+  test('database startup maintenance is explicit instead of init-blocking', () {
+    final source = File('lib/common/db/db_service.dart').readAsStringSync();
+
+    expect(source, contains('Future<DbService> init({'));
+    expect(source, contains('bool runStartupMaintenance = false'));
+    expect(source, contains('Future<void> runStartupMaintenance'));
+    expect(
+      source,
+      isNot(
+        contains(
+          'Future<DbService> init() async {\n'
+          '    // 获取手机里专门存文档的路径',
+        ),
+      ),
+    );
+  });
 }
 
 String? _isarLibraryPath() {

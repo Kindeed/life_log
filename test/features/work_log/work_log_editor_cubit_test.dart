@@ -260,6 +260,10 @@ final class _EditorRepository implements WorkLogRepositoryPort {
   Future<List<WorkLogEntry>> getAllEntries() async => const [];
 
   @override
+  Future<List<WorkLogEntry>> getEntriesByMonth(DateTime month) async =>
+      const [];
+
+  @override
   Future<WorkLogEditDraft?> getEditDraft(int id) async => null;
 
   @override

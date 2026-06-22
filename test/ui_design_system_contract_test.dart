@@ -1,6 +1,8 @@
 import 'dart:io';
 
+import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:life_log/common/widgets/app_filter_chip_bar.dart';
 
 void main() {
   test('common design system exposes typography and page templates', () {
@@ -62,5 +64,73 @@ void main() {
     expect(listPage, contains('AppSpacing.lg'));
     expect(section, contains('AppSectionHeader'));
     expect(section, contains('AppSpacing.sm'));
+  });
+
+  testWidgets(
+    'fixed chip grids render four items as 2x2 and three as one row',
+    (tester) async {
+      await tester.pumpWidget(
+        MaterialApp(
+          home: Scaffold(
+            body: SizedBox(
+              width: 360,
+              child: Column(
+                children: [
+                  AppFilterChipBar<int>(
+                    value: 0,
+                    columns: 2,
+                    onChanged: (_) {},
+                    items: const [
+                      AppFilterChipItem(value: 0, label: '全部'),
+                      AppFilterChipItem(value: 1, label: '每月'),
+                      AppFilterChipItem(value: 2, label: '每年'),
+                      AppFilterChipItem(value: 3, label: '一次性'),
+                    ],
+                  ),
+                  const SizedBox(height: 24),
+                  AppFilterChipBar<int>(
+                    value: 0,
+                    columns: 3,
+                    onChanged: (_) {},
+                    items: const [
+                      AppFilterChipItem(value: 0, label: '手动'),
+                      AppFilterChipItem(value: 1, label: '日期'),
+                      AppFilterChipItem(value: 2, label: '金额'),
+                    ],
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ),
+      );
+
+      final allTop = tester.getTopLeft(find.text('全部'));
+      final monthlyTop = tester.getTopLeft(find.text('每月'));
+      final yearlyTop = tester.getTopLeft(find.text('每年'));
+      final oneTimeTop = tester.getTopLeft(find.text('一次性'));
+      expect(monthlyTop.dy, allTop.dy);
+      expect(oneTimeTop.dy, yearlyTop.dy);
+      expect(yearlyTop.dy, greaterThan(allTop.dy));
+
+      final manualTop = tester.getTopLeft(find.text('手动'));
+      final dateTop = tester.getTopLeft(find.text('日期'));
+      final priceTop = tester.getTopLeft(find.text('金额'));
+      expect(dateTop.dy, manualTop.dy);
+      expect(priceTop.dy, manualTop.dy);
+    },
+  );
+
+  test('subscription and project filter controls use fixed columns', () {
+    final subscription = File(
+      'lib/features/subscription/presentation/subscription_view.dart',
+    ).readAsStringSync();
+    final project = File(
+      'lib/features/photo/presentation/photo_view.dart',
+    ).readAsStringSync();
+
+    expect(subscription, contains('columns: 2'));
+    expect(subscription, contains('columns: 3'));
+    expect(project, contains('columns: 3'));
   });
 }

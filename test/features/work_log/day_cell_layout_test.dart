@@ -53,6 +53,9 @@ void main() {
     expect(source, isNot(contains("package:get/get.dart")));
     expect(source, isNot(contains("work_log_model.dart")));
     expect(source, contains('WorkLogEntry? event'));
+    expect(source, contains('WorkLogDayMetadata? metadata'));
+    expect(source, isNot(contains('Lunar.fromDate')));
+    expect(source, isNot(contains('HolidayUtil.getHoliday')));
     expect(source, isNot(contains('WorkLogController')));
     expect(source, isNot(contains('Obx')));
     expect(source, isNot(contains('logic.')));

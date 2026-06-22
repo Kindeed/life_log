@@ -142,6 +142,7 @@ class _WorkLogContent extends StatelessWidget {
                                   selectedDay: cubitState.selectedDay,
                                   calendarFormat: calendarFormat,
                                   event: _firstEntryForDay(cubitState, day),
+                                  metadata: cubitState.metadataForDay(day),
                                   isDark: isDark,
                                   textPrimary: textPrimary,
                                 );

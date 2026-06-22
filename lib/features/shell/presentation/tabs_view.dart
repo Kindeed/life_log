@@ -1,10 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:life_log/common/theme/app_motion.dart';
 import 'package:life_log/core/di/service_locator.dart';
-import 'package:life_log/features/timeline/presentation/timeline_view.dart';
-import 'package:life_log/features/today/presentation/today_view.dart';
-
 import 'package:life_log/features/photo/presentation/photo_view.dart';
+import 'package:life_log/features/profile/presentation/profile_view.dart';
+import 'package:life_log/features/subscription/presentation/subscription_view.dart';
+import 'package:life_log/features/work_log/presentation/work_log_view.dart';
 import 'tabs_controller.dart';
 
 class TabsView extends StatefulWidget {
@@ -20,19 +20,24 @@ class _TabsViewState extends State<TabsView> {
 
   static const _destinations = [
     _TabDestination(
-      label: '今天',
-      selectedIcon: Icons.today_rounded,
-      icon: Icons.today_outlined,
+      label: '工时',
+      selectedIcon: Icons.work_history_rounded,
+      icon: Icons.work_history_outlined,
     ),
     _TabDestination(
-      label: '记录',
-      selectedIcon: Icons.view_timeline_rounded,
-      icon: Icons.view_timeline_outlined,
+      label: '订阅',
+      selectedIcon: Icons.subscriptions_rounded,
+      icon: Icons.subscriptions_outlined,
     ),
     _TabDestination(
       label: '项目',
       selectedIcon: Icons.folder_rounded,
       icon: Icons.folder_outlined,
+    ),
+    _TabDestination(
+      label: '设置',
+      selectedIcon: Icons.settings_rounded,
+      icon: Icons.settings_outlined,
     ),
   ];
 
@@ -83,9 +88,10 @@ class _TabsViewState extends State<TabsView> {
                         controller: pageController,
                         onPageChanged: controller.changePage,
                         children: const [
-                          _KeepAliveTabPage(child: TodayView()),
-                          _KeepAliveTabPage(child: TimelineView()),
+                          _KeepAliveTabPage(child: WorkLogView()),
+                          _KeepAliveTabPage(child: SubscriptionView()),
                           _KeepAliveTabPage(child: PhotoView()),
+                          _KeepAliveTabPage(child: ProfileView()),
                         ],
                       ),
                     ),

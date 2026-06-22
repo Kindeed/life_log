@@ -67,6 +67,8 @@ void main() {
         expect(snapshot.summary.tripDays, 1);
         expect(snapshot.summary.restDays, 1);
         expect(snapshot.summary.workHours, 2);
+        expect(repository.requestedMonths, [DateTime(2026, 5)]);
+        expect(repository.getAllEntriesCallCount, 0);
       },
     );
 
@@ -100,7 +102,7 @@ void main() {
       cubit.selectDay(DateTime(2026, 5, 9), DateTime(2026, 5, 12));
       await pumpEventQueue();
 
-      expect(states.map((state) => state.status), [
+      expect(states.map((state) => state.status).take(3), [
         WorkLogStatus.loading,
         WorkLogStatus.ready,
         WorkLogStatus.ready,
@@ -108,6 +110,7 @@ void main() {
       expect(cubit.state.selectedDay, DateTime(2026, 5, 9));
       expect(cubit.state.focusedDay, DateTime(2026, 5, 12));
       expect(cubit.state.eventsForDay(DateTime(2026, 5, 9)).single.id, 1);
+      expect(cubit.state.metadataForDay(DateTime(2026, 5, 1)), isNotNull);
     });
 
     test('reloads focused month when repository emits entry changes', () async {
@@ -125,7 +128,7 @@ void main() {
       cubit.start();
       await _settleCubitAsyncWork();
 
-      expect(repository.getAllEntriesCallCount, 1);
+      expect(repository.getEntriesByMonthCallCount, 1);
       expect(
         cubit.state.eventsForDay(DateTime(2026, 5, 9)).single.type,
         WorkLogEntryType.work,
@@ -137,7 +140,7 @@ void main() {
       repository.emitChange();
       await _settleCubitAsyncWork();
 
-      expect(repository.getAllEntriesCallCount, 2);
+      expect(repository.getEntriesByMonthCallCount, 2);
       expect(
         cubit.state.eventsForDay(DateTime(2026, 5, 9)).single.type,
         WorkLogEntryType.rest,
@@ -282,6 +285,8 @@ final class _FakeWorkLogRepository implements WorkLogRepositoryPort {
   final List<WorkLogEntry> entries;
   final Object? error;
   var normalizeDuplicateDaysCallCount = 0;
+  var getAllEntriesCallCount = 0;
+  final requestedMonths = <DateTime>[];
 
   _FakeWorkLogRepository(this.entries) : error = null;
 
@@ -289,11 +294,27 @@ final class _FakeWorkLogRepository implements WorkLogRepositoryPort {
 
   @override
   Future<List<WorkLogEntry>> getAllEntries() async {
+    getAllEntriesCallCount += 1;
     final activeError = error;
     if (activeError != null) {
       throw activeError;
     }
     return entries;
+  }
+
+  @override
+  Future<List<WorkLogEntry>> getEntriesByMonth(DateTime month) async {
+    requestedMonths.add(DateTime(month.year, month.month));
+    final activeError = error;
+    if (activeError != null) {
+      throw activeError;
+    }
+    return entries
+        .where(
+          (entry) =>
+              entry.date.year == month.year && entry.date.month == month.month,
+        )
+        .toList(growable: false);
   }
 
   @override
@@ -318,6 +339,7 @@ final class _WatchableWorkLogRepository implements WorkLogRepositoryPort {
   final StreamController<void> _changes = StreamController<void>.broadcast();
   List<WorkLogEntry> _entries;
   int getAllEntriesCallCount = 0;
+  int getEntriesByMonthCallCount = 0;
 
   _WatchableWorkLogRepository(this._entries);
 
@@ -337,6 +359,17 @@ final class _WatchableWorkLogRepository implements WorkLogRepositoryPort {
   Future<List<WorkLogEntry>> getAllEntries() async {
     getAllEntriesCallCount += 1;
     return _entries;
+  }
+
+  @override
+  Future<List<WorkLogEntry>> getEntriesByMonth(DateTime month) async {
+    getEntriesByMonthCallCount += 1;
+    return _entries
+        .where(
+          (entry) =>
+              entry.date.year == month.year && entry.date.month == month.month,
+        )
+        .toList(growable: false);
   }
 
   @override

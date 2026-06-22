@@ -72,7 +72,7 @@ void main() {
       },
     );
 
-    test('exposes only Today, Records, and Project as primary destinations', () {
+    test('exposes Work, Subscription, Project, and Settings destinations', () {
       final view = File(
         'lib/features/shell/presentation/tabs_view.dart',
       ).readAsStringSync();
@@ -82,57 +82,66 @@ void main() {
 
       expect(
         TabsDestination.values.map((destination) => destination.name).toList(),
-        ['today', 'records', 'project'],
+        ['work', 'subscription', 'project', 'settings'],
       );
       expect(
         view,
         contains(
-          'package:life_log/features/today/presentation/today_view.dart',
+          'package:life_log/features/work_log/presentation/work_log_view.dart',
         ),
       );
       expect(
         view,
         contains(
-          'package:life_log/features/timeline/presentation/timeline_view.dart',
+          'package:life_log/features/subscription/presentation/subscription_view.dart',
         ),
       );
-      expect(view, contains('_KeepAliveTabPage(child: TodayView())'));
-      expect(view, contains('_KeepAliveTabPage(child: TimelineView())'));
+      expect(
+        view,
+        contains(
+          'package:life_log/features/profile/presentation/profile_view.dart',
+        ),
+      );
+      expect(view, contains('_KeepAliveTabPage(child: WorkLogView())'));
+      expect(view, contains('_KeepAliveTabPage(child: SubscriptionView())'));
       expect(view, contains('_KeepAliveTabPage(child: PhotoView())'));
-      expect(view, contains("label: '今天'"));
-      expect(view, contains("label: '记录'"));
+      expect(view, contains('_KeepAliveTabPage(child: ProfileView())'));
+      expect(view, contains("label: '工时'"));
+      expect(view, contains("label: '订阅'"));
       expect(view, contains("label: '项目'"));
-      expect(view, isNot(contains("label: '我的'")));
+      expect(view, contains("label: '设置'"));
+      expect(view, isNot(contains("label: '今天'")));
+      expect(view, isNot(contains("label: '记录'")));
       expect(view, isNot(contains("label: '财务'")));
-      expect(view, isNot(contains('_KeepAliveTabPage(child: WorkLogView())')));
-      expect(
-        view,
-        isNot(contains('_KeepAliveTabPage(child: SubscriptionView())')),
-      );
-      expect(view, isNot(contains('_KeepAliveTabPage(child: ProfileView())')));
+      expect(view, isNot(contains('_KeepAliveTabPage(child: TodayView())')));
+      expect(view, isNot(contains('_KeepAliveTabPage(child: TimelineView())')));
       expect(controller, isNot(contains('finance')));
-      expect(controller, isNot(contains('profile')));
+      expect(controller, isNot(contains('records')));
+      expect(controller, isNot(contains('today')));
     });
 
-    test('moves Profile to a secondary app-bar action', () {
-      final action = File(
-        'lib/features/shell/presentation/profile_action_button.dart',
-      );
-      final todayView = File(
-        'lib/features/today/presentation/today_view.dart',
-      ).readAsStringSync();
-      final photoView = File(
-        'lib/features/photo/presentation/photo_view.dart',
-      ).readAsStringSync();
+    test(
+      'uses Settings as the primary profile entry without project shortcut',
+      () {
+        final action = File(
+          'lib/features/shell/presentation/profile_action_button.dart',
+        );
+        final photoView = File(
+          'lib/features/photo/presentation/photo_view.dart',
+        ).readAsStringSync();
+        final tabsView = File(
+          'lib/features/shell/presentation/tabs_view.dart',
+        ).readAsStringSync();
 
-      expect(action.existsSync(), isTrue);
-      final actionSource = action.readAsStringSync();
-      expect(actionSource, contains('class ProfileActionButton'));
-      expect(actionSource, contains('ProfileView'));
-      expect(actionSource, contains('Navigator.of(context).push'));
-      expect(todayView, contains('ProfileActionButton'));
-      expect(photoView, contains('ProfileActionButton'));
-    });
+        expect(action.existsSync(), isTrue);
+        final actionSource = action.readAsStringSync();
+        expect(actionSource, contains('class ProfileActionButton'));
+        expect(actionSource, contains('ProfileView'));
+        expect(actionSource, contains('Navigator.of(context).push'));
+        expect(tabsView, contains('_KeepAliveTabPage(child: ProfileView())'));
+        expect(photoView, isNot(contains('ProfileActionButton')));
+      },
+    );
 
     test('owns tab state without GetX presentation state coupling', () {
       final controller = File(
@@ -144,7 +153,10 @@ void main() {
       final todayView = File(
         'lib/features/today/presentation/today_view.dart',
       ).readAsStringSync();
-      final combined = '$controller\n$view\n$todayView';
+      final profileView = File(
+        'lib/features/profile/presentation/profile_view.dart',
+      ).readAsStringSync();
+      final combined = '$controller\n$view\n$todayView\n$profileView';
 
       expect(combined, isNot(contains("package:get/get.dart")));
       expect(combined, isNot(contains('Get.find')));
@@ -153,7 +165,7 @@ void main() {
       expect(combined, isNot(contains('TabsController.to')));
       expect(controller, contains('extends ChangeNotifier'));
       expect(view, contains('AnimatedBuilder'));
-      expect(todayView, contains('TabsScope.of(context).goTo'));
+      expect(view, contains('TabsScope('));
     });
   });
 }
