@@ -89,5 +89,72 @@ void main() {
       expect(source, contains('lifelog-main-debug.apk'));
       expect(source, contains('actions/upload-artifact@v4'));
     });
+
+    test('release assets include the tag in downloadable file names', () {
+      final source = File('.github/workflows/build.yml').readAsStringSync();
+
+      expect(
+        source,
+        contains('LifeLog-\${GITHUB_REF_NAME}-arm64-v8a-release.apk'),
+      );
+      expect(
+        source,
+        contains('LifeLog-\${GITHUB_REF_NAME}-armeabi-v7a-release.apk'),
+      );
+      expect(
+        source,
+        contains('LifeLog-\${GITHUB_REF_NAME}-x86_64-release.apk'),
+      );
+      expect(
+        source,
+        contains('LifeLog-\${GITHUB_REF_NAME}-apk-size-report.md'),
+      );
+      expect(
+        source,
+        contains(
+          'LifeLog-\${{ steps.version.outputs.TAG_NAME }}-arm64-v8a-release.apk',
+        ),
+      );
+      expect(
+        source,
+        contains(
+          'LifeLog-\${{ steps.version.outputs.TAG_NAME }}-armeabi-v7a-release.apk',
+        ),
+      );
+      expect(
+        source,
+        contains(
+          'LifeLog-\${{ steps.version.outputs.TAG_NAME }}-x86_64-release.apk',
+        ),
+      );
+      expect(
+        source,
+        contains(
+          'LifeLog-\${{ steps.version.outputs.TAG_NAME }}-apk-size-report.md',
+        ),
+      );
+      expect(
+        source,
+        isNot(
+          contains(
+            'build/app/outputs/flutter-apk/lifelog-arm64-v8a-release.apk',
+          ),
+        ),
+      );
+      expect(
+        source,
+        isNot(
+          contains(
+            'build/app/outputs/flutter-apk/lifelog-armeabi-v7a-release.apk',
+          ),
+        ),
+      );
+      expect(
+        source,
+        isNot(
+          contains('build/app/outputs/flutter-apk/lifelog-x86_64-release.apk'),
+        ),
+      );
+    });
   });
 }

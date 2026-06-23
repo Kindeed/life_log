@@ -48,14 +48,21 @@ void main() {
 
       for (final source in [releaseWorkflow, testWorkflow, mainCiWorkflow]) {
         expect(source, contains('tool/apk_size_report.dart'));
-        expect(source, contains('lifelog-apk-size-report.md'));
       }
+      expect(
+        releaseWorkflow,
+        contains('LifeLog-\${GITHUB_REF_NAME}-apk-size-report.md'),
+      );
+      expect(testWorkflow, contains('lifelog-apk-size-report.md'));
+      expect(mainCiWorkflow, contains('lifelog-apk-size-report.md'));
       expect(releaseWorkflow, contains('--max-mb=120'));
       expect(testWorkflow, contains('--max-mb=250'));
       expect(mainCiWorkflow, contains('--max-mb=250'));
       expect(
         releaseWorkflow,
-        contains('build/app/outputs/flutter-apk/lifelog-apk-size-report.md'),
+        contains(
+          'build/app/outputs/flutter-apk/LifeLog-\${GITHUB_REF_NAME}-apk-size-report.md',
+        ),
       );
       expect(
         testWorkflow,

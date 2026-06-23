@@ -107,15 +107,15 @@ jobs:
 
       - name: Rename release APK files
         run: |
-          mv build/app/outputs/flutter-apk/app-arm64-v8a-release.apk build/app/outputs/flutter-apk/lifelog-arm64-v8a-release.apk
-          mv build/app/outputs/flutter-apk/app-armeabi-v7a-release.apk build/app/outputs/flutter-apk/lifelog-armeabi-v7a-release.apk
-          mv build/app/outputs/flutter-apk/app-x86_64-release.apk build/app/outputs/flutter-apk/lifelog-x86_64-release.apk
+          mv build/app/outputs/flutter-apk/app-arm64-v8a-release.apk build/app/outputs/flutter-apk/LifeLog-${GITHUB_REF_NAME}-arm64-v8a-release.apk
+          mv build/app/outputs/flutter-apk/app-armeabi-v7a-release.apk build/app/outputs/flutter-apk/LifeLog-${GITHUB_REF_NAME}-armeabi-v7a-release.apk
+          mv build/app/outputs/flutter-apk/app-x86_64-release.apk build/app/outputs/flutter-apk/LifeLog-${GITHUB_REF_NAME}-x86_64-release.apk
 
       - name: Generate APK size report
         run: >
           dart run tool/apk_size_report.dart
           build/app/outputs/flutter-apk
-          build/app/outputs/flutter-apk/lifelog-apk-size-report.md
+          build/app/outputs/flutter-apk/LifeLog-${GITHUB_REF_NAME}-apk-size-report.md
           --max-mb=120
 
       # ── 9. 提取版本号用于 Release 标题 ────────────────
@@ -132,9 +132,9 @@ jobs:
             ## 📱 LifeLog ${{ steps.version.outputs.TAG_NAME }}
 
             ### 下载安装包
-            - **lifelog-arm64-v8a-release.apk** (推荐，适用于绝大多数现代手机)
-            - **lifelog-armeabi-v7a-release.apk** (旧款32位手机)
-            - **lifelog-x86_64-release.apk** (模拟器/特殊设备)
+            - **LifeLog-${{ steps.version.outputs.TAG_NAME }}-arm64-v8a-release.apk** (推荐，适用于绝大多数现代手机)
+            - **LifeLog-${{ steps.version.outputs.TAG_NAME }}-armeabi-v7a-release.apk** (旧款32位手机)
+            - **LifeLog-${{ steps.version.outputs.TAG_NAME }}-x86_64-release.apk** (模拟器/特殊设备)
 
             ### 安装方式
             1. 下载对应你手机架构的 APK 文件
@@ -145,9 +145,9 @@ jobs:
           draft: false
           prerelease: false
           files: |
-            build/app/outputs/flutter-apk/lifelog-arm64-v8a-release.apk
-            build/app/outputs/flutter-apk/lifelog-armeabi-v7a-release.apk
-            build/app/outputs/flutter-apk/lifelog-x86_64-release.apk
-            build/app/outputs/flutter-apk/lifelog-apk-size-report.md
+            build/app/outputs/flutter-apk/LifeLog-${{ steps.version.outputs.TAG_NAME }}-arm64-v8a-release.apk
+            build/app/outputs/flutter-apk/LifeLog-${{ steps.version.outputs.TAG_NAME }}-armeabi-v7a-release.apk
+            build/app/outputs/flutter-apk/LifeLog-${{ steps.version.outputs.TAG_NAME }}-x86_64-release.apk
+            build/app/outputs/flutter-apk/LifeLog-${{ steps.version.outputs.TAG_NAME }}-apk-size-report.md
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

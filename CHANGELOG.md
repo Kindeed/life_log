@@ -7,10 +7,12 @@
 #### 变更 (Changed)
 - 应用版本升级到 `1.4.21+27`。
 - 订阅页筛选空结果现在只在列表区域提示，不再切换到整页空状态。
+- GitHub Release APK 下载文件名改为带版本号的 `LifeLog-v1.4.21-...` 格式，后续正式发布会自动使用 tag 写入文件名。
 
 #### 修复 (Fixed)
 - 修复点击订阅分类里的“一次性”时，如果该分类暂无内容，会误显示“还没有固定支出”并隐藏分类/排序控件的问题。
 - 举一反三检查凭证、项目、记录、项目详情等同类筛选/空状态页面，确认它们的搜索或分类无结果不会隐藏筛选入口。
+- 修复正式 Release 资产名只显示应用名和 ABI、无法从下载文件名判断版本号的问题。
 
 #### 验证 (Validation)
 - `flutter test test\features\subscription\subscription_ui_test.dart test\features\evidence\evidence_cubit_test.dart test\features\photo\photo_cubit_test.dart` 通过，当前环境为 `29 passed`。
