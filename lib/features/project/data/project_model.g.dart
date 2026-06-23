@@ -50,20 +50,25 @@ const ProjectSchema = CollectionSchema(
       name: r'remoteVersion',
       type: IsarType.long,
     ),
-    r'status': PropertySchema(
+    r'stageNames': PropertySchema(
       id: 9,
+      name: r'stageNames',
+      type: IsarType.stringList,
+    ),
+    r'status': PropertySchema(
+      id: 10,
       name: r'status',
       type: IsarType.byte,
       enumMap: _ProjectstatusEnumValueMap,
     ),
-    r'syncId': PropertySchema(id: 10, name: r'syncId', type: IsarType.string),
+    r'syncId': PropertySchema(id: 11, name: r'syncId', type: IsarType.string),
     r'syncedAt': PropertySchema(
-      id: 11,
+      id: 12,
       name: r'syncedAt',
       type: IsarType.dateTime,
     ),
     r'updatedAt': PropertySchema(
-      id: 12,
+      id: 13,
       name: r'updatedAt',
       type: IsarType.dateTime,
     ),
@@ -122,6 +127,13 @@ int _projectEstimateSize(
       bytesCount += 3 + value.length * 3;
     }
   }
+  bytesCount += 3 + object.stageNames.length * 3;
+  {
+    for (var i = 0; i < object.stageNames.length; i++) {
+      final value = object.stageNames[i];
+      bytesCount += value.length * 3;
+    }
+  }
   {
     final value = object.syncId;
     if (value != null) {
@@ -146,10 +158,11 @@ void _projectSerialize(
   writer.writeLong(offsets[6], object.remoteId);
   writer.writeDateTime(offsets[7], object.remoteUpdatedAt);
   writer.writeLong(offsets[8], object.remoteVersion);
-  writer.writeByte(offsets[9], object.status.index);
-  writer.writeString(offsets[10], object.syncId);
-  writer.writeDateTime(offsets[11], object.syncedAt);
-  writer.writeDateTime(offsets[12], object.updatedAt);
+  writer.writeStringList(offsets[9], object.stageNames);
+  writer.writeByte(offsets[10], object.status.index);
+  writer.writeString(offsets[11], object.syncId);
+  writer.writeDateTime(offsets[12], object.syncedAt);
+  writer.writeDateTime(offsets[13], object.updatedAt);
 }
 
 Project _projectDeserialize(
@@ -169,12 +182,13 @@ Project _projectDeserialize(
   object.remoteId = reader.readLongOrNull(offsets[6]);
   object.remoteUpdatedAt = reader.readDateTimeOrNull(offsets[7]);
   object.remoteVersion = reader.readLong(offsets[8]);
+  object.stageNames = reader.readStringList(offsets[9]) ?? [];
   object.status =
-      _ProjectstatusValueEnumMap[reader.readByteOrNull(offsets[9])] ??
+      _ProjectstatusValueEnumMap[reader.readByteOrNull(offsets[10])] ??
       ProjectStatus.active;
-  object.syncId = reader.readStringOrNull(offsets[10]);
-  object.syncedAt = reader.readDateTimeOrNull(offsets[11]);
-  object.updatedAt = reader.readDateTime(offsets[12]);
+  object.syncId = reader.readStringOrNull(offsets[11]);
+  object.syncedAt = reader.readDateTimeOrNull(offsets[12]);
+  object.updatedAt = reader.readDateTime(offsets[13]);
   return object;
 }
 
@@ -204,14 +218,16 @@ P _projectDeserializeProp<P>(
     case 8:
       return (reader.readLong(offset)) as P;
     case 9:
+      return (reader.readStringList(offset) ?? []) as P;
+    case 10:
       return (_ProjectstatusValueEnumMap[reader.readByteOrNull(offset)] ??
               ProjectStatus.active)
           as P;
-    case 10:
-      return (reader.readStringOrNull(offset)) as P;
     case 11:
-      return (reader.readDateTimeOrNull(offset)) as P;
+      return (reader.readStringOrNull(offset)) as P;
     case 12:
+      return (reader.readDateTimeOrNull(offset)) as P;
+    case 13:
       return (reader.readDateTime(offset)) as P;
     default:
       throw IsarError('Unknown property with id $propertyId');
@@ -1229,6 +1245,198 @@ extension ProjectQueryFilter
     });
   }
 
+  QueryBuilder<Project, Project, QAfterFilterCondition>
+  stageNamesElementEqualTo(String value, {bool caseSensitive = true}) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(
+        FilterCondition.equalTo(
+          property: r'stageNames',
+          value: value,
+          caseSensitive: caseSensitive,
+        ),
+      );
+    });
+  }
+
+  QueryBuilder<Project, Project, QAfterFilterCondition>
+  stageNamesElementGreaterThan(
+    String value, {
+    bool include = false,
+    bool caseSensitive = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(
+        FilterCondition.greaterThan(
+          include: include,
+          property: r'stageNames',
+          value: value,
+          caseSensitive: caseSensitive,
+        ),
+      );
+    });
+  }
+
+  QueryBuilder<Project, Project, QAfterFilterCondition>
+  stageNamesElementLessThan(
+    String value, {
+    bool include = false,
+    bool caseSensitive = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(
+        FilterCondition.lessThan(
+          include: include,
+          property: r'stageNames',
+          value: value,
+          caseSensitive: caseSensitive,
+        ),
+      );
+    });
+  }
+
+  QueryBuilder<Project, Project, QAfterFilterCondition>
+  stageNamesElementBetween(
+    String lower,
+    String upper, {
+    bool includeLower = true,
+    bool includeUpper = true,
+    bool caseSensitive = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(
+        FilterCondition.between(
+          property: r'stageNames',
+          lower: lower,
+          includeLower: includeLower,
+          upper: upper,
+          includeUpper: includeUpper,
+          caseSensitive: caseSensitive,
+        ),
+      );
+    });
+  }
+
+  QueryBuilder<Project, Project, QAfterFilterCondition>
+  stageNamesElementStartsWith(String value, {bool caseSensitive = true}) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(
+        FilterCondition.startsWith(
+          property: r'stageNames',
+          value: value,
+          caseSensitive: caseSensitive,
+        ),
+      );
+    });
+  }
+
+  QueryBuilder<Project, Project, QAfterFilterCondition>
+  stageNamesElementEndsWith(String value, {bool caseSensitive = true}) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(
+        FilterCondition.endsWith(
+          property: r'stageNames',
+          value: value,
+          caseSensitive: caseSensitive,
+        ),
+      );
+    });
+  }
+
+  QueryBuilder<Project, Project, QAfterFilterCondition>
+  stageNamesElementContains(String value, {bool caseSensitive = true}) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(
+        FilterCondition.contains(
+          property: r'stageNames',
+          value: value,
+          caseSensitive: caseSensitive,
+        ),
+      );
+    });
+  }
+
+  QueryBuilder<Project, Project, QAfterFilterCondition>
+  stageNamesElementMatches(String pattern, {bool caseSensitive = true}) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(
+        FilterCondition.matches(
+          property: r'stageNames',
+          wildcard: pattern,
+          caseSensitive: caseSensitive,
+        ),
+      );
+    });
+  }
+
+  QueryBuilder<Project, Project, QAfterFilterCondition>
+  stageNamesElementIsEmpty() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(
+        FilterCondition.equalTo(property: r'stageNames', value: ''),
+      );
+    });
+  }
+
+  QueryBuilder<Project, Project, QAfterFilterCondition>
+  stageNamesElementIsNotEmpty() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(
+        FilterCondition.greaterThan(property: r'stageNames', value: ''),
+      );
+    });
+  }
+
+  QueryBuilder<Project, Project, QAfterFilterCondition> stageNamesLengthEqualTo(
+    int length,
+  ) {
+    return QueryBuilder.apply(this, (query) {
+      return query.listLength(r'stageNames', length, true, length, true);
+    });
+  }
+
+  QueryBuilder<Project, Project, QAfterFilterCondition> stageNamesIsEmpty() {
+    return QueryBuilder.apply(this, (query) {
+      return query.listLength(r'stageNames', 0, true, 0, true);
+    });
+  }
+
+  QueryBuilder<Project, Project, QAfterFilterCondition> stageNamesIsNotEmpty() {
+    return QueryBuilder.apply(this, (query) {
+      return query.listLength(r'stageNames', 0, false, 999999, true);
+    });
+  }
+
+  QueryBuilder<Project, Project, QAfterFilterCondition>
+  stageNamesLengthLessThan(int length, {bool include = false}) {
+    return QueryBuilder.apply(this, (query) {
+      return query.listLength(r'stageNames', 0, true, length, include);
+    });
+  }
+
+  QueryBuilder<Project, Project, QAfterFilterCondition>
+  stageNamesLengthGreaterThan(int length, {bool include = false}) {
+    return QueryBuilder.apply(this, (query) {
+      return query.listLength(r'stageNames', length, include, 999999, true);
+    });
+  }
+
+  QueryBuilder<Project, Project, QAfterFilterCondition> stageNamesLengthBetween(
+    int lower,
+    int upper, {
+    bool includeLower = true,
+    bool includeUpper = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.listLength(
+        r'stageNames',
+        lower,
+        includeLower,
+        upper,
+        includeUpper,
+      );
+    });
+  }
+
   QueryBuilder<Project, Project, QAfterFilterCondition> statusEqualTo(
     ProjectStatus value,
   ) {
@@ -1980,6 +2188,12 @@ extension ProjectQueryWhereDistinct
     });
   }
 
+  QueryBuilder<Project, Project, QDistinct> distinctByStageNames() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addDistinctBy(r'stageNames');
+    });
+  }
+
   QueryBuilder<Project, Project, QDistinct> distinctByStatus() {
     return QueryBuilder.apply(this, (query) {
       return query.addDistinctBy(r'status');
@@ -2066,6 +2280,12 @@ extension ProjectQueryProperty
   QueryBuilder<Project, int, QQueryOperations> remoteVersionProperty() {
     return QueryBuilder.apply(this, (query) {
       return query.addPropertyName(r'remoteVersion');
+    });
+  }
+
+  QueryBuilder<Project, List<String>, QQueryOperations> stageNamesProperty() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addPropertyName(r'stageNames');
     });
   }
 

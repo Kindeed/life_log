@@ -41,6 +41,7 @@ final class EvidenceEntry extends Equatable {
   final String projectName;
   final int? projectId;
   final String? projectSyncId;
+  final String? projectStageName;
   final DateTime? createdAt;
   final DateTime? updatedAt;
   final DateTime evidenceDate;
@@ -63,6 +64,7 @@ final class EvidenceEntry extends Equatable {
     required this.evidenceDate,
     this.projectId,
     this.projectSyncId,
+    this.projectStageName,
     this.createdAt,
     this.updatedAt,
     this.amount,
@@ -85,6 +87,7 @@ final class EvidenceEntry extends Equatable {
     projectName,
     projectId,
     projectSyncId,
+    projectStageName,
     createdAt,
     updatedAt,
     evidenceDate,

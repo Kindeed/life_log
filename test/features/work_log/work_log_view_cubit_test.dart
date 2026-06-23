@@ -179,7 +179,49 @@ void main() {
 
     expect(repository.savedEntries.length, 1);
     expect(repository.getEntriesByMonthCallCount, 2);
+    expect(find.text('工作'), findsOneWidget);
+    expect(find.text('正常出勤'), findsOneWidget);
   });
+
+  testWidgets(
+    'fab creates a new work-log entry when the selected day has logs',
+    (tester) async {
+      tester.view.devicePixelRatio = 1;
+      tester.view.physicalSize = const Size(375, 812);
+      addTearDown(tester.view.resetPhysicalSize);
+      addTearDown(tester.view.resetDevicePixelRatio);
+
+      final repository = _SavingWorkLogRepository([
+        WorkLogEntry(
+          id: 9,
+          date: DateTime(2026, 5, 1),
+          type: WorkLogEntryType.leave,
+          location: '事假',
+        ),
+      ]);
+      configureWorkLogFeatureDependencies(
+        repository: repository,
+        initialNow: () => DateTime(2026, 5, 1),
+      );
+
+      await tester.pumpWidget(_workLogHarness(const WorkLogView()));
+      await tester.pumpAndSettle();
+
+      expect(find.text('请假'), findsOneWidget);
+
+      await tester.tap(find.text('记工时'));
+      await tester.pumpAndSettle();
+
+      expect(find.text('记录一下'), findsOneWidget);
+
+      await tester.tap(find.text('保存'));
+      await tester.pumpAndSettle();
+
+      expect(repository.savedEntries.last.id, 0);
+      expect(repository.savedEntries.last.type, WorkLogEntryType.work);
+      expect(find.text('正常出勤'), findsOneWidget);
+    },
+  );
 
   testWidgets('detail delete action uses feature command before refresh', (
     tester,
@@ -408,6 +450,10 @@ final class _SavingWorkLogRepository implements WorkLogRepositoryPort {
   final savedEntries = <WorkLogEntry>[];
   var getAllEntriesCallCount = 0;
   var getEntriesByMonthCallCount = 0;
+
+  _SavingWorkLogRepository([List<WorkLogEntry> entries = const []]) {
+    savedEntries.addAll(entries);
+  }
 
   @override
   Future<List<WorkLogEntry>> getAllEntries() async {

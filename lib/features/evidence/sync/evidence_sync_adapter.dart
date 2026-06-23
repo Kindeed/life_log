@@ -112,6 +112,7 @@ final class EvidenceSyncAdapter implements SyncAdapter<ExpenseEvidence> {
       'local_id': entity.id,
       'project_name': entity.projectName,
       'project_sync_id': entity.projectSyncId,
+      'project_stage_name': entity.projectStageName,
       'evidence_date': entity.evidenceDate.toIso8601String(),
       'amount': entity.amount,
       'currency': entity.currency,

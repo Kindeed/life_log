@@ -23,6 +23,8 @@ class Project {
   @enumerated
   ProjectStatus status = ProjectStatus.active;
 
+  List<String> stageNames = [];
+
   late DateTime createdAt;
   late DateTime updatedAt;
 }
@@ -31,8 +33,18 @@ enum ProjectStatus { active, archived }
 
 extension ProjectBusinessChanges on Project {
   bool hasBusinessChangesComparedTo(Project other) {
-    return name != other.name || status != other.status;
+    return name != other.name ||
+        status != other.status ||
+        !_stringListsEqual(stageNames, other.stageNames);
   }
+}
+
+bool _stringListsEqual(List<String> left, List<String> right) {
+  if (left.length != right.length) return false;
+  for (var i = 0; i < left.length; i++) {
+    if (left[i] != right[i]) return false;
+  }
+  return true;
 }
 
 extension ProjectStatusLabel on ProjectStatus {

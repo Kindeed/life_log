@@ -71,6 +71,7 @@ extension LegacyWorkLogMapper on WorkLog {
       projectId: projectId,
       projectSyncId: projectSyncId,
       projectName: projectName,
+      projectStageName: projectStageName,
       isReimbursed: isReimbursed,
       note: note,
       createdAt: createdAt,
@@ -104,6 +105,7 @@ extension WorkLogEntryLegacyMapper on WorkLogEntry {
       ..projectId = projectId
       ..projectSyncId = projectSyncId
       ..projectName = projectName
+      ..projectStageName = projectStageName
       ..isReimbursed = isReimbursed
       ..note = note
       ..createdAt = createdAt

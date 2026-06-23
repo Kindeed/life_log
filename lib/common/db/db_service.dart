@@ -130,6 +130,33 @@ class DbService {
     return value.toString();
   }
 
+  List<String> _parseRemoteStringList(dynamic value) {
+    if (value is Iterable) {
+      return _normalizeStringList(value.map((item) => item.toString()));
+    }
+    if (value is String) {
+      return _normalizeStringList(value.split(','));
+    }
+    return const <String>[];
+  }
+
+  List<String> _normalizeStringList(Iterable<String> values) {
+    final seen = <String>{};
+    final result = <String>[];
+    for (final value in values) {
+      final trimmed = value.trim();
+      if (trimmed.isEmpty) continue;
+      final key = trimmed.toLowerCase();
+      if (seen.add(key)) result.add(trimmed);
+    }
+    return result;
+  }
+
+  String? _normalizeOptionalString(String? value) {
+    final trimmed = value?.trim();
+    return trimmed == null || trimmed.isEmpty ? null : trimmed;
+  }
+
   bool _parseRemoteBool(dynamic value, {bool fallback = false}) {
     if (value is bool) return value;
     if (value is num) return value != 0;
@@ -1206,6 +1233,7 @@ class DbService {
   Future<int> addProject(Project project) async {
     final id = await isar.writeTxn(() async {
       _stampProjectOwner(project);
+      project.stageNames = _normalizeStringList(project.stageNames);
       final existing = project.id == Isar.autoIncrement
           ? null
           : await isar.projects.get(project.id);
@@ -1543,6 +1571,9 @@ class DbService {
     log.projectName = projectLink?.name ?? linkedProjectName;
     log.projectId = projectLink?.id;
     log.projectSyncId = projectLink?.syncId ?? projectSyncId;
+    log.projectStageName = _normalizeOptionalString(
+      _parseRemoteString(data['project_stage_name']),
+    );
 
     await isar.workLogs.put(log);
   }
@@ -1762,6 +1793,9 @@ class DbService {
     item.projectName = projectLink?.name ?? projectName ?? 'DefaultProject';
     item.projectId = projectLink?.id;
     item.projectSyncId = projectLink?.syncId ?? projectSyncId;
+    item.projectStageName = _normalizeOptionalString(
+      _parseRemoteString(data['project_stage_name']),
+    );
     item.evidenceDate = _parseRemoteDateOnly(
       data['evidence_date'],
       fallback: remoteUpdatedAt,
@@ -1910,6 +1944,9 @@ class DbService {
     record.projectName = projectLink?.name ?? projectName;
     record.projectId = projectLink?.id;
     record.projectSyncId = projectLink?.syncId ?? projectSyncId;
+    record.projectStageName = _normalizeOptionalString(
+      _parseRemoteString(data['project_stage_name']),
+    );
     record.tripWorkLogId = tripWorkLog?.id;
     record.tripWorkLogSyncId = tripWorkLog?.syncId ?? tripWorkLogSyncId;
 
@@ -1999,6 +2036,7 @@ class DbService {
     project.deletedAt = null;
     project.pendingDelete = false;
     project.name = _parseRemoteString(data['name']) ?? 'Untitled';
+    project.stageNames = _parseRemoteStringList(data['stage_names']);
     final statusStr =
         _parseRemoteString(data['status']) ?? ProjectStatus.active.name;
     project.status = ProjectStatus.values.firstWhere(

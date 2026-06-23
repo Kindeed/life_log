@@ -45,6 +45,9 @@ class WorkLog {
   @Index(caseSensitive: false)
   String? projectName; // 可选关联项目名称
 
+  @Index(caseSensitive: false)
+  String? projectStageName; // 可选关联项目节点
+
   // --- 【新增】是否已报销 ---
   bool isReimbursed = false;
 
@@ -173,6 +176,7 @@ extension WorkLogBusinessChanges on WorkLog {
         projectId != other.projectId ||
         projectSyncId != other.projectSyncId ||
         projectName != other.projectName ||
+        projectStageName != other.projectStageName ||
         isReimbursed != other.isReimbursed ||
         note != other.note;
   }

@@ -30,6 +30,7 @@ final class WorkLogEditorState extends Equatable {
   final int? projectId;
   final String? projectSyncId;
   final String projectName;
+  final String projectStageName;
   final String leaveType;
   final String customLeave;
   final AppFailure? failure;
@@ -49,6 +50,7 @@ final class WorkLogEditorState extends Equatable {
     required this.projectId,
     required this.projectSyncId,
     required this.projectName,
+    required this.projectStageName,
     required this.leaveType,
     required this.customLeave,
     this.failure,
@@ -109,6 +111,9 @@ final class WorkLogEditorState extends Equatable {
       projectName: entry?.type == WorkLogEntryType.businessTrip
           ? entry?.projectName ?? ''
           : '',
+      projectStageName: entry?.type == WorkLogEntryType.businessTrip
+          ? entry?.projectStageName ?? ''
+          : '',
       leaveType: leaveType,
       customLeave: customLeave,
     );
@@ -126,6 +131,7 @@ final class WorkLogEditorState extends Equatable {
     int? projectId,
     String? projectSyncId,
     String? projectName,
+    String? projectStageName,
     bool clearProject = false,
     String? leaveType,
     String? customLeave,
@@ -147,6 +153,9 @@ final class WorkLogEditorState extends Equatable {
       projectId: clearProject ? null : projectId ?? this.projectId,
       projectSyncId: clearProject ? null : projectSyncId ?? this.projectSyncId,
       projectName: clearProject ? '' : projectName ?? this.projectName,
+      projectStageName: clearProject
+          ? ''
+          : projectStageName ?? this.projectStageName,
       leaveType: leaveType ?? this.leaveType,
       customLeave: customLeave ?? this.customLeave,
       failure: clearFailure ? null : failure ?? this.failure,
@@ -169,6 +178,7 @@ final class WorkLogEditorState extends Equatable {
     projectId,
     projectSyncId,
     projectName,
+    projectStageName,
     leaveType,
     customLeave,
     failure,
@@ -237,9 +247,14 @@ final class WorkLogEditorCubit extends Cubit<WorkLogEditorState> {
         projectId: id,
         projectSyncId: syncId,
         projectName: trimmedName,
+        projectStageName: '',
         clearProject: id == null && syncId == null && trimmedName.isEmpty,
       ),
     );
+  }
+
+  void changeProjectStageName(String projectStageName) {
+    emit(_editingState(projectStageName: projectStageName.trim()));
   }
 
   void changeLeaveType(String leaveType) {
@@ -311,6 +326,7 @@ final class WorkLogEditorCubit extends Cubit<WorkLogEditorState> {
     int? projectId,
     String? projectSyncId,
     String? projectName,
+    String? projectStageName,
     bool clearProject = false,
     String? leaveType,
     String? customLeave,
@@ -327,6 +343,7 @@ final class WorkLogEditorCubit extends Cubit<WorkLogEditorState> {
       projectId: projectId,
       projectSyncId: projectSyncId,
       projectName: projectName,
+      projectStageName: projectStageName,
       clearProject: clearProject,
       leaveType: leaveType,
       customLeave: customLeave,
@@ -401,6 +418,7 @@ final class WorkLogEditorCubit extends Cubit<WorkLogEditorState> {
         projectId: state.projectId,
         projectSyncId: _emptyToNull(state.projectSyncId ?? ''),
         projectName: _emptyToNull(state.projectName),
+        projectStageName: _emptyToNull(state.projectStageName),
         note: state.note,
         createdAt: state.existingEntry?.createdAt,
         updatedAt: state.existingEntry?.updatedAt,
@@ -426,6 +444,7 @@ final class WorkLogEditorCubit extends Cubit<WorkLogEditorState> {
         next.projectId != previous.projectId ||
         next.projectSyncId != previous.projectSyncId ||
         next.projectName != previous.projectName ||
+        next.projectStageName != previous.projectStageName ||
         next.isReimbursed != previous.isReimbursed ||
         next.note != previous.note;
   }

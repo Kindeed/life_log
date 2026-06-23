@@ -19,6 +19,16 @@ class ProjectRepository {
     return _localDataSource.getAllProjects();
   }
 
+  Future<Project?> findProject(int id, String name) async {
+    for (final project in await getAllProjects()) {
+      if (project.id == id ||
+          project.name.toLowerCase() == name.trim().toLowerCase()) {
+        return project;
+      }
+    }
+    return null;
+  }
+
   Stream<void> watchProjects() {
     return _localDataSource.watchProjects();
   }
@@ -44,6 +54,7 @@ class ProjectRepository {
     }
     project.updatedAt = now;
     project.syncId = ensureSyncId(project.syncId);
+    project.stageNames = _normalizeStageNames(project.stageNames);
     project.isDirty = true;
     await _localDataSource.addProject(project);
     await _pushIfNeeded(project);
@@ -94,4 +105,16 @@ class ProjectRepository {
       rethrow;
     }
   }
+}
+
+List<String> _normalizeStageNames(Iterable<String> values) {
+  final seen = <String>{};
+  final result = <String>[];
+  for (final value in values) {
+    final trimmed = value.trim();
+    if (trimmed.isEmpty) continue;
+    final key = trimmed.toLowerCase();
+    if (seen.add(key)) result.add(trimmed);
+  }
+  return result;
 }

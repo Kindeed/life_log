@@ -14,6 +14,7 @@ final class WorkLogEntry extends Equatable {
   final int? projectId;
   final String? projectSyncId;
   final String? projectName;
+  final String? projectStageName;
   final bool isReimbursed;
   final String? note;
   final DateTime? createdAt;
@@ -31,6 +32,7 @@ final class WorkLogEntry extends Equatable {
     this.projectId,
     this.projectSyncId,
     this.projectName,
+    this.projectStageName,
     this.isReimbursed = false,
     this.note,
     this.createdAt,
@@ -49,6 +51,7 @@ final class WorkLogEntry extends Equatable {
     int? projectId,
     String? projectSyncId,
     String? projectName,
+    String? projectStageName,
     bool clearProject = false,
     bool? isReimbursed,
     String? note,
@@ -67,6 +70,9 @@ final class WorkLogEntry extends Equatable {
       projectId: clearProject ? null : projectId ?? this.projectId,
       projectSyncId: clearProject ? null : projectSyncId ?? this.projectSyncId,
       projectName: clearProject ? null : projectName ?? this.projectName,
+      projectStageName: clearProject
+          ? null
+          : projectStageName ?? this.projectStageName,
       isReimbursed: isReimbursed ?? this.isReimbursed,
       note: note ?? this.note,
       createdAt: createdAt ?? this.createdAt,
@@ -95,6 +101,7 @@ final class WorkLogEntry extends Equatable {
     projectId,
     projectSyncId,
     projectName,
+    projectStageName,
     isReimbursed,
     note,
     createdAt,

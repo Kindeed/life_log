@@ -4,6 +4,7 @@ import 'package:equatable/equatable.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:life_log/core/errors/app_failure.dart';
 import 'package:life_log/features/project/application/load_project_entries.dart';
+import 'package:life_log/features/project/application/save_project_entry.dart';
 import 'package:life_log/features/project/application/watch_project_entries.dart';
 import 'package:life_log/features/project/domain/entities/project_entry.dart';
 
@@ -70,13 +71,16 @@ final class ProjectState extends Equatable {
 final class ProjectCubit extends Cubit<ProjectState> {
   final LoadProjectEntries _loadEntries;
   final WatchProjectEntries _watchEntries;
+  final SaveProjectEntry _saveEntry;
   StreamSubscription<void>? _entriesSubscription;
 
   ProjectCubit({
     required LoadProjectEntries loadEntries,
     required WatchProjectEntries watchEntries,
+    required SaveProjectEntry saveEntry,
   }) : _loadEntries = loadEntries,
        _watchEntries = watchEntries,
+       _saveEntry = saveEntry,
        super(ProjectState.initial());
 
   void start() {
@@ -106,9 +110,40 @@ final class ProjectCubit extends Cubit<ProjectState> {
     );
   }
 
+  Future<AppFailure?> saveStageNames(
+    ProjectEntry entry,
+    List<String> stageNames,
+  ) async {
+    final result = await _saveEntry(
+      ProjectEntry(
+        id: entry.id,
+        syncId: entry.syncId,
+        name: entry.name,
+        status: entry.status,
+        stageNames: _normalizeStageNames(stageNames),
+      ),
+    );
+    final failure = result.failureOrNull;
+    if (failure != null) return failure;
+    await loadEntries();
+    return null;
+  }
+
   @override
   Future<void> close() async {
     await _entriesSubscription?.cancel();
     return super.close();
   }
+}
+
+List<String> _normalizeStageNames(Iterable<String> values) {
+  final seen = <String>{};
+  final result = <String>[];
+  for (final value in values) {
+    final trimmed = value.trim();
+    if (trimmed.isEmpty) continue;
+    final key = trimmed.toLowerCase();
+    if (seen.add(key)) result.add(trimmed);
+  }
+  return result;
 }

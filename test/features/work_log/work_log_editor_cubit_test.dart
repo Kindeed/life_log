@@ -229,6 +229,36 @@ void main() {
       expect(find.byType(LogEditView), findsNothing);
     });
 
+    testWidgets('project selectors are scoped to the business-trip form', (
+      tester,
+    ) async {
+      tester.view.devicePixelRatio = 1;
+      tester.view.physicalSize = const Size(375, 812);
+      addTearDown(tester.view.resetPhysicalSize);
+      addTearDown(tester.view.resetDevicePixelRatio);
+
+      configureWorkLogFeatureDependencies(repository: _EditorRepository());
+
+      await tester.pumpWidget(
+        ScreenUtilInit(
+          designSize: const Size(375, 812),
+          builder: (context, _) => MaterialApp(
+            home: LogEditView(selectedDate: DateTime(2026, 5, 9)),
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      expect(find.text('加班时长'), findsOneWidget);
+      expect(find.text('无关联项目'), findsNothing);
+
+      await tester.tap(find.text('出差'));
+      await tester.pumpAndSettle();
+
+      expect(find.text('城市/地点'), findsOneWidget);
+      expect(find.text('无关联项目'), findsOneWidget);
+    });
+
     test(
       'submits through WorkLogEditorCubit instead of controller write methods',
       () {

@@ -9,7 +9,10 @@ final class LoadProjectWorkLogTrips {
 
   const LoadProjectWorkLogTrips(this._repository);
 
-  Future<AppResult<List<WorkLogEntry>>> call(String projectName) async {
+  Future<AppResult<List<WorkLogEntry>>> call(
+    String projectName, {
+    bool includeUnlinked = false,
+  }) async {
     try {
       final normalizedProjectName = projectName.trim();
       if (normalizedProjectName.isEmpty) {
@@ -17,20 +20,20 @@ final class LoadProjectWorkLogTrips {
       }
       final entries = await _repository.getAllEntries();
       final trips =
-          entries
-              .where(
-                (entry) =>
-                    entry.type == WorkLogEntryType.businessTrip &&
-                    entry.projectName?.trim() == normalizedProjectName,
-              )
-              .toList()
-            ..sort((a, b) {
-              final dateCompare = dateOnlyLocal(
-                b.date,
-              ).compareTo(dateOnlyLocal(a.date));
-              if (dateCompare != 0) return dateCompare;
-              return b.id.compareTo(a.id);
-            });
+          entries.where((entry) {
+            if (entry.type != WorkLogEntryType.businessTrip) {
+              return false;
+            }
+            final linkedName = entry.projectName?.trim();
+            return linkedName == normalizedProjectName ||
+                (includeUnlinked && (linkedName == null || linkedName.isEmpty));
+          }).toList()..sort((a, b) {
+            final dateCompare = dateOnlyLocal(
+              b.date,
+            ).compareTo(dateOnlyLocal(a.date));
+            if (dateCompare != 0) return dateCompare;
+            return b.id.compareTo(a.id);
+          });
       return AppResult.success(List<WorkLogEntry>.unmodifiable(trips));
     } catch (error, stackTrace) {
       return AppResult.failure(

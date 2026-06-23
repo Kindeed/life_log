@@ -63,6 +63,7 @@ extension ExpenseRecordEntryMapper on ExpenseRecord {
       projectId: projectId,
       projectSyncId: projectSyncId,
       projectName: projectName,
+      projectStageName: projectStageName,
       tripWorkLogId: tripWorkLogId,
       tripWorkLogSyncId: tripWorkLogSyncId,
     );
@@ -84,6 +85,7 @@ extension ExpenseRecordEntryLegacyMapper on ExpenseRecordEntry {
       ..projectId = projectId
       ..projectSyncId = projectSyncId
       ..projectName = projectName
+      ..projectStageName = projectStageName
       ..tripWorkLogId = tripWorkLogId
       ..tripWorkLogSyncId = tripWorkLogSyncId;
   }

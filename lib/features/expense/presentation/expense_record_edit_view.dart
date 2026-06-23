@@ -9,7 +9,6 @@ import 'package:life_log/common/utils/formatters.dart';
 import 'package:life_log/common/widgets/app_button.dart';
 import 'package:life_log/common/widgets/app_card.dart';
 import 'package:life_log/common/widgets/app_date_picker.dart';
-import 'package:life_log/common/widgets/app_pill.dart';
 import 'package:life_log/common/widgets/app_safe_bottom_bar.dart';
 import 'package:life_log/common/widgets/app_text_field.dart';
 import 'package:life_log/core/di/service_locator.dart';
@@ -18,6 +17,8 @@ import 'package:life_log/features/expense/application/delete_expense_record_entr
 import 'package:life_log/features/expense/application/save_expense_record_entry.dart';
 import 'package:life_log/features/expense/domain/entities/expense_record_entry.dart';
 import 'package:life_log/features/expense/presentation/expense_record_editor_cubit.dart';
+import 'package:life_log/features/project/application/load_project_entries.dart';
+import 'package:life_log/features/project/domain/entities/project_entry.dart';
 import 'package:life_log/features/work_log/application/load_project_work_log_trips.dart';
 import 'package:life_log/features/work_log/domain/entities/work_log_entry.dart';
 
@@ -48,6 +49,7 @@ class _ExpenseRecordEditViewState extends State<ExpenseRecordEditView> {
   final _projectController = TextEditingController();
   final _noteController = TextEditingController();
   late Future<List<WorkLogEntry>> _tripEntriesFuture;
+  late Future<List<ProjectEntry>> _projectEntriesFuture;
 
   @override
   void initState() {
@@ -67,6 +69,7 @@ class _ExpenseRecordEditViewState extends State<ExpenseRecordEditView> {
     _projectController.text = editorState.projectName;
     _noteController.text = editorState.note;
     _tripEntriesFuture = _loadTripsForProject(editorState.projectName);
+    _projectEntriesFuture = _loadProjectEntries();
   }
 
   @override
@@ -99,6 +102,7 @@ class _ExpenseRecordEditViewState extends State<ExpenseRecordEditView> {
               projectController: _projectController,
               noteController: _noteController,
               tripEntriesFuture: _tripEntriesFuture,
+              projectEntriesFuture: _projectEntriesFuture,
               onProjectChanged: _handleProjectChanged,
               onPickDate: _pickDate,
               onSave: _save,
@@ -125,8 +129,17 @@ class _ExpenseRecordEditViewState extends State<ExpenseRecordEditView> {
   Future<List<WorkLogEntry>> _loadTripsForProject(String projectName) async {
     final result = await serviceLocator<LoadProjectWorkLogTrips>().call(
       projectName,
+      includeUnlinked: true,
     );
     return result.valueOrNull ?? const <WorkLogEntry>[];
+  }
+
+  Future<List<ProjectEntry>> _loadProjectEntries() async {
+    if (!serviceLocator.isRegistered<LoadProjectEntries>()) {
+      return const <ProjectEntry>[];
+    }
+    final result = await serviceLocator<LoadProjectEntries>().call();
+    return result.valueOrNull ?? const <ProjectEntry>[];
   }
 
   void _handleProjectChanged(String value) {
@@ -235,6 +248,7 @@ class _ExpenseRecordEditorScaffold extends StatelessWidget {
   final TextEditingController projectController;
   final TextEditingController noteController;
   final Future<List<WorkLogEntry>> tripEntriesFuture;
+  final Future<List<ProjectEntry>> projectEntriesFuture;
   final ValueChanged<String> onProjectChanged;
   final Future<void> Function() onPickDate;
   final Future<void> Function() onSave;
@@ -247,6 +261,7 @@ class _ExpenseRecordEditorScaffold extends StatelessWidget {
     required this.projectController,
     required this.noteController,
     required this.tripEntriesFuture,
+    required this.projectEntriesFuture,
     required this.onProjectChanged,
     required this.onPickDate,
     required this.onSave,
@@ -299,25 +314,30 @@ class _ExpenseRecordEditorScaffold extends StatelessWidget {
                   children: [
                     Text('分类', style: TextStyle(color: textSecondary)),
                     SizedBox(height: 12.h),
-                    Wrap(
-                      spacing: 8.w,
-                      runSpacing: 8.h,
-                      children: ExpenseRecordEntryCategory.values.map((
-                        category,
-                      ) {
+                    GridView.builder(
+                      shrinkWrap: true,
+                      physics: const NeverScrollableScrollPhysics(),
+                      itemCount: ExpenseRecordEntryCategory.values.length,
+                      gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+                        crossAxisCount: 3,
+                        crossAxisSpacing: 8.w,
+                        mainAxisSpacing: 8.h,
+                        childAspectRatio: 2.55,
+                      ),
+                      itemBuilder: (context, index) {
+                        final category =
+                            ExpenseRecordEntryCategory.values[index];
                         final selected = editorState.category == category;
-                        return GestureDetector(
+                        return _CategoryTile(
+                          icon: _categoryIcon(category),
+                          label: category.label,
+                          color: _categoryColor(category, semantic),
+                          selected: selected,
                           onTap: () => context
                               .read<ExpenseRecordEditorCubit>()
                               .changeCategory(category),
-                          child: AppPill(
-                            icon: _categoryIcon(category),
-                            label: category.label,
-                            color: _categoryColor(category, semantic),
-                            selected: selected,
-                          ),
                         );
-                      }).toList(),
+                      },
                     ),
                   ],
                 ),
@@ -340,6 +360,12 @@ class _ExpenseRecordEditorScaffold extends StatelessWidget {
                       onChanged: onProjectChanged,
                     ),
                     SizedBox(height: 12.h),
+                    _ProjectStageTile(
+                      editorState: editorState,
+                      projectEntriesFuture: projectEntriesFuture,
+                    ),
+                    if (editorState.projectName.trim().isNotEmpty)
+                      SizedBox(height: 12.h),
                     _TripWorkLogTile(
                       editorState: editorState,
                       tripEntriesFuture: tripEntriesFuture,
@@ -473,6 +499,70 @@ class _DateTile extends StatelessWidget {
   }
 }
 
+class _CategoryTile extends StatelessWidget {
+  final IconData icon;
+  final String label;
+  final Color color;
+  final bool selected;
+  final VoidCallback onTap;
+
+  const _CategoryTile({
+    required this.icon,
+    required this.label,
+    required this.color,
+    required this.selected,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final semantic = theme.semanticColors;
+    final background = selected
+        ? color.withValues(
+            alpha: theme.brightness == Brightness.dark ? 0.20 : 0.12,
+          )
+        : semantic.mutedSurface;
+    final borderColor = selected ? color : semantic.border;
+
+    return InkWell(
+      borderRadius: BorderRadius.circular(12),
+      onTap: onTap,
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 140),
+        curve: Curves.easeOutCubic,
+        alignment: Alignment.center,
+        padding: EdgeInsets.symmetric(horizontal: 8.w),
+        decoration: BoxDecoration(
+          color: background,
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(color: borderColor.withValues(alpha: 0.75)),
+        ),
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(icon, size: 16.sp, color: color),
+            SizedBox(width: 5.w),
+            Flexible(
+              child: Text(
+                label,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: theme.textTheme.labelMedium?.copyWith(
+                  color: selected ? color : theme.colorScheme.onSurface,
+                  fontWeight: FontWeight.w700,
+                  letterSpacing: 0,
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
 class _TripWorkLogTile extends StatelessWidget {
   final ExpenseRecordEditorState editorState;
   final Future<List<WorkLogEntry>> tripEntriesFuture;
@@ -541,6 +631,75 @@ class _TripWorkLogTile extends StatelessWidget {
   }
 }
 
+class _ProjectStageTile extends StatelessWidget {
+  final ExpenseRecordEditorState editorState;
+  final Future<List<ProjectEntry>> projectEntriesFuture;
+
+  const _ProjectStageTile({
+    required this.editorState,
+    required this.projectEntriesFuture,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final projectName = editorState.projectName.trim();
+    if (projectName.isEmpty) return const SizedBox.shrink();
+    final theme = Theme.of(context);
+    final semantic = theme.semanticColors;
+    return FutureBuilder<List<ProjectEntry>>(
+      future: projectEntriesFuture,
+      builder: (context, snapshot) {
+        final projects = snapshot.data ?? const <ProjectEntry>[];
+        ProjectEntry? matched;
+        for (final project in projects) {
+          if (project.name.trim().toLowerCase() == projectName.toLowerCase()) {
+            matched = project;
+            break;
+          }
+        }
+        final stageNames = matched?.stageNames ?? const <String>[];
+        final selected = editorState.projectStageName.trim();
+        if (stageNames.isEmpty && selected.isEmpty) {
+          return const SizedBox.shrink();
+        }
+        final values = <String>{'', selected, ...stageNames}.toList();
+        return Container(
+          height: 56.h,
+          padding: EdgeInsets.symmetric(horizontal: 14.w),
+          decoration: BoxDecoration(
+            color: semantic.mutedSurface,
+            borderRadius: BorderRadius.circular(12),
+            border: Border.all(color: semantic.border),
+          ),
+          child: DropdownButtonHideUnderline(
+            child: DropdownButton<String>(
+              value: values.contains(selected) ? selected : '',
+              isExpanded: true,
+              icon: Icon(
+                Icons.expand_more_rounded,
+                color: theme.colorScheme.onSurfaceVariant,
+              ),
+              items: values.map((value) {
+                return DropdownMenuItem<String>(
+                  value: value,
+                  child: Text(
+                    value.isEmpty ? '不关联项目节点' : value,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                );
+              }).toList(),
+              onChanged: (value) => context
+                  .read<ExpenseRecordEditorCubit>()
+                  .changeProjectStageName(value ?? ''),
+            ),
+          ),
+        );
+      },
+    );
+  }
+}
+
 WorkLogEntry? _firstTripById(List<WorkLogEntry> trips, int id) {
   for (final trip in trips) {
     if (trip.id == id) return trip;
@@ -551,10 +710,12 @@ WorkLogEntry? _firstTripById(List<WorkLogEntry> trips, int id) {
 String _tripLabel(WorkLogEntry? trip, int id) {
   if (trip == null) return '出差 #$id';
   final location = trip.location?.trim();
+  final projectName = trip.projectName?.trim();
   final parts = <String>[
     formatDateYmd(trip.date),
     if (location != null && location.isNotEmpty) location,
     if (trip.transport?.trim().isNotEmpty == true) trip.transport!.trim(),
+    if (projectName == null || projectName.isEmpty) '未关联项目',
   ];
   return parts.join(' · ');
 }

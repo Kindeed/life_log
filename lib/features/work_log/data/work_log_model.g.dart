@@ -70,41 +70,46 @@ const WorkLogSchema = CollectionSchema(
       name: r'projectName',
       type: IsarType.string,
     ),
-    r'projectSyncId': PropertySchema(
+    r'projectStageName': PropertySchema(
       id: 13,
+      name: r'projectStageName',
+      type: IsarType.string,
+    ),
+    r'projectSyncId': PropertySchema(
+      id: 14,
       name: r'projectSyncId',
       type: IsarType.string,
     ),
-    r'remoteId': PropertySchema(id: 14, name: r'remoteId', type: IsarType.long),
+    r'remoteId': PropertySchema(id: 15, name: r'remoteId', type: IsarType.long),
     r'remoteUpdatedAt': PropertySchema(
-      id: 15,
+      id: 16,
       name: r'remoteUpdatedAt',
       type: IsarType.dateTime,
     ),
     r'remoteVersion': PropertySchema(
-      id: 16,
+      id: 17,
       name: r'remoteVersion',
       type: IsarType.long,
     ),
-    r'syncId': PropertySchema(id: 17, name: r'syncId', type: IsarType.string),
+    r'syncId': PropertySchema(id: 18, name: r'syncId', type: IsarType.string),
     r'syncedAt': PropertySchema(
-      id: 18,
+      id: 19,
       name: r'syncedAt',
       type: IsarType.dateTime,
     ),
     r'transport': PropertySchema(
-      id: 19,
+      id: 20,
       name: r'transport',
       type: IsarType.string,
     ),
     r'type': PropertySchema(
-      id: 20,
+      id: 21,
       name: r'type',
       type: IsarType.byte,
       enumMap: _WorkLogtypeEnumValueMap,
     ),
     r'updatedAt': PropertySchema(
-      id: 21,
+      id: 22,
       name: r'updatedAt',
       type: IsarType.dateTime,
     ),
@@ -167,6 +172,19 @@ const WorkLogSchema = CollectionSchema(
         ),
       ],
     ),
+    r'projectStageName': IndexSchema(
+      id: -4550830919915173385,
+      name: r'projectStageName',
+      unique: false,
+      replace: false,
+      properties: [
+        IndexPropertySchema(
+          name: r'projectStageName',
+          type: IndexType.hash,
+          caseSensitive: false,
+        ),
+      ],
+    ),
   },
   links: {},
   embeddedSchemas: {},
@@ -202,6 +220,12 @@ int _workLogEstimateSize(
   }
   {
     final value = object.projectName;
+    if (value != null) {
+      bytesCount += 3 + value.length * 3;
+    }
+  }
+  {
+    final value = object.projectStageName;
     if (value != null) {
       bytesCount += 3 + value.length * 3;
     }
@@ -246,15 +270,16 @@ void _workLogSerialize(
   writer.writeBool(offsets[10], object.pendingDelete);
   writer.writeLong(offsets[11], object.projectId);
   writer.writeString(offsets[12], object.projectName);
-  writer.writeString(offsets[13], object.projectSyncId);
-  writer.writeLong(offsets[14], object.remoteId);
-  writer.writeDateTime(offsets[15], object.remoteUpdatedAt);
-  writer.writeLong(offsets[16], object.remoteVersion);
-  writer.writeString(offsets[17], object.syncId);
-  writer.writeDateTime(offsets[18], object.syncedAt);
-  writer.writeString(offsets[19], object.transport);
-  writer.writeByte(offsets[20], object.type.index);
-  writer.writeDateTime(offsets[21], object.updatedAt);
+  writer.writeString(offsets[13], object.projectStageName);
+  writer.writeString(offsets[14], object.projectSyncId);
+  writer.writeLong(offsets[15], object.remoteId);
+  writer.writeDateTime(offsets[16], object.remoteUpdatedAt);
+  writer.writeLong(offsets[17], object.remoteVersion);
+  writer.writeString(offsets[18], object.syncId);
+  writer.writeDateTime(offsets[19], object.syncedAt);
+  writer.writeString(offsets[20], object.transport);
+  writer.writeByte(offsets[21], object.type.index);
+  writer.writeDateTime(offsets[22], object.updatedAt);
 }
 
 WorkLog _workLogDeserialize(
@@ -278,17 +303,18 @@ WorkLog _workLogDeserialize(
   object.pendingDelete = reader.readBool(offsets[10]);
   object.projectId = reader.readLongOrNull(offsets[11]);
   object.projectName = reader.readStringOrNull(offsets[12]);
-  object.projectSyncId = reader.readStringOrNull(offsets[13]);
-  object.remoteId = reader.readLongOrNull(offsets[14]);
-  object.remoteUpdatedAt = reader.readDateTimeOrNull(offsets[15]);
-  object.remoteVersion = reader.readLong(offsets[16]);
-  object.syncId = reader.readStringOrNull(offsets[17]);
-  object.syncedAt = reader.readDateTimeOrNull(offsets[18]);
-  object.transport = reader.readStringOrNull(offsets[19]);
+  object.projectStageName = reader.readStringOrNull(offsets[13]);
+  object.projectSyncId = reader.readStringOrNull(offsets[14]);
+  object.remoteId = reader.readLongOrNull(offsets[15]);
+  object.remoteUpdatedAt = reader.readDateTimeOrNull(offsets[16]);
+  object.remoteVersion = reader.readLong(offsets[17]);
+  object.syncId = reader.readStringOrNull(offsets[18]);
+  object.syncedAt = reader.readDateTimeOrNull(offsets[19]);
+  object.transport = reader.readStringOrNull(offsets[20]);
   object.type =
-      _WorkLogtypeValueEnumMap[reader.readByteOrNull(offsets[20])] ??
+      _WorkLogtypeValueEnumMap[reader.readByteOrNull(offsets[21])] ??
       LogType.work;
-  object.updatedAt = reader.readDateTimeOrNull(offsets[21]);
+  object.updatedAt = reader.readDateTimeOrNull(offsets[22]);
   return object;
 }
 
@@ -328,22 +354,24 @@ P _workLogDeserializeProp<P>(
     case 13:
       return (reader.readStringOrNull(offset)) as P;
     case 14:
-      return (reader.readLongOrNull(offset)) as P;
+      return (reader.readStringOrNull(offset)) as P;
     case 15:
-      return (reader.readDateTimeOrNull(offset)) as P;
+      return (reader.readLongOrNull(offset)) as P;
     case 16:
-      return (reader.readLong(offset)) as P;
-    case 17:
-      return (reader.readStringOrNull(offset)) as P;
-    case 18:
       return (reader.readDateTimeOrNull(offset)) as P;
-    case 19:
+    case 17:
+      return (reader.readLong(offset)) as P;
+    case 18:
       return (reader.readStringOrNull(offset)) as P;
+    case 19:
+      return (reader.readDateTimeOrNull(offset)) as P;
     case 20:
+      return (reader.readStringOrNull(offset)) as P;
+    case 21:
       return (_WorkLogtypeValueEnumMap[reader.readByteOrNull(offset)] ??
               LogType.work)
           as P;
-    case 21:
+    case 22:
       return (reader.readDateTimeOrNull(offset)) as P;
     default:
       throw IsarError('Unknown property with id $propertyId');
@@ -869,6 +897,85 @@ extension WorkLogQueryWhere on QueryBuilder<WorkLog, WorkLog, QWhereClause> {
                 indexName: r'projectName',
                 lower: [],
                 upper: [projectName],
+                includeUpper: false,
+              ),
+            );
+      }
+    });
+  }
+
+  QueryBuilder<WorkLog, WorkLog, QAfterWhereClause> projectStageNameIsNull() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addWhereClause(
+        IndexWhereClause.equalTo(indexName: r'projectStageName', value: [null]),
+      );
+    });
+  }
+
+  QueryBuilder<WorkLog, WorkLog, QAfterWhereClause>
+  projectStageNameIsNotNull() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addWhereClause(
+        IndexWhereClause.between(
+          indexName: r'projectStageName',
+          lower: [null],
+          includeLower: false,
+          upper: [],
+        ),
+      );
+    });
+  }
+
+  QueryBuilder<WorkLog, WorkLog, QAfterWhereClause> projectStageNameEqualTo(
+    String? projectStageName,
+  ) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addWhereClause(
+        IndexWhereClause.equalTo(
+          indexName: r'projectStageName',
+          value: [projectStageName],
+        ),
+      );
+    });
+  }
+
+  QueryBuilder<WorkLog, WorkLog, QAfterWhereClause> projectStageNameNotEqualTo(
+    String? projectStageName,
+  ) {
+    return QueryBuilder.apply(this, (query) {
+      if (query.whereSort == Sort.asc) {
+        return query
+            .addWhereClause(
+              IndexWhereClause.between(
+                indexName: r'projectStageName',
+                lower: [],
+                upper: [projectStageName],
+                includeUpper: false,
+              ),
+            )
+            .addWhereClause(
+              IndexWhereClause.between(
+                indexName: r'projectStageName',
+                lower: [projectStageName],
+                includeLower: false,
+                upper: [],
+              ),
+            );
+      } else {
+        return query
+            .addWhereClause(
+              IndexWhereClause.between(
+                indexName: r'projectStageName',
+                lower: [projectStageName],
+                includeLower: false,
+                upper: [],
+              ),
+            )
+            .addWhereClause(
+              IndexWhereClause.between(
+                indexName: r'projectStageName',
+                lower: [],
+                upper: [projectStageName],
                 includeUpper: false,
               ),
             );
@@ -2074,6 +2181,168 @@ extension WorkLogQueryFilter
     });
   }
 
+  QueryBuilder<WorkLog, WorkLog, QAfterFilterCondition>
+  projectStageNameIsNull() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(
+        const FilterCondition.isNull(property: r'projectStageName'),
+      );
+    });
+  }
+
+  QueryBuilder<WorkLog, WorkLog, QAfterFilterCondition>
+  projectStageNameIsNotNull() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(
+        const FilterCondition.isNotNull(property: r'projectStageName'),
+      );
+    });
+  }
+
+  QueryBuilder<WorkLog, WorkLog, QAfterFilterCondition> projectStageNameEqualTo(
+    String? value, {
+    bool caseSensitive = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(
+        FilterCondition.equalTo(
+          property: r'projectStageName',
+          value: value,
+          caseSensitive: caseSensitive,
+        ),
+      );
+    });
+  }
+
+  QueryBuilder<WorkLog, WorkLog, QAfterFilterCondition>
+  projectStageNameGreaterThan(
+    String? value, {
+    bool include = false,
+    bool caseSensitive = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(
+        FilterCondition.greaterThan(
+          include: include,
+          property: r'projectStageName',
+          value: value,
+          caseSensitive: caseSensitive,
+        ),
+      );
+    });
+  }
+
+  QueryBuilder<WorkLog, WorkLog, QAfterFilterCondition>
+  projectStageNameLessThan(
+    String? value, {
+    bool include = false,
+    bool caseSensitive = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(
+        FilterCondition.lessThan(
+          include: include,
+          property: r'projectStageName',
+          value: value,
+          caseSensitive: caseSensitive,
+        ),
+      );
+    });
+  }
+
+  QueryBuilder<WorkLog, WorkLog, QAfterFilterCondition> projectStageNameBetween(
+    String? lower,
+    String? upper, {
+    bool includeLower = true,
+    bool includeUpper = true,
+    bool caseSensitive = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(
+        FilterCondition.between(
+          property: r'projectStageName',
+          lower: lower,
+          includeLower: includeLower,
+          upper: upper,
+          includeUpper: includeUpper,
+          caseSensitive: caseSensitive,
+        ),
+      );
+    });
+  }
+
+  QueryBuilder<WorkLog, WorkLog, QAfterFilterCondition>
+  projectStageNameStartsWith(String value, {bool caseSensitive = true}) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(
+        FilterCondition.startsWith(
+          property: r'projectStageName',
+          value: value,
+          caseSensitive: caseSensitive,
+        ),
+      );
+    });
+  }
+
+  QueryBuilder<WorkLog, WorkLog, QAfterFilterCondition>
+  projectStageNameEndsWith(String value, {bool caseSensitive = true}) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(
+        FilterCondition.endsWith(
+          property: r'projectStageName',
+          value: value,
+          caseSensitive: caseSensitive,
+        ),
+      );
+    });
+  }
+
+  QueryBuilder<WorkLog, WorkLog, QAfterFilterCondition>
+  projectStageNameContains(String value, {bool caseSensitive = true}) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(
+        FilterCondition.contains(
+          property: r'projectStageName',
+          value: value,
+          caseSensitive: caseSensitive,
+        ),
+      );
+    });
+  }
+
+  QueryBuilder<WorkLog, WorkLog, QAfterFilterCondition> projectStageNameMatches(
+    String pattern, {
+    bool caseSensitive = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(
+        FilterCondition.matches(
+          property: r'projectStageName',
+          wildcard: pattern,
+          caseSensitive: caseSensitive,
+        ),
+      );
+    });
+  }
+
+  QueryBuilder<WorkLog, WorkLog, QAfterFilterCondition>
+  projectStageNameIsEmpty() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(
+        FilterCondition.equalTo(property: r'projectStageName', value: ''),
+      );
+    });
+  }
+
+  QueryBuilder<WorkLog, WorkLog, QAfterFilterCondition>
+  projectStageNameIsNotEmpty() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(
+        FilterCondition.greaterThan(property: r'projectStageName', value: ''),
+      );
+    });
+  }
+
   QueryBuilder<WorkLog, WorkLog, QAfterFilterCondition> projectSyncIdIsNull() {
     return QueryBuilder.apply(this, (query) {
       return query.addFilterCondition(
@@ -3143,6 +3412,18 @@ extension WorkLogQuerySortBy on QueryBuilder<WorkLog, WorkLog, QSortBy> {
     });
   }
 
+  QueryBuilder<WorkLog, WorkLog, QAfterSortBy> sortByProjectStageName() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'projectStageName', Sort.asc);
+    });
+  }
+
+  QueryBuilder<WorkLog, WorkLog, QAfterSortBy> sortByProjectStageNameDesc() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'projectStageName', Sort.desc);
+    });
+  }
+
   QueryBuilder<WorkLog, WorkLog, QAfterSortBy> sortByProjectSyncId() {
     return QueryBuilder.apply(this, (query) {
       return query.addSortBy(r'projectSyncId', Sort.asc);
@@ -3422,6 +3703,18 @@ extension WorkLogQuerySortThenBy
     });
   }
 
+  QueryBuilder<WorkLog, WorkLog, QAfterSortBy> thenByProjectStageName() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'projectStageName', Sort.asc);
+    });
+  }
+
+  QueryBuilder<WorkLog, WorkLog, QAfterSortBy> thenByProjectStageNameDesc() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'projectStageName', Sort.desc);
+    });
+  }
+
   QueryBuilder<WorkLog, WorkLog, QAfterSortBy> thenByProjectSyncId() {
     return QueryBuilder.apply(this, (query) {
       return query.addSortBy(r'projectSyncId', Sort.asc);
@@ -3619,6 +3912,17 @@ extension WorkLogQueryWhereDistinct
     });
   }
 
+  QueryBuilder<WorkLog, WorkLog, QDistinct> distinctByProjectStageName({
+    bool caseSensitive = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addDistinctBy(
+        r'projectStageName',
+        caseSensitive: caseSensitive,
+      );
+    });
+  }
+
   QueryBuilder<WorkLog, WorkLog, QDistinct> distinctByProjectSyncId({
     bool caseSensitive = true,
   }) {
@@ -3766,6 +4070,12 @@ extension WorkLogQueryProperty
   QueryBuilder<WorkLog, String?, QQueryOperations> projectNameProperty() {
     return QueryBuilder.apply(this, (query) {
       return query.addPropertyName(r'projectName');
+    });
+  }
+
+  QueryBuilder<WorkLog, String?, QQueryOperations> projectStageNameProperty() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addPropertyName(r'projectStageName');
     });
   }
 

@@ -27,6 +27,7 @@ final class EvidenceEditorState extends Equatable {
   final EvidenceEntryStatus evidenceStatus;
   final String merchant;
   final String projectName;
+  final String projectStageName;
   final String note;
   final String? pendingSourcePath;
   final String? pendingSourceExtension;
@@ -44,6 +45,7 @@ final class EvidenceEditorState extends Equatable {
     required this.evidenceStatus,
     required this.merchant,
     required this.projectName,
+    required this.projectStageName,
     required this.note,
     this.pendingSourcePath,
     this.pendingSourceExtension,
@@ -73,6 +75,7 @@ final class EvidenceEditorState extends Equatable {
       evidenceStatus: entry?.status ?? EvidenceEntryStatus.pending,
       merchant: entry?.merchant ?? '',
       projectName: entry?.projectName ?? initialProjectName?.trim() ?? '',
+      projectStageName: entry?.projectStageName ?? '',
       note: entry?.note ?? '',
       pendingSourcePath: sourcePath,
       pendingSourceExtension: sourceExtension,
@@ -89,6 +92,7 @@ final class EvidenceEditorState extends Equatable {
     EvidenceEntryStatus? evidenceStatus,
     String? merchant,
     String? projectName,
+    String? projectStageName,
     String? note,
     Object? pendingSourcePath = _sentinel,
     Object? pendingSourceExtension = _sentinel,
@@ -109,6 +113,7 @@ final class EvidenceEditorState extends Equatable {
       evidenceStatus: evidenceStatus ?? this.evidenceStatus,
       merchant: merchant ?? this.merchant,
       projectName: projectName ?? this.projectName,
+      projectStageName: projectStageName ?? this.projectStageName,
       note: note ?? this.note,
       pendingSourcePath: identical(pendingSourcePath, _sentinel)
           ? this.pendingSourcePath
@@ -133,6 +138,7 @@ final class EvidenceEditorState extends Equatable {
     evidenceStatus,
     merchant,
     projectName,
+    projectStageName,
     note,
     pendingSourcePath,
     pendingSourceExtension,
@@ -195,7 +201,11 @@ final class EvidenceEditorCubit extends Cubit<EvidenceEditorState> {
   }
 
   void changeProjectName(String projectName) {
-    emit(_editingState(projectName: projectName));
+    emit(_editingState(projectName: projectName, projectStageName: ''));
+  }
+
+  void changeProjectStageName(String projectStageName) {
+    emit(_editingState(projectStageName: projectStageName.trim()));
   }
 
   void changeNote(String note) {
@@ -276,6 +286,7 @@ final class EvidenceEditorCubit extends Cubit<EvidenceEditorState> {
     EvidenceEntryStatus? evidenceStatus,
     String? merchant,
     String? projectName,
+    String? projectStageName,
     String? note,
     Object? pendingSourcePath = _sentinel,
     Object? pendingSourceExtension = _sentinel,
@@ -290,6 +301,7 @@ final class EvidenceEditorCubit extends Cubit<EvidenceEditorState> {
       evidenceStatus: evidenceStatus,
       merchant: merchant,
       projectName: projectName,
+      projectStageName: projectStageName,
       note: note,
       pendingSourcePath: pendingSourcePath,
       pendingSourceExtension: pendingSourceExtension,
@@ -331,6 +343,8 @@ final class EvidenceEditorCubit extends Cubit<EvidenceEditorState> {
       id: state.existingEntry?.id ?? 0,
       projectName: projectName,
       projectId: state.existingEntry?.projectId,
+      projectSyncId: state.existingEntry?.projectSyncId,
+      projectStageName: _emptyToNull(state.projectStageName),
       evidenceDate: state.evidenceDate,
       amount: amount,
       currency: state.currency,
@@ -368,6 +382,10 @@ final class EvidenceEditorCubit extends Cubit<EvidenceEditorState> {
         _normalizeText(next.note) != _normalizeText(previous.note) ||
         _normalizeText(next.projectName) !=
             _normalizeText(previous.projectName) ||
+        _normalizeText(next.projectSyncId) !=
+            _normalizeText(previous.projectSyncId) ||
+        _normalizeText(next.projectStageName) !=
+            _normalizeText(previous.projectStageName) ||
         _dateOnlyOrNull(next.tripDate) != _dateOnlyOrNull(previous.tripDate);
   }
 }

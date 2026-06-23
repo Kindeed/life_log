@@ -19,6 +19,7 @@ import 'package:life_log/features/photo/domain/repositories/photo_repository_por
 import 'package:life_log/features/project/application/create_project_entry.dart';
 import 'package:life_log/features/project/application/delete_project_entry.dart';
 import 'package:life_log/features/project/application/load_project_entries.dart';
+import 'package:life_log/features/project/application/save_project_entry.dart';
 import 'package:life_log/features/project/application/watch_project_entries.dart';
 import 'package:life_log/features/project/domain/entities/project_entry.dart';
 import 'package:life_log/features/project/domain/repositories/project_repository_port.dart';
@@ -84,6 +85,24 @@ void main() {
       expect(cubit.state.status, ProjectReadStatus.failure);
       expect(cubit.state.failure?.code, 'project/load-entries');
       expect(cubit.state.failure?.message, contains('projects down'));
+    });
+
+    test('saves normalized project stage names', () async {
+      final repository = _ProjectCubitRepository(
+        entries: [_entry(id: 1, name: 'Alpha')],
+      );
+      final cubit = _cubit(repository);
+      addTearDown(cubit.close);
+
+      final failure = await cubit.saveStageNames(repository.entries.single, [
+        '合同',
+        ' ',
+        '执行',
+        '合同',
+      ]);
+
+      expect(failure, isNull);
+      expect(repository.entries.single.stageNames, ['合同', '执行']);
     });
   });
 
@@ -188,6 +207,36 @@ void main() {
     });
   });
 
+  group('LoadProjectWorkLogTrips', () {
+    test(
+      'loads linked trips and can include unlinked trips for relinking',
+      () async {
+        final repository = _ProjectWorkLogRepository([
+          _trip(id: 1, projectName: 'Alpha'),
+          _trip(id: 2, projectName: 'Beta'),
+          WorkLogEntry(
+            id: 3,
+            date: DateTime(2026, 5, 3),
+            type: WorkLogEntryType.businessTrip,
+          ),
+          WorkLogEntry(
+            id: 4,
+            date: DateTime(2026, 5, 4),
+            type: WorkLogEntryType.work,
+            projectName: 'Alpha',
+          ),
+        ]);
+        final loadTrips = LoadProjectWorkLogTrips(repository);
+
+        final linkedOnly = await loadTrips('Alpha');
+        final withUnlinked = await loadTrips('Alpha', includeUnlinked: true);
+
+        expect(linkedOnly.valueOrNull!.map((entry) => entry.id), [1]);
+        expect(withUnlinked.valueOrNull!.map((entry) => entry.id), [3, 1]);
+      },
+    );
+  });
+
   group('Project read UI ownership', () {
     test('routes project overview read state through ProjectCubit', () {
       final photoView = File(
@@ -262,6 +311,7 @@ ProjectCubit _cubit(_ProjectCubitRepository repository) {
   return ProjectCubit(
     loadEntries: LoadProjectEntries(repository),
     watchEntries: WatchProjectEntries(repository),
+    saveEntry: SaveProjectEntry(repository),
   );
 }
 
@@ -269,8 +319,14 @@ ProjectEntry _entry({
   required int id,
   required String name,
   ProjectEntryStatus status = ProjectEntryStatus.active,
+  List<String> stageNames = const <String>[],
 }) {
-  return ProjectEntry(id: id, name: name, status: status);
+  return ProjectEntry(
+    id: id,
+    name: name,
+    status: status,
+    stageNames: stageNames,
+  );
 }
 
 final class _ProjectCubitRepository implements ProjectRepositoryPort {
@@ -312,6 +368,15 @@ final class _ProjectCubitRepository implements ProjectRepositoryPort {
       status: ProjectEntryStatus.active,
     );
     entries = [...entries, entry];
+    return entry;
+  }
+
+  @override
+  Future<ProjectEntry> saveEntry(ProjectEntry entry) async {
+    entries = [
+      for (final item in entries)
+        if (item.id == entry.id) entry else item,
+    ];
     return entry;
   }
 

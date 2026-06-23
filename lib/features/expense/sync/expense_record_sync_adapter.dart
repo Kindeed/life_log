@@ -95,6 +95,7 @@ final class ExpenseRecordSyncAdapter implements SyncAdapter<ExpenseRecord> {
       'note': entity.note,
       'project_name': entity.projectName,
       'project_sync_id': entity.projectSyncId,
+      'project_stage_name': entity.projectStageName,
       'trip_work_log_sync_id': entity.tripWorkLogSyncId,
       'deleted_at': null,
       'updated_at': DateTime.now().toUtc().toIso8601String(),

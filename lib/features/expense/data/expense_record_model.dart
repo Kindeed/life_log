@@ -44,6 +44,9 @@ class ExpenseRecord {
   @Index(caseSensitive: false)
   String? projectName;
 
+  @Index(caseSensitive: false)
+  String? projectStageName;
+
   @Index()
   int? tripWorkLogId;
 
@@ -83,6 +86,7 @@ extension ExpenseRecordBusinessChanges on ExpenseRecord {
         projectId != other.projectId ||
         projectSyncId != other.projectSyncId ||
         projectName != other.projectName ||
+        projectStageName != other.projectStageName ||
         tripWorkLogId != other.tripWorkLogId ||
         tripWorkLogSyncId != other.tripWorkLogSyncId;
   }

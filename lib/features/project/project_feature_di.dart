@@ -9,6 +9,7 @@ import 'package:life_log/features/photo/application/load_photo_entries.dart';
 import 'package:life_log/features/project/application/create_project_entry.dart';
 import 'package:life_log/features/project/application/delete_project_entry.dart';
 import 'package:life_log/features/project/application/load_project_entries.dart';
+import 'package:life_log/features/project/application/save_project_entry.dart';
 import 'package:life_log/features/project/application/watch_project_entries.dart';
 import 'package:life_log/features/project/data/legacy_project_repository_adapter.dart';
 import 'package:life_log/features/project/data/project_repository.dart';
@@ -55,6 +56,12 @@ GetIt configureProjectFeatureDependencies({
     );
   }
 
+  if (!activeLocator.isRegistered<SaveProjectEntry>()) {
+    activeLocator.registerLazySingleton<SaveProjectEntry>(
+      () => SaveProjectEntry(activeLocator<ProjectRepositoryPort>()),
+    );
+  }
+
   if (!activeLocator.isRegistered<DeleteProjectEntry>()) {
     activeLocator.registerLazySingleton<DeleteProjectEntry>(
       () => DeleteProjectEntry(
@@ -76,6 +83,7 @@ GetIt configureProjectFeatureDependencies({
       () => ProjectCubit(
         loadEntries: activeLocator<LoadProjectEntries>(),
         watchEntries: activeLocator<WatchProjectEntries>(),
+        saveEntry: activeLocator<SaveProjectEntry>(),
       ),
     );
   }

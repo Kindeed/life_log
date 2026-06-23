@@ -89,6 +89,7 @@ final class ProjectSyncAdapter implements SyncAdapter<Project> {
       'local_id': entity.id,
       'name': entity.name,
       'status': entity.status.name,
+      'stage_names': entity.stageNames,
       'deleted_at': null,
       'updated_at': DateTime.now().toUtc().toIso8601String(),
       'created_at': entity.createdAt.toUtc().toIso8601String(),

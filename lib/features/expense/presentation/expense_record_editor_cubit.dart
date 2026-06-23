@@ -25,6 +25,7 @@ final class ExpenseRecordEditorState extends Equatable {
   final ExpenseRecordEntryCategory category;
   final String merchant;
   final String projectName;
+  final String projectStageName;
   final int? tripWorkLogId;
   final String? tripWorkLogSyncId;
   final String note;
@@ -40,6 +41,7 @@ final class ExpenseRecordEditorState extends Equatable {
     required this.category,
     required this.merchant,
     required this.projectName,
+    required this.projectStageName,
     required this.tripWorkLogId,
     required this.tripWorkLogSyncId,
     required this.note,
@@ -63,6 +65,7 @@ final class ExpenseRecordEditorState extends Equatable {
       category: entry?.category ?? ExpenseRecordEntryCategory.other,
       merchant: entry?.merchant ?? '',
       projectName: entry?.projectName ?? initialProjectName?.trim() ?? '',
+      projectStageName: entry?.projectStageName ?? '',
       tripWorkLogId: entry?.tripWorkLogId,
       tripWorkLogSyncId: entry?.tripWorkLogSyncId,
       note: entry?.note ?? '',
@@ -77,6 +80,7 @@ final class ExpenseRecordEditorState extends Equatable {
     ExpenseRecordEntryCategory? category,
     String? merchant,
     String? projectName,
+    String? projectStageName,
     int? tripWorkLogId,
     String? tripWorkLogSyncId,
     bool clearTripWorkLog = false,
@@ -94,6 +98,7 @@ final class ExpenseRecordEditorState extends Equatable {
       category: category ?? this.category,
       merchant: merchant ?? this.merchant,
       projectName: projectName ?? this.projectName,
+      projectStageName: projectStageName ?? this.projectStageName,
       tripWorkLogId: clearTripWorkLog
           ? null
           : tripWorkLogId ?? this.tripWorkLogId,
@@ -116,6 +121,7 @@ final class ExpenseRecordEditorState extends Equatable {
     category,
     merchant,
     projectName,
+    projectStageName,
     tripWorkLogId,
     tripWorkLogSyncId,
     note,
@@ -166,9 +172,14 @@ final class ExpenseRecordEditorCubit extends Cubit<ExpenseRecordEditorState> {
     emit(
       _editingState(
         projectName: projectName,
+        projectStageName: '',
         clearTripWorkLog: nextProjectName != state.projectName.trim(),
       ),
     );
+  }
+
+  void changeProjectStageName(String projectStageName) {
+    emit(_editingState(projectStageName: projectStageName.trim()));
   }
 
   void changeTripWorkLog({int? id, String? syncId}) {
@@ -252,6 +263,7 @@ final class ExpenseRecordEditorCubit extends Cubit<ExpenseRecordEditorState> {
     ExpenseRecordEntryCategory? category,
     String? merchant,
     String? projectName,
+    String? projectStageName,
     int? tripWorkLogId,
     String? tripWorkLogSyncId,
     bool clearTripWorkLog = false,
@@ -264,6 +276,7 @@ final class ExpenseRecordEditorCubit extends Cubit<ExpenseRecordEditorState> {
       category: category,
       merchant: merchant,
       projectName: projectName,
+      projectStageName: projectStageName,
       tripWorkLogId: tripWorkLogId,
       tripWorkLogSyncId: tripWorkLogSyncId,
       clearTripWorkLog: clearTripWorkLog,
@@ -297,6 +310,7 @@ final class ExpenseRecordEditorCubit extends Cubit<ExpenseRecordEditorState> {
       projectId: state.existingEntry?.projectId,
       projectSyncId: state.existingEntry?.projectSyncId,
       projectName: _emptyToNull(state.projectName),
+      projectStageName: _emptyToNull(state.projectStageName),
       tripWorkLogId: state.tripWorkLogId,
       tripWorkLogSyncId: _emptyToNull(state.tripWorkLogSyncId ?? ''),
       note: _emptyToNull(state.note),
@@ -327,6 +341,8 @@ final class ExpenseRecordEditorCubit extends Cubit<ExpenseRecordEditorState> {
             _normalizeText(previous.projectSyncId) ||
         _normalizeText(next.projectName) !=
             _normalizeText(previous.projectName) ||
+        _normalizeText(next.projectStageName) !=
+            _normalizeText(previous.projectStageName) ||
         next.tripWorkLogId != previous.tripWorkLogId ||
         _normalizeText(next.tripWorkLogSyncId) !=
             _normalizeText(previous.tripWorkLogSyncId);

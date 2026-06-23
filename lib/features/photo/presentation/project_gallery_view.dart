@@ -62,7 +62,7 @@ class _ProjectGalleryViewState extends State<ProjectGalleryView>
     evidenceCubit = serviceLocator<EvidenceCubit>()..start();
     expenseCubit = serviceLocator<ExpenseRecordCubit>()..start();
     unawaited(_loadProjectTrips());
-    _tabController = TabController(length: 5, vsync: this);
+    _tabController = TabController(length: 4, vsync: this);
     _tabController.addListener(_handleTabChanged);
   }
 
@@ -115,7 +115,6 @@ class _ProjectGalleryViewState extends State<ProjectGalleryView>
                             icon: Icon(Icons.receipt_long_rounded),
                             text: '凭证',
                           ),
-                          Tab(icon: Icon(Icons.payments_rounded), text: '项目费用'),
                         ],
                       ),
                       actions: [
@@ -363,15 +362,13 @@ class _ProjectGalleryViewState extends State<ProjectGalleryView>
                             );
                           },
                         ),
-                        _buildEvidenceList(
-                          evidenceState.entriesForProject(widget.projectName),
-                          textSecondary,
-                          theme,
-                        ),
                         BlocBuilder<ExpenseRecordCubit, ExpenseRecordState>(
                           bloc: expenseCubit,
                           builder: (context, expenseState) {
-                            return _buildExpenseList(
+                            return _buildEvidenceAndExpenseList(
+                              evidenceState.entriesForProject(
+                                widget.projectName,
+                              ),
                               expenseState.entriesForProject(
                                 widget.projectName,
                               ),
@@ -465,9 +462,7 @@ class _ProjectGalleryViewState extends State<ProjectGalleryView>
   String get _addActionLabel {
     switch (_tabController.index) {
       case 3:
-        return "添加凭证";
-      case 4:
-        return "添加项目费用";
+        return "添加记录";
       case 2:
       default:
         return "添加照片";
@@ -478,8 +473,6 @@ class _ProjectGalleryViewState extends State<ProjectGalleryView>
     switch (_tabController.index) {
       case 3:
         return Icons.receipt_long_rounded;
-      case 4:
-        return Icons.payments_rounded;
       case 2:
       default:
         return Icons.add_photo_alternate_rounded;
@@ -489,6 +482,7 @@ class _ProjectGalleryViewState extends State<ProjectGalleryView>
   Future<void> _loadProjectTrips() async {
     final result = await serviceLocator<LoadProjectWorkLogTrips>().call(
       widget.projectName,
+      includeUnlinked: true,
     );
     if (!mounted) return;
     setState(() {
@@ -502,14 +496,7 @@ class _ProjectGalleryViewState extends State<ProjectGalleryView>
   void _runCurrentAddAction() {
     switch (_tabController.index) {
       case 3:
-        _showEvidenceAddActions();
-        break;
-      case 4:
-        openExpenseRecordEditorPage(
-          context,
-          initialProjectName: widget.projectName,
-          onSavedOrDeleted: expenseCubit.loadEntries,
-        );
+        _showProjectRecordAddActions();
         break;
       case 2:
       default:
@@ -692,6 +679,47 @@ class _ProjectGalleryViewState extends State<ProjectGalleryView>
           ),
         ),
         SizedBox(height: 12.h),
+        if (project != null) ...[
+          Card(
+            child: Padding(
+              padding: EdgeInsets.all(16.w),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    children: [
+                      Expanded(
+                        child: Text(
+                          '项目节点',
+                          style: theme.textTheme.titleMedium?.copyWith(
+                            fontWeight: FontWeight.w800,
+                          ),
+                        ),
+                      ),
+                      TextButton(
+                        onPressed: () => _showProjectStagesDialog(project),
+                        child: const Text('编辑节点'),
+                      ),
+                    ],
+                  ),
+                  SizedBox(height: 8.h),
+                  if (project.stageNames.isEmpty)
+                    Text('未设置节点', style: TextStyle(color: textSecondary))
+                  else
+                    Wrap(
+                      spacing: 8.w,
+                      runSpacing: 8.h,
+                      children: project.stageNames
+                          .map((stage) => Chip(label: Text(stage)))
+                          .toList(),
+                    ),
+                ],
+              ),
+            ),
+          ),
+          SizedBox(height: 12.h),
+        ],
+        SizedBox(height: 12.h),
         GridView.count(
           crossAxisCount: 2,
           crossAxisSpacing: 10.w,
@@ -780,6 +808,8 @@ class _ProjectGalleryViewState extends State<ProjectGalleryView>
               title: evidenceDisplayTitle(legacyItem),
               subtitle: [
                 evidenceDisplaySubtitle(legacyItem),
+                if (entry.projectStageName?.trim().isNotEmpty == true)
+                  entry.projectStageName!.trim(),
                 entry.status.label,
                 if ((entry.amount ?? 0) > 0) formatMoney(entry.amount ?? 0),
               ].join(' · '),
@@ -796,8 +826,12 @@ class _ProjectGalleryViewState extends State<ProjectGalleryView>
                   title: entry.merchant?.trim().isNotEmpty == true
                       ? entry.merchant!.trim()
                       : entry.category.label,
-                  subtitle:
-                      '${entry.category.label} · ${formatMoney(entry.amount)}',
+                  subtitle: [
+                    entry.category.label,
+                    if (entry.projectStageName?.trim().isNotEmpty == true)
+                      entry.projectStageName!.trim(),
+                    formatMoney(entry.amount),
+                  ].join(' · '),
                   icon: Icons.payments_rounded,
                 ),
               ),
@@ -812,6 +846,8 @@ class _ProjectGalleryViewState extends State<ProjectGalleryView>
               subtitle: [
                 if (entry.transport?.trim().isNotEmpty == true)
                   entry.transport!.trim(),
+                if (entry.projectStageName?.trim().isNotEmpty == true)
+                  entry.projectStageName!.trim(),
                 if ((entry.expenses ?? 0) > 0) formatMoney(entry.expenses ?? 0),
                 entry.isReimbursed ? '已报销' : '未报销',
               ].join(' · '),
@@ -888,89 +924,93 @@ class _ProjectGalleryViewState extends State<ProjectGalleryView>
     );
   }
 
-  Widget _buildEvidenceList(
-    List<EvidenceEntry> items,
-    Color textSecondary,
-    ThemeData theme,
-  ) {
-    if (items.isEmpty) {
-      return Center(
-        child: Text('此项目下暂无凭证', style: TextStyle(color: textSecondary)),
-      );
-    }
-    return ListView.separated(
-      padding: EdgeInsets.all(12.w),
-      itemCount: items.length,
-      separatorBuilder: (_, _) => SizedBox(height: 10.h),
-      itemBuilder: (context, index) {
-        final item = items[index];
-        final legacyItem = legacyEvidenceFromEntry(item);
-        return ListTile(
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(12),
-          ),
-          tileColor: theme.cardColor,
-          leading: const Icon(Icons.receipt_long_rounded),
-          title: Text(
-            evidenceDisplayTitle(legacyItem),
-            maxLines: 1,
-            overflow: TextOverflow.ellipsis,
-          ),
-          subtitle: Text(
-            evidenceDisplaySubtitle(legacyItem),
-            maxLines: 1,
-            overflow: TextOverflow.ellipsis,
-          ),
-          trailing: Text('¥${(item.amount ?? 0).toStringAsFixed(2)}'),
-          onTap: () => showEvidenceDetailSheet(context, legacyItem),
-        );
-      },
-    );
-  }
-
-  Widget _buildExpenseList(
+  Widget _buildEvidenceAndExpenseList(
+    List<EvidenceEntry> evidenceItems,
     List<ExpenseRecordEntry> records,
     Color textSecondary,
     ThemeData theme,
   ) {
-    if (records.isEmpty) {
+    if (evidenceItems.isEmpty && records.isEmpty) {
       return Center(
-        child: Text('此项目下暂无项目费用', style: TextStyle(color: textSecondary)),
+        child: Text('此项目下暂无凭证或项目费用', style: TextStyle(color: textSecondary)),
       );
     }
-    return ListView.separated(
-      padding: EdgeInsets.all(12.w),
-      itemCount: records.length,
-      separatorBuilder: (_, _) => SizedBox(height: 10.h),
-      itemBuilder: (context, index) {
-        final record = records[index];
+
+    final children = <Widget>[];
+    if (evidenceItems.isNotEmpty) {
+      children.add(const _ProjectListSectionHeader(title: '凭证'));
+      for (final item in evidenceItems) {
+        final legacyItem = legacyEvidenceFromEntry(item);
+        children.add(
+          ListTile(
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(12),
+            ),
+            tileColor: theme.cardColor,
+            leading: const Icon(Icons.receipt_long_rounded),
+            title: Text(
+              evidenceDisplayTitle(legacyItem),
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+            ),
+            subtitle: Text(
+              [
+                evidenceDisplaySubtitle(legacyItem),
+                if (item.projectStageName?.trim().isNotEmpty == true)
+                  item.projectStageName!.trim(),
+              ].join(' · '),
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+            ),
+            trailing: Text(formatMoney(item.amount ?? 0)),
+            onTap: () => showEvidenceDetailSheet(context, legacyItem),
+          ),
+        );
+      }
+    }
+    if (records.isNotEmpty) {
+      children.add(const _ProjectListSectionHeader(title: '项目费用'));
+      for (final record in records) {
         final isDuplicate = _isDuplicateExpenseRecord(record, records);
         final title = record.merchant?.trim().isNotEmpty == true
             ? record.merchant!.trim()
             : record.category.label;
-        return ListTile(
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(12),
-          ),
-          tileColor: theme.cardColor,
-          leading: const Icon(Icons.payments_rounded),
-          title: Text(title),
-          subtitle: Text(
-            [
-              formatDateYmd(record.expenseDate),
-              record.category.label,
-              if (record.tripWorkLogId != null) '已关联出差',
-              if (isDuplicate) '疑似重复',
-            ].join(' · '),
-          ),
-          trailing: Text(formatMoney(record.amount)),
-          onTap: () => openExpenseRecordEditorPage(
-            context,
-            entry: record,
-            onSavedOrDeleted: expenseCubit.loadEntries,
+        children.add(
+          ListTile(
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(12),
+            ),
+            tileColor: theme.cardColor,
+            leading: const Icon(Icons.payments_rounded),
+            title: Text(title, maxLines: 1, overflow: TextOverflow.ellipsis),
+            subtitle: Text(
+              [
+                formatDateYmd(record.expenseDate),
+                record.category.label,
+                if (record.projectStageName?.trim().isNotEmpty == true)
+                  record.projectStageName!.trim(),
+                if (record.tripWorkLogId != null) '已关联出差',
+                if (isDuplicate) '疑似重复',
+              ].join(' · '),
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+            ),
+            trailing: Text(formatMoney(record.amount)),
+            onTap: () => openExpenseRecordEditorPage(
+              context,
+              entry: record,
+              onSavedOrDeleted: expenseCubit.loadEntries,
+            ),
           ),
         );
-      },
+      }
+    }
+
+    return ListView.separated(
+      padding: EdgeInsets.all(12.w),
+      itemCount: children.length,
+      separatorBuilder: (_, _) => SizedBox(height: 10.h),
+      itemBuilder: (context, index) => children[index],
     );
   }
 
@@ -1016,6 +1056,99 @@ class _ProjectGalleryViewState extends State<ProjectGalleryView>
       initialProject: widget.projectName,
       title: "添加凭证",
       manualSubtitle: "没有图片时再补充文字",
+    );
+  }
+
+  Future<void> _showProjectStagesDialog(ProjectEntry project) async {
+    final controller = TextEditingController(
+      text: project.stageNames.join('\n'),
+    );
+    final messenger = ScaffoldMessenger.of(context);
+    final result = await showDialog<List<String>>(
+      context: context,
+      builder: (dialogContext) {
+        return AlertDialog(
+          title: const Text('项目节点'),
+          content: TextField(
+            controller: controller,
+            minLines: 4,
+            maxLines: 8,
+            decoration: const InputDecoration(hintText: '每行一个节点，例如：合同签订'),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(dialogContext).pop(),
+              child: const Text('取消'),
+            ),
+            FilledButton(
+              onPressed: () {
+                Navigator.of(dialogContext).pop(
+                  controller.text
+                      .split(RegExp(r'[\r\n]+'))
+                      .map((line) => line.trim())
+                      .where((line) => line.isNotEmpty)
+                      .toList(),
+                );
+              },
+              child: const Text('保存'),
+            ),
+          ],
+        );
+      },
+    );
+    controller.dispose();
+    if (result == null) return;
+    final failure = await projectCubit.saveStageNames(project, result);
+    if (!mounted) return;
+    if (failure != null) {
+      messenger.showSnackBar(SnackBar(content: Text(failure.message)));
+      return;
+    }
+    messenger.showSnackBar(const SnackBar(content: Text('项目节点已保存')));
+  }
+
+  void _showProjectRecordAddActions() {
+    showPhotoActionSheet(
+      context,
+      title: "添加记录",
+      actions: [
+        PhotoActionSheetItem(
+          icon: Icons.receipt_long_rounded,
+          title: "添加凭证",
+          onTap: _showEvidenceAddActions,
+        ),
+        PhotoActionSheetItem(
+          icon: Icons.payments_rounded,
+          title: "添加项目费用",
+          onTap: () {
+            openExpenseRecordEditorPage(
+              context,
+              initialProjectName: widget.projectName,
+              onSavedOrDeleted: expenseCubit.loadEntries,
+            );
+          },
+        ),
+      ],
+    );
+  }
+}
+
+class _ProjectListSectionHeader extends StatelessWidget {
+  final String title;
+
+  const _ProjectListSectionHeader({required this.title});
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: EdgeInsets.only(top: 4.h, left: 4.w),
+      child: Text(
+        title,
+        style: Theme.of(context).textTheme.titleSmall?.copyWith(
+          fontWeight: FontWeight.w800,
+          color: Theme.of(context).colorScheme.onSurfaceVariant,
+        ),
+      ),
     );
   }
 }

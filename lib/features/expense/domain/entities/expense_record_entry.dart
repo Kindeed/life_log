@@ -35,6 +35,7 @@ final class ExpenseRecordEntry extends Equatable {
   final int? projectId;
   final String? projectSyncId;
   final String? projectName;
+  final String? projectStageName;
   final int? tripWorkLogId;
   final String? tripWorkLogSyncId;
 
@@ -51,6 +52,7 @@ final class ExpenseRecordEntry extends Equatable {
     this.projectId,
     this.projectSyncId,
     this.projectName,
+    this.projectStageName,
     this.tripWorkLogId,
     this.tripWorkLogSyncId,
   });
@@ -69,6 +71,7 @@ final class ExpenseRecordEntry extends Equatable {
     projectId,
     projectSyncId,
     projectName,
+    projectStageName,
     tripWorkLogId,
     tripWorkLogSyncId,
   ];

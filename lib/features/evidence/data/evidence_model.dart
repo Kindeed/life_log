@@ -32,6 +32,9 @@ class ExpenseEvidence {
   @Index(caseSensitive: false)
   String? projectSyncId;
 
+  @Index(caseSensitive: false)
+  String? projectStageName;
+
   @Index()
   late DateTime evidenceDate;
 
@@ -73,6 +76,7 @@ extension ExpenseEvidenceBusinessChanges on ExpenseEvidence {
     return projectName != other.projectName ||
         projectId != other.projectId ||
         projectSyncId != other.projectSyncId ||
+        projectStageName != other.projectStageName ||
         evidenceDate != other.evidenceDate ||
         amount != other.amount ||
         currency != other.currency ||

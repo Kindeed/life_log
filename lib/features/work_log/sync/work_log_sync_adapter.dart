@@ -95,6 +95,7 @@ final class WorkLogSyncAdapter implements SyncAdapter<WorkLog> {
           : null,
       'linked_project_name': entity.projectName,
       'project_sync_id': entity.projectSyncId,
+      'project_stage_name': entity.projectStageName,
       'transport': entity.transport,
       'expenses': entity.expenses,
       'is_reimbursed': entity.isReimbursed,

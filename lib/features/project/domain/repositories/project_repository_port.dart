@@ -7,5 +7,7 @@ abstract interface class ProjectRepositoryPort {
 
   Future<ProjectEntry> ensureEntry(String name);
 
+  Future<ProjectEntry> saveEntry(ProjectEntry entry);
+
   Future<void> deleteEntry(ProjectEntry entry);
 }

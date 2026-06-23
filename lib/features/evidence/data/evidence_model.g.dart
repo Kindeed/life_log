@@ -86,51 +86,56 @@ const ExpenseEvidenceSchema = CollectionSchema(
       name: r'projectName',
       type: IsarType.string,
     ),
-    r'projectSyncId': PropertySchema(
+    r'projectStageName': PropertySchema(
       id: 16,
+      name: r'projectStageName',
+      type: IsarType.string,
+    ),
+    r'projectSyncId': PropertySchema(
+      id: 17,
       name: r'projectSyncId',
       type: IsarType.string,
     ),
-    r'remoteId': PropertySchema(id: 17, name: r'remoteId', type: IsarType.long),
+    r'remoteId': PropertySchema(id: 18, name: r'remoteId', type: IsarType.long),
     r'remoteStoragePath': PropertySchema(
-      id: 18,
+      id: 19,
       name: r'remoteStoragePath',
       type: IsarType.string,
     ),
     r'remoteUpdatedAt': PropertySchema(
-      id: 19,
+      id: 20,
       name: r'remoteUpdatedAt',
       type: IsarType.dateTime,
     ),
     r'remoteVersion': PropertySchema(
-      id: 20,
+      id: 21,
       name: r'remoteVersion',
       type: IsarType.long,
     ),
     r'status': PropertySchema(
-      id: 21,
+      id: 22,
       name: r'status',
       type: IsarType.byte,
       enumMap: _ExpenseEvidencestatusEnumValueMap,
     ),
-    r'syncId': PropertySchema(id: 22, name: r'syncId', type: IsarType.string),
+    r'syncId': PropertySchema(id: 23, name: r'syncId', type: IsarType.string),
     r'syncedAt': PropertySchema(
-      id: 23,
+      id: 24,
       name: r'syncedAt',
       type: IsarType.dateTime,
     ),
     r'tripDate': PropertySchema(
-      id: 24,
+      id: 25,
       name: r'tripDate',
       type: IsarType.dateTime,
     ),
     r'updatedAt': PropertySchema(
-      id: 25,
+      id: 26,
       name: r'updatedAt',
       type: IsarType.dateTime,
     ),
     r'uploadedAt': PropertySchema(
-      id: 26,
+      id: 27,
       name: r'uploadedAt',
       type: IsarType.dateTime,
     ),
@@ -188,6 +193,19 @@ const ExpenseEvidenceSchema = CollectionSchema(
       properties: [
         IndexPropertySchema(
           name: r'projectSyncId',
+          type: IndexType.hash,
+          caseSensitive: false,
+        ),
+      ],
+    ),
+    r'projectStageName': IndexSchema(
+      id: -4550830919915173385,
+      name: r'projectStageName',
+      unique: false,
+      replace: false,
+      properties: [
+        IndexPropertySchema(
+          name: r'projectStageName',
           type: IndexType.hash,
           caseSensitive: false,
         ),
@@ -260,6 +278,12 @@ int _expenseEvidenceEstimateSize(
   }
   bytesCount += 3 + object.projectName.length * 3;
   {
+    final value = object.projectStageName;
+    if (value != null) {
+      bytesCount += 3 + value.length * 3;
+    }
+  }
+  {
     final value = object.projectSyncId;
     if (value != null) {
       bytesCount += 3 + value.length * 3;
@@ -302,17 +326,18 @@ void _expenseEvidenceSerialize(
   writer.writeBool(offsets[13], object.pendingDelete);
   writer.writeLong(offsets[14], object.projectId);
   writer.writeString(offsets[15], object.projectName);
-  writer.writeString(offsets[16], object.projectSyncId);
-  writer.writeLong(offsets[17], object.remoteId);
-  writer.writeString(offsets[18], object.remoteStoragePath);
-  writer.writeDateTime(offsets[19], object.remoteUpdatedAt);
-  writer.writeLong(offsets[20], object.remoteVersion);
-  writer.writeByte(offsets[21], object.status.index);
-  writer.writeString(offsets[22], object.syncId);
-  writer.writeDateTime(offsets[23], object.syncedAt);
-  writer.writeDateTime(offsets[24], object.tripDate);
-  writer.writeDateTime(offsets[25], object.updatedAt);
-  writer.writeDateTime(offsets[26], object.uploadedAt);
+  writer.writeString(offsets[16], object.projectStageName);
+  writer.writeString(offsets[17], object.projectSyncId);
+  writer.writeLong(offsets[18], object.remoteId);
+  writer.writeString(offsets[19], object.remoteStoragePath);
+  writer.writeDateTime(offsets[20], object.remoteUpdatedAt);
+  writer.writeLong(offsets[21], object.remoteVersion);
+  writer.writeByte(offsets[22], object.status.index);
+  writer.writeString(offsets[23], object.syncId);
+  writer.writeDateTime(offsets[24], object.syncedAt);
+  writer.writeDateTime(offsets[25], object.tripDate);
+  writer.writeDateTime(offsets[26], object.updatedAt);
+  writer.writeDateTime(offsets[27], object.uploadedAt);
 }
 
 ExpenseEvidence _expenseEvidenceDeserialize(
@@ -341,19 +366,20 @@ ExpenseEvidence _expenseEvidenceDeserialize(
   object.pendingDelete = reader.readBool(offsets[13]);
   object.projectId = reader.readLongOrNull(offsets[14]);
   object.projectName = reader.readString(offsets[15]);
-  object.projectSyncId = reader.readStringOrNull(offsets[16]);
-  object.remoteId = reader.readLongOrNull(offsets[17]);
-  object.remoteStoragePath = reader.readStringOrNull(offsets[18]);
-  object.remoteUpdatedAt = reader.readDateTimeOrNull(offsets[19]);
-  object.remoteVersion = reader.readLong(offsets[20]);
+  object.projectStageName = reader.readStringOrNull(offsets[16]);
+  object.projectSyncId = reader.readStringOrNull(offsets[17]);
+  object.remoteId = reader.readLongOrNull(offsets[18]);
+  object.remoteStoragePath = reader.readStringOrNull(offsets[19]);
+  object.remoteUpdatedAt = reader.readDateTimeOrNull(offsets[20]);
+  object.remoteVersion = reader.readLong(offsets[21]);
   object.status =
-      _ExpenseEvidencestatusValueEnumMap[reader.readByteOrNull(offsets[21])] ??
+      _ExpenseEvidencestatusValueEnumMap[reader.readByteOrNull(offsets[22])] ??
       EvidenceStatus.pending;
-  object.syncId = reader.readStringOrNull(offsets[22]);
-  object.syncedAt = reader.readDateTimeOrNull(offsets[23]);
-  object.tripDate = reader.readDateTimeOrNull(offsets[24]);
-  object.updatedAt = reader.readDateTimeOrNull(offsets[25]);
-  object.uploadedAt = reader.readDateTimeOrNull(offsets[26]);
+  object.syncId = reader.readStringOrNull(offsets[23]);
+  object.syncedAt = reader.readDateTimeOrNull(offsets[24]);
+  object.tripDate = reader.readDateTimeOrNull(offsets[25]);
+  object.updatedAt = reader.readDateTimeOrNull(offsets[26]);
+  object.uploadedAt = reader.readDateTimeOrNull(offsets[27]);
   return object;
 }
 
@@ -403,28 +429,30 @@ P _expenseEvidenceDeserializeProp<P>(
     case 16:
       return (reader.readStringOrNull(offset)) as P;
     case 17:
-      return (reader.readLongOrNull(offset)) as P;
-    case 18:
       return (reader.readStringOrNull(offset)) as P;
+    case 18:
+      return (reader.readLongOrNull(offset)) as P;
     case 19:
-      return (reader.readDateTimeOrNull(offset)) as P;
+      return (reader.readStringOrNull(offset)) as P;
     case 20:
-      return (reader.readLong(offset)) as P;
+      return (reader.readDateTimeOrNull(offset)) as P;
     case 21:
+      return (reader.readLong(offset)) as P;
+    case 22:
       return (_ExpenseEvidencestatusValueEnumMap[reader.readByteOrNull(
                 offset,
               )] ??
               EvidenceStatus.pending)
           as P;
-    case 22:
-      return (reader.readStringOrNull(offset)) as P;
     case 23:
-      return (reader.readDateTimeOrNull(offset)) as P;
+      return (reader.readStringOrNull(offset)) as P;
     case 24:
       return (reader.readDateTimeOrNull(offset)) as P;
     case 25:
       return (reader.readDateTimeOrNull(offset)) as P;
     case 26:
+      return (reader.readDateTimeOrNull(offset)) as P;
+    case 27:
       return (reader.readDateTimeOrNull(offset)) as P;
     default:
       throw IsarError('Unknown property with id $propertyId');
@@ -953,6 +981,84 @@ extension ExpenseEvidenceQueryWhere
                 indexName: r'projectSyncId',
                 lower: [],
                 upper: [projectSyncId],
+                includeUpper: false,
+              ),
+            );
+      }
+    });
+  }
+
+  QueryBuilder<ExpenseEvidence, ExpenseEvidence, QAfterWhereClause>
+  projectStageNameIsNull() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addWhereClause(
+        IndexWhereClause.equalTo(indexName: r'projectStageName', value: [null]),
+      );
+    });
+  }
+
+  QueryBuilder<ExpenseEvidence, ExpenseEvidence, QAfterWhereClause>
+  projectStageNameIsNotNull() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addWhereClause(
+        IndexWhereClause.between(
+          indexName: r'projectStageName',
+          lower: [null],
+          includeLower: false,
+          upper: [],
+        ),
+      );
+    });
+  }
+
+  QueryBuilder<ExpenseEvidence, ExpenseEvidence, QAfterWhereClause>
+  projectStageNameEqualTo(String? projectStageName) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addWhereClause(
+        IndexWhereClause.equalTo(
+          indexName: r'projectStageName',
+          value: [projectStageName],
+        ),
+      );
+    });
+  }
+
+  QueryBuilder<ExpenseEvidence, ExpenseEvidence, QAfterWhereClause>
+  projectStageNameNotEqualTo(String? projectStageName) {
+    return QueryBuilder.apply(this, (query) {
+      if (query.whereSort == Sort.asc) {
+        return query
+            .addWhereClause(
+              IndexWhereClause.between(
+                indexName: r'projectStageName',
+                lower: [],
+                upper: [projectStageName],
+                includeUpper: false,
+              ),
+            )
+            .addWhereClause(
+              IndexWhereClause.between(
+                indexName: r'projectStageName',
+                lower: [projectStageName],
+                includeLower: false,
+                upper: [],
+              ),
+            );
+      } else {
+        return query
+            .addWhereClause(
+              IndexWhereClause.between(
+                indexName: r'projectStageName',
+                lower: [projectStageName],
+                includeLower: false,
+                upper: [],
+              ),
+            )
+            .addWhereClause(
+              IndexWhereClause.between(
+                indexName: r'projectStageName',
+                lower: [],
+                upper: [projectStageName],
                 includeUpper: false,
               ),
             );
@@ -2794,6 +2900,165 @@ extension ExpenseEvidenceQueryFilter
   }
 
   QueryBuilder<ExpenseEvidence, ExpenseEvidence, QAfterFilterCondition>
+  projectStageNameIsNull() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(
+        const FilterCondition.isNull(property: r'projectStageName'),
+      );
+    });
+  }
+
+  QueryBuilder<ExpenseEvidence, ExpenseEvidence, QAfterFilterCondition>
+  projectStageNameIsNotNull() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(
+        const FilterCondition.isNotNull(property: r'projectStageName'),
+      );
+    });
+  }
+
+  QueryBuilder<ExpenseEvidence, ExpenseEvidence, QAfterFilterCondition>
+  projectStageNameEqualTo(String? value, {bool caseSensitive = true}) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(
+        FilterCondition.equalTo(
+          property: r'projectStageName',
+          value: value,
+          caseSensitive: caseSensitive,
+        ),
+      );
+    });
+  }
+
+  QueryBuilder<ExpenseEvidence, ExpenseEvidence, QAfterFilterCondition>
+  projectStageNameGreaterThan(
+    String? value, {
+    bool include = false,
+    bool caseSensitive = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(
+        FilterCondition.greaterThan(
+          include: include,
+          property: r'projectStageName',
+          value: value,
+          caseSensitive: caseSensitive,
+        ),
+      );
+    });
+  }
+
+  QueryBuilder<ExpenseEvidence, ExpenseEvidence, QAfterFilterCondition>
+  projectStageNameLessThan(
+    String? value, {
+    bool include = false,
+    bool caseSensitive = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(
+        FilterCondition.lessThan(
+          include: include,
+          property: r'projectStageName',
+          value: value,
+          caseSensitive: caseSensitive,
+        ),
+      );
+    });
+  }
+
+  QueryBuilder<ExpenseEvidence, ExpenseEvidence, QAfterFilterCondition>
+  projectStageNameBetween(
+    String? lower,
+    String? upper, {
+    bool includeLower = true,
+    bool includeUpper = true,
+    bool caseSensitive = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(
+        FilterCondition.between(
+          property: r'projectStageName',
+          lower: lower,
+          includeLower: includeLower,
+          upper: upper,
+          includeUpper: includeUpper,
+          caseSensitive: caseSensitive,
+        ),
+      );
+    });
+  }
+
+  QueryBuilder<ExpenseEvidence, ExpenseEvidence, QAfterFilterCondition>
+  projectStageNameStartsWith(String value, {bool caseSensitive = true}) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(
+        FilterCondition.startsWith(
+          property: r'projectStageName',
+          value: value,
+          caseSensitive: caseSensitive,
+        ),
+      );
+    });
+  }
+
+  QueryBuilder<ExpenseEvidence, ExpenseEvidence, QAfterFilterCondition>
+  projectStageNameEndsWith(String value, {bool caseSensitive = true}) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(
+        FilterCondition.endsWith(
+          property: r'projectStageName',
+          value: value,
+          caseSensitive: caseSensitive,
+        ),
+      );
+    });
+  }
+
+  QueryBuilder<ExpenseEvidence, ExpenseEvidence, QAfterFilterCondition>
+  projectStageNameContains(String value, {bool caseSensitive = true}) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(
+        FilterCondition.contains(
+          property: r'projectStageName',
+          value: value,
+          caseSensitive: caseSensitive,
+        ),
+      );
+    });
+  }
+
+  QueryBuilder<ExpenseEvidence, ExpenseEvidence, QAfterFilterCondition>
+  projectStageNameMatches(String pattern, {bool caseSensitive = true}) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(
+        FilterCondition.matches(
+          property: r'projectStageName',
+          wildcard: pattern,
+          caseSensitive: caseSensitive,
+        ),
+      );
+    });
+  }
+
+  QueryBuilder<ExpenseEvidence, ExpenseEvidence, QAfterFilterCondition>
+  projectStageNameIsEmpty() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(
+        FilterCondition.equalTo(property: r'projectStageName', value: ''),
+      );
+    });
+  }
+
+  QueryBuilder<ExpenseEvidence, ExpenseEvidence, QAfterFilterCondition>
+  projectStageNameIsNotEmpty() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(
+        FilterCondition.greaterThan(property: r'projectStageName', value: ''),
+      );
+    });
+  }
+
+  QueryBuilder<ExpenseEvidence, ExpenseEvidence, QAfterFilterCondition>
   projectSyncIdIsNull() {
     return QueryBuilder.apply(this, (query) {
       return query.addFilterCondition(
@@ -4049,6 +4314,20 @@ extension ExpenseEvidenceQuerySortBy
   }
 
   QueryBuilder<ExpenseEvidence, ExpenseEvidence, QAfterSortBy>
+  sortByProjectStageName() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'projectStageName', Sort.asc);
+    });
+  }
+
+  QueryBuilder<ExpenseEvidence, ExpenseEvidence, QAfterSortBy>
+  sortByProjectStageNameDesc() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'projectStageName', Sort.desc);
+    });
+  }
+
+  QueryBuilder<ExpenseEvidence, ExpenseEvidence, QAfterSortBy>
   sortByProjectSyncId() {
     return QueryBuilder.apply(this, (query) {
       return query.addSortBy(r'projectSyncId', Sort.asc);
@@ -4437,6 +4716,20 @@ extension ExpenseEvidenceQuerySortThenBy
   }
 
   QueryBuilder<ExpenseEvidence, ExpenseEvidence, QAfterSortBy>
+  thenByProjectStageName() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'projectStageName', Sort.asc);
+    });
+  }
+
+  QueryBuilder<ExpenseEvidence, ExpenseEvidence, QAfterSortBy>
+  thenByProjectStageNameDesc() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'projectStageName', Sort.desc);
+    });
+  }
+
+  QueryBuilder<ExpenseEvidence, ExpenseEvidence, QAfterSortBy>
   thenByProjectSyncId() {
     return QueryBuilder.apply(this, (query) {
       return query.addSortBy(r'projectSyncId', Sort.asc);
@@ -4711,6 +5004,16 @@ extension ExpenseEvidenceQueryWhereDistinct
   }
 
   QueryBuilder<ExpenseEvidence, ExpenseEvidence, QDistinct>
+  distinctByProjectStageName({bool caseSensitive = true}) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addDistinctBy(
+        r'projectStageName',
+        caseSensitive: caseSensitive,
+      );
+    });
+  }
+
+  QueryBuilder<ExpenseEvidence, ExpenseEvidence, QDistinct>
   distinctByProjectSyncId({bool caseSensitive = true}) {
     return QueryBuilder.apply(this, (query) {
       return query.addDistinctBy(
@@ -4903,6 +5206,13 @@ extension ExpenseEvidenceQueryProperty
   projectNameProperty() {
     return QueryBuilder.apply(this, (query) {
       return query.addPropertyName(r'projectName');
+    });
+  }
+
+  QueryBuilder<ExpenseEvidence, String?, QQueryOperations>
+  projectStageNameProperty() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addPropertyName(r'projectStageName');
     });
   }
 

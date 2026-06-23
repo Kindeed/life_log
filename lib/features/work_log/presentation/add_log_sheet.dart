@@ -99,6 +99,9 @@ class _AddLogSheetState extends State<AddLogSheet> {
   ];
 
   Future<List<ProjectEntry>> _loadProjectEntries() async {
+    if (!serviceLocator.isRegistered<LoadProjectEntries>()) {
+      return const <ProjectEntry>[];
+    }
     final result = await serviceLocator<LoadProjectEntries>().call();
     return result.valueOrNull ?? const <ProjectEntry>[];
   }
@@ -437,8 +440,6 @@ class _AddLogSheetState extends State<AddLogSheet> {
           ],
         ),
         SizedBox(height: 12.h),
-        _buildProjectSelector(editorState, bgColor, textPrimary),
-        SizedBox(height: 12.h),
         AppTextField(
           focusNode: _overtimeFocusNode,
           keyboardType: const TextInputType.numberWithOptions(decimal: true),
@@ -504,7 +505,64 @@ class _AddLogSheetState extends State<AddLogSheet> {
                     break;
                   }
                 }
-                _editorCubit.changeProject(id: matched?.id, name: selectedName);
+                _editorCubit.changeProject(
+                  id: matched?.id,
+                  syncId: matched?.syncId,
+                  name: selectedName,
+                );
+              },
+            ),
+          ),
+        );
+      },
+    );
+  }
+
+  Widget _buildProjectStageSelector(
+    WorkLogEditorState editorState,
+    Color bgColor,
+    Color textPrimary,
+  ) {
+    return FutureBuilder<List<ProjectEntry>>(
+      future: _projectEntriesFuture,
+      builder: (context, snapshot) {
+        final projectName = editorState.projectName.trim();
+        if (projectName.isEmpty) return const SizedBox.shrink();
+        final projects = snapshot.data ?? const <ProjectEntry>[];
+        ProjectEntry? matched;
+        for (final project in projects) {
+          if (project.name.trim().toLowerCase() == projectName.toLowerCase()) {
+            matched = project;
+            break;
+          }
+        }
+        final stageNames = matched?.stageNames ?? const <String>[];
+        final currentValue = editorState.projectStageName.trim();
+        if (stageNames.isEmpty && currentValue.isEmpty) {
+          return const SizedBox.shrink();
+        }
+        final values = <String>{'', currentValue, ...stageNames}.toList();
+        return Container(
+          padding: EdgeInsets.symmetric(horizontal: 12.w),
+          decoration: BoxDecoration(
+            color: bgColor,
+            borderRadius: BorderRadius.circular(12),
+          ),
+          child: DropdownButtonHideUnderline(
+            child: DropdownButton<String>(
+              value: values.contains(currentValue) ? currentValue : '',
+              isExpanded: true,
+              dropdownColor: Theme.of(context).cardColor,
+              style: TextStyle(color: textPrimary),
+              icon: const Icon(Icons.expand_more_rounded),
+              items: values.map((value) {
+                return DropdownMenuItem<String>(
+                  value: value,
+                  child: Text(value.isEmpty ? '不关联项目节点' : value),
+                );
+              }).toList(),
+              onChanged: (value) {
+                _editorCubit.changeProjectStageName(value ?? '');
               },
             ),
           ),
@@ -598,6 +656,10 @@ class _AddLogSheetState extends State<AddLogSheet> {
           ],
         ),
         SizedBox(height: 12.h),
+        _buildProjectSelector(editorState, bgColor, textPrimary),
+        SizedBox(height: 12.h),
+        _buildProjectStageSelector(editorState, bgColor, textPrimary),
+        if (editorState.projectName.trim().isNotEmpty) SizedBox(height: 12.h),
         AppTextField(
           controller: _expenseController,
           focusNode: _expenseFocusNode,
