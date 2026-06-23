@@ -24,6 +24,10 @@ final class LegacyPhotoRepositoryAdapter implements PhotoRepositoryPort {
     required String description,
     required String deviceName,
     required bool deleteSource,
+    DateTime? capturedAt,
+    String? capturedAtSource,
+    double? gpsLatitude,
+    double? gpsLongitude,
   }) async {
     final photo = await _repository.processAndSavePhoto(
       tempPath: tempPath,
@@ -31,6 +35,10 @@ final class LegacyPhotoRepositoryAdapter implements PhotoRepositoryPort {
       description: description,
       deviceName: deviceName,
       deleteSource: deleteSource,
+      capturedAt: capturedAt,
+      capturedAtSource: capturedAtSource,
+      gpsLatitude: gpsLatitude,
+      gpsLongitude: gpsLongitude,
     );
     return photo.toPhotoEntry();
   }
@@ -63,6 +71,10 @@ extension PhotoEntryMapper on PhotoItem {
       id: id,
       ownerUserId: ownerUserId,
       createdAt: createdAt,
+      capturedAt: capturedAt,
+      capturedAtSource: capturedAtSource,
+      gpsLatitude: gpsLatitude,
+      gpsLongitude: gpsLongitude,
       fileName: fileName,
       filePath: filePath,
       description: description,
@@ -79,6 +91,10 @@ PhotoItem _photoItemFromEntry(PhotoEntry entry) {
     ..id = entry.id
     ..ownerUserId = entry.ownerUserId
     ..createdAt = entry.createdAt
+    ..capturedAt = entry.capturedAt
+    ..capturedAtSource = entry.capturedAtSource
+    ..gpsLatitude = entry.gpsLatitude
+    ..gpsLongitude = entry.gpsLongitude
     ..fileName = entry.fileName
     ..filePath = entry.filePath
     ..description = entry.description

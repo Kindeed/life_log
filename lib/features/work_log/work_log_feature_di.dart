@@ -5,6 +5,7 @@ import 'package:life_log/features/work_log/application/initialize_work_log_featu
 import 'package:life_log/features/work_log/application/load_work_log_edit_draft.dart';
 import 'package:life_log/features/work_log/application/load_work_log_month.dart';
 import 'package:life_log/features/work_log/application/load_work_log_today.dart';
+import 'package:life_log/features/work_log/application/load_project_work_log_trips.dart';
 import 'package:life_log/features/work_log/application/normalize_work_log_entries.dart';
 import 'package:life_log/features/work_log/application/save_work_log_entry.dart';
 import 'package:life_log/features/work_log/application/watch_work_log_entries.dart';
@@ -64,6 +65,12 @@ GetIt configureWorkLogFeatureDependencies({
   if (!activeLocator.isRegistered<LoadWorkLogToday>()) {
     activeLocator.registerLazySingleton<LoadWorkLogToday>(
       () => LoadWorkLogToday(activeLocator<WorkLogRepositoryPort>()),
+    );
+  }
+
+  if (!activeLocator.isRegistered<LoadProjectWorkLogTrips>()) {
+    activeLocator.registerLazySingleton<LoadProjectWorkLogTrips>(
+      () => LoadProjectWorkLogTrips(activeLocator<WorkLogRepositoryPort>()),
     );
   }
 

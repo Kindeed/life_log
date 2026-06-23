@@ -17,48 +17,68 @@ const PhotoItemSchema = CollectionSchema(
   name: r'PhotoItem',
   id: -5773752777889886468,
   properties: {
-    r'createdAt': PropertySchema(
+    r'capturedAt': PropertySchema(
       id: 0,
+      name: r'capturedAt',
+      type: IsarType.dateTime,
+    ),
+    r'capturedAtSource': PropertySchema(
+      id: 1,
+      name: r'capturedAtSource',
+      type: IsarType.string,
+    ),
+    r'createdAt': PropertySchema(
+      id: 2,
       name: r'createdAt',
       type: IsarType.dateTime,
     ),
     r'dateIndexed': PropertySchema(
-      id: 1,
+      id: 3,
       name: r'dateIndexed',
       type: IsarType.dateTime,
     ),
     r'description': PropertySchema(
-      id: 2,
+      id: 4,
       name: r'description',
       type: IsarType.string,
     ),
     r'deviceName': PropertySchema(
-      id: 3,
+      id: 5,
       name: r'deviceName',
       type: IsarType.string,
     ),
     r'fileName': PropertySchema(
-      id: 4,
+      id: 6,
       name: r'fileName',
       type: IsarType.string,
     ),
     r'filePath': PropertySchema(
-      id: 5,
+      id: 7,
       name: r'filePath',
       type: IsarType.string,
     ),
+    r'gpsLatitude': PropertySchema(
+      id: 8,
+      name: r'gpsLatitude',
+      type: IsarType.double,
+    ),
+    r'gpsLongitude': PropertySchema(
+      id: 9,
+      name: r'gpsLongitude',
+      type: IsarType.double,
+    ),
     r'ownerUserId': PropertySchema(
-      id: 6,
+      id: 10,
       name: r'ownerUserId',
       type: IsarType.string,
     ),
     r'projectId': PropertySchema(
-      id: 7,
+      id: 11,
       name: r'projectId',
       type: IsarType.long,
     ),
     r'projectName': PropertySchema(
-      id: 8,
+      id: 12,
       name: r'projectName',
       type: IsarType.string,
     ),
@@ -98,6 +118,12 @@ int _photoItemEstimateSize(
 ) {
   var bytesCount = offsets.last;
   {
+    final value = object.capturedAtSource;
+    if (value != null) {
+      bytesCount += 3 + value.length * 3;
+    }
+  }
+  {
     final value = object.description;
     if (value != null) {
       bytesCount += 3 + value.length * 3;
@@ -132,15 +158,19 @@ void _photoItemSerialize(
   List<int> offsets,
   Map<Type, List<int>> allOffsets,
 ) {
-  writer.writeDateTime(offsets[0], object.createdAt);
-  writer.writeDateTime(offsets[1], object.dateIndexed);
-  writer.writeString(offsets[2], object.description);
-  writer.writeString(offsets[3], object.deviceName);
-  writer.writeString(offsets[4], object.fileName);
-  writer.writeString(offsets[5], object.filePath);
-  writer.writeString(offsets[6], object.ownerUserId);
-  writer.writeLong(offsets[7], object.projectId);
-  writer.writeString(offsets[8], object.projectName);
+  writer.writeDateTime(offsets[0], object.capturedAt);
+  writer.writeString(offsets[1], object.capturedAtSource);
+  writer.writeDateTime(offsets[2], object.createdAt);
+  writer.writeDateTime(offsets[3], object.dateIndexed);
+  writer.writeString(offsets[4], object.description);
+  writer.writeString(offsets[5], object.deviceName);
+  writer.writeString(offsets[6], object.fileName);
+  writer.writeString(offsets[7], object.filePath);
+  writer.writeDouble(offsets[8], object.gpsLatitude);
+  writer.writeDouble(offsets[9], object.gpsLongitude);
+  writer.writeString(offsets[10], object.ownerUserId);
+  writer.writeLong(offsets[11], object.projectId);
+  writer.writeString(offsets[12], object.projectName);
 }
 
 PhotoItem _photoItemDeserialize(
@@ -150,16 +180,20 @@ PhotoItem _photoItemDeserialize(
   Map<Type, List<int>> allOffsets,
 ) {
   final object = PhotoItem();
-  object.createdAt = reader.readDateTime(offsets[0]);
-  object.dateIndexed = reader.readDateTime(offsets[1]);
-  object.description = reader.readStringOrNull(offsets[2]);
-  object.deviceName = reader.readStringOrNull(offsets[3]);
-  object.fileName = reader.readString(offsets[4]);
-  object.filePath = reader.readString(offsets[5]);
+  object.capturedAt = reader.readDateTimeOrNull(offsets[0]);
+  object.capturedAtSource = reader.readStringOrNull(offsets[1]);
+  object.createdAt = reader.readDateTime(offsets[2]);
+  object.dateIndexed = reader.readDateTime(offsets[3]);
+  object.description = reader.readStringOrNull(offsets[4]);
+  object.deviceName = reader.readStringOrNull(offsets[5]);
+  object.fileName = reader.readString(offsets[6]);
+  object.filePath = reader.readString(offsets[7]);
+  object.gpsLatitude = reader.readDoubleOrNull(offsets[8]);
+  object.gpsLongitude = reader.readDoubleOrNull(offsets[9]);
   object.id = id;
-  object.ownerUserId = reader.readStringOrNull(offsets[6]);
-  object.projectId = reader.readLongOrNull(offsets[7]);
-  object.projectName = reader.readStringOrNull(offsets[8]);
+  object.ownerUserId = reader.readStringOrNull(offsets[10]);
+  object.projectId = reader.readLongOrNull(offsets[11]);
+  object.projectName = reader.readStringOrNull(offsets[12]);
   return object;
 }
 
@@ -171,22 +205,30 @@ P _photoItemDeserializeProp<P>(
 ) {
   switch (propertyId) {
     case 0:
-      return (reader.readDateTime(offset)) as P;
+      return (reader.readDateTimeOrNull(offset)) as P;
     case 1:
-      return (reader.readDateTime(offset)) as P;
+      return (reader.readStringOrNull(offset)) as P;
     case 2:
-      return (reader.readStringOrNull(offset)) as P;
+      return (reader.readDateTime(offset)) as P;
     case 3:
-      return (reader.readStringOrNull(offset)) as P;
+      return (reader.readDateTime(offset)) as P;
     case 4:
-      return (reader.readString(offset)) as P;
-    case 5:
-      return (reader.readString(offset)) as P;
-    case 6:
       return (reader.readStringOrNull(offset)) as P;
+    case 5:
+      return (reader.readStringOrNull(offset)) as P;
+    case 6:
+      return (reader.readString(offset)) as P;
     case 7:
-      return (reader.readLongOrNull(offset)) as P;
+      return (reader.readString(offset)) as P;
     case 8:
+      return (reader.readDoubleOrNull(offset)) as P;
+    case 9:
+      return (reader.readDoubleOrNull(offset)) as P;
+    case 10:
+      return (reader.readStringOrNull(offset)) as P;
+    case 11:
+      return (reader.readLongOrNull(offset)) as P;
+    case 12:
       return (reader.readStringOrNull(offset)) as P;
     default:
       throw IsarError('Unknown property with id $propertyId');
@@ -403,6 +445,239 @@ extension PhotoItemQueryWhere
 
 extension PhotoItemQueryFilter
     on QueryBuilder<PhotoItem, PhotoItem, QFilterCondition> {
+  QueryBuilder<PhotoItem, PhotoItem, QAfterFilterCondition> capturedAtIsNull() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(
+        const FilterCondition.isNull(property: r'capturedAt'),
+      );
+    });
+  }
+
+  QueryBuilder<PhotoItem, PhotoItem, QAfterFilterCondition>
+  capturedAtIsNotNull() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(
+        const FilterCondition.isNotNull(property: r'capturedAt'),
+      );
+    });
+  }
+
+  QueryBuilder<PhotoItem, PhotoItem, QAfterFilterCondition> capturedAtEqualTo(
+    DateTime? value,
+  ) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(
+        FilterCondition.equalTo(property: r'capturedAt', value: value),
+      );
+    });
+  }
+
+  QueryBuilder<PhotoItem, PhotoItem, QAfterFilterCondition>
+  capturedAtGreaterThan(DateTime? value, {bool include = false}) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(
+        FilterCondition.greaterThan(
+          include: include,
+          property: r'capturedAt',
+          value: value,
+        ),
+      );
+    });
+  }
+
+  QueryBuilder<PhotoItem, PhotoItem, QAfterFilterCondition> capturedAtLessThan(
+    DateTime? value, {
+    bool include = false,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(
+        FilterCondition.lessThan(
+          include: include,
+          property: r'capturedAt',
+          value: value,
+        ),
+      );
+    });
+  }
+
+  QueryBuilder<PhotoItem, PhotoItem, QAfterFilterCondition> capturedAtBetween(
+    DateTime? lower,
+    DateTime? upper, {
+    bool includeLower = true,
+    bool includeUpper = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(
+        FilterCondition.between(
+          property: r'capturedAt',
+          lower: lower,
+          includeLower: includeLower,
+          upper: upper,
+          includeUpper: includeUpper,
+        ),
+      );
+    });
+  }
+
+  QueryBuilder<PhotoItem, PhotoItem, QAfterFilterCondition>
+  capturedAtSourceIsNull() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(
+        const FilterCondition.isNull(property: r'capturedAtSource'),
+      );
+    });
+  }
+
+  QueryBuilder<PhotoItem, PhotoItem, QAfterFilterCondition>
+  capturedAtSourceIsNotNull() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(
+        const FilterCondition.isNotNull(property: r'capturedAtSource'),
+      );
+    });
+  }
+
+  QueryBuilder<PhotoItem, PhotoItem, QAfterFilterCondition>
+  capturedAtSourceEqualTo(String? value, {bool caseSensitive = true}) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(
+        FilterCondition.equalTo(
+          property: r'capturedAtSource',
+          value: value,
+          caseSensitive: caseSensitive,
+        ),
+      );
+    });
+  }
+
+  QueryBuilder<PhotoItem, PhotoItem, QAfterFilterCondition>
+  capturedAtSourceGreaterThan(
+    String? value, {
+    bool include = false,
+    bool caseSensitive = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(
+        FilterCondition.greaterThan(
+          include: include,
+          property: r'capturedAtSource',
+          value: value,
+          caseSensitive: caseSensitive,
+        ),
+      );
+    });
+  }
+
+  QueryBuilder<PhotoItem, PhotoItem, QAfterFilterCondition>
+  capturedAtSourceLessThan(
+    String? value, {
+    bool include = false,
+    bool caseSensitive = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(
+        FilterCondition.lessThan(
+          include: include,
+          property: r'capturedAtSource',
+          value: value,
+          caseSensitive: caseSensitive,
+        ),
+      );
+    });
+  }
+
+  QueryBuilder<PhotoItem, PhotoItem, QAfterFilterCondition>
+  capturedAtSourceBetween(
+    String? lower,
+    String? upper, {
+    bool includeLower = true,
+    bool includeUpper = true,
+    bool caseSensitive = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(
+        FilterCondition.between(
+          property: r'capturedAtSource',
+          lower: lower,
+          includeLower: includeLower,
+          upper: upper,
+          includeUpper: includeUpper,
+          caseSensitive: caseSensitive,
+        ),
+      );
+    });
+  }
+
+  QueryBuilder<PhotoItem, PhotoItem, QAfterFilterCondition>
+  capturedAtSourceStartsWith(String value, {bool caseSensitive = true}) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(
+        FilterCondition.startsWith(
+          property: r'capturedAtSource',
+          value: value,
+          caseSensitive: caseSensitive,
+        ),
+      );
+    });
+  }
+
+  QueryBuilder<PhotoItem, PhotoItem, QAfterFilterCondition>
+  capturedAtSourceEndsWith(String value, {bool caseSensitive = true}) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(
+        FilterCondition.endsWith(
+          property: r'capturedAtSource',
+          value: value,
+          caseSensitive: caseSensitive,
+        ),
+      );
+    });
+  }
+
+  QueryBuilder<PhotoItem, PhotoItem, QAfterFilterCondition>
+  capturedAtSourceContains(String value, {bool caseSensitive = true}) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(
+        FilterCondition.contains(
+          property: r'capturedAtSource',
+          value: value,
+          caseSensitive: caseSensitive,
+        ),
+      );
+    });
+  }
+
+  QueryBuilder<PhotoItem, PhotoItem, QAfterFilterCondition>
+  capturedAtSourceMatches(String pattern, {bool caseSensitive = true}) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(
+        FilterCondition.matches(
+          property: r'capturedAtSource',
+          wildcard: pattern,
+          caseSensitive: caseSensitive,
+        ),
+      );
+    });
+  }
+
+  QueryBuilder<PhotoItem, PhotoItem, QAfterFilterCondition>
+  capturedAtSourceIsEmpty() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(
+        FilterCondition.equalTo(property: r'capturedAtSource', value: ''),
+      );
+    });
+  }
+
+  QueryBuilder<PhotoItem, PhotoItem, QAfterFilterCondition>
+  capturedAtSourceIsNotEmpty() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(
+        FilterCondition.greaterThan(property: r'capturedAtSource', value: ''),
+      );
+    });
+  }
+
   QueryBuilder<PhotoItem, PhotoItem, QAfterFilterCondition> createdAtEqualTo(
     DateTime value,
   ) {
@@ -1140,6 +1415,185 @@ extension PhotoItemQueryFilter
     });
   }
 
+  QueryBuilder<PhotoItem, PhotoItem, QAfterFilterCondition>
+  gpsLatitudeIsNull() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(
+        const FilterCondition.isNull(property: r'gpsLatitude'),
+      );
+    });
+  }
+
+  QueryBuilder<PhotoItem, PhotoItem, QAfterFilterCondition>
+  gpsLatitudeIsNotNull() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(
+        const FilterCondition.isNotNull(property: r'gpsLatitude'),
+      );
+    });
+  }
+
+  QueryBuilder<PhotoItem, PhotoItem, QAfterFilterCondition> gpsLatitudeEqualTo(
+    double? value, {
+    double epsilon = Query.epsilon,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(
+        FilterCondition.equalTo(
+          property: r'gpsLatitude',
+          value: value,
+          epsilon: epsilon,
+        ),
+      );
+    });
+  }
+
+  QueryBuilder<PhotoItem, PhotoItem, QAfterFilterCondition>
+  gpsLatitudeGreaterThan(
+    double? value, {
+    bool include = false,
+    double epsilon = Query.epsilon,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(
+        FilterCondition.greaterThan(
+          include: include,
+          property: r'gpsLatitude',
+          value: value,
+          epsilon: epsilon,
+        ),
+      );
+    });
+  }
+
+  QueryBuilder<PhotoItem, PhotoItem, QAfterFilterCondition> gpsLatitudeLessThan(
+    double? value, {
+    bool include = false,
+    double epsilon = Query.epsilon,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(
+        FilterCondition.lessThan(
+          include: include,
+          property: r'gpsLatitude',
+          value: value,
+          epsilon: epsilon,
+        ),
+      );
+    });
+  }
+
+  QueryBuilder<PhotoItem, PhotoItem, QAfterFilterCondition> gpsLatitudeBetween(
+    double? lower,
+    double? upper, {
+    bool includeLower = true,
+    bool includeUpper = true,
+    double epsilon = Query.epsilon,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(
+        FilterCondition.between(
+          property: r'gpsLatitude',
+          lower: lower,
+          includeLower: includeLower,
+          upper: upper,
+          includeUpper: includeUpper,
+          epsilon: epsilon,
+        ),
+      );
+    });
+  }
+
+  QueryBuilder<PhotoItem, PhotoItem, QAfterFilterCondition>
+  gpsLongitudeIsNull() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(
+        const FilterCondition.isNull(property: r'gpsLongitude'),
+      );
+    });
+  }
+
+  QueryBuilder<PhotoItem, PhotoItem, QAfterFilterCondition>
+  gpsLongitudeIsNotNull() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(
+        const FilterCondition.isNotNull(property: r'gpsLongitude'),
+      );
+    });
+  }
+
+  QueryBuilder<PhotoItem, PhotoItem, QAfterFilterCondition> gpsLongitudeEqualTo(
+    double? value, {
+    double epsilon = Query.epsilon,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(
+        FilterCondition.equalTo(
+          property: r'gpsLongitude',
+          value: value,
+          epsilon: epsilon,
+        ),
+      );
+    });
+  }
+
+  QueryBuilder<PhotoItem, PhotoItem, QAfterFilterCondition>
+  gpsLongitudeGreaterThan(
+    double? value, {
+    bool include = false,
+    double epsilon = Query.epsilon,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(
+        FilterCondition.greaterThan(
+          include: include,
+          property: r'gpsLongitude',
+          value: value,
+          epsilon: epsilon,
+        ),
+      );
+    });
+  }
+
+  QueryBuilder<PhotoItem, PhotoItem, QAfterFilterCondition>
+  gpsLongitudeLessThan(
+    double? value, {
+    bool include = false,
+    double epsilon = Query.epsilon,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(
+        FilterCondition.lessThan(
+          include: include,
+          property: r'gpsLongitude',
+          value: value,
+          epsilon: epsilon,
+        ),
+      );
+    });
+  }
+
+  QueryBuilder<PhotoItem, PhotoItem, QAfterFilterCondition> gpsLongitudeBetween(
+    double? lower,
+    double? upper, {
+    bool includeLower = true,
+    bool includeUpper = true,
+    double epsilon = Query.epsilon,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(
+        FilterCondition.between(
+          property: r'gpsLongitude',
+          lower: lower,
+          includeLower: includeLower,
+          upper: upper,
+          includeUpper: includeUpper,
+          epsilon: epsilon,
+        ),
+      );
+    });
+  }
+
   QueryBuilder<PhotoItem, PhotoItem, QAfterFilterCondition> idEqualTo(
     Id value,
   ) {
@@ -1611,6 +2065,31 @@ extension PhotoItemQueryLinks
     on QueryBuilder<PhotoItem, PhotoItem, QFilterCondition> {}
 
 extension PhotoItemQuerySortBy on QueryBuilder<PhotoItem, PhotoItem, QSortBy> {
+  QueryBuilder<PhotoItem, PhotoItem, QAfterSortBy> sortByCapturedAt() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'capturedAt', Sort.asc);
+    });
+  }
+
+  QueryBuilder<PhotoItem, PhotoItem, QAfterSortBy> sortByCapturedAtDesc() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'capturedAt', Sort.desc);
+    });
+  }
+
+  QueryBuilder<PhotoItem, PhotoItem, QAfterSortBy> sortByCapturedAtSource() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'capturedAtSource', Sort.asc);
+    });
+  }
+
+  QueryBuilder<PhotoItem, PhotoItem, QAfterSortBy>
+  sortByCapturedAtSourceDesc() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'capturedAtSource', Sort.desc);
+    });
+  }
+
   QueryBuilder<PhotoItem, PhotoItem, QAfterSortBy> sortByCreatedAt() {
     return QueryBuilder.apply(this, (query) {
       return query.addSortBy(r'createdAt', Sort.asc);
@@ -1683,6 +2162,30 @@ extension PhotoItemQuerySortBy on QueryBuilder<PhotoItem, PhotoItem, QSortBy> {
     });
   }
 
+  QueryBuilder<PhotoItem, PhotoItem, QAfterSortBy> sortByGpsLatitude() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'gpsLatitude', Sort.asc);
+    });
+  }
+
+  QueryBuilder<PhotoItem, PhotoItem, QAfterSortBy> sortByGpsLatitudeDesc() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'gpsLatitude', Sort.desc);
+    });
+  }
+
+  QueryBuilder<PhotoItem, PhotoItem, QAfterSortBy> sortByGpsLongitude() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'gpsLongitude', Sort.asc);
+    });
+  }
+
+  QueryBuilder<PhotoItem, PhotoItem, QAfterSortBy> sortByGpsLongitudeDesc() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'gpsLongitude', Sort.desc);
+    });
+  }
+
   QueryBuilder<PhotoItem, PhotoItem, QAfterSortBy> sortByOwnerUserId() {
     return QueryBuilder.apply(this, (query) {
       return query.addSortBy(r'ownerUserId', Sort.asc);
@@ -1722,6 +2225,31 @@ extension PhotoItemQuerySortBy on QueryBuilder<PhotoItem, PhotoItem, QSortBy> {
 
 extension PhotoItemQuerySortThenBy
     on QueryBuilder<PhotoItem, PhotoItem, QSortThenBy> {
+  QueryBuilder<PhotoItem, PhotoItem, QAfterSortBy> thenByCapturedAt() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'capturedAt', Sort.asc);
+    });
+  }
+
+  QueryBuilder<PhotoItem, PhotoItem, QAfterSortBy> thenByCapturedAtDesc() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'capturedAt', Sort.desc);
+    });
+  }
+
+  QueryBuilder<PhotoItem, PhotoItem, QAfterSortBy> thenByCapturedAtSource() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'capturedAtSource', Sort.asc);
+    });
+  }
+
+  QueryBuilder<PhotoItem, PhotoItem, QAfterSortBy>
+  thenByCapturedAtSourceDesc() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'capturedAtSource', Sort.desc);
+    });
+  }
+
   QueryBuilder<PhotoItem, PhotoItem, QAfterSortBy> thenByCreatedAt() {
     return QueryBuilder.apply(this, (query) {
       return query.addSortBy(r'createdAt', Sort.asc);
@@ -1794,6 +2322,30 @@ extension PhotoItemQuerySortThenBy
     });
   }
 
+  QueryBuilder<PhotoItem, PhotoItem, QAfterSortBy> thenByGpsLatitude() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'gpsLatitude', Sort.asc);
+    });
+  }
+
+  QueryBuilder<PhotoItem, PhotoItem, QAfterSortBy> thenByGpsLatitudeDesc() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'gpsLatitude', Sort.desc);
+    });
+  }
+
+  QueryBuilder<PhotoItem, PhotoItem, QAfterSortBy> thenByGpsLongitude() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'gpsLongitude', Sort.asc);
+    });
+  }
+
+  QueryBuilder<PhotoItem, PhotoItem, QAfterSortBy> thenByGpsLongitudeDesc() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'gpsLongitude', Sort.desc);
+    });
+  }
+
   QueryBuilder<PhotoItem, PhotoItem, QAfterSortBy> thenById() {
     return QueryBuilder.apply(this, (query) {
       return query.addSortBy(r'id', Sort.asc);
@@ -1845,6 +2397,23 @@ extension PhotoItemQuerySortThenBy
 
 extension PhotoItemQueryWhereDistinct
     on QueryBuilder<PhotoItem, PhotoItem, QDistinct> {
+  QueryBuilder<PhotoItem, PhotoItem, QDistinct> distinctByCapturedAt() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addDistinctBy(r'capturedAt');
+    });
+  }
+
+  QueryBuilder<PhotoItem, PhotoItem, QDistinct> distinctByCapturedAtSource({
+    bool caseSensitive = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addDistinctBy(
+        r'capturedAtSource',
+        caseSensitive: caseSensitive,
+      );
+    });
+  }
+
   QueryBuilder<PhotoItem, PhotoItem, QDistinct> distinctByCreatedAt() {
     return QueryBuilder.apply(this, (query) {
       return query.addDistinctBy(r'createdAt');
@@ -1889,6 +2458,18 @@ extension PhotoItemQueryWhereDistinct
     });
   }
 
+  QueryBuilder<PhotoItem, PhotoItem, QDistinct> distinctByGpsLatitude() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addDistinctBy(r'gpsLatitude');
+    });
+  }
+
+  QueryBuilder<PhotoItem, PhotoItem, QDistinct> distinctByGpsLongitude() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addDistinctBy(r'gpsLongitude');
+    });
+  }
+
   QueryBuilder<PhotoItem, PhotoItem, QDistinct> distinctByOwnerUserId({
     bool caseSensitive = true,
   }) {
@@ -1917,6 +2498,19 @@ extension PhotoItemQueryProperty
   QueryBuilder<PhotoItem, int, QQueryOperations> idProperty() {
     return QueryBuilder.apply(this, (query) {
       return query.addPropertyName(r'id');
+    });
+  }
+
+  QueryBuilder<PhotoItem, DateTime?, QQueryOperations> capturedAtProperty() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addPropertyName(r'capturedAt');
+    });
+  }
+
+  QueryBuilder<PhotoItem, String?, QQueryOperations>
+  capturedAtSourceProperty() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addPropertyName(r'capturedAtSource');
     });
   }
 
@@ -1953,6 +2547,18 @@ extension PhotoItemQueryProperty
   QueryBuilder<PhotoItem, String, QQueryOperations> filePathProperty() {
     return QueryBuilder.apply(this, (query) {
       return query.addPropertyName(r'filePath');
+    });
+  }
+
+  QueryBuilder<PhotoItem, double?, QQueryOperations> gpsLatitudeProperty() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addPropertyName(r'gpsLatitude');
+    });
+  }
+
+  QueryBuilder<PhotoItem, double?, QQueryOperations> gpsLongitudeProperty() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addPropertyName(r'gpsLongitude');
     });
   }
 

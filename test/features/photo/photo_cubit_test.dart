@@ -264,6 +264,10 @@ final class _FakePhotoRepository implements PhotoRepositoryPort {
     required String description,
     required String deviceName,
     required bool deleteSource,
+    DateTime? capturedAt,
+    String? capturedAtSource,
+    double? gpsLatitude,
+    double? gpsLongitude,
   }) async {
     final entry = _photo(
       id: entries.length + 1,

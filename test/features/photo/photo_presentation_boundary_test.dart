@@ -83,5 +83,27 @@ void main() {
         expect(presentationSources, contains('ScaffoldMessenger.of(context)'));
       },
     );
+
+    test('keeps GPS metadata hidden by default behind a user setting', () {
+      final preferences = File(
+        'lib/features/photo/presentation/photo_display_preferences.dart',
+      ).readAsStringSync();
+      final preview = File(
+        'lib/features/photo/presentation/photo_preview_view.dart',
+      ).readAsStringSync();
+      final appearance = File(
+        'lib/features/profile/presentation/views/appearance_view.dart',
+      ).readAsStringSync();
+
+      expect(preferences, contains('bool get showGpsMetadata'));
+      expect(preferences, contains("read(_showGpsMetadataKey) == true"));
+      expect(preferences, contains('setShowGpsMetadata'));
+      expect(preview, contains('PhotoDisplayPreferences'));
+      expect(preview, contains('showGpsMetadata'));
+      expect(preview, contains('gpsLatitude'));
+      expect(preview, contains('gpsLongitude'));
+      expect(appearance, contains('照片信息'));
+      expect(appearance, contains('显示 GPS'));
+    });
   });
 }

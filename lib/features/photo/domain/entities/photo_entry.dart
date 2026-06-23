@@ -4,6 +4,10 @@ final class PhotoEntry extends Equatable {
   final int id;
   final String? ownerUserId;
   final DateTime createdAt;
+  final DateTime? capturedAt;
+  final String? capturedAtSource;
+  final double? gpsLatitude;
+  final double? gpsLongitude;
   final String fileName;
   final String filePath;
   final String? description;
@@ -16,6 +20,10 @@ final class PhotoEntry extends Equatable {
     required this.id,
     required this.ownerUserId,
     required this.createdAt,
+    this.capturedAt,
+    this.capturedAtSource,
+    this.gpsLatitude,
+    this.gpsLongitude,
     required this.fileName,
     required this.filePath,
     required this.description,
@@ -30,6 +38,10 @@ final class PhotoEntry extends Equatable {
     id,
     ownerUserId,
     createdAt,
+    capturedAt,
+    capturedAtSource,
+    gpsLatitude,
+    gpsLongitude,
     fileName,
     filePath,
     description,

@@ -27,6 +27,9 @@ final class WorkLogEditorState extends Equatable {
   final String transport;
   final String expenseText;
   final bool isReimbursed;
+  final int? projectId;
+  final String? projectSyncId;
+  final String projectName;
   final String leaveType;
   final String customLeave;
   final AppFailure? failure;
@@ -43,6 +46,9 @@ final class WorkLogEditorState extends Equatable {
     required this.transport,
     required this.expenseText,
     required this.isReimbursed,
+    required this.projectId,
+    required this.projectSyncId,
+    required this.projectName,
     required this.leaveType,
     required this.customLeave,
     this.failure,
@@ -94,6 +100,15 @@ final class WorkLogEditorState extends Equatable {
       isReimbursed: entry?.type == WorkLogEntryType.businessTrip
           ? entry?.isReimbursed ?? false
           : false,
+      projectId: entry?.type == WorkLogEntryType.businessTrip
+          ? entry?.projectId
+          : null,
+      projectSyncId: entry?.type == WorkLogEntryType.businessTrip
+          ? entry?.projectSyncId
+          : null,
+      projectName: entry?.type == WorkLogEntryType.businessTrip
+          ? entry?.projectName ?? ''
+          : '',
       leaveType: leaveType,
       customLeave: customLeave,
     );
@@ -108,6 +123,10 @@ final class WorkLogEditorState extends Equatable {
     String? transport,
     String? expenseText,
     bool? isReimbursed,
+    int? projectId,
+    String? projectSyncId,
+    String? projectName,
+    bool clearProject = false,
     String? leaveType,
     String? customLeave,
     AppFailure? failure,
@@ -125,6 +144,9 @@ final class WorkLogEditorState extends Equatable {
       transport: transport ?? this.transport,
       expenseText: expenseText ?? this.expenseText,
       isReimbursed: isReimbursed ?? this.isReimbursed,
+      projectId: clearProject ? null : projectId ?? this.projectId,
+      projectSyncId: clearProject ? null : projectSyncId ?? this.projectSyncId,
+      projectName: clearProject ? '' : projectName ?? this.projectName,
       leaveType: leaveType ?? this.leaveType,
       customLeave: customLeave ?? this.customLeave,
       failure: clearFailure ? null : failure ?? this.failure,
@@ -144,6 +166,9 @@ final class WorkLogEditorState extends Equatable {
     transport,
     expenseText,
     isReimbursed,
+    projectId,
+    projectSyncId,
+    projectName,
     leaveType,
     customLeave,
     failure,
@@ -173,7 +198,12 @@ final class WorkLogEditorCubit extends Cubit<WorkLogEditorState> {
        );
 
   void changeType(WorkLogEntryType type) {
-    emit(_editingState(type: type));
+    emit(
+      _editingState(
+        type: type,
+        clearProject: type != WorkLogEntryType.businessTrip,
+      ),
+    );
   }
 
   void changeNote(String note) {
@@ -198,6 +228,18 @@ final class WorkLogEditorCubit extends Cubit<WorkLogEditorState> {
 
   void changeReimbursed(bool isReimbursed) {
     emit(_editingState(isReimbursed: isReimbursed));
+  }
+
+  void changeProject({int? id, String? syncId, String? name}) {
+    final trimmedName = name?.trim() ?? '';
+    emit(
+      _editingState(
+        projectId: id,
+        projectSyncId: syncId,
+        projectName: trimmedName,
+        clearProject: id == null && syncId == null && trimmedName.isEmpty,
+      ),
+    );
   }
 
   void changeLeaveType(String leaveType) {
@@ -266,6 +308,10 @@ final class WorkLogEditorCubit extends Cubit<WorkLogEditorState> {
     String? transport,
     String? expenseText,
     bool? isReimbursed,
+    int? projectId,
+    String? projectSyncId,
+    String? projectName,
+    bool clearProject = false,
     String? leaveType,
     String? customLeave,
   }) {
@@ -278,6 +324,10 @@ final class WorkLogEditorCubit extends Cubit<WorkLogEditorState> {
       transport: transport,
       expenseText: expenseText,
       isReimbursed: isReimbursed,
+      projectId: projectId,
+      projectSyncId: projectSyncId,
+      projectName: projectName,
+      clearProject: clearProject,
       leaveType: leaveType,
       customLeave: customLeave,
       clearFailure: true,
@@ -308,6 +358,7 @@ final class WorkLogEditorCubit extends Cubit<WorkLogEditorState> {
     return switch (state.type) {
       WorkLogEntryType.work => WorkLogEntry(
         id: state.existingEntry?.id ?? 0,
+        syncId: state.existingEntry?.syncId,
         date: state.selectedDate,
         type: state.type,
         overtimeHours: state.overtimeHours,
@@ -317,6 +368,7 @@ final class WorkLogEditorCubit extends Cubit<WorkLogEditorState> {
       ),
       WorkLogEntryType.rest => WorkLogEntry(
         id: state.existingEntry?.id ?? 0,
+        syncId: state.existingEntry?.syncId,
         date: state.selectedDate,
         type: state.type,
         note: state.note,
@@ -325,6 +377,7 @@ final class WorkLogEditorCubit extends Cubit<WorkLogEditorState> {
       ),
       WorkLogEntryType.leave => WorkLogEntry(
         id: state.existingEntry?.id ?? 0,
+        syncId: state.existingEntry?.syncId,
         date: state.selectedDate,
         type: state.type,
         location: state.leaveType == '其他'
@@ -338,12 +391,16 @@ final class WorkLogEditorCubit extends Cubit<WorkLogEditorState> {
       ),
       WorkLogEntryType.businessTrip => WorkLogEntry(
         id: state.existingEntry?.id ?? 0,
+        syncId: state.existingEntry?.syncId,
         date: state.selectedDate,
         type: state.type,
         location: state.tripLocation,
         transport: state.transport,
         expenses: expenses,
         isReimbursed: state.isReimbursed,
+        projectId: state.projectId,
+        projectSyncId: _emptyToNull(state.projectSyncId ?? ''),
+        projectName: _emptyToNull(state.projectName),
         note: state.note,
         createdAt: state.existingEntry?.createdAt,
         updatedAt: state.existingEntry?.updatedAt,
@@ -366,6 +423,9 @@ final class WorkLogEditorCubit extends Cubit<WorkLogEditorState> {
         next.location != previous.location ||
         next.transport != previous.transport ||
         next.expenses != previous.expenses ||
+        next.projectId != previous.projectId ||
+        next.projectSyncId != previous.projectSyncId ||
+        next.projectName != previous.projectName ||
         next.isReimbursed != previous.isReimbursed ||
         next.note != previous.note;
   }
@@ -376,4 +436,9 @@ String _formatNumber(double? value) {
   return value == value.roundToDouble()
       ? value.toStringAsFixed(0)
       : value.toString();
+}
+
+String? _emptyToNull(String value) {
+  final trimmed = value.trim();
+  return trimmed.isEmpty ? null : trimmed;
 }

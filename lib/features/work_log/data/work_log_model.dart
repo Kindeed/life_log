@@ -36,6 +36,15 @@ class WorkLog {
 
   double? expenses; // 垫付金额
 
+  @Index()
+  int? projectId; // 可选关联项目，保留本地 ID 方便项目内筛选
+
+  @Index(caseSensitive: false)
+  String? projectSyncId; // 可选关联项目 syncId，供后续云端关系升级
+
+  @Index(caseSensitive: false)
+  String? projectName; // 可选关联项目名称
+
   // --- 【新增】是否已报销 ---
   bool isReimbursed = false;
 
@@ -161,6 +170,9 @@ extension WorkLogBusinessChanges on WorkLog {
         location != other.location ||
         transport != other.transport ||
         expenses != other.expenses ||
+        projectId != other.projectId ||
+        projectSyncId != other.projectSyncId ||
+        projectName != other.projectName ||
         isReimbursed != other.isReimbursed ||
         note != other.note;
   }

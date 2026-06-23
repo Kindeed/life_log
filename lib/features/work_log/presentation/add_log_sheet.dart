@@ -12,6 +12,8 @@ import 'package:life_log/common/widgets/app_sheet_scaffold.dart';
 import 'package:life_log/common/widgets/app_text_field.dart';
 import 'package:life_log/core/di/service_locator.dart';
 import 'package:life_log/core/errors/app_failure.dart';
+import 'package:life_log/features/project/application/load_project_entries.dart';
+import 'package:life_log/features/project/domain/entities/project_entry.dart';
 import 'package:life_log/features/work_log/application/delete_work_log_entry.dart';
 import 'package:life_log/features/work_log/application/save_work_log_entry.dart';
 import 'package:life_log/features/work_log/domain/entities/work_log_entry.dart';
@@ -42,6 +44,7 @@ class AddLogSheet extends StatefulWidget {
 
 class _AddLogSheetState extends State<AddLogSheet> {
   late final WorkLogEditorCubit _editorCubit;
+  late final Future<List<ProjectEntry>> _projectEntriesFuture;
   final TextEditingController _noteController = TextEditingController();
   final FocusNode _noteFocusNode = FocusNode();
   final FocusNode _overtimeFocusNode = FocusNode();
@@ -65,6 +68,7 @@ class _AddLogSheetState extends State<AddLogSheet> {
       existingAlreadyDirty: widget.existingAlreadyDirty,
       initialType: widget.initialType,
     );
+    _projectEntriesFuture = _loadProjectEntries();
 
     final editorState = _editorCubit.state;
     _noteController.text = editorState.note;
@@ -93,6 +97,11 @@ class _AddLogSheetState extends State<AddLogSheet> {
     _expenseFocusNode,
     _customLeaveFocusNode,
   ];
+
+  Future<List<ProjectEntry>> _loadProjectEntries() async {
+    final result = await serviceLocator<LoadProjectEntries>().call();
+    return result.valueOrNull ?? const <ProjectEntry>[];
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -428,6 +437,8 @@ class _AddLogSheetState extends State<AddLogSheet> {
           ],
         ),
         SizedBox(height: 12.h),
+        _buildProjectSelector(editorState, bgColor, textPrimary),
+        SizedBox(height: 12.h),
         AppTextField(
           focusNode: _overtimeFocusNode,
           keyboardType: const TextInputType.numberWithOptions(decimal: true),
@@ -440,6 +451,65 @@ class _AddLogSheetState extends State<AddLogSheet> {
               _editorCubit.changeOvertime(double.tryParse(val) ?? 0.0),
         ),
       ],
+    );
+  }
+
+  Widget _buildProjectSelector(
+    WorkLogEditorState editorState,
+    Color bgColor,
+    Color textPrimary,
+  ) {
+    return FutureBuilder<List<ProjectEntry>>(
+      future: _projectEntriesFuture,
+      builder: (context, snapshot) {
+        final projects = snapshot.data ?? const <ProjectEntry>[];
+        final currentValue = editorState.projectName.trim().isEmpty
+            ? ''
+            : editorState.projectName.trim();
+        final values = <String>{
+          '',
+          currentValue,
+          ...projects.map((project) => project.name.trim()),
+        }.where((value) => value.isNotEmpty || value == '').toList();
+
+        return Container(
+          padding: EdgeInsets.symmetric(horizontal: 12.w),
+          decoration: BoxDecoration(
+            color: bgColor,
+            borderRadius: BorderRadius.circular(12),
+          ),
+          child: DropdownButtonHideUnderline(
+            child: DropdownButton<String>(
+              value: values.contains(currentValue) ? currentValue : '',
+              isExpanded: true,
+              dropdownColor: Theme.of(context).cardColor,
+              style: TextStyle(color: textPrimary),
+              icon: const Icon(Icons.expand_more_rounded),
+              items: values.map((value) {
+                return DropdownMenuItem<String>(
+                  value: value,
+                  child: Text(value.isEmpty ? '无关联项目' : value),
+                );
+              }).toList(),
+              onChanged: (value) {
+                final selectedName = value?.trim() ?? '';
+                if (selectedName.isEmpty) {
+                  _editorCubit.changeProject();
+                  return;
+                }
+                ProjectEntry? matched;
+                for (final project in projects) {
+                  if (project.name.trim() == selectedName) {
+                    matched = project;
+                    break;
+                  }
+                }
+                _editorCubit.changeProject(id: matched?.id, name: selectedName);
+              },
+            ),
+          ),
+        );
+      },
     );
   }
 

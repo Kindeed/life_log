@@ -43,6 +43,12 @@ class ExpenseRecord {
 
   @Index(caseSensitive: false)
   String? projectName;
+
+  @Index()
+  int? tripWorkLogId;
+
+  @Index(caseSensitive: false)
+  String? tripWorkLogSyncId;
 }
 
 enum ExpenseCategory { meal, transport, shopping, travel, office, other }
@@ -76,7 +82,9 @@ extension ExpenseRecordBusinessChanges on ExpenseRecord {
         note != other.note ||
         projectId != other.projectId ||
         projectSyncId != other.projectSyncId ||
-        projectName != other.projectName;
+        projectName != other.projectName ||
+        tripWorkLogId != other.tripWorkLogId ||
+        tripWorkLogSyncId != other.tripWorkLogSyncId;
   }
 }
 

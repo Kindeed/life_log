@@ -93,6 +93,8 @@ final class WorkLogSyncAdapter implements SyncAdapter<WorkLog> {
       'project_name': entity.type == LogType.businessTrip
           ? entity.location
           : null,
+      'linked_project_name': entity.projectName,
+      'project_sync_id': entity.projectSyncId,
       'transport': entity.transport,
       'expenses': entity.expenses,
       'is_reimbursed': entity.isReimbursed,

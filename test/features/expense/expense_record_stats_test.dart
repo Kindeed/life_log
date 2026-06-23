@@ -330,6 +330,8 @@ void main() {
         ..storedRecords.add(
           ExpenseRecord()
             ..id = 7
+            ..createdAt = DateTime(2026, 5, 1, 9)
+            ..updatedAt = DateTime(2026, 5, 2, 10)
             ..expenseDate = DateTime(2026, 5, 2)
             ..amount = 18
             ..currency = 'USD'
@@ -344,6 +346,8 @@ void main() {
       final entries = await adapter.getAllEntries();
 
       expect(entries.single.id, 7);
+      expect(entries.single.createdAt, DateTime(2026, 5, 1, 9));
+      expect(entries.single.updatedAt, DateTime(2026, 5, 2, 10));
       expect(entries.single.expenseDate, DateTime(2026, 5, 2));
       expect(entries.single.amount, 18);
       expect(entries.single.currency, 'USD');
@@ -384,6 +388,8 @@ void main() {
           note: 'keyboard',
           projectId: 4,
           projectName: 'Office',
+          createdAt: DateTime(2026, 5, 1, 9),
+          updatedAt: DateTime(2026, 5, 2, 10),
         ),
         markDirty: true,
       );
@@ -396,6 +402,8 @@ void main() {
       expect(saved.note, 'keyboard');
       expect(saved.projectId, 4);
       expect(saved.projectName, 'Office');
+      expect(saved.createdAt, DateTime(2026, 5, 1, 9));
+      expect(saved.updatedAt, DateTime(2026, 5, 2, 10));
       expect(saved.isDirty, isTrue);
     });
 
@@ -484,6 +492,8 @@ ExpenseRecordEntry _entry({
   String? note,
   int? projectId,
   String? projectName,
+  DateTime? createdAt,
+  DateTime? updatedAt,
 }) {
   return ExpenseRecordEntry(
     id: id,
@@ -494,6 +504,8 @@ ExpenseRecordEntry _entry({
     note: note,
     projectId: projectId,
     projectName: projectName,
+    createdAt: createdAt,
+    updatedAt: updatedAt,
   );
 }
 

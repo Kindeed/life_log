@@ -132,6 +132,23 @@ Guangzhou                                             Yangjiangbei
       expect(result.consumptionSummary, '广州 → 阳江北 2026-05-21 12:08');
       expect(result.buyerName, '航天长征火箭技术有限公司');
       expect(result.buyerTaxId, '91110302700238431D');
+      expect(result.buyerNameValid, isTrue);
+      expect(result.buyerTaxIdValid, isTrue);
+      expect(result.noteLines, contains('校验：购买方名称已识别；统一社会信用代码校验通过'));
     },
   );
+
+  test('parseText flags invalid unified social credit code checksum', () {
+    final result = EvidenceParseService().parseText('''
+电子发票
+购买方名称: 上海示例采购有限公司
+统一社会信用代码: 91310000123456789X
+''');
+
+    expect(result.buyerName, '上海示例采购有限公司');
+    expect(result.buyerTaxId, '91310000123456789X');
+    expect(result.buyerNameValid, isTrue);
+    expect(result.buyerTaxIdValid, isFalse);
+    expect(result.noteLines, contains('校验：购买方名称已识别；统一社会信用代码校验未通过'));
+  });
 }

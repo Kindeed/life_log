@@ -24,6 +24,8 @@ extension ExpenseRecordEntryCategoryLabel on ExpenseRecordEntryCategory {
 
 final class ExpenseRecordEntry extends Equatable {
   final int id;
+  final DateTime? createdAt;
+  final DateTime? updatedAt;
   final DateTime expenseDate;
   final double amount;
   final String currency;
@@ -33,9 +35,13 @@ final class ExpenseRecordEntry extends Equatable {
   final int? projectId;
   final String? projectSyncId;
   final String? projectName;
+  final int? tripWorkLogId;
+  final String? tripWorkLogSyncId;
 
   const ExpenseRecordEntry({
     required this.id,
+    this.createdAt,
+    this.updatedAt,
     required this.expenseDate,
     required this.amount,
     this.currency = 'CNY',
@@ -45,11 +51,15 @@ final class ExpenseRecordEntry extends Equatable {
     this.projectId,
     this.projectSyncId,
     this.projectName,
+    this.tripWorkLogId,
+    this.tripWorkLogSyncId,
   });
 
   @override
   List<Object?> get props => [
     id,
+    createdAt,
+    updatedAt,
     expenseDate,
     amount,
     currency,
@@ -59,5 +69,7 @@ final class ExpenseRecordEntry extends Equatable {
     projectId,
     projectSyncId,
     projectName,
+    tripWorkLogId,
+    tripWorkLogSyncId,
   ];
 }

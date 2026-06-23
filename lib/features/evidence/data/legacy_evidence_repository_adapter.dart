@@ -60,6 +60,8 @@ extension EvidenceEntryMapper on ExpenseEvidence {
       projectName: projectName,
       projectId: projectId,
       projectSyncId: projectSyncId,
+      createdAt: createdAt,
+      updatedAt: updatedAt,
       evidenceDate: evidenceDate,
       amount: amount,
       currency: currency,
@@ -84,6 +86,8 @@ extension EvidenceEntryLegacyMapper on EvidenceEntry {
       ..projectName = projectName
       ..projectId = projectId
       ..projectSyncId = projectSyncId
+      ..createdAt = createdAt
+      ..updatedAt = updatedAt
       ..evidenceDate = evidenceDate
       ..amount = amount
       ..currency = currency

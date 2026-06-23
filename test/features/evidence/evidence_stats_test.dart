@@ -341,6 +341,8 @@ void main() {
               ..id = 7
               ..projectName = 'Alpha'
               ..projectId = 11
+              ..createdAt = DateTime(2026, 5, 1, 9)
+              ..updatedAt = DateTime(2026, 5, 2, 10)
               ..evidenceDate = DateTime(2026, 5, 3)
               ..amount = 12
               ..status = EvidenceStatus.reimbursed,
@@ -354,6 +356,8 @@ void main() {
         expect(entries.single.id, 7);
         expect(entries.single.projectName, 'Alpha');
         expect(entries.single.projectId, 11);
+        expect(entries.single.createdAt, DateTime(2026, 5, 1, 9));
+        expect(entries.single.updatedAt, DateTime(2026, 5, 2, 10));
         expect(entries.single.evidenceDate, DateTime(2026, 5, 3));
         expect(entries.single.amount, 12);
         expect(entries.single.status, EvidenceEntryStatus.reimbursed);
@@ -386,6 +390,8 @@ void main() {
           fileName: 'ticket.pdf',
           mimeType: 'application/pdf',
           tripDate: DateTime(2026, 5, 2),
+          createdAt: DateTime(2026, 5, 1, 9),
+          updatedAt: DateTime(2026, 5, 2, 10),
         ),
         markDirty: true,
         sourcePath: 'C:/tmp/ticket.pdf',
@@ -405,6 +411,8 @@ void main() {
       expect(saved.fileName, 'ticket.pdf');
       expect(saved.mimeType, 'application/pdf');
       expect(saved.tripDate, DateTime(2026, 5, 2));
+      expect(saved.createdAt, DateTime(2026, 5, 1, 9));
+      expect(saved.updatedAt, DateTime(2026, 5, 2, 10));
       expect(saved.isDirty, isTrue);
       expect(repository.savedSourcePath, 'C:/tmp/ticket.pdf');
       expect(repository.savedSourceExtension, 'pdf');
@@ -508,6 +516,8 @@ EvidenceEntry _entry({
   String? mimeType,
   DateTime? uploadedAt,
   DateTime? tripDate,
+  DateTime? createdAt,
+  DateTime? updatedAt,
 }) {
   return EvidenceEntry(
     id: id,
@@ -526,6 +536,8 @@ EvidenceEntry _entry({
     mimeType: mimeType,
     uploadedAt: uploadedAt,
     tripDate: tripDate,
+    createdAt: createdAt,
+    updatedAt: updatedAt,
   );
 }
 

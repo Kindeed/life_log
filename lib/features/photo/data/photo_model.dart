@@ -8,7 +8,15 @@ class PhotoItem {
 
   String? ownerUserId; // 本地账号隔离，不参与云同步
 
-  late DateTime createdAt; // 拍摄时间
+  late DateTime createdAt; // 导入/归档时间
+
+  DateTime? capturedAt; // 拍摄/事件时间，缺省时回退 createdAt
+
+  String? capturedAtSource; // cameraNow / gallery / manual / fallback
+
+  double? gpsLatitude; // 本地 GPS 元数据，默认不展示，不参与云同步
+
+  double? gpsLongitude; // 本地 GPS 元数据，默认不展示，不参与云同步
 
   late String fileName; // 文件名: IMG_20230101_Device_Desc.jpg
 

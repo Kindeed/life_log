@@ -18,6 +18,8 @@ class EvidenceParseResult {
   final String? consumptionSummary;
   final String? buyerName;
   final String? buyerTaxId;
+  final bool buyerNameValid;
+  final bool buyerTaxIdValid;
   final String? travelRoute;
   final String? travelTime;
   final String? serviceItem;
@@ -32,6 +34,8 @@ class EvidenceParseResult {
     this.consumptionSummary,
     this.buyerName,
     this.buyerTaxId,
+    this.buyerNameValid = false,
+    this.buyerTaxIdValid = false,
     this.travelRoute,
     this.travelTime,
     this.serviceItem,
@@ -68,6 +72,16 @@ class EvidenceParseResult {
     }
     if (buyerName != null) lines.add('购买方：$buyerName');
     if (buyerTaxId != null) lines.add('纳税号：$buyerTaxId');
+    if (buyerName != null || buyerTaxId != null) {
+      final checks = <String>[];
+      if (buyerName != null) {
+        checks.add(buyerNameValid ? '购买方名称已识别' : '购买方名称疑似非单位名称');
+      }
+      if (buyerTaxId != null) {
+        checks.add(buyerTaxIdValid ? '统一社会信用代码校验通过' : '统一社会信用代码校验未通过');
+      }
+      lines.add('校验：${checks.join('；')}');
+    }
     if (invoiceNumber != null) lines.add('发票号：$invoiceNumber');
     return lines;
   }
@@ -95,6 +109,8 @@ class EvidenceParseService {
 
   EvidenceParseResult parseText(String text) {
     final normalized = _normalizeText(text);
+    final buyerName = _extractBuyerName(normalized);
+    final buyerTaxId = _extractBuyerTaxId(normalized);
     return EvidenceParseResult(
       rawText: text,
       amount: _extractAmount(normalized),
@@ -103,8 +119,10 @@ class EvidenceParseService {
       currency: _extractCurrency(normalized),
       invoiceNumber: _extractInvoiceNumber(normalized),
       consumptionSummary: _extractConsumptionSummary(normalized),
-      buyerName: _extractBuyerName(normalized),
-      buyerTaxId: _extractBuyerTaxId(normalized),
+      buyerName: buyerName,
+      buyerTaxId: buyerTaxId,
+      buyerNameValid: _looksLikeOrganizationName(buyerName),
+      buyerTaxIdValid: _isValidUnifiedSocialCreditCode(buyerTaxId),
       travelRoute: _extractTravelRoute(normalized),
       travelTime: _extractTravelTime(normalized),
       serviceItem: _extractServiceItem(normalized),
@@ -490,5 +508,46 @@ class EvidenceParseService {
       if (value != null && value.isNotEmpty) return value;
     }
     return null;
+  }
+
+  bool _looksLikeOrganizationName(String? value) {
+    final name = value?.trim();
+    if (name == null || name.length < 4) return false;
+    return RegExp(
+      r'(公司|企业|集团|中心|医院|学校|大学|银行|委员会|合作社|研究所|事务所|工作室|商店|门店|厂)$',
+    ).hasMatch(name);
+  }
+
+  bool _isValidUnifiedSocialCreditCode(String? value) {
+    final code = value?.trim().toUpperCase();
+    if (code == null || code.length != 18) return false;
+    const chars = '0123456789ABCDEFGHJKLMNPQRTUWXY';
+    const weights = [
+      1,
+      3,
+      9,
+      27,
+      19,
+      26,
+      16,
+      17,
+      20,
+      29,
+      25,
+      13,
+      8,
+      24,
+      10,
+      30,
+      28,
+    ];
+    var sum = 0;
+    for (var i = 0; i < 17; i++) {
+      final index = chars.indexOf(code[i]);
+      if (index < 0) return false;
+      sum += index * weights[i];
+    }
+    final checkIndex = (31 - sum % 31) % 31;
+    return chars[checkIndex] == code[17];
   }
 }

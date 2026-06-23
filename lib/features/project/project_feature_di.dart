@@ -14,6 +14,8 @@ import 'package:life_log/features/project/data/legacy_project_repository_adapter
 import 'package:life_log/features/project/data/project_repository.dart';
 import 'package:life_log/features/project/domain/repositories/project_repository_port.dart';
 import 'package:life_log/features/project/presentation/project_cubit.dart';
+import 'package:life_log/features/work_log/application/load_project_work_log_trips.dart';
+import 'package:life_log/features/work_log/application/save_work_log_entry.dart';
 
 GetIt configureProjectFeatureDependencies({
   GetIt? locator,
@@ -63,6 +65,8 @@ GetIt configureProjectFeatureDependencies({
         deleteEvidenceEntry: activeLocator<DeleteEvidenceEntry>(),
         loadExpenseRecordEntries: activeLocator<LoadExpenseRecordEntries>(),
         deleteExpenseRecordEntry: activeLocator<DeleteExpenseRecordEntry>(),
+        loadProjectWorkLogTrips: activeLocator<LoadProjectWorkLogTrips>(),
+        saveWorkLogEntry: activeLocator<SaveWorkLogEntry>(),
       ),
     );
   }

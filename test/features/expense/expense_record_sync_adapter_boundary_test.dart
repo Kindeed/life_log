@@ -31,6 +31,7 @@ void main() {
       expect(adapterSource, contains('mergeRemoteRow('));
       expect(adapterSource, contains('purgeLocalDeleted('));
       expect(adapterSource, contains("onConflict: 'user_id,sync_id'"));
+      expect(adapterSource, contains("'trip_work_log_sync_id'"));
       expect(adapterSource, contains('SyncConflictDraft'));
 
       expect(syncService, contains('ExpenseRecordSyncAdapter('));

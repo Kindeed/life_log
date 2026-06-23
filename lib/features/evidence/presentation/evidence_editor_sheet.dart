@@ -835,11 +835,7 @@ class _EvidenceEditorSheetState extends State<EvidenceEditorSheet> {
 
   bool _shouldApplyParsedDate() {
     final editorState = _editorCubit.state;
-    if (editorState.existingEntry != null) return false;
-    final today = dateOnlyLocal(DateTime.now());
-    return editorState.evidenceDate.year == today.year &&
-        editorState.evidenceDate.month == today.month &&
-        editorState.evidenceDate.day == today.day;
+    return editorState.existingEntry == null;
   }
 
   String _appendParsedNoteLines(String current, List<String> lines) {
@@ -860,7 +856,8 @@ class _EvidenceEditorSheetState extends State<EvidenceEditorSheet> {
     return line.startsWith('发票号：') ||
         line.startsWith('消费内容：') ||
         line.startsWith('购买方：') ||
-        line.startsWith('纳税号：');
+        line.startsWith('纳税号：') ||
+        line.startsWith('校验：');
   }
 }
 

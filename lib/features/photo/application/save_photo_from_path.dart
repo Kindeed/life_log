@@ -14,6 +14,10 @@ final class SavePhotoFromPath {
     required String description,
     required String deviceName,
     required bool deleteSource,
+    DateTime? capturedAt,
+    String? capturedAtSource,
+    double? gpsLatitude,
+    double? gpsLongitude,
   }) async {
     try {
       final entry = await _repository.saveEntryFromPath(
@@ -22,6 +26,10 @@ final class SavePhotoFromPath {
         description: description,
         deviceName: deviceName,
         deleteSource: deleteSource,
+        capturedAt: capturedAt,
+        capturedAtSource: capturedAtSource,
+        gpsLatitude: gpsLatitude,
+        gpsLongitude: gpsLongitude,
       );
       return AppResult.success(entry);
     } catch (error, stackTrace) {

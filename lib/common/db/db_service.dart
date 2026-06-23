@@ -1534,6 +1534,15 @@ class DbService {
     } else {
       log.location = null;
     }
+    final linkedProjectName = _parseRemoteString(data['linked_project_name']);
+    final projectSyncId = _parseRemoteString(data['project_sync_id']);
+    final projectLink = await _resolveProjectLinkInTxn(
+      projectName: linkedProjectName,
+      projectSyncId: projectSyncId,
+    );
+    log.projectName = projectLink?.name ?? linkedProjectName;
+    log.projectId = projectLink?.id;
+    log.projectSyncId = projectLink?.syncId ?? projectSyncId;
 
     await isar.workLogs.put(log);
   }
@@ -1866,6 +1875,13 @@ class DbService {
       projectName: projectName,
       projectSyncId: projectSyncId,
     );
+    final tripWorkLogSyncId = _parseRemoteString(data['trip_work_log_sync_id']);
+    final tripWorkLog = tripWorkLogSyncId == null
+        ? null
+        : await isar.workLogs
+              .filter()
+              .syncIdEqualTo(tripWorkLogSyncId)
+              .findFirst();
 
     record.remoteId = remoteId;
     record.ownerUserId = currentOwnerUserId;
@@ -1894,6 +1910,8 @@ class DbService {
     record.projectName = projectLink?.name ?? projectName;
     record.projectId = projectLink?.id;
     record.projectSyncId = projectLink?.syncId ?? projectSyncId;
+    record.tripWorkLogId = tripWorkLog?.id;
+    record.tripWorkLogSyncId = tripWorkLog?.syncId ?? tripWorkLogSyncId;
 
     await isar.expenseRecords.put(record);
   }

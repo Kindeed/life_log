@@ -32,6 +32,8 @@ Future<void> capturePhotoWithSystemCamera(
         projectName: projectName,
         description: description,
         sourceAssetId: null,
+        capturedAt: DateTime.now(),
+        capturedAtSource: 'cameraNow',
         onSaved: onSaved,
       ),
     );
@@ -55,6 +57,8 @@ Future<void> importPhotoFromGallery(
     );
     if (result == null || !context.mounted) return;
 
+    final latLng = await _galleryLatLng(result.asset);
+    if (!context.mounted) return;
     showCaptureDialog(
       context,
       initialProject: initialProject,
@@ -64,6 +68,10 @@ Future<void> importPhotoFromGallery(
         projectName: projectName,
         description: description,
         sourceAssetId: result.asset.id,
+        capturedAt: result.asset.createDateTime,
+        capturedAtSource: 'gallery',
+        gpsLatitude: latLng?.latitude,
+        gpsLongitude: latLng?.longitude,
         onSaved: onSaved,
       ),
     );
@@ -79,6 +87,10 @@ Future<void> _savePhotoFromPath({
   required String projectName,
   required String description,
   required String? sourceAssetId,
+  DateTime? capturedAt,
+  String? capturedAtSource,
+  double? gpsLatitude,
+  double? gpsLongitude,
   required Future<void> Function()? onSaved,
 }) async {
   try {
@@ -88,6 +100,10 @@ Future<void> _savePhotoFromPath({
       description: description,
       deviceName: await _deviceName(),
       deleteSource: sourceAssetId == null,
+      capturedAt: capturedAt,
+      capturedAtSource: capturedAtSource,
+      gpsLatitude: gpsLatitude,
+      gpsLongitude: gpsLongitude,
     );
     final failure = result.failureOrNull;
     if (failure != null) {
@@ -115,6 +131,15 @@ Future<void> _savePhotoFromPath({
   } catch (error, stackTrace) {
     _logError('保存照片失败', error, stackTrace);
     _showSnack(messenger, '保存照片失败: $error');
+  }
+}
+
+Future<LatLng?> _galleryLatLng(AssetEntity asset) async {
+  try {
+    return asset.latLng ?? await asset.latlngAsync();
+  } catch (error, stackTrace) {
+    _logError('读取相册 GPS 元数据失败', error, stackTrace);
+    return asset.latLng;
   }
 }
 

@@ -65,6 +65,11 @@ void main() {
           reason: 'PhotoItem must stay local-only and not define $field.',
         );
       }
+
+      expect(source, contains('DateTime? capturedAt'));
+      expect(source, contains('String? capturedAtSource'));
+      expect(source, contains('double? gpsLatitude'));
+      expect(source, contains('double? gpsLongitude'));
     });
 
     test(
@@ -161,6 +166,38 @@ void main() {
 
       expect(local.addedPhotos, isEmpty);
     });
+
+    test(
+      'stores captured time and GPS metadata as local-only fields',
+      () async {
+        final local = _PhotoLocalDataSourceFake();
+        final repository = PhotoRepository(
+          localDataSource: local,
+          projectResolver: _PhotoProjectResolverFake(),
+          fileStore: _PhotoFileStoreFake(),
+        );
+        final capturedAt = DateTime(2026, 5, 9, 8, 30);
+
+        await repository.processAndSavePhoto(
+          tempPath: 'C:/tmp/source.jpg',
+          projectName: 'Project',
+          description: 'Desc',
+          deviceName: 'Phone',
+          capturedAt: capturedAt,
+          capturedAtSource: 'gallery',
+          gpsLatitude: 31.2304,
+          gpsLongitude: 121.4737,
+        );
+
+        final saved = local.addedPhotos.single;
+        expect(saved.createdAt, isNot(capturedAt));
+        expect(saved.capturedAt, capturedAt);
+        expect(saved.capturedAtSource, 'gallery');
+        expect(saved.gpsLatitude, 31.2304);
+        expect(saved.gpsLongitude, 121.4737);
+        expect(saved.dateIndexed, DateTime(2026, 5, 9));
+      },
+    );
 
     test('does not delete photo row when file deletion fails', () async {
       final photo = _photo(id: 7, path: 'C:/app/photo.jpg');

@@ -38,7 +38,27 @@ void main() {
       expect(cubit.state.transport, '高铁');
       expect(cubit.state.expenseText, '32.5');
       expect(cubit.state.isReimbursed, isTrue);
+      expect(cubit.state.projectId, isNull);
+      expect(cubit.state.projectSyncId, isNull);
+      expect(cubit.state.projectName, '');
       expect(cubit.state.note, '已存在记录');
+    });
+
+    test('initializes business-trip project link from an existing entry', () {
+      final cubit = _editor(
+        existingEntry: _entry(
+          id: 10,
+          type: WorkLogEntryType.businessTrip,
+          projectId: 5,
+          projectSyncId: 'project-sync-5',
+          projectName: 'Y9 项目',
+        ),
+      );
+      addTearDown(cubit.close);
+
+      expect(cubit.state.projectId, 5);
+      expect(cubit.state.projectSyncId, 'project-sync-5');
+      expect(cubit.state.projectName, 'Y9 项目');
     });
 
     test('rejects invalid trip expense before saving', () async {
@@ -83,6 +103,50 @@ void main() {
       expect(call.entry.isReimbursed, isTrue);
       expect(call.entry.note, '新出差');
       expect(cubit.state.status, WorkLogEditorStatus.saved);
+    });
+
+    test('saves a project link only for business-trip entries', () async {
+      final repository = _EditorRepository();
+      final cubit = _editor(repository: repository);
+      addTearDown(cubit.close);
+
+      cubit
+        ..changeType(WorkLogEntryType.businessTrip)
+        ..changeProject(id: 3, syncId: 'project-sync-3', name: '项目 A')
+        ..changeTripLocation('北京');
+
+      await cubit.submit();
+
+      final saved = repository.savedEntries.single.entry;
+      expect(saved.type, WorkLogEntryType.businessTrip);
+      expect(saved.projectId, 3);
+      expect(saved.projectSyncId, 'project-sync-3');
+      expect(saved.projectName, '项目 A');
+    });
+
+    test('clears project link when entry is not a business trip', () async {
+      final repository = _EditorRepository();
+      final cubit = _editor(
+        repository: repository,
+        existingEntry: _entry(
+          id: 11,
+          type: WorkLogEntryType.businessTrip,
+          projectId: 3,
+          projectSyncId: 'project-sync-3',
+          projectName: '项目 A',
+        ),
+      );
+      addTearDown(cubit.close);
+
+      cubit.changeType(WorkLogEntryType.work);
+
+      await cubit.submit();
+
+      final saved = repository.savedEntries.single.entry;
+      expect(saved.type, WorkLogEntryType.work);
+      expect(saved.projectId, isNull);
+      expect(saved.projectSyncId, isNull);
+      expect(saved.projectName, isNull);
     });
 
     test(
@@ -229,6 +293,9 @@ WorkLogEntry _entry({
   String? location,
   String? transport,
   double? expenses,
+  int? projectId,
+  String? projectSyncId,
+  String? projectName,
   bool isReimbursed = false,
   String? note,
 }) {
@@ -240,6 +307,9 @@ WorkLogEntry _entry({
     location: location,
     transport: transport,
     expenses: expenses,
+    projectId: projectId,
+    projectSyncId: projectSyncId,
+    projectName: projectName,
     isReimbursed: isReimbursed,
     note: note,
   );

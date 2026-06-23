@@ -28,8 +28,24 @@ void main() {
       expect(cubit.state.category, ExpenseRecordEntryCategory.travel);
       expect(cubit.state.merchant, '高铁');
       expect(cubit.state.projectName, '上海项目');
+      expect(cubit.state.tripWorkLogId, isNull);
+      expect(cubit.state.tripWorkLogSyncId, isNull);
       expect(cubit.state.note, '已报销');
       expect(cubit.state.existingAlreadyDirty, isTrue);
+    });
+
+    test('initializes trip link from an existing entry', () {
+      final cubit = _editor(
+        existingEntry: _entry(
+          id: 10,
+          tripWorkLogId: 4,
+          tripWorkLogSyncId: 'trip-sync-4',
+        ),
+      );
+      addTearDown(cubit.close);
+
+      expect(cubit.state.tripWorkLogId, 4);
+      expect(cubit.state.tripWorkLogSyncId, 'trip-sync-4');
     });
 
     test('rejects invalid amount before saving', () async {
@@ -69,6 +85,24 @@ void main() {
       expect(call.entry.projectName, '新项目');
       expect(call.entry.note, '办公用品');
       expect(cubit.state.status, ExpenseRecordEditorStatus.saved);
+    });
+
+    test('saves an optional trip link with project expense entries', () async {
+      final repository = _EditorRepository();
+      final cubit = _editor(repository: repository, initialProjectName: 'Y9');
+      addTearDown(cubit.close);
+
+      cubit
+        ..changeAmountText('88')
+        ..changeTripWorkLog(id: 6, syncId: 'trip-sync-6')
+        ..changeMerchant('高铁票');
+
+      await cubit.submit();
+
+      final saved = repository.savedEntries.single.entry;
+      expect(saved.projectName, 'Y9');
+      expect(saved.tripWorkLogId, 6);
+      expect(saved.tripWorkLogSyncId, 'trip-sync-6');
     });
 
     test(
@@ -153,7 +187,6 @@ void main() {
         expect(source, isNot(contains('saveRecord(')));
         expect(source, isNot(contains('deleteRecord(')));
         expect(source, isNot(contains('remoteId')));
-        expect(source, isNot(contains('syncId')));
         expect(source, isNot(contains('remoteVersion')));
         expect(source, isNot(contains('remoteUpdatedAt')));
         expect(source, isNot(contains('syncedAt')));
@@ -197,6 +230,8 @@ ExpenseRecordEntry _entry({
   ExpenseRecordEntryCategory category = ExpenseRecordEntryCategory.meal,
   String? merchant,
   String? projectName,
+  int? tripWorkLogId,
+  String? tripWorkLogSyncId,
   String? note,
 }) {
   return ExpenseRecordEntry(
@@ -206,6 +241,8 @@ ExpenseRecordEntry _entry({
     category: category,
     merchant: merchant,
     projectName: projectName,
+    tripWorkLogId: tripWorkLogId,
+    tripWorkLogSyncId: tripWorkLogSyncId,
     note: note,
   );
 }

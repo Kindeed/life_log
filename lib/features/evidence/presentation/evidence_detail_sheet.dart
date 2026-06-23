@@ -3,7 +3,6 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:life_log/common/theme/theme_extensions.dart';
-import 'package:life_log/common/utils/date_utils.dart';
 import 'package:life_log/common/utils/formatters.dart';
 import 'package:life_log/core/di/service_locator.dart';
 import 'package:life_log/features/evidence/application/delete_evidence_entry.dart';
@@ -283,7 +282,7 @@ class _EvidenceDetailSheetState extends State<EvidenceDetailSheet> {
       currency = parsedCurrency;
       changed = true;
     }
-    if (result.evidenceDate != null && _isToday(evidenceDate)) {
+    if (result.evidenceDate != null) {
       evidenceDate = result.evidenceDate!;
       changed = true;
     }
@@ -322,15 +321,8 @@ class _EvidenceDetailSheetState extends State<EvidenceDetailSheet> {
     return line.startsWith('发票号：') ||
         line.startsWith('消费内容：') ||
         line.startsWith('购买方：') ||
-        line.startsWith('纳税号：');
-  }
-
-  bool _isToday(DateTime date) {
-    final normalized = dateOnlyLocal(date);
-    final today = dateOnlyLocal(DateTime.now());
-    return normalized.year == today.year &&
-        normalized.month == today.month &&
-        normalized.day == today.day;
+        line.startsWith('纳税号：') ||
+        line.startsWith('校验：');
   }
 
   void _showActionSuccess(String message, {ScaffoldMessengerState? messenger}) {
@@ -510,7 +502,7 @@ class _InfoRow extends StatelessWidget {
             ),
           ),
           Expanded(
-            child: Text(
+            child: SelectableText(
               value,
               style: TextStyle(fontSize: 13.sp, fontWeight: FontWeight.w600),
             ),

@@ -240,6 +240,37 @@ void main() {
       expect(binding, isNot(contains('EvidenceController')));
       expect(backupService, isNot(contains('EvidenceController')));
     });
+
+    test('applies parsed invoice dates instead of keeping import dates', () {
+      final editorSheet = File(
+        'lib/features/evidence/presentation/evidence_editor_sheet.dart',
+      ).readAsStringSync();
+      final detailSheet = File(
+        'lib/features/evidence/presentation/evidence_detail_sheet.dart',
+      ).readAsStringSync();
+
+      expect(
+        editorSheet,
+        contains(
+          'if (result.evidenceDate != null && _shouldApplyParsedDate())',
+        ),
+      );
+      expect(
+        editorSheet,
+        contains('return editorState.existingEntry == null;'),
+      );
+      expect(detailSheet, contains('if (result.evidenceDate != null) {'));
+      expect(detailSheet, isNot(contains('&& _isToday(evidenceDate)')));
+    });
+
+    test('makes recognized evidence detail text selectable', () {
+      final detailSheet = File(
+        'lib/features/evidence/presentation/evidence_detail_sheet.dart',
+      ).readAsStringSync();
+
+      expect(detailSheet, contains('SelectableText('));
+      expect(detailSheet, contains("label: '备注'"));
+    });
   });
 }
 

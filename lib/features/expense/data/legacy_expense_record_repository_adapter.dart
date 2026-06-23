@@ -52,6 +52,8 @@ extension ExpenseRecordEntryMapper on ExpenseRecord {
   ExpenseRecordEntry toExpenseRecordEntry() {
     return ExpenseRecordEntry(
       id: id,
+      createdAt: createdAt,
+      updatedAt: updatedAt,
       expenseDate: expenseDate,
       amount: amount,
       currency: currency,
@@ -61,6 +63,8 @@ extension ExpenseRecordEntryMapper on ExpenseRecord {
       projectId: projectId,
       projectSyncId: projectSyncId,
       projectName: projectName,
+      tripWorkLogId: tripWorkLogId,
+      tripWorkLogSyncId: tripWorkLogSyncId,
     );
   }
 }
@@ -69,6 +73,8 @@ extension ExpenseRecordEntryLegacyMapper on ExpenseRecordEntry {
   ExpenseRecord toLegacyExpenseRecord() {
     return ExpenseRecord()
       ..id = id
+      ..createdAt = createdAt
+      ..updatedAt = updatedAt
       ..expenseDate = expenseDate
       ..amount = amount
       ..currency = currency
@@ -77,7 +83,9 @@ extension ExpenseRecordEntryLegacyMapper on ExpenseRecordEntry {
       ..note = note
       ..projectId = projectId
       ..projectSyncId = projectSyncId
-      ..projectName = projectName;
+      ..projectName = projectName
+      ..tripWorkLogId = tripWorkLogId
+      ..tripWorkLogSyncId = tripWorkLogSyncId;
   }
 }
 

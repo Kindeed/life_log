@@ -3,6 +3,7 @@ import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:life_log/common/theme/theme_controller.dart';
 import 'package:life_log/common/widgets/app_card.dart';
 import 'package:life_log/core/di/service_locator.dart';
+import 'package:life_log/features/photo/presentation/photo_display_preferences.dart';
 
 /// 外观设置页面
 class AppearanceView extends StatelessWidget {
@@ -11,6 +12,7 @@ class AppearanceView extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final themeController = serviceLocator<ThemeController>();
+    final photoDisplayPreferences = serviceLocator<PhotoDisplayPreferences>();
     final theme = Theme.of(context);
     final textPrimary = theme.colorScheme.onSurface;
     final textSecondary = theme.colorScheme.onSurfaceVariant;
@@ -19,7 +21,7 @@ class AppearanceView extends StatelessWidget {
       backgroundColor: theme.scaffoldBackgroundColor,
       appBar: AppBar(title: const Text('外观设置'), centerTitle: true),
       body: AnimatedBuilder(
-        animation: themeController,
+        animation: Listenable.merge([themeController, photoDisplayPreferences]),
         builder: (context, _) {
           return SingleChildScrollView(
             padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 16.h),
@@ -38,6 +40,14 @@ class AppearanceView extends StatelessWidget {
                 _buildSectionTitle('颜色', textPrimary),
                 SizedBox(height: 12.h),
                 _buildDynamicColorOption(themeController, theme, textSecondary),
+                SizedBox(height: 22.h),
+                _buildSectionTitle('照片信息', textPrimary),
+                SizedBox(height: 12.h),
+                _buildPhotoMetadataOption(
+                  photoDisplayPreferences,
+                  theme,
+                  textSecondary,
+                ),
               ],
             ),
           );
@@ -162,6 +172,29 @@ class AppearanceView extends StatelessWidget {
         title: const Text('动态取色'),
         subtitle: Text(
           'Android 12 及以上跟随系统壁纸颜色，其他平台自动使用默认主题色。',
+          style: TextStyle(color: textSecondary),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildPhotoMetadataOption(
+    PhotoDisplayPreferences preferences,
+    ThemeData theme,
+    Color textSecondary,
+  ) {
+    return AppCard(
+      padding: EdgeInsets.zero,
+      child: SwitchListTile(
+        value: preferences.showGpsMetadata,
+        onChanged: preferences.setShowGpsMetadata,
+        secondary: Icon(
+          Icons.location_on_outlined,
+          color: theme.colorScheme.primary,
+        ),
+        title: const Text('显示 GPS'),
+        subtitle: Text(
+          '仅在照片预览中显示已读取到的经纬度；缺少 GPS 的照片不会显示。',
           style: TextStyle(color: textSecondary),
         ),
       ),

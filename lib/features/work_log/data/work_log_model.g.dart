@@ -60,36 +60,51 @@ const WorkLogSchema = CollectionSchema(
       name: r'pendingDelete',
       type: IsarType.bool,
     ),
-    r'remoteId': PropertySchema(id: 11, name: r'remoteId', type: IsarType.long),
-    r'remoteUpdatedAt': PropertySchema(
+    r'projectId': PropertySchema(
+      id: 11,
+      name: r'projectId',
+      type: IsarType.long,
+    ),
+    r'projectName': PropertySchema(
       id: 12,
+      name: r'projectName',
+      type: IsarType.string,
+    ),
+    r'projectSyncId': PropertySchema(
+      id: 13,
+      name: r'projectSyncId',
+      type: IsarType.string,
+    ),
+    r'remoteId': PropertySchema(id: 14, name: r'remoteId', type: IsarType.long),
+    r'remoteUpdatedAt': PropertySchema(
+      id: 15,
       name: r'remoteUpdatedAt',
       type: IsarType.dateTime,
     ),
     r'remoteVersion': PropertySchema(
-      id: 13,
+      id: 16,
       name: r'remoteVersion',
       type: IsarType.long,
     ),
-    r'syncId': PropertySchema(id: 14, name: r'syncId', type: IsarType.string),
+    r'syncId': PropertySchema(id: 17, name: r'syncId', type: IsarType.string),
     r'syncedAt': PropertySchema(
-      id: 15,
+      id: 18,
       name: r'syncedAt',
       type: IsarType.dateTime,
     ),
     r'transport': PropertySchema(
-      id: 16,
+      id: 19,
       name: r'transport',
       type: IsarType.string,
     ),
     r'type': PropertySchema(
-      id: 17,
+      id: 20,
       name: r'type',
       type: IsarType.byte,
       enumMap: _WorkLogtypeEnumValueMap,
     ),
     r'updatedAt': PropertySchema(
-      id: 18,
+      id: 21,
       name: r'updatedAt',
       type: IsarType.dateTime,
     ),
@@ -109,6 +124,45 @@ const WorkLogSchema = CollectionSchema(
         IndexPropertySchema(
           name: r'deletedAt',
           type: IndexType.value,
+          caseSensitive: false,
+        ),
+      ],
+    ),
+    r'projectId': IndexSchema(
+      id: 3305656282123791113,
+      name: r'projectId',
+      unique: false,
+      replace: false,
+      properties: [
+        IndexPropertySchema(
+          name: r'projectId',
+          type: IndexType.value,
+          caseSensitive: false,
+        ),
+      ],
+    ),
+    r'projectSyncId': IndexSchema(
+      id: -4233159093434817676,
+      name: r'projectSyncId',
+      unique: false,
+      replace: false,
+      properties: [
+        IndexPropertySchema(
+          name: r'projectSyncId',
+          type: IndexType.hash,
+          caseSensitive: false,
+        ),
+      ],
+    ),
+    r'projectName': IndexSchema(
+      id: 7457588439029069741,
+      name: r'projectName',
+      unique: false,
+      replace: false,
+      properties: [
+        IndexPropertySchema(
+          name: r'projectName',
+          type: IndexType.hash,
           caseSensitive: false,
         ),
       ],
@@ -147,6 +201,18 @@ int _workLogEstimateSize(
     }
   }
   {
+    final value = object.projectName;
+    if (value != null) {
+      bytesCount += 3 + value.length * 3;
+    }
+  }
+  {
+    final value = object.projectSyncId;
+    if (value != null) {
+      bytesCount += 3 + value.length * 3;
+    }
+  }
+  {
     final value = object.syncId;
     if (value != null) {
       bytesCount += 3 + value.length * 3;
@@ -178,14 +244,17 @@ void _workLogSerialize(
   writer.writeDouble(offsets[8], object.overtimeHours);
   writer.writeString(offsets[9], object.ownerUserId);
   writer.writeBool(offsets[10], object.pendingDelete);
-  writer.writeLong(offsets[11], object.remoteId);
-  writer.writeDateTime(offsets[12], object.remoteUpdatedAt);
-  writer.writeLong(offsets[13], object.remoteVersion);
-  writer.writeString(offsets[14], object.syncId);
-  writer.writeDateTime(offsets[15], object.syncedAt);
-  writer.writeString(offsets[16], object.transport);
-  writer.writeByte(offsets[17], object.type.index);
-  writer.writeDateTime(offsets[18], object.updatedAt);
+  writer.writeLong(offsets[11], object.projectId);
+  writer.writeString(offsets[12], object.projectName);
+  writer.writeString(offsets[13], object.projectSyncId);
+  writer.writeLong(offsets[14], object.remoteId);
+  writer.writeDateTime(offsets[15], object.remoteUpdatedAt);
+  writer.writeLong(offsets[16], object.remoteVersion);
+  writer.writeString(offsets[17], object.syncId);
+  writer.writeDateTime(offsets[18], object.syncedAt);
+  writer.writeString(offsets[19], object.transport);
+  writer.writeByte(offsets[20], object.type.index);
+  writer.writeDateTime(offsets[21], object.updatedAt);
 }
 
 WorkLog _workLogDeserialize(
@@ -207,16 +276,19 @@ WorkLog _workLogDeserialize(
   object.overtimeHours = reader.readDoubleOrNull(offsets[8]);
   object.ownerUserId = reader.readStringOrNull(offsets[9]);
   object.pendingDelete = reader.readBool(offsets[10]);
-  object.remoteId = reader.readLongOrNull(offsets[11]);
-  object.remoteUpdatedAt = reader.readDateTimeOrNull(offsets[12]);
-  object.remoteVersion = reader.readLong(offsets[13]);
-  object.syncId = reader.readStringOrNull(offsets[14]);
-  object.syncedAt = reader.readDateTimeOrNull(offsets[15]);
-  object.transport = reader.readStringOrNull(offsets[16]);
+  object.projectId = reader.readLongOrNull(offsets[11]);
+  object.projectName = reader.readStringOrNull(offsets[12]);
+  object.projectSyncId = reader.readStringOrNull(offsets[13]);
+  object.remoteId = reader.readLongOrNull(offsets[14]);
+  object.remoteUpdatedAt = reader.readDateTimeOrNull(offsets[15]);
+  object.remoteVersion = reader.readLong(offsets[16]);
+  object.syncId = reader.readStringOrNull(offsets[17]);
+  object.syncedAt = reader.readDateTimeOrNull(offsets[18]);
+  object.transport = reader.readStringOrNull(offsets[19]);
   object.type =
-      _WorkLogtypeValueEnumMap[reader.readByteOrNull(offsets[17])] ??
+      _WorkLogtypeValueEnumMap[reader.readByteOrNull(offsets[20])] ??
       LogType.work;
-  object.updatedAt = reader.readDateTimeOrNull(offsets[18]);
+  object.updatedAt = reader.readDateTimeOrNull(offsets[21]);
   return object;
 }
 
@@ -252,20 +324,26 @@ P _workLogDeserializeProp<P>(
     case 11:
       return (reader.readLongOrNull(offset)) as P;
     case 12:
-      return (reader.readDateTimeOrNull(offset)) as P;
-    case 13:
-      return (reader.readLong(offset)) as P;
-    case 14:
       return (reader.readStringOrNull(offset)) as P;
+    case 13:
+      return (reader.readStringOrNull(offset)) as P;
+    case 14:
+      return (reader.readLongOrNull(offset)) as P;
     case 15:
       return (reader.readDateTimeOrNull(offset)) as P;
     case 16:
-      return (reader.readStringOrNull(offset)) as P;
+      return (reader.readLong(offset)) as P;
     case 17:
+      return (reader.readStringOrNull(offset)) as P;
+    case 18:
+      return (reader.readDateTimeOrNull(offset)) as P;
+    case 19:
+      return (reader.readStringOrNull(offset)) as P;
+    case 20:
       return (_WorkLogtypeValueEnumMap[reader.readByteOrNull(offset)] ??
               LogType.work)
           as P;
-    case 18:
+    case 21:
       return (reader.readDateTimeOrNull(offset)) as P;
     default:
       throw IsarError('Unknown property with id $propertyId');
@@ -308,6 +386,14 @@ extension WorkLogQueryWhereSort on QueryBuilder<WorkLog, WorkLog, QWhere> {
     return QueryBuilder.apply(this, (query) {
       return query.addWhereClause(
         const IndexWhereClause.any(indexName: r'deletedAt'),
+      );
+    });
+  }
+
+  QueryBuilder<WorkLog, WorkLog, QAfterWhere> anyProjectId() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addWhereClause(
+        const IndexWhereClause.any(indexName: r'projectId'),
       );
     });
   }
@@ -505,6 +591,288 @@ extension WorkLogQueryWhere on QueryBuilder<WorkLog, WorkLog, QWhereClause> {
           includeUpper: includeUpper,
         ),
       );
+    });
+  }
+
+  QueryBuilder<WorkLog, WorkLog, QAfterWhereClause> projectIdIsNull() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addWhereClause(
+        IndexWhereClause.equalTo(indexName: r'projectId', value: [null]),
+      );
+    });
+  }
+
+  QueryBuilder<WorkLog, WorkLog, QAfterWhereClause> projectIdIsNotNull() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addWhereClause(
+        IndexWhereClause.between(
+          indexName: r'projectId',
+          lower: [null],
+          includeLower: false,
+          upper: [],
+        ),
+      );
+    });
+  }
+
+  QueryBuilder<WorkLog, WorkLog, QAfterWhereClause> projectIdEqualTo(
+    int? projectId,
+  ) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addWhereClause(
+        IndexWhereClause.equalTo(indexName: r'projectId', value: [projectId]),
+      );
+    });
+  }
+
+  QueryBuilder<WorkLog, WorkLog, QAfterWhereClause> projectIdNotEqualTo(
+    int? projectId,
+  ) {
+    return QueryBuilder.apply(this, (query) {
+      if (query.whereSort == Sort.asc) {
+        return query
+            .addWhereClause(
+              IndexWhereClause.between(
+                indexName: r'projectId',
+                lower: [],
+                upper: [projectId],
+                includeUpper: false,
+              ),
+            )
+            .addWhereClause(
+              IndexWhereClause.between(
+                indexName: r'projectId',
+                lower: [projectId],
+                includeLower: false,
+                upper: [],
+              ),
+            );
+      } else {
+        return query
+            .addWhereClause(
+              IndexWhereClause.between(
+                indexName: r'projectId',
+                lower: [projectId],
+                includeLower: false,
+                upper: [],
+              ),
+            )
+            .addWhereClause(
+              IndexWhereClause.between(
+                indexName: r'projectId',
+                lower: [],
+                upper: [projectId],
+                includeUpper: false,
+              ),
+            );
+      }
+    });
+  }
+
+  QueryBuilder<WorkLog, WorkLog, QAfterWhereClause> projectIdGreaterThan(
+    int? projectId, {
+    bool include = false,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addWhereClause(
+        IndexWhereClause.between(
+          indexName: r'projectId',
+          lower: [projectId],
+          includeLower: include,
+          upper: [],
+        ),
+      );
+    });
+  }
+
+  QueryBuilder<WorkLog, WorkLog, QAfterWhereClause> projectIdLessThan(
+    int? projectId, {
+    bool include = false,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addWhereClause(
+        IndexWhereClause.between(
+          indexName: r'projectId',
+          lower: [],
+          upper: [projectId],
+          includeUpper: include,
+        ),
+      );
+    });
+  }
+
+  QueryBuilder<WorkLog, WorkLog, QAfterWhereClause> projectIdBetween(
+    int? lowerProjectId,
+    int? upperProjectId, {
+    bool includeLower = true,
+    bool includeUpper = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addWhereClause(
+        IndexWhereClause.between(
+          indexName: r'projectId',
+          lower: [lowerProjectId],
+          includeLower: includeLower,
+          upper: [upperProjectId],
+          includeUpper: includeUpper,
+        ),
+      );
+    });
+  }
+
+  QueryBuilder<WorkLog, WorkLog, QAfterWhereClause> projectSyncIdIsNull() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addWhereClause(
+        IndexWhereClause.equalTo(indexName: r'projectSyncId', value: [null]),
+      );
+    });
+  }
+
+  QueryBuilder<WorkLog, WorkLog, QAfterWhereClause> projectSyncIdIsNotNull() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addWhereClause(
+        IndexWhereClause.between(
+          indexName: r'projectSyncId',
+          lower: [null],
+          includeLower: false,
+          upper: [],
+        ),
+      );
+    });
+  }
+
+  QueryBuilder<WorkLog, WorkLog, QAfterWhereClause> projectSyncIdEqualTo(
+    String? projectSyncId,
+  ) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addWhereClause(
+        IndexWhereClause.equalTo(
+          indexName: r'projectSyncId',
+          value: [projectSyncId],
+        ),
+      );
+    });
+  }
+
+  QueryBuilder<WorkLog, WorkLog, QAfterWhereClause> projectSyncIdNotEqualTo(
+    String? projectSyncId,
+  ) {
+    return QueryBuilder.apply(this, (query) {
+      if (query.whereSort == Sort.asc) {
+        return query
+            .addWhereClause(
+              IndexWhereClause.between(
+                indexName: r'projectSyncId',
+                lower: [],
+                upper: [projectSyncId],
+                includeUpper: false,
+              ),
+            )
+            .addWhereClause(
+              IndexWhereClause.between(
+                indexName: r'projectSyncId',
+                lower: [projectSyncId],
+                includeLower: false,
+                upper: [],
+              ),
+            );
+      } else {
+        return query
+            .addWhereClause(
+              IndexWhereClause.between(
+                indexName: r'projectSyncId',
+                lower: [projectSyncId],
+                includeLower: false,
+                upper: [],
+              ),
+            )
+            .addWhereClause(
+              IndexWhereClause.between(
+                indexName: r'projectSyncId',
+                lower: [],
+                upper: [projectSyncId],
+                includeUpper: false,
+              ),
+            );
+      }
+    });
+  }
+
+  QueryBuilder<WorkLog, WorkLog, QAfterWhereClause> projectNameIsNull() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addWhereClause(
+        IndexWhereClause.equalTo(indexName: r'projectName', value: [null]),
+      );
+    });
+  }
+
+  QueryBuilder<WorkLog, WorkLog, QAfterWhereClause> projectNameIsNotNull() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addWhereClause(
+        IndexWhereClause.between(
+          indexName: r'projectName',
+          lower: [null],
+          includeLower: false,
+          upper: [],
+        ),
+      );
+    });
+  }
+
+  QueryBuilder<WorkLog, WorkLog, QAfterWhereClause> projectNameEqualTo(
+    String? projectName,
+  ) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addWhereClause(
+        IndexWhereClause.equalTo(
+          indexName: r'projectName',
+          value: [projectName],
+        ),
+      );
+    });
+  }
+
+  QueryBuilder<WorkLog, WorkLog, QAfterWhereClause> projectNameNotEqualTo(
+    String? projectName,
+  ) {
+    return QueryBuilder.apply(this, (query) {
+      if (query.whereSort == Sort.asc) {
+        return query
+            .addWhereClause(
+              IndexWhereClause.between(
+                indexName: r'projectName',
+                lower: [],
+                upper: [projectName],
+                includeUpper: false,
+              ),
+            )
+            .addWhereClause(
+              IndexWhereClause.between(
+                indexName: r'projectName',
+                lower: [projectName],
+                includeLower: false,
+                upper: [],
+              ),
+            );
+      } else {
+        return query
+            .addWhereClause(
+              IndexWhereClause.between(
+                indexName: r'projectName',
+                lower: [projectName],
+                includeLower: false,
+                upper: [],
+              ),
+            )
+            .addWhereClause(
+              IndexWhereClause.between(
+                indexName: r'projectName',
+                lower: [],
+                upper: [projectName],
+                includeUpper: false,
+              ),
+            );
+      }
     });
   }
 }
@@ -1468,6 +1836,409 @@ extension WorkLogQueryFilter
     });
   }
 
+  QueryBuilder<WorkLog, WorkLog, QAfterFilterCondition> projectIdIsNull() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(
+        const FilterCondition.isNull(property: r'projectId'),
+      );
+    });
+  }
+
+  QueryBuilder<WorkLog, WorkLog, QAfterFilterCondition> projectIdIsNotNull() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(
+        const FilterCondition.isNotNull(property: r'projectId'),
+      );
+    });
+  }
+
+  QueryBuilder<WorkLog, WorkLog, QAfterFilterCondition> projectIdEqualTo(
+    int? value,
+  ) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(
+        FilterCondition.equalTo(property: r'projectId', value: value),
+      );
+    });
+  }
+
+  QueryBuilder<WorkLog, WorkLog, QAfterFilterCondition> projectIdGreaterThan(
+    int? value, {
+    bool include = false,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(
+        FilterCondition.greaterThan(
+          include: include,
+          property: r'projectId',
+          value: value,
+        ),
+      );
+    });
+  }
+
+  QueryBuilder<WorkLog, WorkLog, QAfterFilterCondition> projectIdLessThan(
+    int? value, {
+    bool include = false,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(
+        FilterCondition.lessThan(
+          include: include,
+          property: r'projectId',
+          value: value,
+        ),
+      );
+    });
+  }
+
+  QueryBuilder<WorkLog, WorkLog, QAfterFilterCondition> projectIdBetween(
+    int? lower,
+    int? upper, {
+    bool includeLower = true,
+    bool includeUpper = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(
+        FilterCondition.between(
+          property: r'projectId',
+          lower: lower,
+          includeLower: includeLower,
+          upper: upper,
+          includeUpper: includeUpper,
+        ),
+      );
+    });
+  }
+
+  QueryBuilder<WorkLog, WorkLog, QAfterFilterCondition> projectNameIsNull() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(
+        const FilterCondition.isNull(property: r'projectName'),
+      );
+    });
+  }
+
+  QueryBuilder<WorkLog, WorkLog, QAfterFilterCondition> projectNameIsNotNull() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(
+        const FilterCondition.isNotNull(property: r'projectName'),
+      );
+    });
+  }
+
+  QueryBuilder<WorkLog, WorkLog, QAfterFilterCondition> projectNameEqualTo(
+    String? value, {
+    bool caseSensitive = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(
+        FilterCondition.equalTo(
+          property: r'projectName',
+          value: value,
+          caseSensitive: caseSensitive,
+        ),
+      );
+    });
+  }
+
+  QueryBuilder<WorkLog, WorkLog, QAfterFilterCondition> projectNameGreaterThan(
+    String? value, {
+    bool include = false,
+    bool caseSensitive = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(
+        FilterCondition.greaterThan(
+          include: include,
+          property: r'projectName',
+          value: value,
+          caseSensitive: caseSensitive,
+        ),
+      );
+    });
+  }
+
+  QueryBuilder<WorkLog, WorkLog, QAfterFilterCondition> projectNameLessThan(
+    String? value, {
+    bool include = false,
+    bool caseSensitive = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(
+        FilterCondition.lessThan(
+          include: include,
+          property: r'projectName',
+          value: value,
+          caseSensitive: caseSensitive,
+        ),
+      );
+    });
+  }
+
+  QueryBuilder<WorkLog, WorkLog, QAfterFilterCondition> projectNameBetween(
+    String? lower,
+    String? upper, {
+    bool includeLower = true,
+    bool includeUpper = true,
+    bool caseSensitive = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(
+        FilterCondition.between(
+          property: r'projectName',
+          lower: lower,
+          includeLower: includeLower,
+          upper: upper,
+          includeUpper: includeUpper,
+          caseSensitive: caseSensitive,
+        ),
+      );
+    });
+  }
+
+  QueryBuilder<WorkLog, WorkLog, QAfterFilterCondition> projectNameStartsWith(
+    String value, {
+    bool caseSensitive = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(
+        FilterCondition.startsWith(
+          property: r'projectName',
+          value: value,
+          caseSensitive: caseSensitive,
+        ),
+      );
+    });
+  }
+
+  QueryBuilder<WorkLog, WorkLog, QAfterFilterCondition> projectNameEndsWith(
+    String value, {
+    bool caseSensitive = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(
+        FilterCondition.endsWith(
+          property: r'projectName',
+          value: value,
+          caseSensitive: caseSensitive,
+        ),
+      );
+    });
+  }
+
+  QueryBuilder<WorkLog, WorkLog, QAfterFilterCondition> projectNameContains(
+    String value, {
+    bool caseSensitive = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(
+        FilterCondition.contains(
+          property: r'projectName',
+          value: value,
+          caseSensitive: caseSensitive,
+        ),
+      );
+    });
+  }
+
+  QueryBuilder<WorkLog, WorkLog, QAfterFilterCondition> projectNameMatches(
+    String pattern, {
+    bool caseSensitive = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(
+        FilterCondition.matches(
+          property: r'projectName',
+          wildcard: pattern,
+          caseSensitive: caseSensitive,
+        ),
+      );
+    });
+  }
+
+  QueryBuilder<WorkLog, WorkLog, QAfterFilterCondition> projectNameIsEmpty() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(
+        FilterCondition.equalTo(property: r'projectName', value: ''),
+      );
+    });
+  }
+
+  QueryBuilder<WorkLog, WorkLog, QAfterFilterCondition>
+  projectNameIsNotEmpty() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(
+        FilterCondition.greaterThan(property: r'projectName', value: ''),
+      );
+    });
+  }
+
+  QueryBuilder<WorkLog, WorkLog, QAfterFilterCondition> projectSyncIdIsNull() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(
+        const FilterCondition.isNull(property: r'projectSyncId'),
+      );
+    });
+  }
+
+  QueryBuilder<WorkLog, WorkLog, QAfterFilterCondition>
+  projectSyncIdIsNotNull() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(
+        const FilterCondition.isNotNull(property: r'projectSyncId'),
+      );
+    });
+  }
+
+  QueryBuilder<WorkLog, WorkLog, QAfterFilterCondition> projectSyncIdEqualTo(
+    String? value, {
+    bool caseSensitive = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(
+        FilterCondition.equalTo(
+          property: r'projectSyncId',
+          value: value,
+          caseSensitive: caseSensitive,
+        ),
+      );
+    });
+  }
+
+  QueryBuilder<WorkLog, WorkLog, QAfterFilterCondition>
+  projectSyncIdGreaterThan(
+    String? value, {
+    bool include = false,
+    bool caseSensitive = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(
+        FilterCondition.greaterThan(
+          include: include,
+          property: r'projectSyncId',
+          value: value,
+          caseSensitive: caseSensitive,
+        ),
+      );
+    });
+  }
+
+  QueryBuilder<WorkLog, WorkLog, QAfterFilterCondition> projectSyncIdLessThan(
+    String? value, {
+    bool include = false,
+    bool caseSensitive = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(
+        FilterCondition.lessThan(
+          include: include,
+          property: r'projectSyncId',
+          value: value,
+          caseSensitive: caseSensitive,
+        ),
+      );
+    });
+  }
+
+  QueryBuilder<WorkLog, WorkLog, QAfterFilterCondition> projectSyncIdBetween(
+    String? lower,
+    String? upper, {
+    bool includeLower = true,
+    bool includeUpper = true,
+    bool caseSensitive = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(
+        FilterCondition.between(
+          property: r'projectSyncId',
+          lower: lower,
+          includeLower: includeLower,
+          upper: upper,
+          includeUpper: includeUpper,
+          caseSensitive: caseSensitive,
+        ),
+      );
+    });
+  }
+
+  QueryBuilder<WorkLog, WorkLog, QAfterFilterCondition> projectSyncIdStartsWith(
+    String value, {
+    bool caseSensitive = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(
+        FilterCondition.startsWith(
+          property: r'projectSyncId',
+          value: value,
+          caseSensitive: caseSensitive,
+        ),
+      );
+    });
+  }
+
+  QueryBuilder<WorkLog, WorkLog, QAfterFilterCondition> projectSyncIdEndsWith(
+    String value, {
+    bool caseSensitive = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(
+        FilterCondition.endsWith(
+          property: r'projectSyncId',
+          value: value,
+          caseSensitive: caseSensitive,
+        ),
+      );
+    });
+  }
+
+  QueryBuilder<WorkLog, WorkLog, QAfterFilterCondition> projectSyncIdContains(
+    String value, {
+    bool caseSensitive = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(
+        FilterCondition.contains(
+          property: r'projectSyncId',
+          value: value,
+          caseSensitive: caseSensitive,
+        ),
+      );
+    });
+  }
+
+  QueryBuilder<WorkLog, WorkLog, QAfterFilterCondition> projectSyncIdMatches(
+    String pattern, {
+    bool caseSensitive = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(
+        FilterCondition.matches(
+          property: r'projectSyncId',
+          wildcard: pattern,
+          caseSensitive: caseSensitive,
+        ),
+      );
+    });
+  }
+
+  QueryBuilder<WorkLog, WorkLog, QAfterFilterCondition> projectSyncIdIsEmpty() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(
+        FilterCondition.equalTo(property: r'projectSyncId', value: ''),
+      );
+    });
+  }
+
+  QueryBuilder<WorkLog, WorkLog, QAfterFilterCondition>
+  projectSyncIdIsNotEmpty() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(
+        FilterCondition.greaterThan(property: r'projectSyncId', value: ''),
+      );
+    });
+  }
+
   QueryBuilder<WorkLog, WorkLog, QAfterFilterCondition> remoteIdIsNull() {
     return QueryBuilder.apply(this, (query) {
       return query.addFilterCondition(
@@ -2348,6 +3119,42 @@ extension WorkLogQuerySortBy on QueryBuilder<WorkLog, WorkLog, QSortBy> {
     });
   }
 
+  QueryBuilder<WorkLog, WorkLog, QAfterSortBy> sortByProjectId() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'projectId', Sort.asc);
+    });
+  }
+
+  QueryBuilder<WorkLog, WorkLog, QAfterSortBy> sortByProjectIdDesc() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'projectId', Sort.desc);
+    });
+  }
+
+  QueryBuilder<WorkLog, WorkLog, QAfterSortBy> sortByProjectName() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'projectName', Sort.asc);
+    });
+  }
+
+  QueryBuilder<WorkLog, WorkLog, QAfterSortBy> sortByProjectNameDesc() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'projectName', Sort.desc);
+    });
+  }
+
+  QueryBuilder<WorkLog, WorkLog, QAfterSortBy> sortByProjectSyncId() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'projectSyncId', Sort.asc);
+    });
+  }
+
+  QueryBuilder<WorkLog, WorkLog, QAfterSortBy> sortByProjectSyncIdDesc() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'projectSyncId', Sort.desc);
+    });
+  }
+
   QueryBuilder<WorkLog, WorkLog, QAfterSortBy> sortByRemoteId() {
     return QueryBuilder.apply(this, (query) {
       return query.addSortBy(r'remoteId', Sort.asc);
@@ -2591,6 +3398,42 @@ extension WorkLogQuerySortThenBy
     });
   }
 
+  QueryBuilder<WorkLog, WorkLog, QAfterSortBy> thenByProjectId() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'projectId', Sort.asc);
+    });
+  }
+
+  QueryBuilder<WorkLog, WorkLog, QAfterSortBy> thenByProjectIdDesc() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'projectId', Sort.desc);
+    });
+  }
+
+  QueryBuilder<WorkLog, WorkLog, QAfterSortBy> thenByProjectName() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'projectName', Sort.asc);
+    });
+  }
+
+  QueryBuilder<WorkLog, WorkLog, QAfterSortBy> thenByProjectNameDesc() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'projectName', Sort.desc);
+    });
+  }
+
+  QueryBuilder<WorkLog, WorkLog, QAfterSortBy> thenByProjectSyncId() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'projectSyncId', Sort.asc);
+    });
+  }
+
+  QueryBuilder<WorkLog, WorkLog, QAfterSortBy> thenByProjectSyncIdDesc() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'projectSyncId', Sort.desc);
+    });
+  }
+
   QueryBuilder<WorkLog, WorkLog, QAfterSortBy> thenByRemoteId() {
     return QueryBuilder.apply(this, (query) {
       return query.addSortBy(r'remoteId', Sort.asc);
@@ -2762,6 +3605,31 @@ extension WorkLogQueryWhereDistinct
     });
   }
 
+  QueryBuilder<WorkLog, WorkLog, QDistinct> distinctByProjectId() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addDistinctBy(r'projectId');
+    });
+  }
+
+  QueryBuilder<WorkLog, WorkLog, QDistinct> distinctByProjectName({
+    bool caseSensitive = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addDistinctBy(r'projectName', caseSensitive: caseSensitive);
+    });
+  }
+
+  QueryBuilder<WorkLog, WorkLog, QDistinct> distinctByProjectSyncId({
+    bool caseSensitive = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addDistinctBy(
+        r'projectSyncId',
+        caseSensitive: caseSensitive,
+      );
+    });
+  }
+
   QueryBuilder<WorkLog, WorkLog, QDistinct> distinctByRemoteId() {
     return QueryBuilder.apply(this, (query) {
       return query.addDistinctBy(r'remoteId');
@@ -2886,6 +3754,24 @@ extension WorkLogQueryProperty
   QueryBuilder<WorkLog, bool, QQueryOperations> pendingDeleteProperty() {
     return QueryBuilder.apply(this, (query) {
       return query.addPropertyName(r'pendingDelete');
+    });
+  }
+
+  QueryBuilder<WorkLog, int?, QQueryOperations> projectIdProperty() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addPropertyName(r'projectId');
+    });
+  }
+
+  QueryBuilder<WorkLog, String?, QQueryOperations> projectNameProperty() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addPropertyName(r'projectName');
+    });
+  }
+
+  QueryBuilder<WorkLog, String?, QQueryOperations> projectSyncIdProperty() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addPropertyName(r'projectSyncId');
     });
   }
 

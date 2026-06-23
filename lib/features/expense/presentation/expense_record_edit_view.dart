@@ -18,6 +18,8 @@ import 'package:life_log/features/expense/application/delete_expense_record_entr
 import 'package:life_log/features/expense/application/save_expense_record_entry.dart';
 import 'package:life_log/features/expense/domain/entities/expense_record_entry.dart';
 import 'package:life_log/features/expense/presentation/expense_record_editor_cubit.dart';
+import 'package:life_log/features/work_log/application/load_project_work_log_trips.dart';
+import 'package:life_log/features/work_log/domain/entities/work_log_entry.dart';
 
 class ExpenseRecordEditView extends StatefulWidget {
   final ExpenseRecordEntry? existingEntry;
@@ -45,6 +47,7 @@ class _ExpenseRecordEditViewState extends State<ExpenseRecordEditView> {
   final _merchantController = TextEditingController();
   final _projectController = TextEditingController();
   final _noteController = TextEditingController();
+  late Future<List<WorkLogEntry>> _tripEntriesFuture;
 
   @override
   void initState() {
@@ -63,6 +66,7 @@ class _ExpenseRecordEditViewState extends State<ExpenseRecordEditView> {
     _merchantController.text = editorState.merchant;
     _projectController.text = editorState.projectName;
     _noteController.text = editorState.note;
+    _tripEntriesFuture = _loadTripsForProject(editorState.projectName);
   }
 
   @override
@@ -94,6 +98,8 @@ class _ExpenseRecordEditViewState extends State<ExpenseRecordEditView> {
               merchantController: _merchantController,
               projectController: _projectController,
               noteController: _noteController,
+              tripEntriesFuture: _tripEntriesFuture,
+              onProjectChanged: _handleProjectChanged,
               onPickDate: _pickDate,
               onSave: _save,
               onDelete: _delete,
@@ -114,6 +120,20 @@ class _ExpenseRecordEditViewState extends State<ExpenseRecordEditView> {
     if (picked != null) {
       _editorCubit.changeDate(picked);
     }
+  }
+
+  Future<List<WorkLogEntry>> _loadTripsForProject(String projectName) async {
+    final result = await serviceLocator<LoadProjectWorkLogTrips>().call(
+      projectName,
+    );
+    return result.valueOrNull ?? const <WorkLogEntry>[];
+  }
+
+  void _handleProjectChanged(String value) {
+    _editorCubit.changeProjectName(value);
+    setState(() {
+      _tripEntriesFuture = _loadTripsForProject(value);
+    });
   }
 
   Future<void> _save() async {
@@ -214,6 +234,8 @@ class _ExpenseRecordEditorScaffold extends StatelessWidget {
   final TextEditingController merchantController;
   final TextEditingController projectController;
   final TextEditingController noteController;
+  final Future<List<WorkLogEntry>> tripEntriesFuture;
+  final ValueChanged<String> onProjectChanged;
   final Future<void> Function() onPickDate;
   final Future<void> Function() onSave;
   final Future<void> Function() onDelete;
@@ -224,6 +246,8 @@ class _ExpenseRecordEditorScaffold extends StatelessWidget {
     required this.merchantController,
     required this.projectController,
     required this.noteController,
+    required this.tripEntriesFuture,
+    required this.onProjectChanged,
     required this.onPickDate,
     required this.onSave,
     required this.onDelete,
@@ -313,6 +337,12 @@ class _ExpenseRecordEditorScaffold extends StatelessWidget {
                       controller: projectController,
                       hintText: '项目名称（建议先填）',
                       prefixIcon: const Icon(Icons.folder_special_rounded),
+                      onChanged: onProjectChanged,
+                    ),
+                    SizedBox(height: 12.h),
+                    _TripWorkLogTile(
+                      editorState: editorState,
+                      tripEntriesFuture: tripEntriesFuture,
                     ),
                     SizedBox(height: 12.h),
                     _DateTile(
@@ -441,4 +471,90 @@ class _DateTile extends StatelessWidget {
       ),
     );
   }
+}
+
+class _TripWorkLogTile extends StatelessWidget {
+  final ExpenseRecordEditorState editorState;
+  final Future<List<WorkLogEntry>> tripEntriesFuture;
+
+  const _TripWorkLogTile({
+    required this.editorState,
+    required this.tripEntriesFuture,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final semantic = theme.semanticColors;
+    return FutureBuilder<List<WorkLogEntry>>(
+      future: tripEntriesFuture,
+      builder: (context, snapshot) {
+        final trips = snapshot.data ?? const <WorkLogEntry>[];
+        final selectedId = editorState.tripWorkLogId ?? 0;
+        final values = <int>{
+          0,
+          if (selectedId != 0) selectedId,
+          ...trips.map((trip) => trip.id),
+        }.toList();
+
+        return Container(
+          height: 56.h,
+          padding: EdgeInsets.symmetric(horizontal: 14.w),
+          decoration: BoxDecoration(
+            color: semantic.mutedSurface,
+            borderRadius: BorderRadius.circular(12),
+            border: Border.all(color: semantic.border),
+          ),
+          child: DropdownButtonHideUnderline(
+            child: DropdownButton<int>(
+              value: values.contains(selectedId) ? selectedId : 0,
+              isExpanded: true,
+              icon: Icon(
+                Icons.expand_more_rounded,
+                color: theme.colorScheme.onSurfaceVariant,
+              ),
+              items: values.map((value) {
+                final trip = _firstTripById(trips, value);
+                return DropdownMenuItem<int>(
+                  value: value,
+                  child: Text(
+                    value == 0
+                        ? (trips.isEmpty ? '暂无可关联出差' : '不关联出差')
+                        : _tripLabel(trip, value),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                );
+              }).toList(),
+              onChanged: (value) {
+                final trip = _firstTripById(trips, value ?? 0);
+                context.read<ExpenseRecordEditorCubit>().changeTripWorkLog(
+                  id: trip?.id,
+                  syncId: trip?.syncId,
+                );
+              },
+            ),
+          ),
+        );
+      },
+    );
+  }
+}
+
+WorkLogEntry? _firstTripById(List<WorkLogEntry> trips, int id) {
+  for (final trip in trips) {
+    if (trip.id == id) return trip;
+  }
+  return null;
+}
+
+String _tripLabel(WorkLogEntry? trip, int id) {
+  if (trip == null) return '出差 #$id';
+  final location = trip.location?.trim();
+  final parts = <String>[
+    formatDateYmd(trip.date),
+    if (location != null && location.isNotEmpty) location,
+    if (trip.transport?.trim().isNotEmpty == true) trip.transport!.trim(),
+  ];
+  return parts.join(' · ');
 }

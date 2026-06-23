@@ -34,6 +34,10 @@ class PhotoRepository {
     required String description,
     required String deviceName,
     bool deleteSource = true,
+    DateTime? capturedAt,
+    String? capturedAtSource,
+    double? gpsLatitude,
+    double? gpsLongitude,
   }) async {
     final appDocumentsPath = await _fileStore.appDocumentsPath();
 
@@ -52,6 +56,7 @@ class PhotoRepository {
     await _fileStore.ensureDirectory(folderPath);
 
     final now = DateTime.now();
+    final eventTime = capturedAt ?? now;
     final dateStr = DateFormat('yyyyMMdd_HHmmss').format(now);
 
     String filePrefix = safeDesc.isNotEmpty ? safeDesc : safeProjectName;
@@ -71,13 +76,19 @@ class PhotoRepository {
     // Save to DB
     final photoItem = PhotoItem()
       ..createdAt = now
+      ..capturedAt = capturedAt
+      ..capturedAtSource = capturedAt == null
+          ? (capturedAtSource ?? 'fallback')
+          : capturedAtSource
+      ..gpsLatitude = gpsLatitude
+      ..gpsLongitude = gpsLongitude
       ..fileName = _fileStore.basename(savePath)
       ..filePath = savePath
       ..deviceName = deviceName
       ..projectId = project.id
       ..projectName = project.name
       ..description = description
-      ..dateIndexed = DateTime(now.year, now.month, now.day);
+      ..dateIndexed = DateTime(eventTime.year, eventTime.month, eventTime.day);
 
     await _localDataSource.addPhoto(photoItem);
     return photoItem;
@@ -156,6 +167,10 @@ class PhotoRepository {
   void _copyPhotoFields(PhotoItem source, PhotoItem target) {
     target.ownerUserId = source.ownerUserId;
     target.createdAt = source.createdAt;
+    target.capturedAt = source.capturedAt;
+    target.capturedAtSource = source.capturedAtSource;
+    target.gpsLatitude = source.gpsLatitude;
+    target.gpsLongitude = source.gpsLongitude;
     target.fileName = source.fileName;
     target.filePath = source.filePath;
     target.description = source.description;

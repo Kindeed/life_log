@@ -8,6 +8,8 @@ import 'package:life_log/features/photo/application/delete_photo_entries.dart';
 import 'package:life_log/features/photo/application/load_photo_entries.dart';
 import 'package:life_log/features/project/domain/entities/project_entry.dart';
 import 'package:life_log/features/project/domain/repositories/project_repository_port.dart';
+import 'package:life_log/features/work_log/application/load_project_work_log_trips.dart';
+import 'package:life_log/features/work_log/application/save_work_log_entry.dart';
 
 final class DeleteProjectEntry {
   final ProjectRepositoryPort _repository;
@@ -17,6 +19,8 @@ final class DeleteProjectEntry {
   final DeleteEvidenceEntry _deleteEvidenceEntry;
   final LoadExpenseRecordEntries _loadExpenseRecordEntries;
   final DeleteExpenseRecordEntry _deleteExpenseRecordEntry;
+  final LoadProjectWorkLogTrips _loadProjectWorkLogTrips;
+  final SaveWorkLogEntry _saveWorkLogEntry;
 
   const DeleteProjectEntry({
     required ProjectRepositoryPort repository,
@@ -26,13 +30,17 @@ final class DeleteProjectEntry {
     required DeleteEvidenceEntry deleteEvidenceEntry,
     required LoadExpenseRecordEntries loadExpenseRecordEntries,
     required DeleteExpenseRecordEntry deleteExpenseRecordEntry,
+    required LoadProjectWorkLogTrips loadProjectWorkLogTrips,
+    required SaveWorkLogEntry saveWorkLogEntry,
   }) : _repository = repository,
        _loadPhotoEntries = loadPhotoEntries,
        _deletePhotoEntries = deletePhotoEntries,
        _loadEvidenceEntries = loadEvidenceEntries,
        _deleteEvidenceEntry = deleteEvidenceEntry,
        _loadExpenseRecordEntries = loadExpenseRecordEntries,
-       _deleteExpenseRecordEntry = deleteExpenseRecordEntry;
+       _deleteExpenseRecordEntry = deleteExpenseRecordEntry,
+       _loadProjectWorkLogTrips = loadProjectWorkLogTrips,
+       _saveWorkLogEntry = saveWorkLogEntry;
 
   Future<AppResult<void>> call(ProjectEntry entry) async {
     try {
@@ -60,6 +68,12 @@ final class DeleteProjectEntry {
       final records = expenseResult.valueOrNull!
           .where((record) => record.projectName == entry.name)
           .toList();
+      final tripResult = await _loadProjectWorkLogTrips(entry.name);
+      final tripFailure = tripResult.failureOrNull;
+      if (tripFailure != null) {
+        throw tripFailure;
+      }
+      final trips = tripResult.valueOrNull!;
 
       if (photos.isNotEmpty) {
         final result = await _deletePhotoEntries(photos);
@@ -77,6 +91,16 @@ final class DeleteProjectEntry {
       }
       for (final record in records) {
         final result = await _deleteExpenseRecordEntry(record.id);
+        final failure = result.failureOrNull;
+        if (failure != null) {
+          throw failure;
+        }
+      }
+      for (final trip in trips) {
+        final result = await _saveWorkLogEntry(
+          trip.copyWith(clearProject: true),
+          markDirty: true,
+        );
         final failure = result.failureOrNull;
         if (failure != null) {
           throw failure;

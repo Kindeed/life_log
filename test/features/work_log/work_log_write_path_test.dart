@@ -169,6 +169,9 @@ void main() {
           transport: '高铁',
           expenses: 32,
           isReimbursed: true,
+          projectId: 4,
+          projectSyncId: 'project-sync-4',
+          projectName: '上海项目',
           note: '应用层写路径',
         ),
         markDirty: true,
@@ -182,8 +185,31 @@ void main() {
       expect(saved.transport, '高铁');
       expect(saved.expenses, 32);
       expect(saved.isReimbursed, isTrue);
+      expect(saved.projectId, 4);
+      expect(saved.projectSyncId, 'project-sync-4');
+      expect(saved.projectName, '上海项目');
       expect(saved.note, '应用层写路径');
       expect(saved.isDirty, isTrue);
+    });
+
+    test('maps legacy project association into work-log entries', () async {
+      final repository = _LegacyRepositorySpy()
+        ..storedLogs.add(
+          WorkLog()
+            ..id = 24
+            ..date = DateTime(2026, 5, 9)
+            ..type = LogType.businessTrip
+            ..projectId = 8
+            ..projectSyncId = 'project-sync-8'
+            ..projectName = 'Y9',
+        );
+      final adapter = LegacyWorkLogRepositoryAdapter(repository);
+
+      final entries = await adapter.getAllEntries();
+
+      expect(entries.single.projectId, 8);
+      expect(entries.single.projectSyncId, 'project-sync-8');
+      expect(entries.single.projectName, 'Y9');
     });
 
     test('delegates feature delete entries to the legacy repository', () async {

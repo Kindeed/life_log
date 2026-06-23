@@ -11,6 +11,10 @@ abstract interface class PhotoRepositoryPort {
     required String description,
     required String deviceName,
     required bool deleteSource,
+    DateTime? capturedAt,
+    String? capturedAtSource,
+    double? gpsLatitude,
+    double? gpsLongitude,
   });
 
   Future<void> deleteEntries(List<PhotoEntry> entries);

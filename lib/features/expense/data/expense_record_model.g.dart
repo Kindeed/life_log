@@ -93,8 +93,18 @@ const ExpenseRecordSchema = CollectionSchema(
       name: r'syncedAt',
       type: IsarType.dateTime,
     ),
-    r'updatedAt': PropertySchema(
+    r'tripWorkLogId': PropertySchema(
       id: 19,
+      name: r'tripWorkLogId',
+      type: IsarType.long,
+    ),
+    r'tripWorkLogSyncId': PropertySchema(
+      id: 20,
+      name: r'tripWorkLogSyncId',
+      type: IsarType.string,
+    ),
+    r'updatedAt': PropertySchema(
+      id: 21,
       name: r'updatedAt',
       type: IsarType.dateTime,
     ),
@@ -170,6 +180,32 @@ const ExpenseRecordSchema = CollectionSchema(
         ),
       ],
     ),
+    r'tripWorkLogId': IndexSchema(
+      id: 3055051438301889989,
+      name: r'tripWorkLogId',
+      unique: false,
+      replace: false,
+      properties: [
+        IndexPropertySchema(
+          name: r'tripWorkLogId',
+          type: IndexType.value,
+          caseSensitive: false,
+        ),
+      ],
+    ),
+    r'tripWorkLogSyncId': IndexSchema(
+      id: 1755366758862706131,
+      name: r'tripWorkLogSyncId',
+      unique: false,
+      replace: false,
+      properties: [
+        IndexPropertySchema(
+          name: r'tripWorkLogSyncId',
+          type: IndexType.hash,
+          caseSensitive: false,
+        ),
+      ],
+    ),
   },
   links: {},
   embeddedSchemas: {},
@@ -222,6 +258,12 @@ int _expenseRecordEstimateSize(
       bytesCount += 3 + value.length * 3;
     }
   }
+  {
+    final value = object.tripWorkLogSyncId;
+    if (value != null) {
+      bytesCount += 3 + value.length * 3;
+    }
+  }
   return bytesCount;
 }
 
@@ -250,7 +292,9 @@ void _expenseRecordSerialize(
   writer.writeLong(offsets[16], object.remoteVersion);
   writer.writeString(offsets[17], object.syncId);
   writer.writeDateTime(offsets[18], object.syncedAt);
-  writer.writeDateTime(offsets[19], object.updatedAt);
+  writer.writeLong(offsets[19], object.tripWorkLogId);
+  writer.writeString(offsets[20], object.tripWorkLogSyncId);
+  writer.writeDateTime(offsets[21], object.updatedAt);
 }
 
 ExpenseRecord _expenseRecordDeserialize(
@@ -282,7 +326,9 @@ ExpenseRecord _expenseRecordDeserialize(
   object.remoteVersion = reader.readLong(offsets[16]);
   object.syncId = reader.readStringOrNull(offsets[17]);
   object.syncedAt = reader.readDateTimeOrNull(offsets[18]);
-  object.updatedAt = reader.readDateTimeOrNull(offsets[19]);
+  object.tripWorkLogId = reader.readLongOrNull(offsets[19]);
+  object.tripWorkLogSyncId = reader.readStringOrNull(offsets[20]);
+  object.updatedAt = reader.readDateTimeOrNull(offsets[21]);
   return object;
 }
 
@@ -336,6 +382,10 @@ P _expenseRecordDeserializeProp<P>(
     case 18:
       return (reader.readDateTimeOrNull(offset)) as P;
     case 19:
+      return (reader.readLongOrNull(offset)) as P;
+    case 20:
+      return (reader.readStringOrNull(offset)) as P;
+    case 21:
       return (reader.readDateTimeOrNull(offset)) as P;
     default:
       throw IsarError('Unknown property with id $propertyId');
@@ -403,6 +453,14 @@ extension ExpenseRecordQueryWhereSort
     return QueryBuilder.apply(this, (query) {
       return query.addWhereClause(
         const IndexWhereClause.any(indexName: r'projectId'),
+      );
+    });
+  }
+
+  QueryBuilder<ExpenseRecord, ExpenseRecord, QAfterWhere> anyTripWorkLogId() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addWhereClause(
+        const IndexWhereClause.any(indexName: r'tripWorkLogId'),
       );
     });
   }
@@ -980,6 +1038,213 @@ extension ExpenseRecordQueryWhere
                 indexName: r'projectName',
                 lower: [],
                 upper: [projectName],
+                includeUpper: false,
+              ),
+            );
+      }
+    });
+  }
+
+  QueryBuilder<ExpenseRecord, ExpenseRecord, QAfterWhereClause>
+  tripWorkLogIdIsNull() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addWhereClause(
+        IndexWhereClause.equalTo(indexName: r'tripWorkLogId', value: [null]),
+      );
+    });
+  }
+
+  QueryBuilder<ExpenseRecord, ExpenseRecord, QAfterWhereClause>
+  tripWorkLogIdIsNotNull() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addWhereClause(
+        IndexWhereClause.between(
+          indexName: r'tripWorkLogId',
+          lower: [null],
+          includeLower: false,
+          upper: [],
+        ),
+      );
+    });
+  }
+
+  QueryBuilder<ExpenseRecord, ExpenseRecord, QAfterWhereClause>
+  tripWorkLogIdEqualTo(int? tripWorkLogId) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addWhereClause(
+        IndexWhereClause.equalTo(
+          indexName: r'tripWorkLogId',
+          value: [tripWorkLogId],
+        ),
+      );
+    });
+  }
+
+  QueryBuilder<ExpenseRecord, ExpenseRecord, QAfterWhereClause>
+  tripWorkLogIdNotEqualTo(int? tripWorkLogId) {
+    return QueryBuilder.apply(this, (query) {
+      if (query.whereSort == Sort.asc) {
+        return query
+            .addWhereClause(
+              IndexWhereClause.between(
+                indexName: r'tripWorkLogId',
+                lower: [],
+                upper: [tripWorkLogId],
+                includeUpper: false,
+              ),
+            )
+            .addWhereClause(
+              IndexWhereClause.between(
+                indexName: r'tripWorkLogId',
+                lower: [tripWorkLogId],
+                includeLower: false,
+                upper: [],
+              ),
+            );
+      } else {
+        return query
+            .addWhereClause(
+              IndexWhereClause.between(
+                indexName: r'tripWorkLogId',
+                lower: [tripWorkLogId],
+                includeLower: false,
+                upper: [],
+              ),
+            )
+            .addWhereClause(
+              IndexWhereClause.between(
+                indexName: r'tripWorkLogId',
+                lower: [],
+                upper: [tripWorkLogId],
+                includeUpper: false,
+              ),
+            );
+      }
+    });
+  }
+
+  QueryBuilder<ExpenseRecord, ExpenseRecord, QAfterWhereClause>
+  tripWorkLogIdGreaterThan(int? tripWorkLogId, {bool include = false}) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addWhereClause(
+        IndexWhereClause.between(
+          indexName: r'tripWorkLogId',
+          lower: [tripWorkLogId],
+          includeLower: include,
+          upper: [],
+        ),
+      );
+    });
+  }
+
+  QueryBuilder<ExpenseRecord, ExpenseRecord, QAfterWhereClause>
+  tripWorkLogIdLessThan(int? tripWorkLogId, {bool include = false}) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addWhereClause(
+        IndexWhereClause.between(
+          indexName: r'tripWorkLogId',
+          lower: [],
+          upper: [tripWorkLogId],
+          includeUpper: include,
+        ),
+      );
+    });
+  }
+
+  QueryBuilder<ExpenseRecord, ExpenseRecord, QAfterWhereClause>
+  tripWorkLogIdBetween(
+    int? lowerTripWorkLogId,
+    int? upperTripWorkLogId, {
+    bool includeLower = true,
+    bool includeUpper = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addWhereClause(
+        IndexWhereClause.between(
+          indexName: r'tripWorkLogId',
+          lower: [lowerTripWorkLogId],
+          includeLower: includeLower,
+          upper: [upperTripWorkLogId],
+          includeUpper: includeUpper,
+        ),
+      );
+    });
+  }
+
+  QueryBuilder<ExpenseRecord, ExpenseRecord, QAfterWhereClause>
+  tripWorkLogSyncIdIsNull() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addWhereClause(
+        IndexWhereClause.equalTo(
+          indexName: r'tripWorkLogSyncId',
+          value: [null],
+        ),
+      );
+    });
+  }
+
+  QueryBuilder<ExpenseRecord, ExpenseRecord, QAfterWhereClause>
+  tripWorkLogSyncIdIsNotNull() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addWhereClause(
+        IndexWhereClause.between(
+          indexName: r'tripWorkLogSyncId',
+          lower: [null],
+          includeLower: false,
+          upper: [],
+        ),
+      );
+    });
+  }
+
+  QueryBuilder<ExpenseRecord, ExpenseRecord, QAfterWhereClause>
+  tripWorkLogSyncIdEqualTo(String? tripWorkLogSyncId) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addWhereClause(
+        IndexWhereClause.equalTo(
+          indexName: r'tripWorkLogSyncId',
+          value: [tripWorkLogSyncId],
+        ),
+      );
+    });
+  }
+
+  QueryBuilder<ExpenseRecord, ExpenseRecord, QAfterWhereClause>
+  tripWorkLogSyncIdNotEqualTo(String? tripWorkLogSyncId) {
+    return QueryBuilder.apply(this, (query) {
+      if (query.whereSort == Sort.asc) {
+        return query
+            .addWhereClause(
+              IndexWhereClause.between(
+                indexName: r'tripWorkLogSyncId',
+                lower: [],
+                upper: [tripWorkLogSyncId],
+                includeUpper: false,
+              ),
+            )
+            .addWhereClause(
+              IndexWhereClause.between(
+                indexName: r'tripWorkLogSyncId',
+                lower: [tripWorkLogSyncId],
+                includeLower: false,
+                upper: [],
+              ),
+            );
+      } else {
+        return query
+            .addWhereClause(
+              IndexWhereClause.between(
+                indexName: r'tripWorkLogSyncId',
+                lower: [tripWorkLogSyncId],
+                includeLower: false,
+                upper: [],
+              ),
+            )
+            .addWhereClause(
+              IndexWhereClause.between(
+                indexName: r'tripWorkLogSyncId',
+                lower: [],
+                upper: [tripWorkLogSyncId],
                 includeUpper: false,
               ),
             );
@@ -2838,6 +3103,238 @@ extension ExpenseRecordQueryFilter
   }
 
   QueryBuilder<ExpenseRecord, ExpenseRecord, QAfterFilterCondition>
+  tripWorkLogIdIsNull() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(
+        const FilterCondition.isNull(property: r'tripWorkLogId'),
+      );
+    });
+  }
+
+  QueryBuilder<ExpenseRecord, ExpenseRecord, QAfterFilterCondition>
+  tripWorkLogIdIsNotNull() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(
+        const FilterCondition.isNotNull(property: r'tripWorkLogId'),
+      );
+    });
+  }
+
+  QueryBuilder<ExpenseRecord, ExpenseRecord, QAfterFilterCondition>
+  tripWorkLogIdEqualTo(int? value) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(
+        FilterCondition.equalTo(property: r'tripWorkLogId', value: value),
+      );
+    });
+  }
+
+  QueryBuilder<ExpenseRecord, ExpenseRecord, QAfterFilterCondition>
+  tripWorkLogIdGreaterThan(int? value, {bool include = false}) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(
+        FilterCondition.greaterThan(
+          include: include,
+          property: r'tripWorkLogId',
+          value: value,
+        ),
+      );
+    });
+  }
+
+  QueryBuilder<ExpenseRecord, ExpenseRecord, QAfterFilterCondition>
+  tripWorkLogIdLessThan(int? value, {bool include = false}) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(
+        FilterCondition.lessThan(
+          include: include,
+          property: r'tripWorkLogId',
+          value: value,
+        ),
+      );
+    });
+  }
+
+  QueryBuilder<ExpenseRecord, ExpenseRecord, QAfterFilterCondition>
+  tripWorkLogIdBetween(
+    int? lower,
+    int? upper, {
+    bool includeLower = true,
+    bool includeUpper = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(
+        FilterCondition.between(
+          property: r'tripWorkLogId',
+          lower: lower,
+          includeLower: includeLower,
+          upper: upper,
+          includeUpper: includeUpper,
+        ),
+      );
+    });
+  }
+
+  QueryBuilder<ExpenseRecord, ExpenseRecord, QAfterFilterCondition>
+  tripWorkLogSyncIdIsNull() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(
+        const FilterCondition.isNull(property: r'tripWorkLogSyncId'),
+      );
+    });
+  }
+
+  QueryBuilder<ExpenseRecord, ExpenseRecord, QAfterFilterCondition>
+  tripWorkLogSyncIdIsNotNull() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(
+        const FilterCondition.isNotNull(property: r'tripWorkLogSyncId'),
+      );
+    });
+  }
+
+  QueryBuilder<ExpenseRecord, ExpenseRecord, QAfterFilterCondition>
+  tripWorkLogSyncIdEqualTo(String? value, {bool caseSensitive = true}) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(
+        FilterCondition.equalTo(
+          property: r'tripWorkLogSyncId',
+          value: value,
+          caseSensitive: caseSensitive,
+        ),
+      );
+    });
+  }
+
+  QueryBuilder<ExpenseRecord, ExpenseRecord, QAfterFilterCondition>
+  tripWorkLogSyncIdGreaterThan(
+    String? value, {
+    bool include = false,
+    bool caseSensitive = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(
+        FilterCondition.greaterThan(
+          include: include,
+          property: r'tripWorkLogSyncId',
+          value: value,
+          caseSensitive: caseSensitive,
+        ),
+      );
+    });
+  }
+
+  QueryBuilder<ExpenseRecord, ExpenseRecord, QAfterFilterCondition>
+  tripWorkLogSyncIdLessThan(
+    String? value, {
+    bool include = false,
+    bool caseSensitive = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(
+        FilterCondition.lessThan(
+          include: include,
+          property: r'tripWorkLogSyncId',
+          value: value,
+          caseSensitive: caseSensitive,
+        ),
+      );
+    });
+  }
+
+  QueryBuilder<ExpenseRecord, ExpenseRecord, QAfterFilterCondition>
+  tripWorkLogSyncIdBetween(
+    String? lower,
+    String? upper, {
+    bool includeLower = true,
+    bool includeUpper = true,
+    bool caseSensitive = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(
+        FilterCondition.between(
+          property: r'tripWorkLogSyncId',
+          lower: lower,
+          includeLower: includeLower,
+          upper: upper,
+          includeUpper: includeUpper,
+          caseSensitive: caseSensitive,
+        ),
+      );
+    });
+  }
+
+  QueryBuilder<ExpenseRecord, ExpenseRecord, QAfterFilterCondition>
+  tripWorkLogSyncIdStartsWith(String value, {bool caseSensitive = true}) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(
+        FilterCondition.startsWith(
+          property: r'tripWorkLogSyncId',
+          value: value,
+          caseSensitive: caseSensitive,
+        ),
+      );
+    });
+  }
+
+  QueryBuilder<ExpenseRecord, ExpenseRecord, QAfterFilterCondition>
+  tripWorkLogSyncIdEndsWith(String value, {bool caseSensitive = true}) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(
+        FilterCondition.endsWith(
+          property: r'tripWorkLogSyncId',
+          value: value,
+          caseSensitive: caseSensitive,
+        ),
+      );
+    });
+  }
+
+  QueryBuilder<ExpenseRecord, ExpenseRecord, QAfterFilterCondition>
+  tripWorkLogSyncIdContains(String value, {bool caseSensitive = true}) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(
+        FilterCondition.contains(
+          property: r'tripWorkLogSyncId',
+          value: value,
+          caseSensitive: caseSensitive,
+        ),
+      );
+    });
+  }
+
+  QueryBuilder<ExpenseRecord, ExpenseRecord, QAfterFilterCondition>
+  tripWorkLogSyncIdMatches(String pattern, {bool caseSensitive = true}) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(
+        FilterCondition.matches(
+          property: r'tripWorkLogSyncId',
+          wildcard: pattern,
+          caseSensitive: caseSensitive,
+        ),
+      );
+    });
+  }
+
+  QueryBuilder<ExpenseRecord, ExpenseRecord, QAfterFilterCondition>
+  tripWorkLogSyncIdIsEmpty() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(
+        FilterCondition.equalTo(property: r'tripWorkLogSyncId', value: ''),
+      );
+    });
+  }
+
+  QueryBuilder<ExpenseRecord, ExpenseRecord, QAfterFilterCondition>
+  tripWorkLogSyncIdIsNotEmpty() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(
+        FilterCondition.greaterThan(property: r'tripWorkLogSyncId', value: ''),
+      );
+    });
+  }
+
+  QueryBuilder<ExpenseRecord, ExpenseRecord, QAfterFilterCondition>
   updatedAtIsNull() {
     return QueryBuilder.apply(this, (query) {
       return query.addFilterCondition(
@@ -3166,6 +3663,34 @@ extension ExpenseRecordQuerySortBy
     });
   }
 
+  QueryBuilder<ExpenseRecord, ExpenseRecord, QAfterSortBy>
+  sortByTripWorkLogId() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'tripWorkLogId', Sort.asc);
+    });
+  }
+
+  QueryBuilder<ExpenseRecord, ExpenseRecord, QAfterSortBy>
+  sortByTripWorkLogIdDesc() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'tripWorkLogId', Sort.desc);
+    });
+  }
+
+  QueryBuilder<ExpenseRecord, ExpenseRecord, QAfterSortBy>
+  sortByTripWorkLogSyncId() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'tripWorkLogSyncId', Sort.asc);
+    });
+  }
+
+  QueryBuilder<ExpenseRecord, ExpenseRecord, QAfterSortBy>
+  sortByTripWorkLogSyncIdDesc() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'tripWorkLogSyncId', Sort.desc);
+    });
+  }
+
   QueryBuilder<ExpenseRecord, ExpenseRecord, QAfterSortBy> sortByUpdatedAt() {
     return QueryBuilder.apply(this, (query) {
       return query.addSortBy(r'updatedAt', Sort.asc);
@@ -3441,6 +3966,34 @@ extension ExpenseRecordQuerySortThenBy
     });
   }
 
+  QueryBuilder<ExpenseRecord, ExpenseRecord, QAfterSortBy>
+  thenByTripWorkLogId() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'tripWorkLogId', Sort.asc);
+    });
+  }
+
+  QueryBuilder<ExpenseRecord, ExpenseRecord, QAfterSortBy>
+  thenByTripWorkLogIdDesc() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'tripWorkLogId', Sort.desc);
+    });
+  }
+
+  QueryBuilder<ExpenseRecord, ExpenseRecord, QAfterSortBy>
+  thenByTripWorkLogSyncId() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'tripWorkLogSyncId', Sort.asc);
+    });
+  }
+
+  QueryBuilder<ExpenseRecord, ExpenseRecord, QAfterSortBy>
+  thenByTripWorkLogSyncIdDesc() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'tripWorkLogSyncId', Sort.desc);
+    });
+  }
+
   QueryBuilder<ExpenseRecord, ExpenseRecord, QAfterSortBy> thenByUpdatedAt() {
     return QueryBuilder.apply(this, (query) {
       return query.addSortBy(r'updatedAt', Sort.asc);
@@ -3591,6 +4144,23 @@ extension ExpenseRecordQueryWhereDistinct
     });
   }
 
+  QueryBuilder<ExpenseRecord, ExpenseRecord, QDistinct>
+  distinctByTripWorkLogId() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addDistinctBy(r'tripWorkLogId');
+    });
+  }
+
+  QueryBuilder<ExpenseRecord, ExpenseRecord, QDistinct>
+  distinctByTripWorkLogSyncId({bool caseSensitive = true}) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addDistinctBy(
+        r'tripWorkLogSyncId',
+        caseSensitive: caseSensitive,
+      );
+    });
+  }
+
   QueryBuilder<ExpenseRecord, ExpenseRecord, QDistinct> distinctByUpdatedAt() {
     return QueryBuilder.apply(this, (query) {
       return query.addDistinctBy(r'updatedAt');
@@ -3721,6 +4291,19 @@ extension ExpenseRecordQueryProperty
   QueryBuilder<ExpenseRecord, DateTime?, QQueryOperations> syncedAtProperty() {
     return QueryBuilder.apply(this, (query) {
       return query.addPropertyName(r'syncedAt');
+    });
+  }
+
+  QueryBuilder<ExpenseRecord, int?, QQueryOperations> tripWorkLogIdProperty() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addPropertyName(r'tripWorkLogId');
+    });
+  }
+
+  QueryBuilder<ExpenseRecord, String?, QQueryOperations>
+  tripWorkLogSyncIdProperty() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addPropertyName(r'tripWorkLogSyncId');
     });
   }
 

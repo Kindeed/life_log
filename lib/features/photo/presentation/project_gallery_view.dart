@@ -18,6 +18,8 @@ import 'package:life_log/features/expense/presentation/expense_record_editor_lau
 import 'package:life_log/features/project/application/delete_project_entry.dart';
 import 'package:life_log/features/project/domain/entities/project_entry.dart';
 import 'package:life_log/features/project/presentation/project_cubit.dart';
+import 'package:life_log/features/work_log/application/load_project_work_log_trips.dart';
+import 'package:life_log/features/work_log/domain/entities/work_log_entry.dart';
 import 'package:life_log/features/photo/application/delete_photo_entries.dart';
 import 'package:life_log/features/photo/application/export_photo_entries.dart';
 import 'package:life_log/features/photo/domain/entities/photo_entry.dart';
@@ -45,8 +47,11 @@ class _ProjectGalleryViewState extends State<ProjectGalleryView>
   late final PhotoCubit photoCubit;
   late final EvidenceCubit evidenceCubit;
   late final ExpenseRecordCubit expenseCubit;
+  List<WorkLogEntry> _projectTrips = const <WorkLogEntry>[];
   final Set<int> _selectedPhotoIds = <int>{};
   bool _isMultiSelectMode = false;
+  _ProjectTimelineSortMode _timelineSortMode =
+      _ProjectTimelineSortMode.eventDate;
   late final TabController _tabController;
 
   @override
@@ -56,6 +61,7 @@ class _ProjectGalleryViewState extends State<ProjectGalleryView>
     photoCubit = serviceLocator<PhotoCubit>()..start();
     evidenceCubit = serviceLocator<EvidenceCubit>()..start();
     expenseCubit = serviceLocator<ExpenseRecordCubit>()..start();
+    unawaited(_loadProjectTrips());
     _tabController = TabController(length: 5, vsync: this);
     _tabController.addListener(_handleTabChanged);
   }
@@ -109,7 +115,7 @@ class _ProjectGalleryViewState extends State<ProjectGalleryView>
                             icon: Icon(Icons.receipt_long_rounded),
                             text: '凭证',
                           ),
-                          Tab(icon: Icon(Icons.payments_rounded), text: '支出'),
+                          Tab(icon: Icon(Icons.payments_rounded), text: '项目费用'),
                         ],
                       ),
                       actions: [
@@ -213,6 +219,7 @@ class _ProjectGalleryViewState extends State<ProjectGalleryView>
                               photoState,
                               evidenceState,
                               expenseState,
+                              _projectTrips,
                               textSecondary,
                               theme,
                             );
@@ -225,6 +232,7 @@ class _ProjectGalleryViewState extends State<ProjectGalleryView>
                               photoState,
                               evidenceState,
                               expenseState,
+                              _projectTrips,
                               textSecondary,
                               theme,
                             );
@@ -459,7 +467,7 @@ class _ProjectGalleryViewState extends State<ProjectGalleryView>
       case 3:
         return "添加凭证";
       case 4:
-        return "添加支出";
+        return "添加项目费用";
       case 2:
       default:
         return "添加照片";
@@ -476,6 +484,19 @@ class _ProjectGalleryViewState extends State<ProjectGalleryView>
       default:
         return Icons.add_photo_alternate_rounded;
     }
+  }
+
+  Future<void> _loadProjectTrips() async {
+    final result = await serviceLocator<LoadProjectWorkLogTrips>().call(
+      widget.projectName,
+    );
+    if (!mounted) return;
+    setState(() {
+      _projectTrips = entriesForProjectTrips(
+        result.valueOrNull ?? const <WorkLogEntry>[],
+        widget.projectName,
+      );
+    });
   }
 
   void _runCurrentAddAction() {
@@ -594,9 +615,11 @@ class _ProjectGalleryViewState extends State<ProjectGalleryView>
     final mediaCount = projectPhotos.length;
     final evidenceCount = evidenceItems.length;
     final expenseCount = expenseItems.length;
-    final hasChildren = mediaCount + evidenceCount + expenseCount > 0;
+    final tripCount = _projectTrips.length;
+    final hasChildren =
+        mediaCount + evidenceCount + expenseCount + tripCount > 0;
     final message = hasChildren
-        ? "删除项目「${widget.projectName}」后，会一并删除 $mediaCount 张照片、$evidenceCount 份凭证和 $expenseCount 条支出，且无法恢复。"
+        ? "删除项目「${widget.projectName}」后，会一并删除 $mediaCount 张照片、$evidenceCount 份凭证和 $expenseCount 条项目费用，并解除 $tripCount 条出差记录的项目关联；出差记录本身不会删除。"
         : "删除项目「${widget.projectName}」后无法恢复。";
 
     final messenger = ScaffoldMessenger.of(context);
@@ -628,6 +651,7 @@ class _ProjectGalleryViewState extends State<ProjectGalleryView>
     PhotoState photoState,
     EvidenceState evidenceState,
     ExpenseRecordState expenseState,
+    List<WorkLogEntry> projectTrips,
     Color textSecondary,
     ThemeData theme,
   ) {
@@ -688,8 +712,13 @@ class _ProjectGalleryViewState extends State<ProjectGalleryView>
             ),
             _ProjectMetricTile(
               icon: Icons.payments_rounded,
-              label: '支出',
+              label: '项目费用',
               value: formatMoney(expenseTotal),
+            ),
+            _ProjectMetricTile(
+              icon: Icons.luggage_rounded,
+              label: '出差',
+              value: projectTrips.length.toString(),
             ),
             _ProjectMetricTile(
               icon: Icons.assignment_late_outlined,
@@ -708,6 +737,7 @@ class _ProjectGalleryViewState extends State<ProjectGalleryView>
                 projectPhotos,
                 evidenceItems,
                 expenseItems,
+                projectTrips,
               ),
               style: TextStyle(color: textSecondary),
             ),
@@ -721,52 +751,78 @@ class _ProjectGalleryViewState extends State<ProjectGalleryView>
     PhotoState photoState,
     EvidenceState evidenceState,
     ExpenseRecordState expenseState,
+    List<WorkLogEntry> projectTrips,
     Color textSecondary,
     ThemeData theme,
   ) {
-    final items = <_ProjectTimelineItem>[
-      ...photoState
-          .entriesForProject(widget.projectName)
-          .map(
-            (entry) => _ProjectTimelineItem(
-              date: entry.createdAt,
-              type: '照片',
-              title: entry.description?.trim().isNotEmpty == true
-                  ? entry.description!.trim()
-                  : entry.fileName,
-              subtitle: entry.deviceName ?? '项目照片',
-              icon: Icons.photo_library_rounded,
-            ),
-          ),
-      ...evidenceState
-          .entriesForProject(widget.projectName)
-          .map(
-            (entry) => _ProjectTimelineItem(
-              date: entry.evidenceDate,
+    final items =
+        <_ProjectTimelineItem>[
+          ...photoState
+              .entriesForProject(widget.projectName)
+              .map(
+                (entry) => _ProjectTimelineItem(
+                  eventDate: entry.capturedAt ?? entry.createdAt,
+                  importedAt: entry.createdAt,
+                  type: '照片',
+                  title: entry.description?.trim().isNotEmpty == true
+                      ? entry.description!.trim()
+                      : entry.fileName,
+                  subtitle: entry.deviceName ?? '项目照片',
+                  icon: Icons.photo_library_rounded,
+                ),
+              ),
+          ...evidenceState.entriesForProject(widget.projectName).map((entry) {
+            final legacyItem = legacyEvidenceFromEntry(entry);
+            return _ProjectTimelineItem(
+              eventDate: entry.evidenceDate,
+              importedAt: entry.createdAt ?? entry.evidenceDate,
               type: '凭证',
-              title: entry.merchant?.trim().isNotEmpty == true
-                  ? entry.merchant!.trim()
-                  : entry.category.label,
-              subtitle:
-                  '${entry.status.label} · ${formatMoney(entry.amount ?? 0)}',
+              title: evidenceDisplayTitle(legacyItem),
+              subtitle: [
+                evidenceDisplaySubtitle(legacyItem),
+                entry.status.label,
+                if ((entry.amount ?? 0) > 0) formatMoney(entry.amount ?? 0),
+              ].join(' · '),
               icon: Icons.receipt_long_rounded,
-            ),
-          ),
-      ...expenseState
-          .entriesForProject(widget.projectName)
-          .map(
+            );
+          }),
+          ...expenseState
+              .entriesForProject(widget.projectName)
+              .map(
+                (entry) => _ProjectTimelineItem(
+                  eventDate: entry.expenseDate,
+                  importedAt: entry.createdAt ?? entry.expenseDate,
+                  type: '项目费用',
+                  title: entry.merchant?.trim().isNotEmpty == true
+                      ? entry.merchant!.trim()
+                      : entry.category.label,
+                  subtitle:
+                      '${entry.category.label} · ${formatMoney(entry.amount)}',
+                  icon: Icons.payments_rounded,
+                ),
+              ),
+          ...projectTrips.map(
             (entry) => _ProjectTimelineItem(
-              date: entry.expenseDate,
-              type: '支出',
-              title: entry.merchant?.trim().isNotEmpty == true
-                  ? entry.merchant!.trim()
-                  : entry.category.label,
-              subtitle:
-                  '${entry.category.label} · ${formatMoney(entry.amount)}',
-              icon: Icons.payments_rounded,
+              eventDate: entry.date,
+              importedAt: entry.updatedAt ?? entry.createdAt ?? entry.date,
+              type: '出差',
+              title: entry.location?.trim().isNotEmpty == true
+                  ? entry.location!.trim()
+                  : '出差记录',
+              subtitle: [
+                if (entry.transport?.trim().isNotEmpty == true)
+                  entry.transport!.trim(),
+                if ((entry.expenses ?? 0) > 0) formatMoney(entry.expenses ?? 0),
+                entry.isReimbursed ? '已报销' : '未报销',
+              ].join(' · '),
+              icon: Icons.luggage_rounded,
             ),
           ),
-    ]..sort((a, b) => b.date.compareTo(a.date));
+        ]..sort(
+          (a, b) => b
+              .dateFor(_timelineSortMode)
+              .compareTo(a.dateFor(_timelineSortMode)),
+        );
 
     if (items.isEmpty) {
       return Center(
@@ -774,26 +830,61 @@ class _ProjectGalleryViewState extends State<ProjectGalleryView>
       );
     }
 
-    return ListView.separated(
-      padding: EdgeInsets.all(12.w),
-      itemCount: items.length,
-      separatorBuilder: (_, _) => SizedBox(height: 10.h),
-      itemBuilder: (context, index) {
-        final item = items[index];
-        return ListTile(
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(12),
+    return Column(
+      children: [
+        Padding(
+          padding: EdgeInsets.fromLTRB(12.w, 12.h, 12.w, 0),
+          child: SizedBox(
+            width: double.infinity,
+            child: SegmentedButton<_ProjectTimelineSortMode>(
+              segments: const [
+                ButtonSegment<_ProjectTimelineSortMode>(
+                  value: _ProjectTimelineSortMode.eventDate,
+                  label: Text('事件日期'),
+                  icon: Icon(Icons.event_available_rounded),
+                ),
+                ButtonSegment<_ProjectTimelineSortMode>(
+                  value: _ProjectTimelineSortMode.importDate,
+                  label: Text('导入日期'),
+                  icon: Icon(Icons.file_download_done_rounded),
+                ),
+              ],
+              selected: {_timelineSortMode},
+              onSelectionChanged: (selection) {
+                setState(() => _timelineSortMode = selection.single);
+              },
+            ),
           ),
-          tileColor: theme.cardColor,
-          leading: Icon(item.icon),
-          title: Text(item.title, maxLines: 1, overflow: TextOverflow.ellipsis),
-          subtitle: Text(
-            '${formatDateYmd(item.date)} · ${item.type} · ${item.subtitle}',
-            maxLines: 1,
-            overflow: TextOverflow.ellipsis,
+        ),
+        Expanded(
+          child: ListView.separated(
+            padding: EdgeInsets.all(12.w),
+            itemCount: items.length,
+            separatorBuilder: (_, _) => SizedBox(height: 10.h),
+            itemBuilder: (context, index) {
+              final item = items[index];
+              final displayDate = item.dateFor(_timelineSortMode);
+              return ListTile(
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                tileColor: theme.cardColor,
+                leading: Icon(item.icon),
+                title: Text(
+                  item.title,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                ),
+                subtitle: Text(
+                  '${formatDateYmd(displayDate)} · ${item.type} · ${item.subtitle}',
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                ),
+              );
+            },
           ),
-        );
-      },
+        ),
+      ],
     );
   }
 
@@ -844,7 +935,7 @@ class _ProjectGalleryViewState extends State<ProjectGalleryView>
   ) {
     if (records.isEmpty) {
       return Center(
-        child: Text('此项目下暂无支出', style: TextStyle(color: textSecondary)),
+        child: Text('此项目下暂无项目费用', style: TextStyle(color: textSecondary)),
       );
     }
     return ListView.separated(
@@ -853,6 +944,7 @@ class _ProjectGalleryViewState extends State<ProjectGalleryView>
       separatorBuilder: (_, _) => SizedBox(height: 10.h),
       itemBuilder: (context, index) {
         final record = records[index];
+        final isDuplicate = _isDuplicateExpenseRecord(record, records);
         final title = record.merchant?.trim().isNotEmpty == true
             ? record.merchant!.trim()
             : record.category.label;
@@ -864,7 +956,12 @@ class _ProjectGalleryViewState extends State<ProjectGalleryView>
           leading: const Icon(Icons.payments_rounded),
           title: Text(title),
           subtitle: Text(
-            '${formatDateYmd(record.expenseDate)} · ${record.category.label}',
+            [
+              formatDateYmd(record.expenseDate),
+              record.category.label,
+              if (record.tripWorkLogId != null) '已关联出差',
+              if (isDuplicate) '疑似重复',
+            ].join(' · '),
           ),
           trailing: Text(formatMoney(record.amount)),
           onTap: () => openExpenseRecordEditorPage(
@@ -974,31 +1071,71 @@ class _ProjectMetricTile extends StatelessWidget {
 }
 
 class _ProjectTimelineItem {
-  final DateTime date;
+  final DateTime eventDate;
+  final DateTime importedAt;
   final String type;
   final String title;
   final String subtitle;
   final IconData icon;
 
   const _ProjectTimelineItem({
-    required this.date,
+    required this.eventDate,
+    required this.importedAt,
     required this.type,
     required this.title,
     required this.subtitle,
     required this.icon,
   });
+
+  DateTime dateFor(_ProjectTimelineSortMode mode) {
+    return switch (mode) {
+      _ProjectTimelineSortMode.eventDate => eventDate,
+      _ProjectTimelineSortMode.importDate => importedAt,
+    };
+  }
 }
+
+enum _ProjectTimelineSortMode { eventDate, importDate }
 
 String _latestProjectActivity(
   List<PhotoEntry> photos,
   List<EvidenceEntry> evidences,
   List<ExpenseRecordEntry> expenses,
+  List<WorkLogEntry> trips,
 ) {
   final dates = <DateTime>[
-    ...photos.map((entry) => entry.createdAt),
+    ...photos.map((entry) => entry.capturedAt ?? entry.createdAt),
     ...evidences.map((entry) => entry.evidenceDate),
     ...expenses.map((entry) => entry.expenseDate),
+    ...trips.map((entry) => entry.date),
   ]..sort((a, b) => b.compareTo(a));
-  if (dates.isEmpty) return '暂无照片、凭证或支出';
+  if (dates.isEmpty) return '暂无照片、凭证、项目费用或出差';
   return formatDateYmd(dates.first);
+}
+
+List<WorkLogEntry> entriesForProjectTrips(
+  List<WorkLogEntry> entries,
+  String projectName,
+) {
+  final normalizedProjectName = projectName.trim();
+  return entries
+      .where(
+        (entry) =>
+            entry.type == WorkLogEntryType.businessTrip &&
+            entry.projectName?.trim() == normalizedProjectName,
+      )
+      .toList(growable: false);
+}
+
+bool _isDuplicateExpenseRecord(
+  ExpenseRecordEntry record,
+  List<ExpenseRecordEntry> records,
+) {
+  return records.any(
+    (other) =>
+        other.id != record.id &&
+        formatDateYmd(other.expenseDate) == formatDateYmd(record.expenseDate) &&
+        other.amount == record.amount &&
+        other.currency == record.currency,
+  );
 }

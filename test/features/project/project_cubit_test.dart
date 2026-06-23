@@ -23,6 +23,11 @@ import 'package:life_log/features/project/application/watch_project_entries.dart
 import 'package:life_log/features/project/domain/entities/project_entry.dart';
 import 'package:life_log/features/project/domain/repositories/project_repository_port.dart';
 import 'package:life_log/features/project/presentation/project_cubit.dart';
+import 'package:life_log/features/work_log/application/load_project_work_log_trips.dart';
+import 'package:life_log/features/work_log/application/save_work_log_entry.dart';
+import 'package:life_log/features/work_log/domain/entities/work_log_edit_draft.dart';
+import 'package:life_log/features/work_log/domain/entities/work_log_entry.dart';
+import 'package:life_log/features/work_log/domain/repositories/work_log_repository_port.dart';
 
 void main() {
   group('ProjectCubit', () {
@@ -127,6 +132,10 @@ void main() {
         _expense(id: 30, projectName: 'Alpha'),
         _expense(id: 31, projectName: 'Beta'),
       ]);
+      final workLogRepository = _ProjectWorkLogRepository([
+        _trip(id: 40, projectName: 'Alpha'),
+        _trip(id: 41, projectName: 'Beta'),
+      ]);
       final deleteProject = DeleteProjectEntry(
         repository: projectRepository,
         loadPhotoEntries: LoadPhotoEntries(photoRepository),
@@ -135,6 +144,8 @@ void main() {
         deleteEvidenceEntry: DeleteEvidenceEntry(evidenceRepository),
         loadExpenseRecordEntries: LoadExpenseRecordEntries(expenseRepository),
         deleteExpenseRecordEntry: DeleteExpenseRecordEntry(expenseRepository),
+        loadProjectWorkLogTrips: LoadProjectWorkLogTrips(workLogRepository),
+        saveWorkLogEntry: SaveWorkLogEntry(workLogRepository),
       );
 
       final result = await deleteProject(_entry(id: 1, name: 'Alpha'));
@@ -143,6 +154,8 @@ void main() {
       expect(photoRepository.deletedIds, [10]);
       expect(evidenceRepository.deletedIds, [20]);
       expect(expenseRepository.deletedIds, [30]);
+      expect(workLogRepository.savedEntries.single.projectName, isNull);
+      expect(workLogRepository.savedEntries.single.projectId, isNull);
       expect(projectRepository.deletedEntries.map((entry) => entry.name), [
         'Alpha',
       ]);
@@ -160,6 +173,8 @@ void main() {
       expect(source, contains('DeletePhotoEntries'));
       expect(source, contains('LoadExpenseRecordEntries'));
       expect(source, contains('DeleteExpenseRecordEntry'));
+      expect(source, contains('LoadProjectWorkLogTrips'));
+      expect(source, contains('SaveWorkLogEntry'));
       expect(
         source,
         isNot(contains('features/photo/data/photo_repository.dart')),
@@ -343,6 +358,17 @@ ExpenseRecordEntry _expense({required int id, required String projectName}) {
   );
 }
 
+WorkLogEntry _trip({required int id, required String projectName}) {
+  return WorkLogEntry(
+    id: id,
+    syncId: 'trip-sync-$id',
+    date: DateTime(2026, 5, 1),
+    type: WorkLogEntryType.businessTrip,
+    projectId: id,
+    projectName: projectName,
+  );
+}
+
 final class _ProjectPhotoRepository implements PhotoRepositoryPort {
   final List<PhotoEntry> photos;
   final deletedIds = <int>[];
@@ -370,6 +396,10 @@ final class _ProjectPhotoRepository implements PhotoRepositoryPort {
     required String description,
     required String deviceName,
     required bool deleteSource,
+    DateTime? capturedAt,
+    String? capturedAtSource,
+    double? gpsLatitude,
+    double? gpsLongitude,
   }) async => throw UnimplementedError();
 
   @override
@@ -435,6 +465,36 @@ final class _ProjectExpenseRepository implements ExpenseRecordRepositoryPort {
     ExpenseRecordEntry entry, {
     required bool markDirty,
   }) async {}
+
+  @override
+  Stream<void> watchEntries() => const Stream.empty();
+}
+
+final class _ProjectWorkLogRepository implements WorkLogRepositoryPort {
+  final List<WorkLogEntry> entries;
+  final savedEntries = <WorkLogEntry>[];
+
+  _ProjectWorkLogRepository(this.entries);
+
+  @override
+  Future<List<WorkLogEntry>> getAllEntries() async => entries;
+
+  @override
+  Future<List<WorkLogEntry>> getEntriesByMonth(DateTime month) async => entries;
+
+  @override
+  Future<WorkLogEditDraft?> getEditDraft(int id) async => null;
+
+  @override
+  Future<void> normalizeDuplicateDays() async {}
+
+  @override
+  Future<void> saveEntry(WorkLogEntry entry, {required bool markDirty}) async {
+    savedEntries.add(entry);
+  }
+
+  @override
+  Future<void> deleteEntry(int id) async {}
 
   @override
   Stream<void> watchEntries() => const Stream.empty();

@@ -61,12 +61,16 @@ extension LegacyWorkLogMapper on WorkLog {
   WorkLogEntry toWorkLogEntry() {
     return WorkLogEntry(
       id: id,
+      syncId: syncId,
       date: date,
       type: type.toWorkLogEntryType(),
       overtimeHours: overtimeHours,
       location: location,
       transport: transport,
       expenses: expenses,
+      projectId: projectId,
+      projectSyncId: projectSyncId,
+      projectName: projectName,
       isReimbursed: isReimbursed,
       note: note,
       createdAt: createdAt,
@@ -90,12 +94,16 @@ extension WorkLogEntryLegacyMapper on WorkLogEntry {
   WorkLog toLegacyWorkLog() {
     return WorkLog()
       ..id = id
+      ..syncId = syncId
       ..date = date
       ..type = type.toLegacyLogType()
       ..overtimeHours = overtimeHours
       ..location = location
       ..transport = transport
       ..expenses = expenses
+      ..projectId = projectId
+      ..projectSyncId = projectSyncId
+      ..projectName = projectName
       ..isReimbursed = isReimbursed
       ..note = note
       ..createdAt = createdAt

@@ -25,6 +25,8 @@ final class ExpenseRecordEditorState extends Equatable {
   final ExpenseRecordEntryCategory category;
   final String merchant;
   final String projectName;
+  final int? tripWorkLogId;
+  final String? tripWorkLogSyncId;
   final String note;
   final AppFailure? failure;
 
@@ -38,6 +40,8 @@ final class ExpenseRecordEditorState extends Equatable {
     required this.category,
     required this.merchant,
     required this.projectName,
+    required this.tripWorkLogId,
+    required this.tripWorkLogSyncId,
     required this.note,
     this.failure,
   });
@@ -59,6 +63,8 @@ final class ExpenseRecordEditorState extends Equatable {
       category: entry?.category ?? ExpenseRecordEntryCategory.other,
       merchant: entry?.merchant ?? '',
       projectName: entry?.projectName ?? initialProjectName?.trim() ?? '',
+      tripWorkLogId: entry?.tripWorkLogId,
+      tripWorkLogSyncId: entry?.tripWorkLogSyncId,
       note: entry?.note ?? '',
     );
   }
@@ -71,6 +77,9 @@ final class ExpenseRecordEditorState extends Equatable {
     ExpenseRecordEntryCategory? category,
     String? merchant,
     String? projectName,
+    int? tripWorkLogId,
+    String? tripWorkLogSyncId,
+    bool clearTripWorkLog = false,
     String? note,
     AppFailure? failure,
     bool clearFailure = false,
@@ -85,6 +94,12 @@ final class ExpenseRecordEditorState extends Equatable {
       category: category ?? this.category,
       merchant: merchant ?? this.merchant,
       projectName: projectName ?? this.projectName,
+      tripWorkLogId: clearTripWorkLog
+          ? null
+          : tripWorkLogId ?? this.tripWorkLogId,
+      tripWorkLogSyncId: clearTripWorkLog
+          ? null
+          : tripWorkLogSyncId ?? this.tripWorkLogSyncId,
       note: note ?? this.note,
       failure: clearFailure ? null : failure ?? this.failure,
     );
@@ -101,6 +116,8 @@ final class ExpenseRecordEditorState extends Equatable {
     category,
     merchant,
     projectName,
+    tripWorkLogId,
+    tripWorkLogSyncId,
     note,
     failure,
   ];
@@ -145,7 +162,23 @@ final class ExpenseRecordEditorCubit extends Cubit<ExpenseRecordEditorState> {
   }
 
   void changeProjectName(String projectName) {
-    emit(_editingState(projectName: projectName));
+    final nextProjectName = projectName.trim();
+    emit(
+      _editingState(
+        projectName: projectName,
+        clearTripWorkLog: nextProjectName != state.projectName.trim(),
+      ),
+    );
+  }
+
+  void changeTripWorkLog({int? id, String? syncId}) {
+    emit(
+      _editingState(
+        tripWorkLogId: id,
+        tripWorkLogSyncId: syncId,
+        clearTripWorkLog: id == null && syncId == null,
+      ),
+    );
   }
 
   void changeNote(String note) {
@@ -219,6 +252,9 @@ final class ExpenseRecordEditorCubit extends Cubit<ExpenseRecordEditorState> {
     ExpenseRecordEntryCategory? category,
     String? merchant,
     String? projectName,
+    int? tripWorkLogId,
+    String? tripWorkLogSyncId,
+    bool clearTripWorkLog = false,
     String? note,
   }) {
     return state.copyWith(
@@ -228,6 +264,9 @@ final class ExpenseRecordEditorCubit extends Cubit<ExpenseRecordEditorState> {
       category: category,
       merchant: merchant,
       projectName: projectName,
+      tripWorkLogId: tripWorkLogId,
+      tripWorkLogSyncId: tripWorkLogSyncId,
+      clearTripWorkLog: clearTripWorkLog,
       note: note,
       clearFailure: true,
     );
@@ -256,7 +295,10 @@ final class ExpenseRecordEditorCubit extends Cubit<ExpenseRecordEditorState> {
       category: state.category,
       merchant: _emptyToNull(state.merchant),
       projectId: state.existingEntry?.projectId,
+      projectSyncId: state.existingEntry?.projectSyncId,
       projectName: _emptyToNull(state.projectName),
+      tripWorkLogId: state.tripWorkLogId,
+      tripWorkLogSyncId: _emptyToNull(state.tripWorkLogSyncId ?? ''),
       note: _emptyToNull(state.note),
     );
   }
@@ -281,8 +323,13 @@ final class ExpenseRecordEditorCubit extends Cubit<ExpenseRecordEditorState> {
         _normalizeText(next.merchant) != _normalizeText(previous.merchant) ||
         _normalizeText(next.note) != _normalizeText(previous.note) ||
         next.projectId != previous.projectId ||
+        _normalizeText(next.projectSyncId) !=
+            _normalizeText(previous.projectSyncId) ||
         _normalizeText(next.projectName) !=
-            _normalizeText(previous.projectName);
+            _normalizeText(previous.projectName) ||
+        next.tripWorkLogId != previous.tripWorkLogId ||
+        _normalizeText(next.tripWorkLogSyncId) !=
+            _normalizeText(previous.tripWorkLogSyncId);
   }
 }
 

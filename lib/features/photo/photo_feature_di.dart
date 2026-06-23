@@ -10,6 +10,7 @@ import 'package:life_log/features/photo/data/legacy_photo_repository_adapter.dar
 import 'package:life_log/features/photo/data/photo_repository.dart';
 import 'package:life_log/features/photo/domain/repositories/photo_repository_port.dart';
 import 'package:life_log/features/photo/presentation/photo_cubit.dart';
+import 'package:life_log/features/photo/presentation/photo_display_preferences.dart';
 
 GetIt configurePhotoFeatureDependencies({
   GetIt? locator,
@@ -62,6 +63,12 @@ GetIt configurePhotoFeatureDependencies({
   if (!activeLocator.isRegistered<ExportPhotoEntries>()) {
     activeLocator.registerLazySingleton<ExportPhotoEntries>(
       () => ExportPhotoEntries(activeLocator<PhotoRepositoryPort>()),
+    );
+  }
+
+  if (!activeLocator.isRegistered<PhotoDisplayPreferences>()) {
+    activeLocator.registerLazySingleton<PhotoDisplayPreferences>(
+      PhotoDisplayPreferences.new,
     );
   }
 
