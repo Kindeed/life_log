@@ -52,7 +52,7 @@ class _SubscriptionContent extends StatelessWidget {
         final visibleEntries = state.visibleEntries;
         return AppListPage(
           title: "订阅",
-          isEmpty: visibleEntries.isEmpty,
+          isEmpty: state.entries.isEmpty,
           empty: const AppEmptyState(
             icon: Icons.subscriptions_outlined,
             title: "还没有固定支出",
@@ -65,6 +65,21 @@ class _SubscriptionContent extends StatelessWidget {
             textSecondary: textSecondary,
           ),
           sliverBuilder: (_) {
+            if (visibleEntries.isEmpty) {
+              return SliverPadding(
+                padding: EdgeInsets.fromLTRB(16.w, 8.h, 16.w, 88.h),
+                sliver: const SliverToBoxAdapter(
+                  child: ConstrainedPage(
+                    child: AppEmptyState(
+                      icon: Icons.filter_alt_off_outlined,
+                      title: "该分类暂无支出",
+                      message: "切换分类或添加一笔对应类型的支出。",
+                    ),
+                  ),
+                ),
+              );
+            }
+
             if (state.filter == SubscriptionFilter.all &&
                 state.sortMode == SubscriptionSortMode.manual) {
               return SliverPadding(

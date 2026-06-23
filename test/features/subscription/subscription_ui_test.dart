@@ -174,6 +174,16 @@ void main() {
       expect(di, contains('registerFactory<SubscriptionCubit>'));
     });
 
+    test('keeps filters visible when the selected category is empty', () {
+      final view = File(
+        'lib/features/subscription/presentation/subscription_view.dart',
+      ).readAsStringSync();
+
+      expect(view, contains('isEmpty: state.entries.isEmpty'));
+      expect(view, contains('该分类暂无支出'));
+      expect(view, isNot(contains('isEmpty: visibleEntries.isEmpty')));
+    });
+
     test('moves editor routing and delete confirmation behind local helpers', () {
       final view = File(
         'lib/features/subscription/presentation/subscription_view.dart',

@@ -1,5 +1,21 @@
 # Changelog
 
+## [1.4.21] - 2026-06-23
+
+### 订阅筛选重大回归修复
+
+#### 变更 (Changed)
+- 应用版本升级到 `1.4.21+27`。
+- 订阅页筛选空结果现在只在列表区域提示，不再切换到整页空状态。
+
+#### 修复 (Fixed)
+- 修复点击订阅分类里的“一次性”时，如果该分类暂无内容，会误显示“还没有固定支出”并隐藏分类/排序控件的问题。
+- 举一反三检查凭证、项目、记录、项目详情等同类筛选/空状态页面，确认它们的搜索或分类无结果不会隐藏筛选入口。
+
+#### 验证 (Validation)
+- `flutter test test\features\subscription\subscription_ui_test.dart test\features\evidence\evidence_cubit_test.dart test\features\photo\photo_cubit_test.dart` 通过，当前环境为 `29 passed`。
+- 发布前验证完成：`dart format --set-exit-if-changed .`、`dart run build_runner build --delete-conflicting-outputs`、`flutter analyze --fatal-infos --fatal-warnings`、`flutter test`、`git diff --check`、旧 module/GetX 扫描、照片 local-only 扫描和 `flutter build apk --debug` 均通过；当前环境全量测试为 `469 passed`。
+
 ## [1.4.20] - 2026-06-22
 
 ### Android 发布与过度设计削减
