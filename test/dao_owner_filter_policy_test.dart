@@ -27,6 +27,7 @@ void main() {
           contains('getPendingForSyncForOwner'),
           reason: '${entry.key} DAO should filter owner/dirty in Isar.',
         );
+        expect(source, contains('ownerVisibleTo(ownerUserId)'));
         expect(source, contains('ownerMatches(ownerUserId)'));
         expect(source, contains('deletedAtIsNull()'));
         expect(source, contains('isDirtyEqualTo(true)'));
@@ -51,6 +52,8 @@ void main() {
         contains('getActiveByDayForOwner(date, currentOwnerUserId)'),
       );
       expect(source, contains('getPendingForSyncForOwner(currentOwnerUserId)'));
+      expect(source, contains('_isVisibleToCurrentUser'));
+      expect(source, contains('_belongsToCurrentUser'));
       expect(
         source,
         isNot(contains('final logs = await _workLogDao.getAllSorted();')),

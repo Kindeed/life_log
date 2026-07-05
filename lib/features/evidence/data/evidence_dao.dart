@@ -24,7 +24,7 @@ class EvidenceDao {
   Future<List<ExpenseEvidence>> getActiveSortedForOwner(String? ownerUserId) {
     return _isar.expenseEvidences
         .filter()
-        .ownerMatches(ownerUserId)
+        .ownerVisibleTo(ownerUserId)
         .and()
         .deletedAtIsNull()
         .sortByEvidenceDateDesc()
@@ -103,6 +103,16 @@ class EvidenceDao {
 
 extension _EvidenceOwnerFilter
     on QueryBuilder<ExpenseEvidence, ExpenseEvidence, QFilterCondition> {
+  QueryBuilder<ExpenseEvidence, ExpenseEvidence, QAfterFilterCondition>
+  ownerVisibleTo(String? ownerUserId) {
+    return ownerUserId == null
+        ? ownerUserIdIsNull()
+        : group(
+            (query) =>
+                query.ownerUserIdIsNull().or().ownerUserIdEqualTo(ownerUserId),
+          );
+  }
+
   QueryBuilder<ExpenseEvidence, ExpenseEvidence, QAfterFilterCondition>
   ownerMatches(String? ownerUserId) {
     return ownerUserId == null

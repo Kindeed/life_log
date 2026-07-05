@@ -20,7 +20,7 @@ class ExpenseRecordDao {
   Future<List<ExpenseRecord>> getActiveSortedForOwner(String? ownerUserId) {
     return _isar.expenseRecords
         .filter()
-        .ownerMatches(ownerUserId)
+        .ownerVisibleTo(ownerUserId)
         .and()
         .deletedAtIsNull()
         .sortByExpenseDateDesc()
@@ -99,6 +99,16 @@ class ExpenseRecordDao {
 
 extension _ExpenseRecordOwnerFilter
     on QueryBuilder<ExpenseRecord, ExpenseRecord, QFilterCondition> {
+  QueryBuilder<ExpenseRecord, ExpenseRecord, QAfterFilterCondition>
+  ownerVisibleTo(String? ownerUserId) {
+    return ownerUserId == null
+        ? ownerUserIdIsNull()
+        : group(
+            (query) =>
+                query.ownerUserIdIsNull().or().ownerUserIdEqualTo(ownerUserId),
+          );
+  }
+
   QueryBuilder<ExpenseRecord, ExpenseRecord, QAfterFilterCondition>
   ownerMatches(String? ownerUserId) {
     return ownerUserId == null

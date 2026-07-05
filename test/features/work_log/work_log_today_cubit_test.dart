@@ -12,7 +12,7 @@ import 'package:life_log/features/work_log/presentation/work_log_today_cubit.dar
 void main() {
   group('LoadWorkLogToday', () {
     test(
-      'keeps latest day entries and builds today dashboard snapshot',
+      'keeps all recent entries while using latest entry for today card',
       () async {
         final repository = _FakeWorkLogRepository([
           _entry(
@@ -61,9 +61,9 @@ void main() {
         expect(result.isSuccess, isTrue);
         expect(snapshot.today, DateTime(2026, 5, 9));
         expect(snapshot.todayEntry?.id, 2);
-        expect(snapshot.recentEntries.map((entry) => entry.id), [2, 3, 4]);
-        expect(snapshot.currentMonthSummary.workHours, 6);
-        expect(snapshot.currentMonthSummary.workDays, 2);
+        expect(snapshot.recentEntries.map((entry) => entry.id), [2, 1, 3, 4]);
+        expect(snapshot.currentMonthSummary.workHours, 8);
+        expect(snapshot.currentMonthSummary.workDays, 3);
         expect(snapshot.currentMonthSummary.tripDays, 1);
         expect(snapshot.currentMonthSummary.restDays, 1);
       },

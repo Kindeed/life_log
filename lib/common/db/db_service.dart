@@ -67,28 +67,108 @@ class DbService {
         : ownerUserId == currentUserId;
   }
 
-  void _stampWorkLogOwner(WorkLog log) {
-    log.ownerUserId ??= currentOwnerUserId;
+  bool _isVisibleToCurrentUser(String? ownerUserId) {
+    final currentUserId = currentOwnerUserId;
+    return currentUserId == null
+        ? ownerUserId == null
+        : ownerUserId == null || ownerUserId == currentUserId;
   }
 
-  void _stampSubscriptionOwner(Subscription sub) {
-    sub.ownerUserId ??= currentOwnerUserId;
+  void _stampWorkLogOwner(WorkLog log, WorkLog? existing) {
+    log.ownerUserId ??= existing?.ownerUserId ?? currentOwnerUserId;
   }
 
-  void _stampEvidenceOwner(ExpenseEvidence evidence) {
-    evidence.ownerUserId ??= currentOwnerUserId;
+  void _preserveWorkLogSyncIdentity(WorkLog log, WorkLog? existing) {
+    if (existing == null) return;
+    log.remoteId ??= existing.remoteId;
+    log.syncId ??= existing.syncId;
+    if (log.remoteVersion == 0) log.remoteVersion = existing.remoteVersion;
+    log.remoteUpdatedAt ??= existing.remoteUpdatedAt;
+    log.syncedAt ??= existing.syncedAt;
+    log.pendingDelete = log.pendingDelete || existing.pendingDelete;
+    log.deletedAt ??= existing.deletedAt;
   }
 
-  void _stampExpenseRecordOwner(ExpenseRecord record) {
-    record.ownerUserId ??= currentOwnerUserId;
+  void _stampSubscriptionOwner(Subscription sub, Subscription? existing) {
+    sub.ownerUserId ??= existing?.ownerUserId ?? currentOwnerUserId;
+  }
+
+  void _preserveSubscriptionSyncIdentity(
+    Subscription sub,
+    Subscription? existing,
+  ) {
+    if (existing == null) return;
+    sub.remoteId ??= existing.remoteId;
+    sub.syncId ??= existing.syncId;
+    if (sub.remoteVersion == 0) sub.remoteVersion = existing.remoteVersion;
+    sub.remoteUpdatedAt ??= existing.remoteUpdatedAt;
+    sub.syncedAt ??= existing.syncedAt;
+    sub.pendingDelete = sub.pendingDelete || existing.pendingDelete;
+    sub.deletedAt ??= existing.deletedAt;
+  }
+
+  void _stampEvidenceOwner(
+    ExpenseEvidence evidence,
+    ExpenseEvidence? existing,
+  ) {
+    evidence.ownerUserId ??= existing?.ownerUserId ?? currentOwnerUserId;
+  }
+
+  void _preserveEvidenceSyncIdentity(
+    ExpenseEvidence evidence,
+    ExpenseEvidence? existing,
+  ) {
+    if (existing == null) return;
+    evidence.remoteId ??= existing.remoteId;
+    evidence.syncId ??= existing.syncId;
+    if (evidence.remoteVersion == 0) {
+      evidence.remoteVersion = existing.remoteVersion;
+    }
+    evidence.remoteUpdatedAt ??= existing.remoteUpdatedAt;
+    evidence.syncedAt ??= existing.syncedAt;
+    evidence.pendingDelete = evidence.pendingDelete || existing.pendingDelete;
+    evidence.deletedAt ??= existing.deletedAt;
+  }
+
+  void _stampExpenseRecordOwner(ExpenseRecord record, ExpenseRecord? existing) {
+    record.ownerUserId ??= existing?.ownerUserId ?? currentOwnerUserId;
+  }
+
+  void _preserveExpenseRecordSyncIdentity(
+    ExpenseRecord record,
+    ExpenseRecord? existing,
+  ) {
+    if (existing == null) return;
+    record.remoteId ??= existing.remoteId;
+    record.syncId ??= existing.syncId;
+    if (record.remoteVersion == 0) {
+      record.remoteVersion = existing.remoteVersion;
+    }
+    record.remoteUpdatedAt ??= existing.remoteUpdatedAt;
+    record.syncedAt ??= existing.syncedAt;
+    record.pendingDelete = record.pendingDelete || existing.pendingDelete;
+    record.deletedAt ??= existing.deletedAt;
   }
 
   void _stampPhotoOwner(PhotoItem photo) {
     photo.ownerUserId ??= currentOwnerUserId;
   }
 
-  void _stampProjectOwner(Project project) {
-    project.ownerUserId ??= currentOwnerUserId;
+  void _stampProjectOwner(Project project, Project? existing) {
+    project.ownerUserId ??= existing?.ownerUserId ?? currentOwnerUserId;
+  }
+
+  void _preserveProjectSyncIdentity(Project project, Project? existing) {
+    if (existing == null) return;
+    project.remoteId ??= existing.remoteId;
+    project.syncId ??= existing.syncId;
+    if (project.remoteVersion == 0) {
+      project.remoteVersion = existing.remoteVersion;
+    }
+    project.remoteUpdatedAt ??= existing.remoteUpdatedAt;
+    project.syncedAt ??= existing.syncedAt;
+    project.pendingDelete = project.pendingDelete || existing.pendingDelete;
+    project.deletedAt ??= existing.deletedAt;
   }
 
   DateTime _parseRemoteDateTime(dynamic value, {DateTime? fallback}) {
@@ -603,10 +683,11 @@ class DbService {
   // --- 2. 增加一条日志 (入库) ---
   Future<int> addLog(WorkLog log) async {
     final id = await isar.writeTxn(() async {
-      _stampWorkLogOwner(log);
       final existing = log.id == Isar.autoIncrement
           ? null
           : await isar.workLogs.get(log.id);
+      _stampWorkLogOwner(log, existing);
+      _preserveWorkLogSyncIdentity(log, existing);
       _stampWorkLogAudit(log, existing);
       log.isDirty =
           existing?.isDirty == true ||
@@ -644,7 +725,7 @@ class DbService {
   // --- 5. 获取单条记录 (供 Repository 查询使用) ---
   Future<WorkLog?> getWorkLog(int id) async {
     final log = await _workLogDao.getById(id);
-    if (log == null || !_belongsToCurrentUser(log.ownerUserId)) return null;
+    if (log == null || !_isVisibleToCurrentUser(log.ownerUserId)) return null;
     return log;
   }
 
@@ -660,7 +741,7 @@ class DbService {
     return await isar.writeTxn(() async {
       final log = await isar.workLogs.get(id);
       if (log == null) return null;
-      if (!_belongsToCurrentUser(log.ownerUserId)) return null;
+      if (!_isVisibleToCurrentUser(log.ownerUserId)) return null;
       log.deletedAt = DateTime.now().toUtc();
       log.updatedAt = log.deletedAt;
       log.pendingDelete = true;
@@ -693,7 +774,7 @@ class DbService {
   // 2. 获取单条订阅
   Future<Subscription?> getSubscription(int id) async {
     final sub = await _subscriptionDao.getById(id);
-    if (sub == null || !_belongsToCurrentUser(sub.ownerUserId)) return null;
+    if (sub == null || !_isVisibleToCurrentUser(sub.ownerUserId)) return null;
     return sub;
   }
 
@@ -703,10 +784,11 @@ class DbService {
   // 2. 添加/修改订阅
   Future<int> addSubscription(Subscription sub) async {
     final id = await isar.writeTxn(() async {
-      _stampSubscriptionOwner(sub);
       final existing = sub.id == Isar.autoIncrement
           ? null
           : await isar.subscriptions.get(sub.id);
+      _stampSubscriptionOwner(sub, existing);
+      _preserveSubscriptionSyncIdentity(sub, existing);
       sub.isDirty =
           existing?.isDirty == true ||
           sub.isDirty ||
@@ -726,7 +808,7 @@ class DbService {
     return await isar.writeTxn(() async {
       final sub = await isar.subscriptions.get(id);
       if (sub == null) return null;
-      if (!_belongsToCurrentUser(sub.ownerUserId)) return null;
+      if (!_isVisibleToCurrentUser(sub.ownerUserId)) return null;
       sub.deletedAt = DateTime.now().toUtc();
       sub.pendingDelete = true;
       sub.isDirty = true;
@@ -749,9 +831,11 @@ class DbService {
       final changed = <Subscription>[];
       for (int i = 0; i < subs.length; i++) {
         final sub = subs[i];
-        _stampSubscriptionOwner(sub);
         final existing = await isar.subscriptions.get(sub.id);
-        if (existing == null || !_belongsToCurrentUser(existing.ownerUserId)) {
+        _stampSubscriptionOwner(sub, existing);
+        _preserveSubscriptionSyncIdentity(sub, existing);
+        if (existing == null ||
+            !_isVisibleToCurrentUser(existing.ownerUserId)) {
           continue;
         }
         if (existing.sortIndex == i) continue;
@@ -773,13 +857,15 @@ class DbService {
         .sortByCreatedAtDesc()
         .findAll();
     return photos
-        .where((photo) => _belongsToCurrentUser(photo.ownerUserId))
+        .where((photo) => _isVisibleToCurrentUser(photo.ownerUserId))
         .toList();
   }
 
   Future<PhotoItem?> getPhoto(int id) async {
     final photo = await isar.photoItems.get(id);
-    if (photo == null || !_belongsToCurrentUser(photo.ownerUserId)) return null;
+    if (photo == null || !_isVisibleToCurrentUser(photo.ownerUserId)) {
+      return null;
+    }
     return photo;
   }
 
@@ -796,7 +882,7 @@ class DbService {
   Future<void> deletePhoto(int id) async {
     await isar.writeTxn(() async {
       final photo = await isar.photoItems.get(id);
-      if (photo == null || !_belongsToCurrentUser(photo.ownerUserId)) return;
+      if (photo == null || !_isVisibleToCurrentUser(photo.ownerUserId)) return;
       await isar.photoItems.delete(id);
     });
   }
@@ -820,13 +906,13 @@ class DbService {
 
   Future<ExpenseEvidence?> getEvidenceBySyncId(String syncId) async {
     final item = await _evidenceDao.getBySyncId(syncId);
-    if (item == null || !_belongsToCurrentUser(item.ownerUserId)) return null;
+    if (item == null || !_isVisibleToCurrentUser(item.ownerUserId)) return null;
     return item;
   }
 
   Future<ExpenseEvidence?> getEvidence(int id) async {
     final item = await _evidenceDao.getById(id);
-    if (item == null || !_belongsToCurrentUser(item.ownerUserId)) return null;
+    if (item == null || !_isVisibleToCurrentUser(item.ownerUserId)) return null;
     return item;
   }
 
@@ -839,10 +925,11 @@ class DbService {
       evidence.syncId = ensureSyncId(evidence.syncId);
     }
     final id = await isar.writeTxn(() async {
-      _stampEvidenceOwner(evidence);
       final existing = evidence.id == Isar.autoIncrement
           ? null
           : await isar.expenseEvidences.get(evidence.id);
+      _stampEvidenceOwner(evidence, existing);
+      _preserveEvidenceSyncIdentity(evidence, existing);
       _stampEvidenceAudit(evidence, existing);
       evidence.isDirty =
           existing?.isDirty == true ||
@@ -862,7 +949,7 @@ class DbService {
     return await isar.writeTxn(() async {
       final item = await isar.expenseEvidences.get(id);
       if (item == null) return null;
-      if (!_belongsToCurrentUser(item.ownerUserId)) return null;
+      if (!_isVisibleToCurrentUser(item.ownerUserId)) return null;
       item.deletedAt = DateTime.now().toUtc();
       item.updatedAt = item.deletedAt;
       item.pendingDelete = true;
@@ -1232,11 +1319,12 @@ class DbService {
 
   Future<int> addProject(Project project) async {
     final id = await isar.writeTxn(() async {
-      _stampProjectOwner(project);
       project.stageNames = _normalizeStringList(project.stageNames);
       final existing = project.id == Isar.autoIncrement
           ? null
           : await isar.projects.get(project.id);
+      _stampProjectOwner(project, existing);
+      _preserveProjectSyncIdentity(project, existing);
       if (existing != null) {
         project.isDirty =
             project.isDirty ||
@@ -1286,7 +1374,7 @@ class DbService {
 
   Future<Project?> getProject(int id) async {
     final project = await _projectDao.getById(id);
-    if (project == null || !_belongsToCurrentUser(project.ownerUserId)) {
+    if (project == null || !_isVisibleToCurrentUser(project.ownerUserId)) {
       return null;
     }
     return project;
@@ -1296,7 +1384,7 @@ class DbService {
     return await isar.writeTxn(() async {
       final project = await isar.projects.get(id);
       if (project == null) return null;
-      if (!_belongsToCurrentUser(project.ownerUserId)) return null;
+      if (!_isVisibleToCurrentUser(project.ownerUserId)) return null;
       project.deletedAt = DateTime.now().toUtc();
       project.pendingDelete = true;
       project.isDirty = true;
@@ -1410,10 +1498,11 @@ class DbService {
 
   Future<int> addExpenseRecord(ExpenseRecord record) async {
     final id = await isar.writeTxn(() async {
-      _stampExpenseRecordOwner(record);
       final existing = record.id == Isar.autoIncrement
           ? null
           : await isar.expenseRecords.get(record.id);
+      _stampExpenseRecordOwner(record, existing);
+      _preserveExpenseRecordSyncIdentity(record, existing);
       _stampExpenseRecordAudit(record, existing);
       record.isDirty =
           existing?.isDirty == true ||
@@ -1427,7 +1516,7 @@ class DbService {
 
   Future<ExpenseRecord?> getExpenseRecord(int id) async {
     final record = await _expenseRecordDao.getById(id);
-    if (record == null || !_belongsToCurrentUser(record.ownerUserId)) {
+    if (record == null || !_isVisibleToCurrentUser(record.ownerUserId)) {
       return null;
     }
     return record;
@@ -1437,7 +1526,7 @@ class DbService {
     return await isar.writeTxn(() async {
       final record = await isar.expenseRecords.get(id);
       if (record == null) return null;
-      if (!_belongsToCurrentUser(record.ownerUserId)) return null;
+      if (!_isVisibleToCurrentUser(record.ownerUserId)) return null;
       record.deletedAt = DateTime.now().toUtc();
       record.updatedAt = record.deletedAt;
       record.pendingDelete = true;

@@ -20,7 +20,7 @@ class ProjectDao {
   Future<List<Project>> getActiveSortedForOwner(String? ownerUserId) {
     return _isar.projects
         .filter()
-        .ownerMatches(ownerUserId)
+        .ownerVisibleTo(ownerUserId)
         .and()
         .deletedAtIsNull()
         .sortByUpdatedAtDesc()
@@ -95,6 +95,17 @@ class ProjectDao {
 
 extension _ProjectOwnerFilter
     on QueryBuilder<Project, Project, QFilterCondition> {
+  QueryBuilder<Project, Project, QAfterFilterCondition> ownerVisibleTo(
+    String? ownerUserId,
+  ) {
+    return ownerUserId == null
+        ? ownerUserIdIsNull()
+        : group(
+            (query) =>
+                query.ownerUserIdIsNull().or().ownerUserIdEqualTo(ownerUserId),
+          );
+  }
+
   QueryBuilder<Project, Project, QAfterFilterCondition> ownerMatches(
     String? ownerUserId,
   ) {

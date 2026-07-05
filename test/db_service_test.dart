@@ -4,11 +4,15 @@ import 'dart:io';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:isar/isar.dart';
 import 'package:life_log/common/db/db_service.dart';
+import 'package:life_log/common/services/auth_service.dart';
 import 'package:life_log/core/db/isar_database.dart';
+import 'package:life_log/core/di/service_locator.dart';
 import 'package:life_log/features/evidence/data/evidence_model.dart';
 import 'package:life_log/features/expense/data/expense_record_model.dart';
 import 'package:life_log/features/project/data/project_model.dart';
 import 'package:life_log/features/photo/data/photo_model.dart';
+import 'package:life_log/features/work_log/data/work_log_model.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 
 void main() {
   final isarLibraryPath = _isarLibraryPath();
@@ -17,6 +21,17 @@ void main() {
       : 'isar.dll is not available in this test environment. '
             'Set ISAR_DLL_PATH or place it at D:\\Tool\\Isar\\isar.dll.';
   setUpAll(() async {
+    TestWidgetsFlutterBinding.ensureInitialized();
+    await Supabase.initialize(
+      url: 'https://life-log-test.supabase.co',
+      anonKey: 'test-anon-key',
+      authOptions: FlutterAuthClientOptions(
+        localStorage: const EmptyLocalStorage(),
+        pkceAsyncStorage: _MemoryGotrueAsyncStorage(),
+      ),
+      accessToken: () async => null,
+      debug: false,
+    );
     if (isarLibraryPath == null) return;
     await Isar.initializeIsarCore(libraries: {Abi.current(): isarLibraryPath});
   });
@@ -49,6 +64,11 @@ void main() {
       await db.isar.close(deleteFromDisk: true);
       if (await tempDir.exists()) {
         await tempDir.delete(recursive: true);
+      }
+      if (serviceLocator.isRegistered<AuthService>()) {
+        final auth = serviceLocator<AuthService>();
+        await serviceLocator.unregister<AuthService>();
+        auth.dispose();
       }
     });
 
@@ -128,6 +148,83 @@ void main() {
       expect(await db.getAllEvidence(), isEmpty);
       expect(await db.isar.expenseEvidences.get(id), isNull);
     }, skip: isarSkip);
+
+    test('work log edit preserves existing sync identity', () async {
+      final remoteUpdatedAt = DateTime.utc(2026, 6, 23, 9);
+      final syncedAt = DateTime.utc(2026, 6, 23, 10);
+      late final int id;
+      await db.isar.writeTxn(() async {
+        id = await db.isar.workLogs.put(
+          WorkLog()
+            ..ownerUserId = 'user-1'
+            ..remoteId = 41
+            ..syncId = 'sync-work-log-1'
+            ..remoteVersion = 7
+            ..remoteUpdatedAt = remoteUpdatedAt
+            ..syncedAt = syncedAt
+            ..date = DateTime(2026, 6, 23)
+            ..type = LogType.work
+            ..overtimeHours = 1,
+        );
+      });
+
+      await db.addLog(
+        WorkLog()
+          ..id = id
+          ..syncId = 'sync-work-log-1'
+          ..date = DateTime(2026, 6, 23)
+          ..type = LogType.work
+          ..overtimeHours = 2,
+      );
+
+      final saved = await db.isar.workLogs.get(id);
+      expect(saved!.ownerUserId, 'user-1');
+      expect(saved.remoteId, 41);
+      expect(saved.syncId, 'sync-work-log-1');
+      expect(saved.remoteVersion, 7);
+      expect(saved.remoteUpdatedAt?.toUtc(), remoteUpdatedAt);
+      expect(saved.syncedAt?.toUtc(), syncedAt);
+      expect(saved.isDirty, isTrue);
+      expect(saved.overtimeHours, 2);
+    }, skip: isarSkip);
+
+    test(
+      'logged-in work-log sequence keeps unowned local entries visible',
+      () async {
+        await db.addLog(
+          WorkLog()
+            ..date = DateTime(2026, 6, 23)
+            ..type = LogType.work
+            ..overtimeHours = 1
+            ..note = 'yesterday-local',
+        );
+        _registerTestAuthUser('user-1');
+        await db.addLog(
+          WorkLog()
+            ..date = DateTime(2026, 6, 24)
+            ..type = LogType.work
+            ..overtimeHours = 2
+            ..note = 'today-owned',
+        );
+        await db.addLog(
+          WorkLog()
+            ..date = DateTime(2026, 6, 23)
+            ..type = LogType.work
+            ..overtimeHours = 3
+            ..note = 'yesterday-owned',
+        );
+
+        final logs = await db.getLogsByMonth(DateTime(2026, 6));
+
+        expect(logs.map((log) => log.note), [
+          'yesterday-local',
+          'yesterday-owned',
+          'today-owned',
+        ]);
+        expect(logs.map((log) => log.ownerUserId), [null, 'user-1', 'user-1']);
+      },
+      skip: isarSkip,
+    );
   });
 
   test('database startup maintenance is explicit instead of init-blocking', () {
@@ -146,6 +243,35 @@ void main() {
       ),
     );
   });
+}
+
+void _registerTestAuthUser(String userId) {
+  final auth = AuthService();
+  auth.currentUser.value = User(
+    id: userId,
+    appMetadata: const {},
+    userMetadata: null,
+    aud: 'authenticated',
+    createdAt: '2026-06-23T00:00:00Z',
+  );
+  serviceLocator.registerSingleton<AuthService>(auth);
+}
+
+final class _MemoryGotrueAsyncStorage extends GotrueAsyncStorage {
+  final Map<String, String> _values = <String, String>{};
+
+  @override
+  Future<String?> getItem({required String key}) async => _values[key];
+
+  @override
+  Future<void> removeItem({required String key}) async {
+    _values.remove(key);
+  }
+
+  @override
+  Future<void> setItem({required String key, required String value}) async {
+    _values[key] = value;
+  }
 }
 
 String? _isarLibraryPath() {

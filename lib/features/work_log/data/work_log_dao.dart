@@ -34,7 +34,7 @@ class WorkLogDao {
     final end = DateTime(month.year, month.month + 1);
     final query = _isar.workLogs
         .filter()
-        .ownerMatches(ownerUserId)
+        .ownerVisibleTo(ownerUserId)
         .and()
         .deletedAtIsNull()
         .and()
@@ -51,7 +51,7 @@ class WorkLogDao {
   Future<List<WorkLog>> getActiveSortedForOwner(String? ownerUserId) {
     return _isar.workLogs
         .filter()
-        .ownerMatches(ownerUserId)
+        .ownerVisibleTo(ownerUserId)
         .and()
         .deletedAtIsNull()
         .sortByDate()
@@ -78,7 +78,7 @@ class WorkLogDao {
     final nextDay = day.add(const Duration(days: 1));
     return _isar.workLogs
         .filter()
-        .ownerMatches(ownerUserId)
+        .ownerVisibleTo(ownerUserId)
         .and()
         .deletedAtIsNull()
         .and()
@@ -161,6 +161,17 @@ class WorkLogDao {
 
 extension _WorkLogOwnerFilter
     on QueryBuilder<WorkLog, WorkLog, QFilterCondition> {
+  QueryBuilder<WorkLog, WorkLog, QAfterFilterCondition> ownerVisibleTo(
+    String? ownerUserId,
+  ) {
+    return ownerUserId == null
+        ? ownerUserIdIsNull()
+        : group(
+            (query) =>
+                query.ownerUserIdIsNull().or().ownerUserIdEqualTo(ownerUserId),
+          );
+  }
+
   QueryBuilder<WorkLog, WorkLog, QAfterFilterCondition> ownerMatches(
     String? ownerUserId,
   ) {

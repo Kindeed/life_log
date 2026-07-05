@@ -20,7 +20,7 @@ class SubscriptionDao {
   Future<List<Subscription>> getActiveSortedForOwner(String? ownerUserId) {
     return _isar.subscriptions
         .filter()
-        .ownerMatches(ownerUserId)
+        .ownerVisibleTo(ownerUserId)
         .and()
         .deletedAtIsNull()
         .sortByNextPaymentDate()
@@ -103,6 +103,16 @@ class SubscriptionDao {
 
 extension _SubscriptionOwnerFilter
     on QueryBuilder<Subscription, Subscription, QFilterCondition> {
+  QueryBuilder<Subscription, Subscription, QAfterFilterCondition>
+  ownerVisibleTo(String? ownerUserId) {
+    return ownerUserId == null
+        ? ownerUserIdIsNull()
+        : group(
+            (query) =>
+                query.ownerUserIdIsNull().or().ownerUserIdEqualTo(ownerUserId),
+          );
+  }
+
   QueryBuilder<Subscription, Subscription, QAfterFilterCondition> ownerMatches(
     String? ownerUserId,
   ) {

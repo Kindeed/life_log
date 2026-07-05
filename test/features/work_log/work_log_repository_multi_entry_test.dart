@@ -25,6 +25,47 @@ void main() {
     });
 
     test(
+      'saveLog keeps adjacent days across repeated logged-in entries',
+      () async {
+        final local = _FakeWorkLogLocalDataSource();
+        final repository = WorkLogRepository(
+          localDataSource: local,
+          syncGateway: const _FakeWorkLogSyncGateway(),
+        );
+
+        await repository.saveLog(
+          _log(id: 0, date: DateTime(2026, 6, 23), note: 'yesterday-1')
+            ..ownerUserId = 'user-1',
+        );
+        await repository.saveLog(
+          _log(id: 0, date: DateTime(2026, 6, 24), note: 'today')
+            ..ownerUserId = 'user-1',
+        );
+        await repository.saveLog(
+          _log(id: 0, date: DateTime(2026, 6, 23), note: 'yesterday-2')
+            ..ownerUserId = 'user-1',
+        );
+
+        final logs = await repository.getLogsByMonth(DateTime(2026, 6));
+
+        expect(
+          logs
+              .where((log) => log.date == DateTime(2026, 6, 23))
+              .map((log) => log.note),
+          ['yesterday-1', 'yesterday-2'],
+        );
+        expect(
+          logs
+              .where((log) => log.date == DateTime(2026, 6, 24))
+              .map((log) => log.note),
+          ['today'],
+        );
+        expect(local.markedDeletedIds, isEmpty);
+        expect(local.purgedIds, isEmpty);
+      },
+    );
+
+    test(
       'normalizeDuplicateDays normalizes dates without purging duplicates',
       () async {
         final local = _FakeWorkLogLocalDataSource([
@@ -80,11 +121,18 @@ final class _FakeWorkLogLocalDataSource implements WorkLogLocalDataSource {
   final addedLogs = <WorkLog>[];
   final markedDeletedIds = <int>[];
   final purgedIds = <int>[];
+  var _nextId = 1;
 
-  _FakeWorkLogLocalDataSource(this.logs);
+  _FakeWorkLogLocalDataSource([List<WorkLog>? logs]) : logs = logs ?? [];
 
   @override
   Future<int> addLog(WorkLog log) async {
+    if (log.id == 0) {
+      log.id = _nextId++;
+    }
+    logs.removeWhere((existing) => existing.id == log.id);
+    logs.add(log);
+    logs.sort((a, b) => a.date.compareTo(b.date));
     addedLogs.add(log);
     return log.id;
   }
