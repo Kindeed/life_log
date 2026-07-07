@@ -66,7 +66,7 @@ class SubscriptionRepository {
     final sub = await _localDataSource.markSubscriptionDeleted(id);
 
     try {
-      if (sub == null || sub.remoteId == null) {
+      if (sub == null || (sub.remoteId == null && sub.syncId == null)) {
         await _localDataSource.purgeDeletedSubscription(id);
       } else if (!_syncGateway.isAvailable) {
         LogService.to.info('SubscriptionRepository', '本地模式：跳过云端删除');

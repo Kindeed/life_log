@@ -71,7 +71,7 @@ class ExpenseRecordRepository {
     final record = await _localDataSource.markExpenseRecordDeleted(id);
     if (record == null) return;
 
-    if (record.remoteId == null) {
+    if (record.remoteId == null && record.syncId == null) {
       await _localDataSource.purgeDeletedExpenseRecord(id);
       return;
     }

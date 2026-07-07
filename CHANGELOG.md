@@ -1,5 +1,32 @@
 # Changelog
 
+## [1.4.25] - 2026-07-07
+
+### 工时记录与同步数据边界修复
+
+#### 新增 (Added)
+- 应用版本升级到 `1.4.25+31`。
+- 新增真实 Isar 回归测试，覆盖登录态昨天/今天/未来工时反复保存后仍同时可见。
+- 新增跨 owner 远端 pull、远端 tombstone、项目/出差关联、EvidenceAttachment 队列和 sync-id 删除协议回归测试。
+
+#### 变更 (Changed)
+- 远端同步 merge 现在按当前账号 owner 精确解析 `syncId`、`remoteId` 和附件 `evidenceSyncId`，不再用全库首条命中。
+- EvidenceAttachment 本地 `syncId` 改为非唯一索引，与云端 `(user_id, sync_id)` 唯一身份保持一致。
+- 删除入口保留 `remoteId == null` 但仍有 `syncId` 的记录，让同步层先按 `(user_id, sync_id)` 写远端 tombstone。
+
+#### 修复 (Fixed)
+- 修复新建工时、订阅、凭证、支出、项目和本地照片使用 `id == 0` 时可能覆盖同一条 Isar 本地记录的问题。
+- 修复登录态远端 pull 可能把另一个本地 owner 的同步记录改写、改 owner 或被远端 tombstone 误删的问题。
+- 修复 `remoteId` 未落本地但云端 upsert 已成功时，删除同步直接本地 purge 导致云端孤儿记录残留的问题。
+- 修复 EvidenceAttachment 队列按 `syncId` / `evidenceSyncId` 全局命中时可能误改或误删另一个 owner 附件的问题。
+
+#### 验证 (Validation)
+- `flutter test` 通过，当前环境为 `503 passed`。
+- `flutter analyze` 通过。
+- `git diff --check` 通过。
+- `flutter build apk --debug` 通过。
+- Android 模拟器 `emulator-5554` 安装并启动 `com.wzh.lifelog/.MainActivity` 成功，crash buffer 为空。
+
 ## [1.4.24] - 2026-07-05
 
 ### 工时记录可见性与同步身份修复

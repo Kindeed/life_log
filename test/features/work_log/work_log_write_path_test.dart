@@ -1,6 +1,7 @@
 import 'dart:io';
 
 import 'package:flutter_test/flutter_test.dart';
+import 'package:isar/isar.dart';
 import 'package:life_log/features/work_log/application/delete_work_log_entry.dart';
 import 'package:life_log/features/work_log/application/load_work_log_edit_draft.dart';
 import 'package:life_log/features/work_log/application/save_work_log_entry.dart';
@@ -190,6 +191,22 @@ void main() {
       expect(saved.projectName, '上海项目');
       expect(saved.note, '应用层写路径');
       expect(saved.isDirty, isTrue);
+    });
+
+    test('maps new feature save entries to Isar auto increment ids', () async {
+      final repository = _LegacyRepositorySpy();
+      final adapter = LegacyWorkLogRepositoryAdapter(repository);
+
+      await adapter.saveEntry(
+        WorkLogEntry(
+          id: 0,
+          date: DateTime(2026, 7, 6),
+          type: WorkLogEntryType.work,
+        ),
+        markDirty: true,
+      );
+
+      expect(repository.savedLogs.single.id, Isar.autoIncrement);
     });
 
     test('maps legacy project association into work-log entries', () async {

@@ -105,7 +105,7 @@ const EvidenceAttachmentSchema = CollectionSchema(
     r'syncId': IndexSchema(
       id: 7538593479801827566,
       name: r'syncId',
-      unique: true,
+      unique: false,
       replace: false,
       properties: [
         IndexPropertySchema(
@@ -345,63 +345,6 @@ void _evidenceAttachmentAttach(
   EvidenceAttachment object,
 ) {
   object.id = id;
-}
-
-extension EvidenceAttachmentByIndex on IsarCollection<EvidenceAttachment> {
-  Future<EvidenceAttachment?> getBySyncId(String syncId) {
-    return getByIndex(r'syncId', [syncId]);
-  }
-
-  EvidenceAttachment? getBySyncIdSync(String syncId) {
-    return getByIndexSync(r'syncId', [syncId]);
-  }
-
-  Future<bool> deleteBySyncId(String syncId) {
-    return deleteByIndex(r'syncId', [syncId]);
-  }
-
-  bool deleteBySyncIdSync(String syncId) {
-    return deleteByIndexSync(r'syncId', [syncId]);
-  }
-
-  Future<List<EvidenceAttachment?>> getAllBySyncId(List<String> syncIdValues) {
-    final values = syncIdValues.map((e) => [e]).toList();
-    return getAllByIndex(r'syncId', values);
-  }
-
-  List<EvidenceAttachment?> getAllBySyncIdSync(List<String> syncIdValues) {
-    final values = syncIdValues.map((e) => [e]).toList();
-    return getAllByIndexSync(r'syncId', values);
-  }
-
-  Future<int> deleteAllBySyncId(List<String> syncIdValues) {
-    final values = syncIdValues.map((e) => [e]).toList();
-    return deleteAllByIndex(r'syncId', values);
-  }
-
-  int deleteAllBySyncIdSync(List<String> syncIdValues) {
-    final values = syncIdValues.map((e) => [e]).toList();
-    return deleteAllByIndexSync(r'syncId', values);
-  }
-
-  Future<Id> putBySyncId(EvidenceAttachment object) {
-    return putByIndex(r'syncId', object);
-  }
-
-  Id putBySyncIdSync(EvidenceAttachment object, {bool saveLinks = true}) {
-    return putByIndexSync(r'syncId', object, saveLinks: saveLinks);
-  }
-
-  Future<List<Id>> putAllBySyncId(List<EvidenceAttachment> objects) {
-    return putAllByIndex(r'syncId', objects);
-  }
-
-  List<Id> putAllBySyncIdSync(
-    List<EvidenceAttachment> objects, {
-    bool saveLinks = true,
-  }) {
-    return putAllByIndexSync(r'syncId', objects, saveLinks: saveLinks);
-  }
 }
 
 extension EvidenceAttachmentQueryWhereSort

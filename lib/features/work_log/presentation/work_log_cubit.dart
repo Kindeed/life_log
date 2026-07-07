@@ -97,6 +97,7 @@ final class WorkLogCubit extends Cubit<WorkLogState> {
   final WatchWorkLogEntries _watchEntries;
   StreamSubscription<void>? _entriesSubscription;
   DateTime? _loadedMonth;
+  int _monthLoadRequestId = 0;
 
   WorkLogCubit({
     required LoadWorkLogMonth loadMonth,
@@ -117,10 +118,12 @@ final class WorkLogCubit extends Cubit<WorkLogState> {
 
   Future<void> loadFocusedMonth() async {
     if (isClosed) return;
+    final requestId = ++_monthLoadRequestId;
+    final focusedDay = state.focusedDay;
     emit(state.copyWith(status: WorkLogStatus.loading, clearFailure: true));
 
-    final result = await _loadMonth(state.focusedDay);
-    if (isClosed) return;
+    final result = await _loadMonth(focusedDay);
+    if (isClosed || requestId != _monthLoadRequestId) return;
     result.when(
       success: (snapshot) {
         _loadedMonth = DateTime(snapshot.month.year, snapshot.month.month);

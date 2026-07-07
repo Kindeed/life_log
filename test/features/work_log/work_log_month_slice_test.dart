@@ -146,6 +146,62 @@ void main() {
         WorkLogEntryType.rest,
       );
     });
+
+    test(
+      'ignores stale month load completions that would hide adjacent days',
+      () async {
+        final repository = _QueuedMonthWorkLogRepository();
+        final cubit = WorkLogCubit(
+          loadMonth: LoadWorkLogMonth(repository),
+          watchEntries: WatchWorkLogEntries(repository),
+          initialNow: () => DateTime(2026, 7, 11),
+        );
+        addTearDown(cubit.close);
+
+        final staleLoad = cubit.loadFocusedMonth();
+        final freshLoad = cubit.loadFocusedMonth();
+
+        expect(repository.getEntriesByMonthCallCount, 2);
+
+        repository.completeRequest(1, [
+          _entry(id: 10, date: DateTime(2026, 7, 10), note: '7.10'),
+          _entry(id: 11, date: DateTime(2026, 7, 11), note: '7.11'),
+          _entry(id: 12, date: DateTime(2026, 7, 12), note: '7.12'),
+        ]);
+        await freshLoad;
+
+        expect(
+          cubit.state.eventsForDay(DateTime(2026, 7, 10)).single.note,
+          '7.10',
+        );
+        expect(
+          cubit.state.eventsForDay(DateTime(2026, 7, 11)).single.note,
+          '7.11',
+        );
+        expect(
+          cubit.state.eventsForDay(DateTime(2026, 7, 12)).single.note,
+          '7.12',
+        );
+
+        repository.completeRequest(0, [
+          _entry(id: 11, date: DateTime(2026, 7, 11), note: 'stale 7.11 only'),
+        ]);
+        await staleLoad;
+
+        expect(
+          cubit.state.eventsForDay(DateTime(2026, 7, 10)).single.note,
+          '7.10',
+        );
+        expect(
+          cubit.state.eventsForDay(DateTime(2026, 7, 11)).single.note,
+          '7.11',
+        );
+        expect(
+          cubit.state.eventsForDay(DateTime(2026, 7, 12)).single.note,
+          '7.12',
+        );
+      },
+    );
   });
 
   group('configureWorkLogFeatureDependencies', () {
@@ -271,12 +327,14 @@ WorkLogEntry _entry({
   WorkLogEntryType type = WorkLogEntryType.work,
   double? overtimeHours,
   DateTime? updatedAt,
+  String? note,
 }) {
   return WorkLogEntry(
     id: id,
     date: date,
     type: type,
     overtimeHours: overtimeHours,
+    note: note,
     updatedAt: updatedAt,
   );
 }
@@ -386,6 +444,45 @@ final class _WatchableWorkLogRepository implements WorkLogRepositoryPort {
 
   @override
   Stream<void> watchEntries() => _changes.stream;
+}
+
+final class _QueuedMonthWorkLogRepository implements WorkLogRepositoryPort {
+  final _monthRequests = <Completer<List<WorkLogEntry>>>[];
+  var getAllEntriesCallCount = 0;
+  var getEntriesByMonthCallCount = 0;
+
+  void completeRequest(int index, List<WorkLogEntry> entries) {
+    _monthRequests[index].complete(entries);
+  }
+
+  @override
+  Future<List<WorkLogEntry>> getAllEntries() async {
+    getAllEntriesCallCount += 1;
+    return const [];
+  }
+
+  @override
+  Future<List<WorkLogEntry>> getEntriesByMonth(DateTime month) {
+    getEntriesByMonthCallCount += 1;
+    final completer = Completer<List<WorkLogEntry>>();
+    _monthRequests.add(completer);
+    return completer.future;
+  }
+
+  @override
+  Future<WorkLogEditDraft?> getEditDraft(int id) async => null;
+
+  @override
+  Future<void> normalizeDuplicateDays() async {}
+
+  @override
+  Future<void> saveEntry(WorkLogEntry entry, {required bool markDirty}) async {}
+
+  @override
+  Future<void> deleteEntry(int id) async {}
+
+  @override
+  Stream<void> watchEntries() => const Stream.empty();
 }
 
 Future<void> _settleCubitAsyncWork() async {

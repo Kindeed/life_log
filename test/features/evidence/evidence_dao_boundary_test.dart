@@ -42,7 +42,8 @@ void main() {
         expect(dbService, contains('_evidenceDao.getActiveSortedForOwner('));
         expect(dbService, contains('_evidenceDao.getPendingForSyncForOwner('));
         expect(dbService, contains('_evidenceDao.getById('));
-        expect(dbService, contains('_evidenceDao.getBySyncId('));
+        expect(dbService, contains('syncIdEqualTo(syncId)'));
+        expect(dbService, contains('_firstForCurrentOwner'));
         expect(dbService, contains('_evidenceDao.watch()'));
         expect(dbService, contains('_evidenceDao.delete('));
       },

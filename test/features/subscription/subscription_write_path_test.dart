@@ -1,6 +1,7 @@
 import 'dart:io';
 
 import 'package:flutter_test/flutter_test.dart';
+import 'package:isar/isar.dart';
 import 'package:life_log/features/subscription/application/delete_subscription_entry.dart';
 import 'package:life_log/features/subscription/application/load_subscription_edit_draft.dart';
 import 'package:life_log/features/subscription/application/reorder_subscription_entries.dart';
@@ -308,6 +309,18 @@ void main() {
         expect(repository.currentCounts, [0]);
       },
     );
+
+    test('maps new feature save entries to Isar auto increment ids', () async {
+      final repository = _LegacySubscriptionRepositorySpy();
+      final adapter = LegacySubscriptionRepositoryAdapter(repository);
+
+      await adapter.saveEntry(
+        _entry(id: 0, name: 'New Music'),
+        markDirty: true,
+      );
+
+      expect(repository.savedSubscriptions.single.id, Isar.autoIncrement);
+    });
 
     test('preserves legacy sync metadata behind the adapter', () async {
       final repository = _LegacySubscriptionRepositorySpy()

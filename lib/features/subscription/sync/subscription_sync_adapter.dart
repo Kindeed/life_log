@@ -74,7 +74,7 @@ final class SubscriptionSyncAdapter implements SyncAdapter<Subscription> {
   Future<PushResult> pushLocalChange(Subscription entity) async {
     if (entity.pendingDelete) {
       if (entity.remoteId == null) {
-        return const PushResult(success: true, purgeLocalDeleted: true);
+        return _deleteRemoteBySyncId(entity);
       }
       return _deleteRemote(entity);
     }
@@ -180,14 +180,38 @@ final class SubscriptionSyncAdapter implements SyncAdapter<Subscription> {
     return const PushResult(success: true, purgeLocalDeleted: true);
   }
 
-  Future<Map<String, dynamic>?> _refreshRemote(Subscription entity) async {
-    if (entity.remoteId == null) return null;
-    final remote = await client
+  Future<PushResult> _deleteRemoteBySyncId(Subscription entity) async {
+    final syncId = entity.syncId?.trim();
+    if (syncId == null || syncId.isEmpty) {
+      return const PushResult(success: true, purgeLocalDeleted: true);
+    }
+
+    final now = DateTime.now().toUtc().toIso8601String();
+    final response = await client
         .from(tableName)
-        .select()
-        .eq('id', entity.remoteId!)
+        .update({'deleted_at': now, 'updated_at': now})
         .eq('user_id', userId)
+        .eq('sync_id', syncId)
+        .select('id, sync_id, version, updated_at')
         .maybeSingle();
+    if (response == null) {
+      return const PushResult(success: true, purgeLocalDeleted: true);
+    }
+
+    _applySyncResult(entity, response);
+    return const PushResult(success: true, purgeLocalDeleted: true);
+  }
+
+  Future<Map<String, dynamic>?> _refreshRemote(Subscription entity) async {
+    dynamic query = client.from(tableName).select().eq('user_id', userId);
+    if (entity.remoteId != null) {
+      query = query.eq('id', entity.remoteId!);
+    } else {
+      final syncId = entity.syncId?.trim();
+      if (syncId == null || syncId.isEmpty) return null;
+      query = query.eq('sync_id', syncId);
+    }
+    final remote = await query.maybeSingle();
     if (remote != null) {
       await dbService.syncRemoteSubscriptionToLocal(remote);
     }

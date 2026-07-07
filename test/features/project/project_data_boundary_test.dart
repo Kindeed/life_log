@@ -2,6 +2,7 @@ import 'dart:async';
 import 'dart:io';
 
 import 'package:flutter_test/flutter_test.dart';
+import 'package:isar/isar.dart';
 import 'package:life_log/features/project/data/project_local_data_source.dart';
 import 'package:life_log/features/project/data/project_model.dart';
 import 'package:life_log/features/project/data/project_repository.dart';
@@ -143,6 +144,7 @@ void main() {
       expect(project.name, 'New Project');
       expect(project.syncId, isNotEmpty);
       expect(project.isDirty, isTrue);
+      expect(project.id, Isar.autoIncrement);
       expect(local.addedProjects, [project]);
       expect(sync.syncRequests, [project]);
       expect(sync.syncReasons, ['project-save']);

@@ -126,7 +126,7 @@ class WorkLogRepository {
     final log = await _localDataSource.markLogDeleted(target.id);
 
     try {
-      if (log == null || log.remoteId == null) {
+      if (log == null || (log.remoteId == null && log.syncId == null)) {
         await _localDataSource.purgeDeletedLog(target.id);
       } else if (!_syncGateway.isAvailable) {
         LogService.to.info('WorkLogRepository', '本地模式：跳过云端删除');

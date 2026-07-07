@@ -34,6 +34,66 @@ void main() {
       );
     });
 
+    test('pending deletes can tombstone by sync id when remote id is missing', () {
+      final adapterPaths = [
+        'lib/features/work_log/sync/work_log_sync_adapter.dart',
+        'lib/features/subscription/sync/subscription_sync_adapter.dart',
+        'lib/features/project/sync/project_sync_adapter.dart',
+        'lib/features/expense/sync/expense_record_sync_adapter.dart',
+        'lib/features/evidence/sync/evidence_sync_adapter.dart',
+      ];
+
+      for (final path in adapterPaths) {
+        final source = File(path).readAsStringSync();
+
+        expect(
+          source,
+          isNot(
+            contains(
+              'if (entity.remoteId == null) {\n'
+              '        return const PushResult(success: true, purgeLocalDeleted: true);\n'
+              '      }',
+            ),
+          ),
+          reason:
+              '$path must not silently purge a pending delete just because remoteId is missing.',
+        );
+        expect(
+          source,
+          contains('_deleteRemoteBySyncId(entity)'),
+          reason:
+              '$path must tombstone the remote row by (user_id, sync_id) when remoteId was not recorded.',
+        );
+      }
+    });
+
+    test('delete entrypoints preserve sync id records for remote tombstone', () {
+      final repositoryPaths = [
+        'lib/features/work_log/data/work_log_repository.dart',
+        'lib/features/subscription/data/subscription_repository.dart',
+        'lib/features/project/data/project_repository.dart',
+        'lib/features/expense/data/expense_record_repository.dart',
+        'lib/features/evidence/data/evidence_repository.dart',
+      ];
+
+      for (final path in repositoryPaths) {
+        final source = File(path).readAsStringSync();
+
+        expect(
+          source,
+          contains('remoteId == null &&'),
+          reason:
+              '$path may purge only records that have no remote id and no sync id.',
+        );
+        expect(
+          source,
+          contains('syncId == null'),
+          reason:
+              '$path must keep remoteId-missing records with syncId for sync tombstone.',
+        );
+      }
+    });
+
     test('Supabase migrations keep unique sync identity per user', () {
       final migrations = Directory('supabase/migrations')
           .listSync(recursive: true)

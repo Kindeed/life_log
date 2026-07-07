@@ -1,3 +1,4 @@
+import 'package:isar/isar.dart';
 import 'package:life_log/common/services/log_service.dart';
 import 'package:life_log/common/utils/sync_id_policy.dart';
 import 'package:life_log/features/project/data/project_local_data_source.dart';
@@ -49,7 +50,8 @@ class ProjectRepository {
     if (project.name.isEmpty) {
       throw ArgumentError.value(project.name, 'name', '项目名称不能为空');
     }
-    if (project.id == 0) {
+    if (project.id == 0 || project.id == Isar.autoIncrement) {
+      project.id = Isar.autoIncrement;
       project.createdAt = now;
     }
     project.updatedAt = now;
@@ -87,7 +89,7 @@ class ProjectRepository {
     if (deleted == null) return;
 
     try {
-      if (deleted.remoteId == null) {
+      if (deleted.remoteId == null && deleted.syncId == null) {
         await _localDataSource.purgeDeletedProject(project.id);
       } else if (!_syncGateway.isAvailable) {
         LogService.to.info('ProjectRepository', '本地模式：跳过云端删除');

@@ -8,7 +8,7 @@ class EvidenceAttachment {
 
   String? ownerUserId;
 
-  @Index(unique: true, replace: false)
+  @Index()
   late String syncId;
 
   @Index()

@@ -1,3 +1,4 @@
+import 'package:isar/isar.dart';
 import 'package:life_log/features/evidence/data/evidence_model.dart';
 import 'package:life_log/features/evidence/data/evidence_repository.dart';
 import 'package:life_log/features/evidence/domain/entities/evidence_entry.dart';
@@ -83,7 +84,7 @@ extension EvidenceEntryMapper on ExpenseEvidence {
 extension EvidenceEntryLegacyMapper on EvidenceEntry {
   ExpenseEvidence toLegacyExpenseEvidence() {
     return ExpenseEvidence()
-      ..id = id
+      ..id = id == 0 ? Isar.autoIncrement : id
       ..projectName = projectName
       ..projectId = projectId
       ..projectSyncId = projectSyncId

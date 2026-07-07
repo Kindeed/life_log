@@ -2,6 +2,7 @@ import 'dart:async';
 import 'dart:io';
 
 import 'package:flutter_test/flutter_test.dart';
+import 'package:isar/isar.dart';
 import 'package:life_log/features/evidence/application/delete_evidence_entry.dart';
 import 'package:life_log/features/evidence/application/load_evidence_edit_draft.dart';
 import 'package:life_log/features/evidence/application/save_evidence_entry.dart';
@@ -416,6 +417,15 @@ void main() {
       expect(saved.isDirty, isTrue);
       expect(repository.savedSourcePath, 'C:/tmp/ticket.pdf');
       expect(repository.savedSourceExtension, 'pdf');
+    });
+
+    test('maps new feature save entries to Isar auto increment ids', () async {
+      final repository = _FakeEvidenceRepository();
+      final adapter = LegacyEvidenceRepositoryAdapter(repository);
+
+      await adapter.saveEntry(_entry(id: 0), markDirty: true);
+
+      expect(repository.savedRecords.single.id, Isar.autoIncrement);
     });
 
     test('preserves legacy sync metadata behind the adapter', () async {

@@ -2,6 +2,7 @@ import 'dart:async';
 import 'dart:io';
 
 import 'package:flutter_test/flutter_test.dart';
+import 'package:isar/isar.dart';
 import 'package:life_log/features/expense/application/delete_expense_record_entry.dart';
 import 'package:life_log/features/expense/application/load_expense_record_edit_draft.dart';
 import 'package:life_log/features/expense/application/save_expense_record_entry.dart';
@@ -405,6 +406,15 @@ void main() {
       expect(saved.createdAt, DateTime(2026, 5, 1, 9));
       expect(saved.updatedAt, DateTime(2026, 5, 2, 10));
       expect(saved.isDirty, isTrue);
+    });
+
+    test('maps new feature save entries to Isar auto increment ids', () async {
+      final repository = _LegacyExpenseRecordRepositorySpy();
+      final adapter = LegacyExpenseRecordRepositoryAdapter(repository);
+
+      await adapter.saveEntry(_entry(id: 0, amount: 33), markDirty: true);
+
+      expect(repository.savedRecords.single.id, Isar.autoIncrement);
     });
 
     test('preserves legacy sync metadata behind the adapter', () async {

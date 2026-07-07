@@ -84,7 +84,8 @@ class EvidenceRepository {
     final evidence = await _localDataSource.markEvidenceDeleted(id);
 
     try {
-      if (evidence == null || evidence.remoteId == null) {
+      if (evidence == null ||
+          (evidence.remoteId == null && evidence.syncId == null)) {
         await _fileStore.deleteEvidenceFile(evidence);
         await _localDataSource.purgeDeletedEvidence(id);
       } else if (!_syncGateway.isAvailable) {

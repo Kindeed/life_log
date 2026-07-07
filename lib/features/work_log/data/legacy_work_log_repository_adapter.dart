@@ -1,3 +1,4 @@
+import 'package:isar/isar.dart';
 import 'package:life_log/features/work_log/domain/entities/work_log_entry.dart';
 import 'package:life_log/features/work_log/domain/entities/work_log_edit_draft.dart';
 import 'package:life_log/features/work_log/domain/repositories/work_log_repository_port.dart';
@@ -94,7 +95,7 @@ extension LegacyLogTypeMapper on LogType {
 extension WorkLogEntryLegacyMapper on WorkLogEntry {
   WorkLog toLegacyWorkLog() {
     return WorkLog()
-      ..id = id
+      ..id = id == 0 ? Isar.autoIncrement : id
       ..syncId = syncId
       ..date = date
       ..type = type.toLegacyLogType()

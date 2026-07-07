@@ -60,11 +60,27 @@ class DbService {
       ? serviceLocator<AuthService>().userId
       : null;
 
+  bool _isNewRecordId(Id id) => id == Isar.autoIncrement || id == 0;
+
+  Id _normalizeNewRecordId(Id id) {
+    return id == 0 ? Isar.autoIncrement : id;
+  }
+
   bool _belongsToCurrentUser(String? ownerUserId) {
     final currentUserId = currentOwnerUserId;
     return currentUserId == null
         ? ownerUserId == null
         : ownerUserId == currentUserId;
+  }
+
+  T? _firstForCurrentOwner<T>(
+    Iterable<T> items,
+    String? Function(T item) ownerUserIdOf,
+  ) {
+    for (final item in items) {
+      if (_belongsToCurrentUser(ownerUserIdOf(item))) return item;
+    }
+    return null;
   }
 
   bool _isVisibleToCurrentUser(String? ownerUserId) {
@@ -683,7 +699,8 @@ class DbService {
   // --- 2. 增加一条日志 (入库) ---
   Future<int> addLog(WorkLog log) async {
     final id = await isar.writeTxn(() async {
-      final existing = log.id == Isar.autoIncrement
+      log.id = _normalizeNewRecordId(log.id);
+      final existing = _isNewRecordId(log.id)
           ? null
           : await isar.workLogs.get(log.id);
       _stampWorkLogOwner(log, existing);
@@ -784,7 +801,8 @@ class DbService {
   // 2. 添加/修改订阅
   Future<int> addSubscription(Subscription sub) async {
     final id = await isar.writeTxn(() async {
-      final existing = sub.id == Isar.autoIncrement
+      sub.id = _normalizeNewRecordId(sub.id);
+      final existing = _isNewRecordId(sub.id)
           ? null
           : await isar.subscriptions.get(sub.id);
       _stampSubscriptionOwner(sub, existing);
@@ -874,6 +892,7 @@ class DbService {
 
   Future<void> addPhoto(PhotoItem photo) async {
     await isar.writeTxn(() async {
+      photo.id = _normalizeNewRecordId(photo.id);
       _stampPhotoOwner(photo);
       await isar.photoItems.put(photo);
     });
@@ -905,8 +924,11 @@ class DbService {
   }
 
   Future<ExpenseEvidence?> getEvidenceBySyncId(String syncId) async {
-    final item = await _evidenceDao.getBySyncId(syncId);
-    if (item == null || !_isVisibleToCurrentUser(item.ownerUserId)) return null;
+    final items = await isar.expenseEvidences
+        .filter()
+        .syncIdEqualTo(syncId)
+        .findAll();
+    final item = _firstForCurrentOwner(items, (item) => item.ownerUserId);
     return item;
   }
 
@@ -925,7 +947,8 @@ class DbService {
       evidence.syncId = ensureSyncId(evidence.syncId);
     }
     final id = await isar.writeTxn(() async {
-      final existing = evidence.id == Isar.autoIncrement
+      evidence.id = _normalizeNewRecordId(evidence.id);
+      final existing = _isNewRecordId(evidence.id)
           ? null
           : await isar.expenseEvidences.get(evidence.id);
       _stampEvidenceOwner(evidence, existing);
@@ -972,8 +995,11 @@ class DbService {
             .filter()
             .evidenceSyncIdEqualTo(evidenceSyncId)
             .findAll();
+        final ownedAttachments = attachments.where(
+          (attachment) => _belongsToCurrentUser(attachment.ownerUserId),
+        );
         await isar.evidenceAttachments.deleteAll(
-          attachments.map((attachment) => attachment.id).toList(),
+          ownedAttachments.map((attachment) => attachment.id).toList(),
         );
       });
     }
@@ -1012,15 +1038,18 @@ class DbService {
           .filter()
           .evidenceSyncIdEqualTo(evidenceSyncId)
           .findAll();
+      final ownedExisting = existing
+          .where((item) => _belongsToCurrentUser(item.ownerUserId))
+          .toList();
       EvidenceAttachment? attachment;
-      for (final item in existing) {
+      for (final item in ownedExisting) {
         if (item.localPath == localPath && item.deletedAt == null) {
           attachment = item;
           break;
         }
       }
 
-      for (final item in existing) {
+      for (final item in ownedExisting) {
         if (item.id == attachment?.id) continue;
         item.uploadState = EvidenceAttachmentUploadState.deleted;
         item.deletedAt ??= now;
@@ -1074,7 +1103,14 @@ class DbService {
   Future<EvidenceAttachment?> getEvidenceAttachmentBySyncId(
     String syncId,
   ) async {
-    return isar.evidenceAttachments.filter().syncIdEqualTo(syncId).findFirst();
+    final attachments = await isar.evidenceAttachments
+        .filter()
+        .syncIdEqualTo(syncId)
+        .findAll();
+    return _firstForCurrentOwner(
+      attachments,
+      (attachment) => attachment.ownerUserId,
+    );
   }
 
   Future<void> syncRemoteEvidenceAttachmentToLocal(
@@ -1088,10 +1124,13 @@ class DbService {
         ? null
         : _parseRemoteDateTime(data['deleted_at']);
     await isar.writeTxn(() async {
-      final existing = await isar.evidenceAttachments
-          .filter()
-          .syncIdEqualTo(remoteSyncId)
-          .findFirst();
+      final existing = _firstForCurrentOwner(
+        await isar.evidenceAttachments
+            .filter()
+            .syncIdEqualTo(remoteSyncId)
+            .findAll(),
+        (attachment) => attachment.ownerUserId,
+      );
 
       if (remoteDeletedAt != null) {
         if (existing != null) {
@@ -1129,10 +1168,13 @@ class DbService {
             : _parseRemoteDateTime(data['updated_at'], fallback: now);
       await isar.evidenceAttachments.put(item);
 
-      final evidence = await isar.expenseEvidences
-          .filter()
-          .syncIdEqualTo(evidenceSyncId)
-          .findFirst();
+      final evidence = _firstForCurrentOwner(
+        await isar.expenseEvidences
+            .filter()
+            .syncIdEqualTo(evidenceSyncId)
+            .findAll(),
+        (evidence) => evidence.ownerUserId,
+      );
       final remoteStoragePath = item.remoteStoragePath;
       if (evidence != null &&
           remoteStoragePath != null &&
@@ -1173,10 +1215,13 @@ class DbService {
         ..updatedAt = now;
       await isar.evidenceAttachments.put(item);
 
-      final evidence = await isar.expenseEvidences
-          .filter()
-          .syncIdEqualTo(item.evidenceSyncId)
-          .findFirst();
+      final evidence = _firstForCurrentOwner(
+        await isar.expenseEvidences
+            .filter()
+            .syncIdEqualTo(item.evidenceSyncId)
+            .findAll(),
+        (evidence) => evidence.ownerUserId,
+      );
       if (evidence != null) {
         evidence
           ..remoteStoragePath = remoteStoragePath
@@ -1239,8 +1284,11 @@ class DbService {
         .filter()
         .evidenceSyncIdEqualTo(evidenceSyncId)
         .findAll();
+    final ownedAttachments = attachments
+        .where((attachment) => _belongsToCurrentUser(attachment.ownerUserId))
+        .toList();
 
-    if (attachments.isEmpty) {
+    if (ownedAttachments.isEmpty) {
       final localPath = evidence.localFilePath;
       final fileName = evidence.fileName ?? evidence.remoteStoragePath;
       if (localPath == null && evidence.remoteStoragePath == null) return;
@@ -1263,7 +1311,7 @@ class DbService {
       return;
     }
 
-    for (final attachment in attachments) {
+    for (final attachment in ownedAttachments) {
       attachment
         ..uploadState = EvidenceAttachmentUploadState.deleted
         ..deletedAt ??= now
@@ -1320,7 +1368,8 @@ class DbService {
   Future<int> addProject(Project project) async {
     final id = await isar.writeTxn(() async {
       project.stageNames = _normalizeStringList(project.stageNames);
-      final existing = project.id == Isar.autoIncrement
+      project.id = _normalizeNewRecordId(project.id);
+      final existing = _isNewRecordId(project.id)
           ? null
           : await isar.projects.get(project.id);
       _stampProjectOwner(project, existing);
@@ -1440,14 +1489,12 @@ class DbService {
 
     Project? project;
     if (hasSyncId) {
-      project = await isar.projects
-          .filter()
-          .syncIdEqualTo(normalizedSyncId)
-          .findFirst();
-      if (project != null && !_belongsToCurrentUser(project.ownerUserId)) {
-        project = null;
-      }
-    } else if (hasName) {
+      project = _firstForCurrentOwner(
+        await isar.projects.filter().syncIdEqualTo(normalizedSyncId).findAll(),
+        (project) => project.ownerUserId,
+      );
+    }
+    if (project == null && hasName) {
       final projects = await isar.projects.where().findAll();
       for (final item in projects) {
         if (_belongsToCurrentUser(item.ownerUserId) &&
@@ -1498,7 +1545,8 @@ class DbService {
 
   Future<int> addExpenseRecord(ExpenseRecord record) async {
     final id = await isar.writeTxn(() async {
-      final existing = record.id == Isar.autoIncrement
+      record.id = _normalizeNewRecordId(record.id);
+      final existing = _isNewRecordId(record.id)
           ? null
           : await isar.expenseRecords.get(record.id);
       _stampExpenseRecordOwner(record, existing);
@@ -1575,12 +1623,15 @@ class DbService {
 
     WorkLog? log;
     if (remoteSyncId != null) {
-      log = await isar.workLogs
-          .filter()
-          .syncIdEqualTo(remoteSyncId)
-          .findFirst();
+      log = _firstForCurrentOwner(
+        await isar.workLogs.filter().syncIdEqualTo(remoteSyncId).findAll(),
+        (log) => log.ownerUserId,
+      );
     }
-    log ??= await isar.workLogs.filter().remoteIdEqualTo(remoteId).findFirst();
+    log ??= _firstForCurrentOwner(
+      await isar.workLogs.filter().remoteIdEqualTo(remoteId).findAll(),
+      (log) => log.ownerUserId,
+    );
 
     if (remoteDeletedAt != null) {
       if (log != null) {
@@ -1700,15 +1751,15 @@ class DbService {
 
     Subscription? sub;
     if (remoteSyncId != null) {
-      sub = await isar.subscriptions
-          .filter()
-          .syncIdEqualTo(remoteSyncId)
-          .findFirst();
+      sub = _firstForCurrentOwner(
+        await isar.subscriptions.filter().syncIdEqualTo(remoteSyncId).findAll(),
+        (sub) => sub.ownerUserId,
+      );
     }
-    sub ??= await isar.subscriptions
-        .filter()
-        .remoteIdEqualTo(remoteId)
-        .findFirst();
+    sub ??= _firstForCurrentOwner(
+      await isar.subscriptions.filter().remoteIdEqualTo(remoteId).findAll(),
+      (sub) => sub.ownerUserId,
+    );
 
     if (remoteDeletedAt != null) {
       if (sub != null) {
@@ -1818,15 +1869,18 @@ class DbService {
 
     ExpenseEvidence? item;
     if (remoteSyncId != null) {
-      item = await isar.expenseEvidences
-          .filter()
-          .syncIdEqualTo(remoteSyncId)
-          .findFirst();
+      item = _firstForCurrentOwner(
+        await isar.expenseEvidences
+            .filter()
+            .syncIdEqualTo(remoteSyncId)
+            .findAll(),
+        (item) => item.ownerUserId,
+      );
     }
-    item ??= await isar.expenseEvidences
-        .filter()
-        .remoteIdEqualTo(remoteId)
-        .findFirst();
+    item ??= _firstForCurrentOwner(
+      await isar.expenseEvidences.filter().remoteIdEqualTo(remoteId).findAll(),
+      (item) => item.ownerUserId,
+    );
 
     if (remoteDeletedAt != null) {
       if (item != null) {
@@ -1949,15 +2003,18 @@ class DbService {
 
     ExpenseRecord? record;
     if (remoteSyncId != null) {
-      record = await isar.expenseRecords
-          .filter()
-          .syncIdEqualTo(remoteSyncId)
-          .findFirst();
+      record = _firstForCurrentOwner(
+        await isar.expenseRecords
+            .filter()
+            .syncIdEqualTo(remoteSyncId)
+            .findAll(),
+        (record) => record.ownerUserId,
+      );
     }
-    record ??= await isar.expenseRecords
-        .filter()
-        .remoteIdEqualTo(remoteId)
-        .findFirst();
+    record ??= _firstForCurrentOwner(
+      await isar.expenseRecords.filter().remoteIdEqualTo(remoteId).findAll(),
+      (record) => record.ownerUserId,
+    );
 
     if (remoteDeletedAt != null) {
       if (record != null) {
@@ -2001,10 +2058,13 @@ class DbService {
     final tripWorkLogSyncId = _parseRemoteString(data['trip_work_log_sync_id']);
     final tripWorkLog = tripWorkLogSyncId == null
         ? null
-        : await isar.workLogs
-              .filter()
-              .syncIdEqualTo(tripWorkLogSyncId)
-              .findFirst();
+        : _firstForCurrentOwner(
+            await isar.workLogs
+                .filter()
+                .syncIdEqualTo(tripWorkLogSyncId)
+                .findAll(),
+            (log) => log.ownerUserId,
+          );
 
     record.remoteId = remoteId;
     record.ownerUserId = currentOwnerUserId;
@@ -2072,15 +2132,15 @@ class DbService {
 
     Project? project;
     if (remoteSyncId != null) {
-      project = await isar.projects
-          .filter()
-          .syncIdEqualTo(remoteSyncId)
-          .findFirst();
+      project = _firstForCurrentOwner(
+        await isar.projects.filter().syncIdEqualTo(remoteSyncId).findAll(),
+        (project) => project.ownerUserId,
+      );
     }
-    project ??= await isar.projects
-        .filter()
-        .remoteIdEqualTo(remoteId)
-        .findFirst();
+    project ??= _firstForCurrentOwner(
+      await isar.projects.filter().remoteIdEqualTo(remoteId).findAll(),
+      (project) => project.ownerUserId,
+    );
 
     if (remoteDeletedAt != null) {
       if (project != null) {
