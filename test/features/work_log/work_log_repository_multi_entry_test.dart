@@ -6,9 +6,14 @@ import 'package:life_log/features/work_log/data/work_log_sync_gateway.dart';
 
 void main() {
   group('WorkLogRepository multi-entry day policy', () {
-    test('saveLog does not delete existing same-day entries', () async {
+    test('saveLog preserves different same-day entry types', () async {
       final local = _FakeWorkLogLocalDataSource([
-        _log(id: 1, date: DateTime(2026, 5, 9), note: 'morning'),
+        _log(
+          id: 1,
+          date: DateTime(2026, 5, 9),
+          type: LogType.leave,
+          note: 'leave',
+        ),
       ]);
       final repository = WorkLogRepository(
         localDataSource: local,
@@ -16,16 +21,46 @@ void main() {
       );
 
       await repository.saveLog(
-        _log(id: 2, date: DateTime(2026, 5, 9, 18), note: 'overtime'),
+        _log(id: 0, date: DateTime(2026, 5, 9, 18), note: 'work'),
       );
 
+      final logs = await repository.getLogsByMonth(DateTime(2026, 5));
+
+      expect(logs.map((log) => log.note), ['leave', 'work']);
       expect(local.addedLogs.map((log) => log.id), [2]);
       expect(local.markedDeletedIds, isEmpty);
       expect(local.purgedIds, isEmpty);
     });
 
+    test('new same-day work entry updates the existing work record', () async {
+      final local = _FakeWorkLogLocalDataSource([
+        _log(id: 4, date: DateTime(2026, 7, 7), note: 'first')
+          ..syncId = 'work-20260707',
+      ]);
+      final repository = WorkLogRepository(
+        localDataSource: local,
+        syncGateway: const _FakeWorkLogSyncGateway(),
+      );
+
+      await repository.saveLog(
+        _log(id: 0, date: DateTime(2026, 7, 7), note: 'second')
+          ..overtimeHours = 3,
+      );
+
+      final logs = await repository.getLogsByMonth(DateTime(2026, 7));
+
+      expect(logs, hasLength(1));
+      expect(logs.single.id, 4);
+      expect(logs.single.syncId, 'work-20260707');
+      expect(logs.single.note, 'second');
+      expect(logs.single.overtimeHours, 3);
+      expect(local.addedLogs.map((log) => log.id), [4]);
+      expect(local.markedDeletedIds, isEmpty);
+      expect(local.purgedIds, isEmpty);
+    });
+
     test(
-      'saveLog keeps adjacent days across repeated logged-in entries',
+      'saveLog keeps adjacent days when repeated same-day work is updated',
       () async {
         final local = _FakeWorkLogLocalDataSource();
         final repository = WorkLogRepository(
@@ -52,7 +87,7 @@ void main() {
           logs
               .where((log) => log.date == DateTime(2026, 6, 23))
               .map((log) => log.note),
-          ['yesterday-1', 'yesterday-2'],
+          ['yesterday-2'],
         );
         expect(
           logs
@@ -107,11 +142,16 @@ void main() {
   });
 }
 
-WorkLog _log({required int id, required DateTime date, String? note}) {
+WorkLog _log({
+  required int id,
+  required DateTime date,
+  LogType type = LogType.work,
+  String? note,
+}) {
   return WorkLog()
     ..id = id
     ..date = date
-    ..type = LogType.work
+    ..type = type
     ..overtimeHours = 1
     ..note = note;
 }
@@ -123,7 +163,13 @@ final class _FakeWorkLogLocalDataSource implements WorkLogLocalDataSource {
   final purgedIds = <int>[];
   var _nextId = 1;
 
-  _FakeWorkLogLocalDataSource([List<WorkLog>? logs]) : logs = logs ?? [];
+  _FakeWorkLogLocalDataSource([List<WorkLog>? logs]) : logs = logs ?? [] {
+    for (final log in this.logs) {
+      if (log.id >= _nextId) {
+        _nextId = log.id + 1;
+      }
+    }
+  }
 
   @override
   Future<int> addLog(WorkLog log) async {

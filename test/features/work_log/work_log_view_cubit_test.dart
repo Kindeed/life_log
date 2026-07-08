@@ -223,6 +223,48 @@ void main() {
     },
   );
 
+  testWidgets(
+    'fab edits existing same-day work entry instead of creating a duplicate',
+    (tester) async {
+      tester.view.devicePixelRatio = 1;
+      tester.view.physicalSize = const Size(375, 812);
+      addTearDown(tester.view.resetPhysicalSize);
+      addTearDown(tester.view.resetDevicePixelRatio);
+
+      final repository = _SavingWorkLogRepository([
+        WorkLogEntry(
+          id: 9,
+          date: DateTime(2026, 5, 1),
+          type: WorkLogEntryType.work,
+          overtimeHours: 1,
+          note: '已有工作记录',
+        ),
+      ]);
+      configureWorkLogFeatureDependencies(
+        repository: repository,
+        initialNow: () => DateTime(2026, 5, 1),
+      );
+
+      await tester.pumpWidget(_workLogHarness(const WorkLogView()));
+      await tester.pumpAndSettle();
+
+      expect(find.text('已有工作记录'), findsOneWidget);
+
+      await tester.tap(find.text('记工时'));
+      await tester.pumpAndSettle();
+
+      expect(find.text('修改记录'), findsOneWidget);
+      expect(find.text('记录一下'), findsNothing);
+
+      await tester.tap(find.text('保存修改'));
+      await tester.pumpAndSettle();
+
+      expect(repository.savedEntries, hasLength(1));
+      expect(repository.savedEntries.single.id, 9);
+      expect(repository.savedEntries.single.type, WorkLogEntryType.work);
+    },
+  );
+
   testWidgets('detail delete action uses feature command before refresh', (
     tester,
   ) async {
@@ -480,6 +522,9 @@ final class _SavingWorkLogRepository implements WorkLogRepositoryPort {
 
   @override
   Future<void> saveEntry(WorkLogEntry entry, {required bool markDirty}) async {
+    if (entry.id != 0) {
+      savedEntries.removeWhere((existing) => existing.id == entry.id);
+    }
     savedEntries.add(entry);
   }
 

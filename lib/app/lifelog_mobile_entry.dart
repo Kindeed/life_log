@@ -24,8 +24,10 @@ import 'package:life_log/core/routing/app_router.dart';
 import 'package:life_log/core/routing/app_routes.dart';
 import 'package:life_log/core/sync/sync_scheduler.dart';
 import 'package:life_log/features/evidence/evidence_feature_di.dart';
+import 'package:life_log/features/evidence/presentation/evidence_lost_data_recovery.dart';
 import 'package:life_log/features/expense/expense_feature_di.dart';
 import 'package:life_log/features/photo/photo_feature_di.dart';
+import 'package:life_log/features/photo/presentation/photo_lost_data_recovery.dart';
 import 'package:life_log/features/profile/presentation/views/login_view.dart';
 import 'package:life_log/features/profile/profile_feature_di.dart';
 import 'package:life_log/features/project/project_feature_di.dart';
@@ -113,6 +115,8 @@ Future<void> _bootstrap() async {
   runApp(const MyApp());
   WidgetsBinding.instance.addPostFrameCallback((_) {
     unawaited(_runStartupMaintenance(dbService, logService));
+    unawaited(recoverLostPhotoData(_rootNavigatorKey));
+    unawaited(recoverLostEvidenceData(_rootNavigatorKey));
   });
 }
 

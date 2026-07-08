@@ -43,7 +43,14 @@ class _WorkLogContent extends StatelessWidget {
         heroTag: 'work_log_add_fab',
         onPressed: () {
           final cubitState = context.read<WorkLogCubit>().state;
-          _openLogEdit(context, selectedDate: cubitState.selectedDay);
+          _openLogEdit(
+            context,
+            selectedDate: cubitState.selectedDay,
+            existingEntry: _existingWorkEntryForDay(
+              cubitState,
+              cubitState.selectedDay,
+            ),
+          );
         },
         icon: const Icon(Icons.edit_calendar_rounded),
         label: const Text('记工时'),
@@ -216,6 +223,20 @@ class _WorkLogContent extends StatelessWidget {
   WorkLogEntry? _firstEntryForDay(WorkLogState cubitState, DateTime day) {
     final events = _entriesForDay(cubitState, day);
     return events.isEmpty ? null : events.first;
+  }
+
+  WorkLogEntry? _existingWorkEntryForDay(
+    WorkLogState cubitState,
+    DateTime day,
+  ) {
+    WorkLogEntry? existingWork;
+    for (final entry in _entriesForDay(cubitState, day)) {
+      if (entry.type != WorkLogEntryType.work) continue;
+      if (existingWork == null || entry.isNewerThan(existingWork)) {
+        existingWork = entry;
+      }
+    }
+    return existingWork;
   }
 
   void _openLogEdit(

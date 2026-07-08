@@ -1,5 +1,30 @@
 # Changelog
 
+## [1.4.26] - 2026-07-08
+
+### 相机恢复与同日工时修复
+
+#### 新增 (Added)
+- 应用版本升级到 `1.4.26+32`。
+- 新增项目照片和凭证 `image_picker` lost-data 恢复边界测试，覆盖 Android 外部相机/图库导致 Activity 重建后的回收路径。
+- 新增同日工时保存回归测试，覆盖 FAB 打开已有工作记录和 repository 采用既有工作身份的路径。
+
+#### 变更 (Changed)
+- 工时页 `记工时` 在当天已有工作记录时改为编辑最新工作记录，不再默认创建第二张同日“工作”卡片。
+- WorkLog repository 对新建同日工作保存采用已有工作记录身份，同时继续保留同日请假、出差、报销等不同类型记录。
+
+#### 修复 (Fixed)
+- 修复项目内拍照时 Android 外部相机重建 `MainActivity` 后可能黑屏/空白并丢失照片和项目上下文的问题。
+- 修复凭证拍摄/图库导入在 Activity 重建后丢失返回图片的问题，恢复后会重新打开凭证编辑器并带回项目和来源上下文。
+- 修复凭证编辑器在外部 picker 或异步保存/删除返回前已关闭时，仍可能写入已释放 UI/Cubit 状态的问题。
+
+#### 验证 (Validation)
+- `flutter test` 通过，当前环境为 `510 passed`。
+- `flutter analyze` 通过。
+- `git diff --check` 通过。
+- `flutter build apk --debug` 通过。
+- Android 模拟器 `LifeLog_API_34_DTool` 验证：新建项目后进入凭证拍摄，系统相机返回正常；在相机打开时杀掉 `com.wzh.lifelog` 后拍照返回，应用重启并恢复到凭证编辑器，crash buffer 为空。
+
 ## [1.4.25] - 2026-07-07
 
 ### 工时记录与同步数据边界修复

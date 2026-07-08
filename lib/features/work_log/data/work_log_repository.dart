@@ -1,5 +1,6 @@
 import 'dart:async';
 
+import 'package:isar/isar.dart';
 import 'package:life_log/common/services/log_service.dart';
 import 'package:life_log/common/utils/date_utils.dart';
 import 'package:life_log/common/utils/record_validators.dart';
@@ -78,6 +79,8 @@ class WorkLogRepository {
   Future<void> _saveLog(WorkLog log) async {
     log.date = dateOnlyLocal(log.date);
 
+    await _adoptExistingSameDayWorkIdentity(log);
+
     validateWorkLog(log);
     log.syncId = ensureSyncId(log.syncId);
 
@@ -114,6 +117,32 @@ class WorkLogRepository {
     }
   }
 
+  Future<void> _adoptExistingSameDayWorkIdentity(WorkLog log) async {
+    if (!_isNewRecordId(log.id) || log.type != LogType.work) return;
+
+    final sameDayLogs = await _localDataSource.getLogsForDay(log.date);
+    WorkLog? existingWork;
+    for (final existing in sameDayLogs) {
+      if (existing.type != LogType.work) continue;
+      if (existingWork == null ||
+          _isNewerStoredWorkLog(existing, existingWork)) {
+        existingWork = existing;
+      }
+    }
+    if (existingWork == null) return;
+
+    log
+      ..id = existingWork.id
+      ..ownerUserId = existingWork.ownerUserId
+      ..remoteId = existingWork.remoteId
+      ..syncId = existingWork.syncId
+      ..remoteVersion = existingWork.remoteVersion
+      ..remoteUpdatedAt = existingWork.remoteUpdatedAt
+      ..syncedAt = existingWork.syncedAt
+      ..createdAt = existingWork.createdAt
+      ..isDirty = log.isDirty || existingWork.isDirty;
+  }
+
   // 删除业务逻辑
   Future<void> deleteLog(int id) async {
     final log = await _localDataSource.getWorkLog(id);
@@ -143,4 +172,14 @@ class WorkLogRepository {
       LogService.to.error('WorkLogRepository', '云端删除失败: $e', stackTrace);
     }
   }
+}
+
+bool _isNewRecordId(Id id) => id == Isar.autoIncrement || id == 0;
+
+bool _isNewerStoredWorkLog(WorkLog next, WorkLog current) {
+  final nextTime = next.updatedAt ?? next.createdAt ?? next.date;
+  final currentTime = current.updatedAt ?? current.createdAt ?? current.date;
+  final timeCompare = nextTime.compareTo(currentTime);
+  if (timeCompare != 0) return timeCompare > 0;
+  return next.id > current.id;
 }

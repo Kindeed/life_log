@@ -239,6 +239,7 @@ final class EvidenceEditorCubit extends Cubit<EvidenceEditorState> {
       sourcePath: state.pendingSourcePath,
       sourceExtension: state.pendingSourceExtension,
     );
+    if (isClosed) return;
     result.when(
       success: (_) => emit(state.copyWith(status: EvidenceEditorStatus.saved)),
       failure: (failure) => emit(
@@ -268,6 +269,7 @@ final class EvidenceEditorCubit extends Cubit<EvidenceEditorState> {
       state.copyWith(status: EvidenceEditorStatus.deleting, clearFailure: true),
     );
     final result = await _deleteEntry(existing.id);
+    if (isClosed) return;
     result.when(
       success: (_) =>
           emit(state.copyWith(status: EvidenceEditorStatus.deleted)),

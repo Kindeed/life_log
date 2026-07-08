@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:io';
 
 import 'package:flutter_test/flutter_test.dart';
@@ -130,6 +131,46 @@ void main() {
       expect(repository.deletedIds, [13]);
       expect(cubit.state.status, EvidenceEditorStatus.deleted);
     });
+
+    test('does not emit save completion after the editor is closed', () async {
+      final saveCompleter = Completer<void>();
+      final repository = _EditorRepository(saveCompleter: saveCompleter);
+      final cubit = _editor(
+        repository: repository,
+        initialProjectName: 'Alpha',
+      );
+
+      cubit.changeAmountText('18');
+      final submitFuture = cubit.submit();
+      expect(cubit.state.status, EvidenceEditorStatus.submitting);
+
+      await cubit.close();
+      saveCompleter.complete();
+      await submitFuture;
+
+      expect(repository.savedEntries, hasLength(1));
+    });
+
+    test(
+      'does not emit delete completion after the editor is closed',
+      () async {
+        final deleteCompleter = Completer<void>();
+        final repository = _EditorRepository(deleteCompleter: deleteCompleter);
+        final cubit = _editor(
+          repository: repository,
+          existingEntry: _entry(id: 13),
+        );
+
+        final deleteFuture = cubit.delete();
+        expect(cubit.state.status, EvidenceEditorStatus.deleting);
+
+        await cubit.close();
+        deleteCompleter.complete();
+        await deleteFuture;
+
+        expect(repository.deletedIds, [13]);
+      },
+    );
   });
 
   group('Evidence editor UI ownership', () {
@@ -173,6 +214,34 @@ void main() {
       expect(source, contains('Navigator.of(context).maybePop'));
       expect(source, contains('showDialog<bool>'));
       expect(source, contains('ScaffoldMessenger'));
+    });
+
+    test('guards attachment picker returns after the editor is disposed', () {
+      final source = File(
+        'lib/features/evidence/presentation/evidence_editor_sheet.dart',
+      ).readAsStringSync();
+
+      expect(source, contains('if (file == null || !mounted) return;'));
+      expect(
+        source,
+        contains('if (path == null || path.isEmpty || !mounted) return;'),
+      );
+      expect(
+        source,
+        isNot(
+          contains(
+            'if (file == null) return;\n    _editorCubit.changeAttachment',
+          ),
+        ),
+      );
+      expect(
+        source,
+        isNot(
+          contains(
+            'if (path == null || path.isEmpty) return;\n    _editorCubit.changeAttachment',
+          ),
+        ),
+      );
     });
 
     test('routes editor opening through the feature launcher', () {
@@ -333,6 +402,10 @@ final class _SavedEditorEntry {
 final class _EditorRepository implements EvidenceRepositoryPort {
   final savedEntries = <_SavedEditorEntry>[];
   final deletedIds = <int>[];
+  final Completer<void>? saveCompleter;
+  final Completer<void>? deleteCompleter;
+
+  _EditorRepository({this.saveCompleter, this.deleteCompleter});
 
   @override
   Future<List<EvidenceEntry>> getAllEntries() async => const [];
@@ -347,6 +420,7 @@ final class _EditorRepository implements EvidenceRepositoryPort {
     String? sourcePath,
     String? sourceExtension,
   }) async {
+    await saveCompleter?.future;
     savedEntries.add(
       _SavedEditorEntry(
         entry: entry,
@@ -359,6 +433,7 @@ final class _EditorRepository implements EvidenceRepositoryPort {
 
   @override
   Future<void> deleteEntry(int id) async {
+    await deleteCompleter?.future;
     deletedIds.add(id);
   }
 

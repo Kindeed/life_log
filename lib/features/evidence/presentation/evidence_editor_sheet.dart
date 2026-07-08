@@ -20,6 +20,7 @@ import 'package:life_log/features/evidence/data/evidence_model.dart';
 import 'package:life_log/features/evidence/data/evidence_parse_service.dart';
 import 'package:life_log/features/evidence/domain/entities/evidence_entry.dart';
 import 'package:life_log/features/evidence/presentation/evidence_editor_cubit.dart';
+import 'package:life_log/features/evidence/presentation/evidence_lost_data_recovery.dart';
 
 class EvidenceEditorSheet extends StatefulWidget {
   final ExpenseEvidence? existing;
@@ -47,11 +48,13 @@ class _EvidenceEditorSheetState extends State<EvidenceEditorSheet> {
   late final TextEditingController _amountController;
   late final TextEditingController _merchantController;
   late final TextEditingController _noteController;
+  late final EvidencePendingPickerStore _pendingPickerStore;
   bool _isParsingAttachment = false;
 
   @override
   void initState() {
     super.initState();
+    _pendingPickerStore = EvidencePendingPickerStore();
     _editorCubit = EvidenceEditorCubit(
       saveEntry: serviceLocator<SaveEvidenceEntry>(),
       deleteEntry: serviceLocator<DeleteEvidenceEntry>(),
@@ -742,21 +745,37 @@ class _EvidenceEditorSheetState extends State<EvidenceEditorSheet> {
   String _formatDate(DateTime date) => formatDateYmd(date);
 
   Future<void> _pickEvidenceFromCamera() async {
-    final file = await ImagePicker().pickImage(
-      source: ImageSource.camera,
-      imageQuality: 95,
+    await _pendingPickerStore.rememberLaunch(
+      source: EvidencePendingPickerSource.camera,
+      initialProject: _editorCubit.state.projectName,
     );
-    if (file == null) return;
-    _editorCubit.changeAttachment(file.path);
+    try {
+      final file = await ImagePicker().pickImage(
+        source: ImageSource.camera,
+        imageQuality: 95,
+      );
+      if (file == null || !mounted) return;
+      _editorCubit.changeAttachment(file.path);
+    } finally {
+      await _pendingPickerStore.clear();
+    }
   }
 
   Future<void> _pickEvidenceFromGallery() async {
-    final file = await ImagePicker().pickImage(
-      source: ImageSource.gallery,
-      imageQuality: 95,
+    await _pendingPickerStore.rememberLaunch(
+      source: EvidencePendingPickerSource.gallery,
+      initialProject: _editorCubit.state.projectName,
     );
-    if (file == null) return;
-    _editorCubit.changeAttachment(file.path);
+    try {
+      final file = await ImagePicker().pickImage(
+        source: ImageSource.gallery,
+        imageQuality: 95,
+      );
+      if (file == null || !mounted) return;
+      _editorCubit.changeAttachment(file.path);
+    } finally {
+      await _pendingPickerStore.clear();
+    }
   }
 
   Future<void> _pickEvidenceFromFile() async {
@@ -767,7 +786,7 @@ class _EvidenceEditorSheetState extends State<EvidenceEditorSheet> {
     );
     final file = result?.files.single;
     final path = file?.path;
-    if (path == null || path.isEmpty) return;
+    if (path == null || path.isEmpty || !mounted) return;
     _editorCubit.changeAttachment(path, sourceExtension: file?.extension);
   }
 

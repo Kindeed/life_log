@@ -9,6 +9,7 @@ import 'package:life_log/common/theme/app_spacing.dart';
 import 'package:life_log/common/theme/theme_extensions.dart';
 import 'package:life_log/features/evidence/data/evidence_file_utils.dart';
 import 'package:life_log/features/evidence/presentation/evidence_editor_launcher.dart';
+import 'package:life_log/features/evidence/presentation/evidence_lost_data_recovery.dart';
 
 void showEvidenceAddActions(
   BuildContext context, {
@@ -130,11 +131,17 @@ Future<void> _captureEvidence(
   BuildContext context, {
   String? initialProject,
 }) async {
+  final pendingPickerStore = EvidencePendingPickerStore();
   try {
+    await pendingPickerStore.rememberLaunch(
+      initialProject: initialProject,
+      source: EvidencePendingPickerSource.camera,
+    );
     final image = await ImagePicker().pickImage(
       source: ImageSource.camera,
       imageQuality: 95,
     );
+    await pendingPickerStore.clear();
     if (image == null || !context.mounted) return;
     await showEvidenceEditorSheet(
       context,
@@ -142,6 +149,7 @@ Future<void> _captureEvidence(
       sourcePath: image.path,
     );
   } catch (error, stackTrace) {
+    await pendingPickerStore.clear();
     LogService.to.error('Evidence', '无法打开系统相机: $error', stackTrace);
     if (!context.mounted) return;
     _showSnack(context, '无法打开系统相机: $error');
@@ -152,11 +160,17 @@ Future<void> _importEvidenceImage(
   BuildContext context, {
   String? initialProject,
 }) async {
+  final pendingPickerStore = EvidencePendingPickerStore();
   try {
+    await pendingPickerStore.rememberLaunch(
+      initialProject: initialProject,
+      source: EvidencePendingPickerSource.gallery,
+    );
     final image = await ImagePicker().pickImage(
       source: ImageSource.gallery,
       imageQuality: 95,
     );
+    await pendingPickerStore.clear();
     if (image == null || !context.mounted) return;
     await showEvidenceEditorSheet(
       context,
@@ -164,6 +178,7 @@ Future<void> _importEvidenceImage(
       sourcePath: image.path,
     );
   } catch (error, stackTrace) {
+    await pendingPickerStore.clear();
     LogService.to.error('Evidence', '无法导入凭证图片: $error', stackTrace);
     if (!context.mounted) return;
     _showSnack(context, '无法导入凭证图片: $error');

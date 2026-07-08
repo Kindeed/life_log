@@ -301,6 +301,42 @@ void main() {
         contains('showEvidenceAddActions(\n              context,'),
       );
     });
+
+    test(
+      'recovers Android image picker results lost across Activity restart',
+      () {
+        final appEntry = File(
+          'lib/app/lifelog_mobile_entry.dart',
+        ).readAsStringSync();
+        final launcher = File(
+          'lib/features/evidence/presentation/evidence_add_action_launcher.dart',
+        ).readAsStringSync();
+        final editorSheet = File(
+          'lib/features/evidence/presentation/evidence_editor_sheet.dart',
+        ).readAsStringSync();
+        final recoveryFile = File(
+          'lib/features/evidence/presentation/evidence_lost_data_recovery.dart',
+        );
+
+        expect(recoveryFile.existsSync(), isTrue);
+        final recovery = recoveryFile.existsSync()
+            ? recoveryFile.readAsStringSync()
+            : '';
+        expect(appEntry, contains('recoverLostEvidenceData'));
+        expect(appEntry, contains('_rootNavigatorKey'));
+        expect(launcher, contains('EvidencePendingPickerStore'));
+        expect(launcher, contains('initialProject: initialProject'));
+        expect(launcher, contains('EvidencePendingPickerSource.camera'));
+        expect(launcher, contains('EvidencePendingPickerSource.gallery'));
+        expect(editorSheet, contains('EvidencePendingPickerStore'));
+        expect(editorSheet, contains('rememberLaunch('));
+        expect(recovery, contains('retrieveLostData()'));
+        expect(recovery, contains('showEvidenceEditorSheet'));
+        expect(recovery, isNot(contains('PhotoItem')));
+        expect(recovery, isNot(contains('showCaptureDialog')));
+        expect(recovery, isNot(contains('recoverLostPhotoData')));
+      },
+    );
   });
 }
 

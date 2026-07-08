@@ -15,6 +15,7 @@ void main() {
         'lib/features/photo/presentation/create_project_sheet.dart',
         'lib/features/photo/presentation/photo_local_ui.dart',
         'lib/features/photo/presentation/photo_add_action_launcher.dart',
+        'lib/features/photo/presentation/photo_lost_data_recovery.dart',
       ];
       final legacyPaths = [
         'lib/features/photo/presentation/photo_controller.dart',
@@ -104,6 +105,28 @@ void main() {
       expect(preview, contains('gpsLongitude'));
       expect(appearance, contains('照片信息'));
       expect(appearance, contains('显示 GPS'));
+    });
+
+    test('recovers Android camera results lost across Activity restart', () {
+      final appEntry = File(
+        'lib/app/lifelog_mobile_entry.dart',
+      ).readAsStringSync();
+      final launcher = File(
+        'lib/features/photo/presentation/photo_add_action_launcher.dart',
+      ).readAsStringSync();
+      final recovery = File(
+        'lib/features/photo/presentation/photo_lost_data_recovery.dart',
+      ).readAsStringSync();
+
+      expect(appEntry, contains('recoverLostPhotoData'));
+      expect(appEntry, contains('_rootNavigatorKey'));
+      expect(launcher, contains('PhotoPendingCaptureStore'));
+      expect(launcher, contains('rememberProject(initialProject)'));
+      expect(recovery, contains('retrieveLostData()'));
+      expect(recovery, contains('showCaptureDialog'));
+      expect(recovery, contains("capturedAtSource: 'cameraRecovered'"));
+      expect(recovery, isNot(contains('SyncService')));
+      expect(recovery, isNot(contains('PhotoItem')));
     });
   });
 }
