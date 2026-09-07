@@ -11,10 +11,8 @@ import 'package:life_log/features/profile/presentation/profile_view.dart';
 import 'package:life_log/features/profile/presentation/views/about_view.dart';
 import 'package:life_log/features/profile/presentation/views/appearance_view.dart';
 import 'package:life_log/features/profile/presentation/views/data_management_view.dart';
-import 'package:life_log/features/profile/presentation/views/developer_view.dart';
 import 'package:life_log/features/statistics/presentation/statistics_view.dart';
 import 'package:life_log/features/subscription/presentation/subscription_view.dart';
-import 'package:life_log/features/sync_center/presentation/sync_center_view.dart';
 import 'package:life_log/features/telemetry_calc/presentation/telemetry_calc_view.dart';
 import 'package:life_log/features/timeline/presentation/timeline_view.dart';
 
@@ -97,19 +95,6 @@ class _MoreViewState extends State<MoreView> {
                           subtitle: '查看个人账户与同步偏好',
                           onTap: () => _openPage(const ProfileView()),
                         ),
-                      Divider(
-                        height: 1,
-                        indent: 58.w,
-                        endIndent: 14.w,
-                        color: dividerColor,
-                      ),
-                      _MoreItemTile(
-                        icon: Icons.cloud_sync_outlined,
-                        iconColor: semantic.work,
-                        title: '云同步中心',
-                        subtitle: '同步状态、排队队列与冲突解决',
-                        onTap: () => _openPage(const SyncCenterView()),
-                      ),
                     ],
                   ),
                 ),
@@ -218,19 +203,6 @@ class _MoreViewState extends State<MoreView> {
                         title: '关于应用',
                         subtitle: '版本信息、技术架构与开源说明',
                         onTap: () => _openPage(const AboutView()),
-                      ),
-                      Divider(
-                        height: 1,
-                        indent: 58.w,
-                        endIndent: 14.w,
-                        color: dividerColor,
-                      ),
-                      _MoreItemTile(
-                        icon: Icons.bug_report_outlined,
-                        iconColor: semantic.warning,
-                        title: '开发者选项',
-                        subtitle: '诊断日志、调试工具与运行状态',
-                        onTap: () => _openPage(const DeveloperView()),
                       ),
                     ],
                   ),

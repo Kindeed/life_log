@@ -518,13 +518,19 @@ class _ProjectGalleryViewState extends State<ProjectGalleryView>
     }
   }
 
-  Future<void> _openPhotoPreview(List<PhotoEntry> photos, int initialIndex) {
-    return Navigator.of(context).push<void>(
-      MaterialPageRoute<void>(
+  Future<void> _openPhotoPreview(
+    List<PhotoEntry> photos,
+    int initialIndex,
+  ) async {
+    final deleted = await Navigator.of(context).push<bool>(
+      MaterialPageRoute<bool>(
         builder: (_) =>
             PhotoPreviewView(photos: photos, initialIndex: initialIndex),
       ),
     );
+    if (deleted == true && mounted) {
+      await photoCubit.loadEntries();
+    }
   }
 
   List<PhotoEntry> _selectedProjectPhotos() {

@@ -2,6 +2,8 @@ import 'dart:async';
 import 'dart:io';
 
 import 'package:file_picker/file_picker.dart';
+import 'package:image_picker/image_picker.dart';
+import 'package:life_log/features/project/data/project_cover_file_store.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
@@ -35,6 +37,7 @@ import 'package:life_log/features/project/domain/entities/project_entry.dart';
 import 'package:life_log/features/project/presentation/project_cubit.dart';
 import 'package:life_log/features/work_log/application/load_project_work_log_trips.dart';
 import 'package:life_log/features/work_log/domain/entities/work_log_entry.dart';
+import 'package:life_log/features/more/presentation/quick_action_contract.dart';
 
 class ProjectDetailView extends StatefulWidget {
   final String projectName;
@@ -50,6 +53,8 @@ class ProjectDetailView extends StatefulWidget {
   final DeleteProjectEntry? deleteProjectEntry;
   final DeletePhotoEntries? deletePhotoEntries;
   final ExportPhotoEntries? exportPhotoEntries;
+  final ImagePicker? imagePicker;
+  final ProjectCoverFileStore? coverFileStore;
 
   const ProjectDetailView({
     super.key,
@@ -64,6 +69,8 @@ class ProjectDetailView extends StatefulWidget {
     this.deleteProjectEntry,
     this.deletePhotoEntries,
     this.exportPhotoEntries,
+    this.imagePicker,
+    this.coverFileStore,
   });
 
   @override
@@ -79,6 +86,8 @@ class _ProjectDetailViewState extends State<ProjectDetailView>
   late final ExpenseRecordRepository? _expenseRepository;
   late final LoadProjectWorkLogTrips? _loadTrips;
   late final DeleteProjectEntry? _deleteProject;
+  late final ImagePicker _imagePicker;
+  late final ProjectCoverFileStore _coverFileStore;
 
   bool _ownsProjectCubit = false;
   bool _ownsPhotoCubit = false;
@@ -95,6 +104,8 @@ class _ProjectDetailViewState extends State<ProjectDetailView>
   @override
   void initState() {
     super.initState();
+    _imagePicker = widget.imagePicker ?? ImagePicker();
+    _coverFileStore = widget.coverFileStore ?? const ProjectCoverFileStore();
     if (widget.projectCubit != null) {
       _projectCubit = widget.projectCubit!;
     } else {
@@ -416,6 +427,12 @@ class _ProjectDetailViewState extends State<ProjectDetailView>
                 case 'archive':
                   _toggleArchiveProject(project);
                   break;
+                case 'cover':
+                  _pickProjectCover(project);
+                  break;
+                case 'clearCover':
+                  _clearProjectCover(project);
+                  break;
                 case 'delete':
                   _showDeleteProjectDialog(project);
                   break;
@@ -452,6 +469,28 @@ class _ProjectDetailViewState extends State<ProjectDetailView>
                 ),
               ),
               const PopupMenuItem(
+                value: 'cover',
+                child: Row(
+                  children: [
+                    Icon(Icons.image_outlined, size: 20),
+                    SizedBox(width: 8),
+                    Text('选择封面'),
+                  ],
+                ),
+              ),
+              if (project?.localCoverPath != null ||
+                  project?.coverImagePath != null)
+                const PopupMenuItem(
+                  value: 'clearCover',
+                  child: Row(
+                    children: [
+                      Icon(Icons.hide_image_outlined, size: 20),
+                      SizedBox(width: 8),
+                      Text('清除封面'),
+                    ],
+                  ),
+                ),
+              const PopupMenuItem(
                 value: 'delete',
                 child: Row(
                   children: [
@@ -480,6 +519,46 @@ class _ProjectDetailViewState extends State<ProjectDetailView>
     );
   }
 
+  Future<void> _pickProjectCover(ProjectEntry project) async {
+    final image = await _imagePicker.pickImage(source: ImageSource.gallery);
+    if (image == null || !mounted) return;
+    try {
+      final path = await _coverFileStore.copyToPrivateStorage(
+        projectId: project.id,
+        sourcePath: image.path,
+      );
+      final failure = await _projectCubit.saveCoverPath(
+        project,
+        localCoverPath: path,
+        coverImagePath: null,
+      );
+      if (mounted && failure != null) {
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text(failure.message)));
+      }
+    } catch (error) {
+      if (mounted) {
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text('保存封面失败：$error')));
+      }
+    }
+  }
+
+  Future<void> _clearProjectCover(ProjectEntry project) async {
+    final failure = await _projectCubit.saveCoverPath(
+      project,
+      localCoverPath: null,
+      coverImagePath: null,
+    );
+    if (mounted && failure != null) {
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text(failure.message)));
+    }
+  }
+
   Widget _buildActionCapsule(ThemeData theme) {
     return Material(
       elevation: 6,
@@ -493,7 +572,7 @@ class _ProjectDetailViewState extends State<ProjectDetailView>
           children: [
             _CapsuleButton(
               icon: Icons.camera_alt_rounded,
-              label: '拍照片',
+              label: QuickActionLabels.addPhoto,
               onTap: _showAddPhotoActions,
             ),
             Container(
@@ -504,7 +583,7 @@ class _ProjectDetailViewState extends State<ProjectDetailView>
             ),
             _CapsuleButton(
               icon: Icons.payments_rounded,
-              label: '记费用',
+              label: QuickActionLabels.recordExpense,
               onTap: _openAddExpense,
             ),
             Container(
@@ -515,7 +594,7 @@ class _ProjectDetailViewState extends State<ProjectDetailView>
             ),
             _CapsuleButton(
               icon: Icons.receipt_long_rounded,
-              label: '加凭证',
+              label: QuickActionLabels.addEvidence,
               onTap: _showEvidenceAddActions,
             ),
           ],
@@ -1489,12 +1568,15 @@ class _ProjectDetailViewState extends State<ProjectDetailView>
     final mediaCount = projectPhotos.length;
     final evidenceCount = evidenceItems.length;
     final expenseCount = expenseItems.length;
-    final tripCount = _projectTrips.length;
-    final hasChildren =
-        mediaCount + evidenceCount + expenseCount + tripCount > 0;
+    final tripCount = _projectTrips
+        .where((trip) => trip.projectName == widget.projectName)
+        .length;
+    final hasChildren = evidenceCount + expenseCount + tripCount > 0;
     final message = hasChildren
-        ? "删除项目「${widget.projectName}」后，会一并删除 $mediaCount 张照片、$evidenceCount 份凭证和 $expenseCount 条项目费用，并解除 $tripCount 条出差记录的项目关联；出差记录本身不会删除。"
-        : "删除项目「${widget.projectName}」后无法恢复。";
+        ? "删除项目「${widget.projectName}」后会删除 $evidenceCount 份凭证和 $expenseCount 条项目费用，解除 $tripCount 条已关联的出差记录；$mediaCount 张项目照片将保留并移除项目关联。同步项目会先标记为待删除，待同步完成后再清理。"
+        : mediaCount > 0
+        ? "删除项目「${widget.projectName}」后，$mediaCount 张项目照片将保留并移除项目关联；同步项目会先标记为待删除。"
+        : "删除项目「${widget.projectName}」后，同步项目会先标记为待删除；本地项目删除后无法恢复。";
 
     final confirmed = await confirmPhotoAction(
       context,

@@ -12,8 +12,6 @@ import 'package:life_log/features/expense/application/load_expense_record_entrie
 import 'package:life_log/features/expense/domain/entities/expense_record_edit_draft.dart';
 import 'package:life_log/features/expense/domain/entities/expense_record_entry.dart';
 import 'package:life_log/features/expense/domain/repositories/expense_record_repository_port.dart';
-import 'package:life_log/features/photo/application/delete_photo_entries.dart';
-import 'package:life_log/features/photo/application/load_photo_entries.dart';
 import 'package:life_log/features/photo/domain/entities/photo_entry.dart';
 import 'package:life_log/features/photo/domain/repositories/photo_repository_port.dart';
 import 'package:life_log/features/project/application/create_project_entry.dart';
@@ -157,8 +155,6 @@ void main() {
       ]);
       final deleteProject = DeleteProjectEntry(
         repository: projectRepository,
-        loadPhotoEntries: LoadPhotoEntries(photoRepository),
-        deletePhotoEntries: DeletePhotoEntries(photoRepository),
         loadEvidenceEntries: LoadEvidenceEntries(evidenceRepository),
         deleteEvidenceEntry: DeleteEvidenceEntry(evidenceRepository),
         loadExpenseRecordEntries: LoadExpenseRecordEntries(expenseRepository),
@@ -170,7 +166,7 @@ void main() {
       final result = await deleteProject(_entry(id: 1, name: 'Alpha'));
 
       expect(result.failureOrNull, isNull);
-      expect(photoRepository.deletedIds, [10]);
+      expect(photoRepository.deletedIds, isEmpty);
       expect(evidenceRepository.deletedIds, [20]);
       expect(expenseRepository.deletedIds, [30]);
       expect(workLogRepository.savedEntries.single.projectName, isNull);
@@ -188,8 +184,7 @@ void main() {
         'lib/features/project/project_feature_di.dart',
       ).readAsStringSync();
 
-      expect(source, contains('LoadPhotoEntries'));
-      expect(source, contains('DeletePhotoEntries'));
+      expect(source, isNot(contains('DeletePhotoEntries')));
       expect(source, contains('LoadExpenseRecordEntries'));
       expect(source, contains('DeleteExpenseRecordEntry'));
       expect(source, contains('LoadProjectWorkLogTrips'));
@@ -378,6 +373,27 @@ final class _ProjectCubitRepository implements ProjectRepositoryPort {
         if (item.id == entry.id) entry else item,
     ];
     return entry;
+  }
+
+  @override
+  Future<ProjectEntry> saveCoverPath(
+    ProjectEntry entry, {
+    required String? localCoverPath,
+    required String? coverImagePath,
+  }) async {
+    final updated = ProjectEntry(
+      id: entry.id,
+      syncId: entry.syncId,
+      name: entry.name,
+      status: entry.status,
+      stageNames: entry.stageNames,
+      localCoverPath: localCoverPath,
+      coverImagePath: coverImagePath,
+    );
+    entries = [
+      for (final item in entries) item.id == entry.id ? updated : item,
+    ];
+    return updated;
   }
 
   @override

@@ -217,7 +217,7 @@ void main() {
         expect(moreSource, contains('应用设置'));
 
         expect(moreSource, contains('ProfileView'));
-        expect(moreSource, contains('SyncCenterView'));
+        expect(moreSource, isNot(contains('SyncCenterView')));
         expect(moreSource, contains('SubscriptionView'));
         expect(moreSource, contains('TimelineView'));
         expect(moreSource, contains('StatisticsView'));

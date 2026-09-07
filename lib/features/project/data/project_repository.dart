@@ -84,6 +84,12 @@ class ProjectRepository {
     }
   }
 
+  Future<Project> saveLocalProjectCover(Project project) async {
+    final saved = await _localDataSource.updateProjectCover(project);
+    if (saved == null) throw StateError('Project not found: ${project.name}');
+    return saved;
+  }
+
   Future<void> deleteProject(Project project) async {
     final deleted = await _localDataSource.markProjectDeleted(project.id);
     if (deleted == null) return;

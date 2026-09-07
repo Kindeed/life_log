@@ -4,8 +4,6 @@ import 'package:life_log/features/evidence/application/delete_evidence_entry.dar
 import 'package:life_log/features/evidence/application/load_evidence_entries.dart';
 import 'package:life_log/features/expense/application/delete_expense_record_entry.dart';
 import 'package:life_log/features/expense/application/load_expense_record_entries.dart';
-import 'package:life_log/features/photo/application/delete_photo_entries.dart';
-import 'package:life_log/features/photo/application/load_photo_entries.dart';
 import 'package:life_log/features/project/domain/entities/project_entry.dart';
 import 'package:life_log/features/project/domain/repositories/project_repository_port.dart';
 import 'package:life_log/features/work_log/application/load_project_work_log_trips.dart';
@@ -13,8 +11,6 @@ import 'package:life_log/features/work_log/application/save_work_log_entry.dart'
 
 final class DeleteProjectEntry {
   final ProjectRepositoryPort _repository;
-  final LoadPhotoEntries _loadPhotoEntries;
-  final DeletePhotoEntries _deletePhotoEntries;
   final LoadEvidenceEntries _loadEvidenceEntries;
   final DeleteEvidenceEntry _deleteEvidenceEntry;
   final LoadExpenseRecordEntries _loadExpenseRecordEntries;
@@ -24,8 +20,6 @@ final class DeleteProjectEntry {
 
   const DeleteProjectEntry({
     required ProjectRepositoryPort repository,
-    required LoadPhotoEntries loadPhotoEntries,
-    required DeletePhotoEntries deletePhotoEntries,
     required LoadEvidenceEntries loadEvidenceEntries,
     required DeleteEvidenceEntry deleteEvidenceEntry,
     required LoadExpenseRecordEntries loadExpenseRecordEntries,
@@ -33,8 +27,6 @@ final class DeleteProjectEntry {
     required LoadProjectWorkLogTrips loadProjectWorkLogTrips,
     required SaveWorkLogEntry saveWorkLogEntry,
   }) : _repository = repository,
-       _loadPhotoEntries = loadPhotoEntries,
-       _deletePhotoEntries = deletePhotoEntries,
        _loadEvidenceEntries = loadEvidenceEntries,
        _deleteEvidenceEntry = deleteEvidenceEntry,
        _loadExpenseRecordEntries = loadExpenseRecordEntries,
@@ -44,14 +36,6 @@ final class DeleteProjectEntry {
 
   Future<AppResult<void>> call(ProjectEntry entry) async {
     try {
-      final photoResult = await _loadPhotoEntries();
-      final photoFailure = photoResult.failureOrNull;
-      if (photoFailure != null) {
-        throw photoFailure;
-      }
-      final photos = photoResult.valueOrNull!
-          .where((photo) => photo.projectName == entry.name)
-          .toList();
       final evidenceResult = await _loadEvidenceEntries();
       final evidenceFailure = evidenceResult.failureOrNull;
       if (evidenceFailure != null) {
@@ -75,13 +59,8 @@ final class DeleteProjectEntry {
       }
       final trips = tripResult.valueOrNull!;
 
-      if (photos.isNotEmpty) {
-        final result = await _deletePhotoEntries(photos);
-        final failure = result.failureOrNull;
-        if (failure != null) {
-          throw failure;
-        }
-      }
+      // Project deletion must preserve local-only PhotoItem records and files.
+      // Photos are intentionally left unlinked rather than deleted.
       for (final item in evidence) {
         final result = await _deleteEvidenceEntry(item.id);
         final failure = result.failureOrNull;

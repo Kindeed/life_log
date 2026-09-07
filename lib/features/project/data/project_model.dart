@@ -27,6 +27,12 @@ class Project {
 
   late DateTime createdAt;
   late DateTime updatedAt;
+
+  /// App-private local cover copy; never included in sync payloads.
+  String? localCoverPath;
+
+  /// Optional local photo path used when the cover comes from a project photo.
+  String? coverImagePath;
 }
 
 enum ProjectStatus { active, archived }

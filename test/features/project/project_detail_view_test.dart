@@ -125,9 +125,9 @@ void main() {
         expect(find.widgetWithText(Tab, '费用'), findsOneWidget);
 
         // 验证快速操作胶囊
-        expect(find.text('拍照片'), findsOneWidget);
-        expect(find.text('记费用'), findsOneWidget);
-        expect(find.text('加凭证'), findsOneWidget);
+        expect(find.text('添加照片'), findsOneWidget);
+        expect(find.text('记录支出'), findsOneWidget);
+        expect(find.text('添加凭证'), findsOneWidget);
       },
     );
 
@@ -455,7 +455,7 @@ void main() {
       expect(find.byType(ProjectDetailView), findsOneWidget);
       expect(find.text('兼容项目'), findsOneWidget);
       expect(find.text('动态'), findsOneWidget);
-      expect(find.text('拍照片'), findsOneWidget);
+      expect(find.text('添加照片'), findsOneWidget);
     });
   });
 }
@@ -497,6 +497,25 @@ final class _FakeProjectRepository implements ProjectRepositoryPort {
     ];
     _controller.add(null);
     return entry;
+  }
+
+  @override
+  Future<ProjectEntry> saveCoverPath(
+    ProjectEntry entry, {
+    required String? localCoverPath,
+    required String? coverImagePath,
+  }) async {
+    return saveEntry(
+      ProjectEntry(
+        id: entry.id,
+        syncId: entry.syncId,
+        name: entry.name,
+        status: entry.status,
+        stageNames: entry.stageNames,
+        localCoverPath: localCoverPath,
+        coverImagePath: coverImagePath,
+      ),
+    );
   }
 
   @override

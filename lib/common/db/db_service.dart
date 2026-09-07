@@ -1452,6 +1452,20 @@ class DbService {
     });
   }
 
+  /// Saves local-only cover metadata without changing sync dirty state.
+  Future<Project?> updateProjectCover(Project project) async {
+    return await isar.writeTxn(() async {
+      final existing = await isar.projects.get(project.id);
+      if (existing == null || !_isVisibleToCurrentUser(existing.ownerUserId)) {
+        return null;
+      }
+      existing.localCoverPath = project.localCoverPath;
+      existing.coverImagePath = project.coverImagePath;
+      await isar.projects.put(existing);
+      return existing;
+    });
+  }
+
   Future<Project> ensureProject(String name, {bool syncable = false}) async {
     final safeName = name.trim().isEmpty ? 'DefaultProject' : name.trim();
     for (final project in await getAllProjects()) {
