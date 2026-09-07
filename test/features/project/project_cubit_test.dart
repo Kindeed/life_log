@@ -155,6 +155,7 @@ void main() {
       ]);
       final deleteProject = DeleteProjectEntry(
         repository: projectRepository,
+        photoRepository: photoRepository,
         loadEvidenceEntries: LoadEvidenceEntries(evidenceRepository),
         deleteEvidenceEntry: DeleteEvidenceEntry(evidenceRepository),
         loadExpenseRecordEntries: LoadExpenseRecordEntries(expenseRepository),
@@ -167,6 +168,22 @@ void main() {
 
       expect(result.failureOrNull, isNull);
       expect(photoRepository.deletedIds, isEmpty);
+      expect(
+        photoRepository.photos.singleWhere((photo) => photo.id == 10).projectId,
+        isNull,
+      );
+      expect(
+        photoRepository.photos
+            .singleWhere((photo) => photo.id == 10)
+            .projectName,
+        isNull,
+      );
+      expect(
+        photoRepository.photos
+            .singleWhere((photo) => photo.id == 11)
+            .projectName,
+        'Beta',
+      );
       expect(evidenceRepository.deletedIds, [20]);
       expect(expenseRepository.deletedIds, [30]);
       expect(workLogRepository.savedEntries.single.projectName, isNull);
@@ -458,6 +475,36 @@ final class _ProjectPhotoRepository implements PhotoRepositoryPort {
 
   @override
   Future<List<PhotoEntry>> getAllEntries() async => photos;
+
+  @override
+  Future<int> unlinkEntriesFromProject({
+    required int projectId,
+    required String projectName,
+  }) async {
+    for (final photo in photos.where(
+      (photo) =>
+          photo.projectId == projectId || photo.projectName == projectName,
+    )) {
+      final index = photos.indexOf(photo);
+      photos[index] = PhotoEntry(
+        id: photo.id,
+        ownerUserId: photo.ownerUserId,
+        createdAt: photo.createdAt,
+        capturedAt: photo.capturedAt,
+        capturedAtSource: photo.capturedAtSource,
+        gpsLatitude: photo.gpsLatitude,
+        gpsLongitude: photo.gpsLongitude,
+        fileName: photo.fileName,
+        filePath: photo.filePath,
+        description: photo.description,
+        deviceName: photo.deviceName,
+        projectName: null,
+        projectId: null,
+        dateIndexed: photo.dateIndexed,
+      );
+    }
+    return photos.where((photo) => photo.projectName == null).length;
+  }
 
   @override
   Future<void> deleteEntries(List<PhotoEntry> itemsToDelete) async {

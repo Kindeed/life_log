@@ -94,6 +94,16 @@ class PhotoRepository {
     return photoItem;
   }
 
+  Future<int> unlinkPhotosFromProject({
+    required int projectId,
+    required String projectName,
+  }) {
+    return _localDataSource.unlinkPhotosFromProject(
+      projectId: projectId,
+      projectName: projectName,
+    );
+  }
+
   Future<void> deletePhotos(List<PhotoItem> itemsToDelete) async {
     for (var photo in itemsToDelete) {
       final currentPhoto = await _localDataSource.getPhoto(photo.id);

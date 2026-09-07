@@ -4,6 +4,7 @@ import 'package:life_log/features/evidence/application/delete_evidence_entry.dar
 import 'package:life_log/features/evidence/application/load_evidence_entries.dart';
 import 'package:life_log/features/expense/application/delete_expense_record_entry.dart';
 import 'package:life_log/features/expense/application/load_expense_record_entries.dart';
+import 'package:life_log/features/photo/domain/repositories/photo_repository_port.dart';
 import 'package:life_log/features/project/domain/entities/project_entry.dart';
 import 'package:life_log/features/project/domain/repositories/project_repository_port.dart';
 import 'package:life_log/features/work_log/application/load_project_work_log_trips.dart';
@@ -11,6 +12,7 @@ import 'package:life_log/features/work_log/application/save_work_log_entry.dart'
 
 final class DeleteProjectEntry {
   final ProjectRepositoryPort _repository;
+  final PhotoRepositoryPort _photoRepository;
   final LoadEvidenceEntries _loadEvidenceEntries;
   final DeleteEvidenceEntry _deleteEvidenceEntry;
   final LoadExpenseRecordEntries _loadExpenseRecordEntries;
@@ -20,6 +22,7 @@ final class DeleteProjectEntry {
 
   const DeleteProjectEntry({
     required ProjectRepositoryPort repository,
+    required PhotoRepositoryPort photoRepository,
     required LoadEvidenceEntries loadEvidenceEntries,
     required DeleteEvidenceEntry deleteEvidenceEntry,
     required LoadExpenseRecordEntries loadExpenseRecordEntries,
@@ -27,6 +30,7 @@ final class DeleteProjectEntry {
     required LoadProjectWorkLogTrips loadProjectWorkLogTrips,
     required SaveWorkLogEntry saveWorkLogEntry,
   }) : _repository = repository,
+       _photoRepository = photoRepository,
        _loadEvidenceEntries = loadEvidenceEntries,
        _deleteEvidenceEntry = deleteEvidenceEntry,
        _loadExpenseRecordEntries = loadExpenseRecordEntries,
@@ -36,6 +40,10 @@ final class DeleteProjectEntry {
 
   Future<AppResult<void>> call(ProjectEntry entry) async {
     try {
+      await _photoRepository.unlinkEntriesFromProject(
+        projectId: entry.id,
+        projectName: entry.name,
+      );
       final evidenceResult = await _loadEvidenceEntries();
       final evidenceFailure = evidenceResult.failureOrNull;
       if (evidenceFailure != null) {
