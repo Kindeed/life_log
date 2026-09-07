@@ -1,7 +1,20 @@
 # ADR 0001: LifeLog Architecture Modernization Roadmap
 
 Date: 2026-06-21
-Status: accepted
+Status: accepted; partially superseded by ADR 0002
+
+## Supersession
+
+[ADR 0002: Work-log-first reconstruction](0002-worklog-first-reconstruction.md)
+is the approved reconstruction direction. It supersedes this ADR's
+one-work-log-per-day rule and any fixed navigation/layer-count requirement.
+Multiple same-day work-log types are intentional; the target navigation is
+工时 / 项目 / 更多, not a claim that the current four-tab shell has changed.
+Do not restore old navigation to satisfy historical requirements.
+The local-only photo rule remains a hard constraint and is not superseded.
+
+The original decision and implementation order below are retained as historical
+context where superseded; they are not evidence of completed reconstruction.
 
 ## Context
 
@@ -34,7 +47,8 @@ that boundary.
 - Keep photos local-only. Do not add `syncId`, `remoteId`, `isDirty`,
   `remoteVersion`, `deletedAt`, `pendingDelete`, `projectSyncId`, or any other
   cloud-sync field to `PhotoItem`.
-- Keep the current one-work-log-per-day product behavior. A multi-entry work-log
+- **Historical — superseded by ADR 0002:** Keep the current one-work-log-per-day
+  product behavior. A multi-entry work-log
   model requires a separate ADR with migration, UI, statistics, and rollback
   strategy.
 - Defer hot update integration until sync protocol versioning, migration

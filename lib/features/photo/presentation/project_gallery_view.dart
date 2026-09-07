@@ -32,10 +32,16 @@ import 'package:life_log/common/widgets/app_button.dart';
 import 'package:life_log/common/widgets/app_floating_action_pill.dart';
 import 'package:life_log/common/widgets/app_safe_bottom_bar.dart';
 import 'package:life_log/features/photo/presentation/photo_local_ui.dart';
+import 'package:life_log/features/project/presentation/project_detail_view.dart';
 
 class ProjectGalleryView extends StatefulWidget {
   final String projectName;
-  const ProjectGalleryView({super.key, required this.projectName});
+  final bool useLegacyView;
+  const ProjectGalleryView({
+    super.key,
+    required this.projectName,
+    this.useLegacyView = false,
+  });
 
   @override
   State<ProjectGalleryView> createState() => _ProjectGalleryViewState();
@@ -57,6 +63,7 @@ class _ProjectGalleryViewState extends State<ProjectGalleryView>
   @override
   void initState() {
     super.initState();
+    if (!widget.useLegacyView) return;
     projectCubit = serviceLocator<ProjectCubit>()..start();
     photoCubit = serviceLocator<PhotoCubit>()..start();
     evidenceCubit = serviceLocator<EvidenceCubit>()..start();
@@ -68,17 +75,23 @@ class _ProjectGalleryViewState extends State<ProjectGalleryView>
 
   @override
   void dispose() {
-    _tabController.removeListener(_handleTabChanged);
-    _tabController.dispose();
-    projectCubit.close();
-    photoCubit.close();
-    evidenceCubit.close();
-    expenseCubit.close();
+    if (widget.useLegacyView) {
+      _tabController.removeListener(_handleTabChanged);
+      _tabController.dispose();
+      projectCubit.close();
+      photoCubit.close();
+      evidenceCubit.close();
+      expenseCubit.close();
+    }
     super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
+    if (!widget.useLegacyView) {
+      return ProjectDetailView(projectName: widget.projectName);
+    }
+
     final theme = Theme.of(context);
     final textPrimary = theme.colorScheme.onSurface;
     final textSecondary = theme.colorScheme.onSurfaceVariant;

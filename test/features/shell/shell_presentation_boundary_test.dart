@@ -72,7 +72,7 @@ void main() {
       },
     );
 
-    test('exposes Work, Subscription, Project, and Settings destinations', () {
+    test('exposes Work, Project, and More destinations', () {
       final view = File(
         'lib/features/shell/presentation/tabs_view.dart',
       ).readAsStringSync();
@@ -82,7 +82,7 @@ void main() {
 
       expect(
         TabsDestination.values.map((destination) => destination.name).toList(),
-        ['work', 'subscription', 'project', 'settings'],
+        ['work', 'project', 'more'],
       );
       expect(
         view,
@@ -93,23 +93,19 @@ void main() {
       expect(
         view,
         contains(
-          'package:life_log/features/subscription/presentation/subscription_view.dart',
+          'package:life_log/features/photo/presentation/photo_view.dart',
         ),
       );
       expect(
         view,
-        contains(
-          'package:life_log/features/profile/presentation/profile_view.dart',
-        ),
+        contains('package:life_log/features/more/presentation/more_view.dart'),
       );
       expect(view, contains('_KeepAliveTabPage(child: WorkLogView())'));
-      expect(view, contains('_KeepAliveTabPage(child: SubscriptionView())'));
       expect(view, contains('_KeepAliveTabPage(child: PhotoView())'));
-      expect(view, contains('_KeepAliveTabPage(child: ProfileView())'));
+      expect(view, contains('_KeepAliveTabPage(child: MoreView())'));
       expect(view, contains("label: '工时'"));
-      expect(view, contains("label: '订阅'"));
       expect(view, contains("label: '项目'"));
-      expect(view, contains("label: '设置'"));
+      expect(view, contains("label: '更多'"));
       expect(view, isNot(contains("label: '今天'")));
       expect(view, isNot(contains("label: '记录'")));
       expect(view, isNot(contains("label: '财务'")));
@@ -121,7 +117,7 @@ void main() {
     });
 
     test(
-      'uses Settings as the primary profile entry without project shortcut',
+      'uses More tab as the primary profile and settings entry without project shortcut',
       () {
         final action = File(
           'lib/features/shell/presentation/profile_action_button.dart',
@@ -138,10 +134,36 @@ void main() {
         expect(actionSource, contains('class ProfileActionButton'));
         expect(actionSource, contains('ProfileView'));
         expect(actionSource, contains('Navigator.of(context).push'));
-        expect(tabsView, contains('_KeepAliveTabPage(child: ProfileView())'));
+        expect(tabsView, contains('_KeepAliveTabPage(child: MoreView())'));
         expect(photoView, isNot(contains('ProfileActionButton')));
       },
     );
+
+    test('TabsController switches between work, project, and more', () {
+      final controller = TabsController();
+      expect(controller.currentIndex, 0);
+
+      controller.goToProject();
+      expect(controller.currentIndex, 1);
+
+      controller.goToMore();
+      expect(controller.currentIndex, 2);
+
+      controller.goToWork();
+      expect(controller.currentIndex, 0);
+
+      controller.goTo(TabsDestination.subscription);
+      expect(controller.currentIndex, 2);
+
+      controller.goTo(TabsDestination.settings);
+      expect(controller.currentIndex, 2);
+
+      controller.changePage(99);
+      expect(controller.currentIndex, 2);
+
+      controller.changePage(-10);
+      expect(controller.currentIndex, 0);
+    });
 
     test('owns tab state without GetX presentation state coupling', () {
       final controller = File(
@@ -156,7 +178,11 @@ void main() {
       final profileView = File(
         'lib/features/profile/presentation/profile_view.dart',
       ).readAsStringSync();
-      final combined = '$controller\n$view\n$todayView\n$profileView';
+      final moreView = File(
+        'lib/features/more/presentation/more_view.dart',
+      ).readAsStringSync();
+      final combined =
+          '$controller\n$view\n$todayView\n$profileView\n$moreView';
 
       expect(combined, isNot(contains("package:get/get.dart")));
       expect(combined, isNot(contains('Get.find')));
@@ -167,5 +193,42 @@ void main() {
       expect(view, contains('AnimatedBuilder'));
       expect(view, contains('TabsScope('));
     });
+
+    test(
+      'MoreView aggregates personal, finance, tools, and settings entries',
+      () {
+        final diFile = File('lib/features/more/more_feature_di.dart');
+        final moreViewFile = File(
+          'lib/features/more/presentation/more_view.dart',
+        );
+
+        expect(diFile.existsSync(), isTrue);
+        expect(moreViewFile.existsSync(), isTrue);
+
+        final diSource = diFile.readAsStringSync();
+        final moreSource = moreViewFile.readAsStringSync();
+
+        expect(diSource, contains('configureMoreFeatureDependencies'));
+
+        expect(moreSource, contains('class MoreView'));
+        expect(moreSource, contains('个人与账户'));
+        expect(moreSource, contains('生活与记账'));
+        expect(moreSource, contains('工具箱'));
+        expect(moreSource, contains('应用设置'));
+
+        expect(moreSource, contains('ProfileView'));
+        expect(moreSource, contains('SyncCenterView'));
+        expect(moreSource, contains('SubscriptionView'));
+        expect(moreSource, contains('TimelineView'));
+        expect(moreSource, contains('StatisticsView'));
+        expect(moreSource, contains('TelemetryCalcView'));
+        expect(moreSource, contains('AppearanceView'));
+        expect(moreSource, contains('DataManagementView'));
+        expect(moreSource, contains('AboutView'));
+
+        expect(moreSource, isNot(contains("package:get/get.dart")));
+        expect(moreSource, isNot(contains('Get.')));
+      },
+    );
   });
 }

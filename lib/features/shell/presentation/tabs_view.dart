@@ -1,11 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:life_log/common/theme/app_motion.dart';
 import 'package:life_log/core/di/service_locator.dart';
+import 'package:life_log/features/more/presentation/more_view.dart';
 import 'package:life_log/features/photo/presentation/photo_view.dart';
-import 'package:life_log/features/profile/presentation/profile_view.dart';
-import 'package:life_log/features/subscription/presentation/subscription_view.dart';
 import 'package:life_log/features/work_log/presentation/work_log_view.dart';
 import 'tabs_controller.dart';
+
+// Note: Secondary tabs such as SubscriptionView() (historical label: '订阅')
+// are now accessible under MoreView.
 
 class TabsView extends StatefulWidget {
   const TabsView({super.key});
@@ -25,19 +27,14 @@ class _TabsViewState extends State<TabsView> {
       icon: Icons.work_history_outlined,
     ),
     _TabDestination(
-      label: '订阅',
-      selectedIcon: Icons.subscriptions_rounded,
-      icon: Icons.subscriptions_outlined,
-    ),
-    _TabDestination(
       label: '项目',
       selectedIcon: Icons.folder_rounded,
       icon: Icons.folder_outlined,
     ),
     _TabDestination(
-      label: '设置',
-      selectedIcon: Icons.settings_rounded,
-      icon: Icons.settings_outlined,
+      label: '更多',
+      selectedIcon: Icons.more_horiz_rounded,
+      icon: Icons.more_horiz_outlined,
     ),
   ];
 
@@ -89,9 +86,8 @@ class _TabsViewState extends State<TabsView> {
                         onPageChanged: controller.changePage,
                         children: const [
                           _KeepAliveTabPage(child: WorkLogView()),
-                          _KeepAliveTabPage(child: SubscriptionView()),
                           _KeepAliveTabPage(child: PhotoView()),
-                          _KeepAliveTabPage(child: ProfileView()),
+                          _KeepAliveTabPage(child: MoreView()),
                         ],
                       ),
                     ),
