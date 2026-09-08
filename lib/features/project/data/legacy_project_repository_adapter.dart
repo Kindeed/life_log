@@ -32,8 +32,28 @@ final class LegacyProjectRepositoryAdapter implements ProjectRepositoryPort {
     project
       ..name = entry.name
       ..status = entry.status.toProjectStatus()
-      ..stageNames = normalizedProjectStageNames(entry.stageNames);
+      ..stageNames = normalizedProjectStageNames(entry.stageNames)
+      ..localCoverPath = entry.localCoverPath
+      ..coverImagePath = entry.coverImagePath;
     final saved = await _repository.saveProject(project);
+    return saved.toProjectEntry();
+  }
+
+  @override
+  Future<ProjectEntry> saveCoverPath(
+    ProjectEntry entry, {
+    required String? localCoverPath,
+    required String? coverImagePath,
+  }) async {
+    final project = await _repository.findProject(entry.id, entry.name);
+    if (project == null) {
+      throw StateError('Project not found: ${entry.name}');
+    }
+    project
+      ..localCoverPath = localCoverPath
+      ..coverImagePath = coverImagePath;
+    // Cover metadata is local-only and must not mark the project dirty for sync.
+    final saved = await _repository.saveLocalProjectCover(project);
     return saved.toProjectEntry();
   }
 
@@ -68,6 +88,8 @@ extension ProjectEntryMapper on Project {
       name: name,
       status: status.toProjectEntryStatus(),
       stageNames: List<String>.unmodifiable(stageNames),
+      localCoverPath: localCoverPath,
+      coverImagePath: coverImagePath,
     );
   }
 }

@@ -8,6 +8,31 @@ final class SaveProjectEntry {
 
   const SaveProjectEntry(this._repository);
 
+  Future<AppResult<ProjectEntry>> saveCoverPath(
+    ProjectEntry entry, {
+    required String? localCoverPath,
+    required String? coverImagePath,
+  }) async {
+    try {
+      return AppResult.success(
+        await _repository.saveCoverPath(
+          entry,
+          localCoverPath: localCoverPath,
+          coverImagePath: coverImagePath,
+        ),
+      );
+    } catch (error, stackTrace) {
+      return AppResult.failure(
+        AppFailure(
+          code: 'project/save-cover',
+          message: error.toString(),
+          cause: error,
+          stackTrace: stackTrace,
+        ),
+      );
+    }
+  }
+
   Future<AppResult<ProjectEntry>> call(ProjectEntry entry) async {
     try {
       return AppResult.success(await _repository.saveEntry(entry));

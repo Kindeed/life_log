@@ -21,6 +21,7 @@ import 'package:life_log/features/work_log/presentation/work_log_editor_launcher
 import 'package:life_log/features/work_log/presentation/work_log_today_cubit.dart';
 import 'package:life_log/features/shell/presentation/profile_action_button.dart';
 import 'package:life_log/features/shell/presentation/tabs_controller.dart';
+import 'package:life_log/features/more/presentation/quick_action_contract.dart';
 
 class TodayView extends StatelessWidget {
   const TodayView({super.key});
@@ -388,20 +389,24 @@ class _QuickActions extends StatelessWidget {
         spacing: 8.w,
         runSpacing: 8.h,
         children: [
-          _action('工时', Icons.work_history_rounded, () {
-            openWorkLogEditorPage(
-              context,
-              selectedDate: today,
-              existingEntry: existingTodayEntry,
-              onSavedOrDeleted: onWorkLogChanged,
-            );
-          }),
           _action(
-            '支出',
+            QuickActionLabels.recordWorkLog,
+            Icons.work_history_rounded,
+            () {
+              openWorkLogEditorPage(
+                context,
+                selectedDate: today,
+                existingEntry: existingTodayEntry,
+                onSavedOrDeleted: onWorkLogChanged,
+              );
+            },
+          ),
+          _action(
+            QuickActionLabels.recordExpense,
             Icons.payments_rounded,
             () => _showExpenseActions(context),
           ),
-          _action('凭证', Icons.attach_file_rounded, () {
+          _action(QuickActionLabels.addEvidence, Icons.attach_file_rounded, () {
             showEvidenceAddActions(
               context,
               galleryTitle: '导入截图',

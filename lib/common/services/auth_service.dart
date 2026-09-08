@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:flutter/foundation.dart';
+import 'package:get_storage/get_storage.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../../common/services/log_service.dart';
 
@@ -112,9 +113,53 @@ class AuthService extends ChangeNotifier {
     _sessionExpiredHandler?.call();
   }
 
+  static const _sessionEpochKey = 'auth.sessionEpoch';
+  static const _lastUserKey = 'auth.lastUserId';
+  int _sessionEpoch = 0;
+
+  int get sessionEpoch {
+    try {
+      return GetStorage().read<int>(_sessionEpochKey) ?? _sessionEpoch;
+    } catch (_) {
+      return _sessionEpoch;
+    }
+  }
+
+  @visibleForTesting
+  void debugSetSessionEpoch(int epoch) {
+    _sessionEpoch = epoch;
+    try {
+      GetStorage().write(_sessionEpochKey, epoch);
+    } catch (_) {}
+  }
+
   void _setCurrentUser(User? user) {
     if (currentUser.value == user) return;
+    final oldUser = currentUser.value;
     currentUser.value = user;
+
+    try {
+      final storage = GetStorage();
+      final lastUserId = storage.read<String>(_lastUserKey);
+      final newUserId = user?.id;
+      if (lastUserId != newUserId) {
+        final currentEpoch = storage.read<int>(_sessionEpochKey) ?? 0;
+        _sessionEpoch = currentEpoch + 1;
+        storage.write(_sessionEpochKey, _sessionEpoch);
+        if (newUserId != null) {
+          storage.write(_lastUserKey, newUserId);
+        } else {
+          storage.remove(_lastUserKey);
+        }
+      } else {
+        _sessionEpoch = storage.read<int>(_sessionEpochKey) ?? 0;
+      }
+    } catch (_) {
+      if (oldUser?.id != user?.id) {
+        _sessionEpoch++;
+      }
+    }
+
     notifyListeners();
   }
 

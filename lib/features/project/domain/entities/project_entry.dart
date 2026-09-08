@@ -8,6 +8,8 @@ final class ProjectEntry extends Equatable {
   final String name;
   final ProjectEntryStatus status;
   final List<String> stageNames;
+  final String? localCoverPath;
+  final String? coverImagePath;
 
   const ProjectEntry({
     required this.id,
@@ -15,12 +17,22 @@ final class ProjectEntry extends Equatable {
     required this.name,
     required this.status,
     this.stageNames = const <String>[],
+    this.localCoverPath,
+    this.coverImagePath,
   });
 
   String get label => status.label;
 
   @override
-  List<Object?> get props => [id, syncId, name, status, stageNames];
+  List<Object?> get props => [
+    id,
+    syncId,
+    name,
+    status,
+    stageNames,
+    localCoverPath,
+    coverImagePath,
+  ];
 }
 
 extension ProjectEntryStatusLabel on ProjectEntryStatus {

@@ -17,58 +17,68 @@ const ProjectSchema = CollectionSchema(
   name: r'Project',
   id: 3302999628838485849,
   properties: {
-    r'createdAt': PropertySchema(
+    r'coverImagePath': PropertySchema(
       id: 0,
+      name: r'coverImagePath',
+      type: IsarType.string,
+    ),
+    r'createdAt': PropertySchema(
+      id: 1,
       name: r'createdAt',
       type: IsarType.dateTime,
     ),
     r'deletedAt': PropertySchema(
-      id: 1,
+      id: 2,
       name: r'deletedAt',
       type: IsarType.dateTime,
     ),
-    r'isDirty': PropertySchema(id: 2, name: r'isDirty', type: IsarType.bool),
-    r'name': PropertySchema(id: 3, name: r'name', type: IsarType.string),
-    r'ownerUserId': PropertySchema(
+    r'isDirty': PropertySchema(id: 3, name: r'isDirty', type: IsarType.bool),
+    r'localCoverPath': PropertySchema(
       id: 4,
+      name: r'localCoverPath',
+      type: IsarType.string,
+    ),
+    r'name': PropertySchema(id: 5, name: r'name', type: IsarType.string),
+    r'ownerUserId': PropertySchema(
+      id: 6,
       name: r'ownerUserId',
       type: IsarType.string,
     ),
     r'pendingDelete': PropertySchema(
-      id: 5,
+      id: 7,
       name: r'pendingDelete',
       type: IsarType.bool,
     ),
-    r'remoteId': PropertySchema(id: 6, name: r'remoteId', type: IsarType.long),
+    r'remoteId': PropertySchema(id: 8, name: r'remoteId', type: IsarType.long),
     r'remoteUpdatedAt': PropertySchema(
-      id: 7,
+      id: 9,
       name: r'remoteUpdatedAt',
       type: IsarType.dateTime,
     ),
     r'remoteVersion': PropertySchema(
-      id: 8,
+      id: 10,
       name: r'remoteVersion',
       type: IsarType.long,
     ),
     r'stageNames': PropertySchema(
-      id: 9,
+      id: 11,
       name: r'stageNames',
       type: IsarType.stringList,
     ),
     r'status': PropertySchema(
-      id: 10,
+      id: 12,
       name: r'status',
       type: IsarType.byte,
       enumMap: _ProjectstatusEnumValueMap,
     ),
-    r'syncId': PropertySchema(id: 11, name: r'syncId', type: IsarType.string),
+    r'syncId': PropertySchema(id: 13, name: r'syncId', type: IsarType.string),
     r'syncedAt': PropertySchema(
-      id: 12,
+      id: 14,
       name: r'syncedAt',
       type: IsarType.dateTime,
     ),
     r'updatedAt': PropertySchema(
-      id: 13,
+      id: 15,
       name: r'updatedAt',
       type: IsarType.dateTime,
     ),
@@ -120,6 +130,18 @@ int _projectEstimateSize(
   Map<Type, List<int>> allOffsets,
 ) {
   var bytesCount = offsets.last;
+  {
+    final value = object.coverImagePath;
+    if (value != null) {
+      bytesCount += 3 + value.length * 3;
+    }
+  }
+  {
+    final value = object.localCoverPath;
+    if (value != null) {
+      bytesCount += 3 + value.length * 3;
+    }
+  }
   bytesCount += 3 + object.name.length * 3;
   {
     final value = object.ownerUserId;
@@ -149,20 +171,22 @@ void _projectSerialize(
   List<int> offsets,
   Map<Type, List<int>> allOffsets,
 ) {
-  writer.writeDateTime(offsets[0], object.createdAt);
-  writer.writeDateTime(offsets[1], object.deletedAt);
-  writer.writeBool(offsets[2], object.isDirty);
-  writer.writeString(offsets[3], object.name);
-  writer.writeString(offsets[4], object.ownerUserId);
-  writer.writeBool(offsets[5], object.pendingDelete);
-  writer.writeLong(offsets[6], object.remoteId);
-  writer.writeDateTime(offsets[7], object.remoteUpdatedAt);
-  writer.writeLong(offsets[8], object.remoteVersion);
-  writer.writeStringList(offsets[9], object.stageNames);
-  writer.writeByte(offsets[10], object.status.index);
-  writer.writeString(offsets[11], object.syncId);
-  writer.writeDateTime(offsets[12], object.syncedAt);
-  writer.writeDateTime(offsets[13], object.updatedAt);
+  writer.writeString(offsets[0], object.coverImagePath);
+  writer.writeDateTime(offsets[1], object.createdAt);
+  writer.writeDateTime(offsets[2], object.deletedAt);
+  writer.writeBool(offsets[3], object.isDirty);
+  writer.writeString(offsets[4], object.localCoverPath);
+  writer.writeString(offsets[5], object.name);
+  writer.writeString(offsets[6], object.ownerUserId);
+  writer.writeBool(offsets[7], object.pendingDelete);
+  writer.writeLong(offsets[8], object.remoteId);
+  writer.writeDateTime(offsets[9], object.remoteUpdatedAt);
+  writer.writeLong(offsets[10], object.remoteVersion);
+  writer.writeStringList(offsets[11], object.stageNames);
+  writer.writeByte(offsets[12], object.status.index);
+  writer.writeString(offsets[13], object.syncId);
+  writer.writeDateTime(offsets[14], object.syncedAt);
+  writer.writeDateTime(offsets[15], object.updatedAt);
 }
 
 Project _projectDeserialize(
@@ -172,23 +196,25 @@ Project _projectDeserialize(
   Map<Type, List<int>> allOffsets,
 ) {
   final object = Project();
-  object.createdAt = reader.readDateTime(offsets[0]);
-  object.deletedAt = reader.readDateTimeOrNull(offsets[1]);
+  object.coverImagePath = reader.readStringOrNull(offsets[0]);
+  object.createdAt = reader.readDateTime(offsets[1]);
+  object.deletedAt = reader.readDateTimeOrNull(offsets[2]);
   object.id = id;
-  object.isDirty = reader.readBool(offsets[2]);
-  object.name = reader.readString(offsets[3]);
-  object.ownerUserId = reader.readStringOrNull(offsets[4]);
-  object.pendingDelete = reader.readBool(offsets[5]);
-  object.remoteId = reader.readLongOrNull(offsets[6]);
-  object.remoteUpdatedAt = reader.readDateTimeOrNull(offsets[7]);
-  object.remoteVersion = reader.readLong(offsets[8]);
-  object.stageNames = reader.readStringList(offsets[9]) ?? [];
+  object.isDirty = reader.readBool(offsets[3]);
+  object.localCoverPath = reader.readStringOrNull(offsets[4]);
+  object.name = reader.readString(offsets[5]);
+  object.ownerUserId = reader.readStringOrNull(offsets[6]);
+  object.pendingDelete = reader.readBool(offsets[7]);
+  object.remoteId = reader.readLongOrNull(offsets[8]);
+  object.remoteUpdatedAt = reader.readDateTimeOrNull(offsets[9]);
+  object.remoteVersion = reader.readLong(offsets[10]);
+  object.stageNames = reader.readStringList(offsets[11]) ?? [];
   object.status =
-      _ProjectstatusValueEnumMap[reader.readByteOrNull(offsets[10])] ??
+      _ProjectstatusValueEnumMap[reader.readByteOrNull(offsets[12])] ??
       ProjectStatus.active;
-  object.syncId = reader.readStringOrNull(offsets[11]);
-  object.syncedAt = reader.readDateTimeOrNull(offsets[12]);
-  object.updatedAt = reader.readDateTime(offsets[13]);
+  object.syncId = reader.readStringOrNull(offsets[13]);
+  object.syncedAt = reader.readDateTimeOrNull(offsets[14]);
+  object.updatedAt = reader.readDateTime(offsets[15]);
   return object;
 }
 
@@ -200,34 +226,38 @@ P _projectDeserializeProp<P>(
 ) {
   switch (propertyId) {
     case 0:
-      return (reader.readDateTime(offset)) as P;
+      return (reader.readStringOrNull(offset)) as P;
     case 1:
-      return (reader.readDateTimeOrNull(offset)) as P;
+      return (reader.readDateTime(offset)) as P;
     case 2:
-      return (reader.readBool(offset)) as P;
+      return (reader.readDateTimeOrNull(offset)) as P;
     case 3:
-      return (reader.readString(offset)) as P;
+      return (reader.readBool(offset)) as P;
     case 4:
       return (reader.readStringOrNull(offset)) as P;
     case 5:
-      return (reader.readBool(offset)) as P;
+      return (reader.readString(offset)) as P;
     case 6:
-      return (reader.readLongOrNull(offset)) as P;
+      return (reader.readStringOrNull(offset)) as P;
     case 7:
-      return (reader.readDateTimeOrNull(offset)) as P;
+      return (reader.readBool(offset)) as P;
     case 8:
-      return (reader.readLong(offset)) as P;
+      return (reader.readLongOrNull(offset)) as P;
     case 9:
-      return (reader.readStringList(offset) ?? []) as P;
+      return (reader.readDateTimeOrNull(offset)) as P;
     case 10:
+      return (reader.readLong(offset)) as P;
+    case 11:
+      return (reader.readStringList(offset) ?? []) as P;
+    case 12:
       return (_ProjectstatusValueEnumMap[reader.readByteOrNull(offset)] ??
               ProjectStatus.active)
           as P;
-    case 11:
-      return (reader.readStringOrNull(offset)) as P;
-    case 12:
-      return (reader.readDateTimeOrNull(offset)) as P;
     case 13:
+      return (reader.readStringOrNull(offset)) as P;
+    case 14:
+      return (reader.readDateTimeOrNull(offset)) as P;
+    case 15:
       return (reader.readDateTime(offset)) as P;
     default:
       throw IsarError('Unknown property with id $propertyId');
@@ -518,6 +548,170 @@ extension ProjectQueryWhere on QueryBuilder<Project, Project, QWhereClause> {
 
 extension ProjectQueryFilter
     on QueryBuilder<Project, Project, QFilterCondition> {
+  QueryBuilder<Project, Project, QAfterFilterCondition> coverImagePathIsNull() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(
+        const FilterCondition.isNull(property: r'coverImagePath'),
+      );
+    });
+  }
+
+  QueryBuilder<Project, Project, QAfterFilterCondition>
+  coverImagePathIsNotNull() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(
+        const FilterCondition.isNotNull(property: r'coverImagePath'),
+      );
+    });
+  }
+
+  QueryBuilder<Project, Project, QAfterFilterCondition> coverImagePathEqualTo(
+    String? value, {
+    bool caseSensitive = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(
+        FilterCondition.equalTo(
+          property: r'coverImagePath',
+          value: value,
+          caseSensitive: caseSensitive,
+        ),
+      );
+    });
+  }
+
+  QueryBuilder<Project, Project, QAfterFilterCondition>
+  coverImagePathGreaterThan(
+    String? value, {
+    bool include = false,
+    bool caseSensitive = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(
+        FilterCondition.greaterThan(
+          include: include,
+          property: r'coverImagePath',
+          value: value,
+          caseSensitive: caseSensitive,
+        ),
+      );
+    });
+  }
+
+  QueryBuilder<Project, Project, QAfterFilterCondition> coverImagePathLessThan(
+    String? value, {
+    bool include = false,
+    bool caseSensitive = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(
+        FilterCondition.lessThan(
+          include: include,
+          property: r'coverImagePath',
+          value: value,
+          caseSensitive: caseSensitive,
+        ),
+      );
+    });
+  }
+
+  QueryBuilder<Project, Project, QAfterFilterCondition> coverImagePathBetween(
+    String? lower,
+    String? upper, {
+    bool includeLower = true,
+    bool includeUpper = true,
+    bool caseSensitive = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(
+        FilterCondition.between(
+          property: r'coverImagePath',
+          lower: lower,
+          includeLower: includeLower,
+          upper: upper,
+          includeUpper: includeUpper,
+          caseSensitive: caseSensitive,
+        ),
+      );
+    });
+  }
+
+  QueryBuilder<Project, Project, QAfterFilterCondition>
+  coverImagePathStartsWith(String value, {bool caseSensitive = true}) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(
+        FilterCondition.startsWith(
+          property: r'coverImagePath',
+          value: value,
+          caseSensitive: caseSensitive,
+        ),
+      );
+    });
+  }
+
+  QueryBuilder<Project, Project, QAfterFilterCondition> coverImagePathEndsWith(
+    String value, {
+    bool caseSensitive = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(
+        FilterCondition.endsWith(
+          property: r'coverImagePath',
+          value: value,
+          caseSensitive: caseSensitive,
+        ),
+      );
+    });
+  }
+
+  QueryBuilder<Project, Project, QAfterFilterCondition> coverImagePathContains(
+    String value, {
+    bool caseSensitive = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(
+        FilterCondition.contains(
+          property: r'coverImagePath',
+          value: value,
+          caseSensitive: caseSensitive,
+        ),
+      );
+    });
+  }
+
+  QueryBuilder<Project, Project, QAfterFilterCondition> coverImagePathMatches(
+    String pattern, {
+    bool caseSensitive = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(
+        FilterCondition.matches(
+          property: r'coverImagePath',
+          wildcard: pattern,
+          caseSensitive: caseSensitive,
+        ),
+      );
+    });
+  }
+
+  QueryBuilder<Project, Project, QAfterFilterCondition>
+  coverImagePathIsEmpty() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(
+        FilterCondition.equalTo(property: r'coverImagePath', value: ''),
+      );
+    });
+  }
+
+  QueryBuilder<Project, Project, QAfterFilterCondition>
+  coverImagePathIsNotEmpty() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(
+        FilterCondition.greaterThan(property: r'coverImagePath', value: ''),
+      );
+    });
+  }
+
   QueryBuilder<Project, Project, QAfterFilterCondition> createdAtEqualTo(
     DateTime value,
   ) {
@@ -715,6 +909,170 @@ extension ProjectQueryFilter
     return QueryBuilder.apply(this, (query) {
       return query.addFilterCondition(
         FilterCondition.equalTo(property: r'isDirty', value: value),
+      );
+    });
+  }
+
+  QueryBuilder<Project, Project, QAfterFilterCondition> localCoverPathIsNull() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(
+        const FilterCondition.isNull(property: r'localCoverPath'),
+      );
+    });
+  }
+
+  QueryBuilder<Project, Project, QAfterFilterCondition>
+  localCoverPathIsNotNull() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(
+        const FilterCondition.isNotNull(property: r'localCoverPath'),
+      );
+    });
+  }
+
+  QueryBuilder<Project, Project, QAfterFilterCondition> localCoverPathEqualTo(
+    String? value, {
+    bool caseSensitive = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(
+        FilterCondition.equalTo(
+          property: r'localCoverPath',
+          value: value,
+          caseSensitive: caseSensitive,
+        ),
+      );
+    });
+  }
+
+  QueryBuilder<Project, Project, QAfterFilterCondition>
+  localCoverPathGreaterThan(
+    String? value, {
+    bool include = false,
+    bool caseSensitive = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(
+        FilterCondition.greaterThan(
+          include: include,
+          property: r'localCoverPath',
+          value: value,
+          caseSensitive: caseSensitive,
+        ),
+      );
+    });
+  }
+
+  QueryBuilder<Project, Project, QAfterFilterCondition> localCoverPathLessThan(
+    String? value, {
+    bool include = false,
+    bool caseSensitive = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(
+        FilterCondition.lessThan(
+          include: include,
+          property: r'localCoverPath',
+          value: value,
+          caseSensitive: caseSensitive,
+        ),
+      );
+    });
+  }
+
+  QueryBuilder<Project, Project, QAfterFilterCondition> localCoverPathBetween(
+    String? lower,
+    String? upper, {
+    bool includeLower = true,
+    bool includeUpper = true,
+    bool caseSensitive = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(
+        FilterCondition.between(
+          property: r'localCoverPath',
+          lower: lower,
+          includeLower: includeLower,
+          upper: upper,
+          includeUpper: includeUpper,
+          caseSensitive: caseSensitive,
+        ),
+      );
+    });
+  }
+
+  QueryBuilder<Project, Project, QAfterFilterCondition>
+  localCoverPathStartsWith(String value, {bool caseSensitive = true}) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(
+        FilterCondition.startsWith(
+          property: r'localCoverPath',
+          value: value,
+          caseSensitive: caseSensitive,
+        ),
+      );
+    });
+  }
+
+  QueryBuilder<Project, Project, QAfterFilterCondition> localCoverPathEndsWith(
+    String value, {
+    bool caseSensitive = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(
+        FilterCondition.endsWith(
+          property: r'localCoverPath',
+          value: value,
+          caseSensitive: caseSensitive,
+        ),
+      );
+    });
+  }
+
+  QueryBuilder<Project, Project, QAfterFilterCondition> localCoverPathContains(
+    String value, {
+    bool caseSensitive = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(
+        FilterCondition.contains(
+          property: r'localCoverPath',
+          value: value,
+          caseSensitive: caseSensitive,
+        ),
+      );
+    });
+  }
+
+  QueryBuilder<Project, Project, QAfterFilterCondition> localCoverPathMatches(
+    String pattern, {
+    bool caseSensitive = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(
+        FilterCondition.matches(
+          property: r'localCoverPath',
+          wildcard: pattern,
+          caseSensitive: caseSensitive,
+        ),
+      );
+    });
+  }
+
+  QueryBuilder<Project, Project, QAfterFilterCondition>
+  localCoverPathIsEmpty() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(
+        FilterCondition.equalTo(property: r'localCoverPath', value: ''),
+      );
+    });
+  }
+
+  QueryBuilder<Project, Project, QAfterFilterCondition>
+  localCoverPathIsNotEmpty() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(
+        FilterCondition.greaterThan(property: r'localCoverPath', value: ''),
       );
     });
   }
@@ -1800,6 +2158,18 @@ extension ProjectQueryLinks
     on QueryBuilder<Project, Project, QFilterCondition> {}
 
 extension ProjectQuerySortBy on QueryBuilder<Project, Project, QSortBy> {
+  QueryBuilder<Project, Project, QAfterSortBy> sortByCoverImagePath() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'coverImagePath', Sort.asc);
+    });
+  }
+
+  QueryBuilder<Project, Project, QAfterSortBy> sortByCoverImagePathDesc() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'coverImagePath', Sort.desc);
+    });
+  }
+
   QueryBuilder<Project, Project, QAfterSortBy> sortByCreatedAt() {
     return QueryBuilder.apply(this, (query) {
       return query.addSortBy(r'createdAt', Sort.asc);
@@ -1833,6 +2203,18 @@ extension ProjectQuerySortBy on QueryBuilder<Project, Project, QSortBy> {
   QueryBuilder<Project, Project, QAfterSortBy> sortByIsDirtyDesc() {
     return QueryBuilder.apply(this, (query) {
       return query.addSortBy(r'isDirty', Sort.desc);
+    });
+  }
+
+  QueryBuilder<Project, Project, QAfterSortBy> sortByLocalCoverPath() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'localCoverPath', Sort.asc);
+    });
+  }
+
+  QueryBuilder<Project, Project, QAfterSortBy> sortByLocalCoverPathDesc() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'localCoverPath', Sort.desc);
     });
   }
 
@@ -1959,6 +2341,18 @@ extension ProjectQuerySortBy on QueryBuilder<Project, Project, QSortBy> {
 
 extension ProjectQuerySortThenBy
     on QueryBuilder<Project, Project, QSortThenBy> {
+  QueryBuilder<Project, Project, QAfterSortBy> thenByCoverImagePath() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'coverImagePath', Sort.asc);
+    });
+  }
+
+  QueryBuilder<Project, Project, QAfterSortBy> thenByCoverImagePathDesc() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'coverImagePath', Sort.desc);
+    });
+  }
+
   QueryBuilder<Project, Project, QAfterSortBy> thenByCreatedAt() {
     return QueryBuilder.apply(this, (query) {
       return query.addSortBy(r'createdAt', Sort.asc);
@@ -2004,6 +2398,18 @@ extension ProjectQuerySortThenBy
   QueryBuilder<Project, Project, QAfterSortBy> thenByIsDirtyDesc() {
     return QueryBuilder.apply(this, (query) {
       return query.addSortBy(r'isDirty', Sort.desc);
+    });
+  }
+
+  QueryBuilder<Project, Project, QAfterSortBy> thenByLocalCoverPath() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'localCoverPath', Sort.asc);
+    });
+  }
+
+  QueryBuilder<Project, Project, QAfterSortBy> thenByLocalCoverPathDesc() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'localCoverPath', Sort.desc);
     });
   }
 
@@ -2130,6 +2536,17 @@ extension ProjectQuerySortThenBy
 
 extension ProjectQueryWhereDistinct
     on QueryBuilder<Project, Project, QDistinct> {
+  QueryBuilder<Project, Project, QDistinct> distinctByCoverImagePath({
+    bool caseSensitive = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addDistinctBy(
+        r'coverImagePath',
+        caseSensitive: caseSensitive,
+      );
+    });
+  }
+
   QueryBuilder<Project, Project, QDistinct> distinctByCreatedAt() {
     return QueryBuilder.apply(this, (query) {
       return query.addDistinctBy(r'createdAt');
@@ -2145,6 +2562,17 @@ extension ProjectQueryWhereDistinct
   QueryBuilder<Project, Project, QDistinct> distinctByIsDirty() {
     return QueryBuilder.apply(this, (query) {
       return query.addDistinctBy(r'isDirty');
+    });
+  }
+
+  QueryBuilder<Project, Project, QDistinct> distinctByLocalCoverPath({
+    bool caseSensitive = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addDistinctBy(
+        r'localCoverPath',
+        caseSensitive: caseSensitive,
+      );
     });
   }
 
@@ -2229,6 +2657,12 @@ extension ProjectQueryProperty
     });
   }
 
+  QueryBuilder<Project, String?, QQueryOperations> coverImagePathProperty() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addPropertyName(r'coverImagePath');
+    });
+  }
+
   QueryBuilder<Project, DateTime, QQueryOperations> createdAtProperty() {
     return QueryBuilder.apply(this, (query) {
       return query.addPropertyName(r'createdAt');
@@ -2244,6 +2678,12 @@ extension ProjectQueryProperty
   QueryBuilder<Project, bool, QQueryOperations> isDirtyProperty() {
     return QueryBuilder.apply(this, (query) {
       return query.addPropertyName(r'isDirty');
+    });
+  }
+
+  QueryBuilder<Project, String?, QQueryOperations> localCoverPathProperty() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addPropertyName(r'localCoverPath');
     });
   }
 

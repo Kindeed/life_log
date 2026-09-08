@@ -49,6 +49,17 @@ final class LegacyPhotoRepositoryAdapter implements PhotoRepositoryPort {
   }
 
   @override
+  Future<int> unlinkEntriesFromProject({
+    required int projectId,
+    required String projectName,
+  }) {
+    return _repository.unlinkPhotosFromProject(
+      projectId: projectId,
+      projectName: projectName,
+    );
+  }
+
+  @override
   Future<String?> updateEntryDescription(PhotoEntry entry, String description) {
     return _repository.updatePhotoDescription(
       _photoItemFromEntry(entry),

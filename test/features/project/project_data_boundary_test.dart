@@ -219,6 +219,11 @@ final class _ProjectLocalDataSourceFake implements ProjectLocalDataSource {
   Future<Project?> markProjectDeleted(int id) async => deletedResult;
 
   @override
+  Future<Project?> updateProjectCover(Project project) async {
+    return project;
+  }
+
+  @override
   Future<void> purgeDeletedProject(int id) async {
     purgedIds.add(id);
   }

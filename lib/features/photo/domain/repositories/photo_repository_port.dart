@@ -19,6 +19,11 @@ abstract interface class PhotoRepositoryPort {
 
   Future<void> deleteEntries(List<PhotoEntry> entries);
 
+  Future<int> unlinkEntriesFromProject({
+    required int projectId,
+    required String projectName,
+  });
+
   Future<String?> updateEntryDescription(PhotoEntry entry, String description);
 
   Future<int> exportEntries(List<PhotoEntry> entries, String targetDirectory);

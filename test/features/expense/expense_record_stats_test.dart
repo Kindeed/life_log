@@ -202,6 +202,44 @@ void main() {
       await controller.close();
     });
 
+    test(
+      'routes getExpenseRecordsByProject to the injected local seam',
+      () async {
+        final recordA = _expenseRecord(id: 1)..projectName = 'Alpha';
+        final recordB = _expenseRecord(id: 2)..projectName = 'Beta';
+        final localDataSource = _ExpenseRecordLocalDataSourceSpy(
+          storedRecords: [recordA, recordB],
+        );
+        final repository = ExpenseRecordRepository(
+          localDataSource: localDataSource,
+          syncGateway: _ExpenseRecordSyncGatewaySpy(isAvailable: false),
+        );
+
+        final result = await repository.getExpenseRecordsByProject('Alpha');
+        expect(result, [same(recordA)]);
+        expect(localDataSource.queriedProjectNames, ['Alpha']);
+      },
+    );
+
+    test(
+      'routes getExpenseRecordsByProjectId to the injected local seam',
+      () async {
+        final recordA = _expenseRecord(id: 1)..projectId = 10;
+        final recordB = _expenseRecord(id: 2)..projectId = 20;
+        final localDataSource = _ExpenseRecordLocalDataSourceSpy(
+          storedRecords: [recordA, recordB],
+        );
+        final repository = ExpenseRecordRepository(
+          localDataSource: localDataSource,
+          syncGateway: _ExpenseRecordSyncGatewaySpy(isAvailable: false),
+        );
+
+        final result = await repository.getExpenseRecordsByProjectId(10);
+        expect(result, [same(recordA)]);
+        expect(localDataSource.queriedProjectIds, [10]);
+      },
+    );
+
     test('routes saves through injected local and sync seams', () async {
       final localDataSource = _ExpenseRecordLocalDataSourceSpy();
       final syncGateway = _ExpenseRecordSyncGatewaySpy(isAvailable: true);
@@ -267,6 +305,38 @@ void main() {
       expect(record.projectName, isNull);
       expect(localDataSource.addedRecords, [same(record)]);
     });
+
+    test(
+      'U289: completely unbinds projectId, projectSyncId and projectName when projectName is cleared',
+      () async {
+        final localDataSource = _ExpenseRecordLocalDataSourceSpy();
+        final repository = ExpenseRecordRepository(
+          localDataSource: localDataSource,
+          syncGateway: _ExpenseRecordSyncGatewaySpy(isAvailable: true),
+        );
+        final recordWithSpaces = _expenseRecord()
+          ..projectId = 101
+          ..projectSyncId = 'project-sync-101'
+          ..projectName = '   ';
+
+        await repository.saveExpenseRecord(recordWithSpaces);
+
+        expect(recordWithSpaces.projectId, isNull);
+        expect(recordWithSpaces.projectSyncId, isNull);
+        expect(recordWithSpaces.projectName, isNull);
+
+        final recordWithNull = _expenseRecord()
+          ..projectId = 102
+          ..projectSyncId = 'project-sync-102'
+          ..projectName = null;
+
+        await repository.saveExpenseRecord(recordWithNull);
+
+        expect(recordWithNull.projectId, isNull);
+        expect(recordWithNull.projectSyncId, isNull);
+        expect(recordWithNull.projectName, isNull);
+      },
+    );
 
     test(
       'does not push already clean remote records after local save',
@@ -613,6 +683,8 @@ final class _ExpenseRecordLocalDataSourceSpy
   final List<ExpenseRecord> addedRecords = [];
   final List<int> markDeletedIds = [];
   final List<int> purgedIds = [];
+  final List<String> queriedProjectNames = [];
+  final List<int> queriedProjectIds = [];
   final ExpenseRecord? markedDeleted;
   final Stream<void> watchStream;
 
@@ -630,6 +702,32 @@ final class _ExpenseRecordLocalDataSourceSpy
 
   @override
   Future<List<ExpenseRecord>> getAllExpenseRecords() async => storedRecords;
+
+  @override
+  Future<List<ExpenseRecord>> getExpenseRecordsByProject(
+    String projectName,
+  ) async {
+    queriedProjectNames.add(projectName);
+    final trimmed = projectName.trim();
+    if (trimmed.isEmpty) return const [];
+    return storedRecords
+        .where(
+          (record) =>
+              record.projectName?.trim().toLowerCase() == trimmed.toLowerCase(),
+        )
+        .toList();
+  }
+
+  @override
+  Future<List<ExpenseRecord>> getExpenseRecordsByProjectId(
+    int projectId,
+  ) async {
+    queriedProjectIds.add(projectId);
+    if (projectId <= 0) return const [];
+    return storedRecords
+        .where((record) => record.projectId == projectId)
+        .toList();
+  }
 
   @override
   Future<ExpenseRecord?> markExpenseRecordDeleted(int id) async {

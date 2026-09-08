@@ -8,6 +8,10 @@ abstract interface class PhotoLocalDataSource {
   Future<void> addPhoto(PhotoItem photo);
   Future<PhotoItem?> getPhoto(int id);
   Future<void> deletePhoto(int id);
+  Future<int> unlinkPhotosFromProject({
+    required int projectId,
+    required String projectName,
+  });
 }
 
 final class DbPhotoLocalDataSource implements PhotoLocalDataSource {
@@ -31,6 +35,15 @@ final class DbPhotoLocalDataSource implements PhotoLocalDataSource {
   Future<PhotoItem?> getPhoto(int id) {
     return serviceLocator<DbService>().getPhoto(id);
   }
+
+  @override
+  Future<int> unlinkPhotosFromProject({
+    required int projectId,
+    required String projectName,
+  }) => serviceLocator<DbService>().unlinkPhotosFromProject(
+    projectId: projectId,
+    projectName: projectName,
+  );
 
   @override
   Stream<void> watchPhotos() => serviceLocator<DbService>().watchPhotos();
