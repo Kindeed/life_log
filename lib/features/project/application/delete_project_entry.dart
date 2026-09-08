@@ -46,7 +46,7 @@ final class DeleteProjectEntry {
         throw evidenceFailure;
       }
       final evidence = evidenceResult.valueOrNull!
-          .where((item) => item.projectName == entry.name)
+          .where((item) => item.projectName.trim() == entry.name.trim())
           .toList();
       final expenseResult = await _loadExpenseRecordEntries();
       final expenseFailure = expenseResult.failureOrNull;
@@ -54,7 +54,7 @@ final class DeleteProjectEntry {
         throw expenseFailure;
       }
       final records = expenseResult.valueOrNull!
-          .where((record) => record.projectName == entry.name)
+          .where((record) => record.projectName?.trim() == entry.name.trim())
           .toList();
       final tripResult = await _loadProjectWorkLogTrips(entry.name);
       final tripFailure = tripResult.failureOrNull;

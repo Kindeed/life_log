@@ -158,8 +158,19 @@ class _UnifiedTimeline extends StatelessWidget {
                           evidenceState.status == EvidenceStatus.loading ||
                           subscriptionState.status ==
                               SubscriptionReadStatus.loading;
+                      final failures = [
+                        workState.failure,
+                        expenseState.failure,
+                        evidenceState.failure,
+                        subscriptionState.failure,
+                      ].whereType<Object>().toList(growable: false);
                       if (items.isEmpty && isLoading) {
                         return const AppLoading(label: '正在加载记录');
+                      }
+                      if (items.isEmpty && failures.isNotEmpty) {
+                        return const _TimelineLoadFailure(
+                          message: '部分记录加载失败，请重试或切换到对应分类查看。',
+                        );
                       }
                       if (items.isEmpty) {
                         return const AppEmptyState(
@@ -287,6 +298,33 @@ class _UnifiedTimeline extends StatelessWidget {
           ),
         )
         .toList();
+  }
+}
+
+class _TimelineLoadFailure extends StatelessWidget {
+  final String message;
+
+  const _TimelineLoadFailure({required this.message});
+
+  @override
+  Widget build(BuildContext context) {
+    return Center(
+      child: Padding(
+        padding: const EdgeInsets.all(AppSpacing.xl),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(
+              Icons.cloud_off_rounded,
+              size: 40,
+              color: Theme.of(context).colorScheme.error,
+            ),
+            const SizedBox(height: AppSpacing.md),
+            Text(message, textAlign: TextAlign.center),
+          ],
+        ),
+      ),
+    );
   }
 }
 
