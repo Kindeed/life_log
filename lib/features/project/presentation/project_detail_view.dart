@@ -1588,20 +1588,26 @@ class _ProjectDetailViewState extends State<ProjectDetailView>
     if (!confirmed) return;
 
     final deleter = _deleteProject;
-    if (deleter != null) {
-      final result = await deleter(project);
-      final failure = result.failureOrNull;
-      if (failure != null) {
-        messenger.showSnackBar(SnackBar(content: Text(failure.message)));
-        return;
-      }
+    if (deleter == null) {
+      messenger.showSnackBar(const SnackBar(content: Text('删除项目功能暂不可用')));
+      return;
+    }
+    final result = await deleter(project);
+    if (!mounted) return;
+    final failure = result.failureOrNull;
+    if (failure != null) {
+      messenger.showSnackBar(SnackBar(content: Text(failure.message)));
+      return;
     }
 
-    await _projectCubit.loadEntries();
-    await _photoCubit.loadEntries();
-    if (mounted) {
-      Navigator.of(context).pop();
-    }
+    await Future.wait([
+      _projectCubit.loadEntries(),
+      _photoCubit.loadEntries(),
+      _evidenceCubit.loadEntries(),
+      _expenseCubit.loadEntries(),
+    ]);
+    if (!mounted) return;
+    Navigator.of(context).pop();
   }
 
   Future<void> _showProjectStagesDialog(ProjectEntry project) async {
