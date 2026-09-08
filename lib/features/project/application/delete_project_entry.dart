@@ -40,10 +40,6 @@ final class DeleteProjectEntry {
 
   Future<AppResult<void>> call(ProjectEntry entry) async {
     try {
-      await _photoRepository.unlinkEntriesFromProject(
-        projectId: entry.id,
-        projectName: entry.name,
-      );
       final evidenceResult = await _loadEvidenceEntries();
       final evidenceFailure = evidenceResult.failureOrNull;
       if (evidenceFailure != null) {
@@ -65,9 +61,13 @@ final class DeleteProjectEntry {
       if (tripFailure != null) {
         throw tripFailure;
       }
-      final trips = tripResult.valueOrNull!;
+      final trips = tripResult.valueOrNull!
+          .where((trip) => trip.projectName?.trim() == entry.name.trim())
+          .toList();
 
       // Project deletion must preserve local-only PhotoItem records and files.
+      // Unlinking is deliberately performed immediately before project deletion
+      // so a failed child cleanup leaves the photo ownership intact for retry.
       // Photos are intentionally left unlinked rather than deleted.
       for (final item in evidence) {
         final result = await _deleteEvidenceEntry(item.id);
@@ -94,6 +94,10 @@ final class DeleteProjectEntry {
         }
       }
 
+      await _photoRepository.unlinkEntriesFromProject(
+        projectId: entry.id,
+        projectName: entry.name,
+      );
       await _repository.deleteEntry(entry);
       return const AppResult.success(null);
     } catch (error, stackTrace) {

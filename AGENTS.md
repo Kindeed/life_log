@@ -13,6 +13,15 @@
   - `pendingDelete`
 - Do not extend `SyncService` / `DbService` cloud-sync protocol paths to cover photos.
 
+## Device Data Safety (Hard Constraint)
+
+- Never use `flutter install` for upgrade verification on a device containing LifeLog data; it may uninstall the existing package before installing a missing or mismatched artifact.
+- Before any device install, verify the target package with `adb shell pm list packages` and `adb shell pm path com.wzh.lifelog`.
+- Preserve application data by using only `adb install -r <apk>` after confirming the APK application ID and signing compatibility; never use `pm clear`, uninstall, or a clean install as an upgrade test.
+- Before installation, confirm a current cloud sync and/or local backup exists; if the target package is absent, stop and report that an in-place upgrade cannot be performed.
+- Treat output containing `Uninstalling`, `clear data`, `delete data`, or `reset` as a hard stop. Do not continue automatically.
+- Build/debug artifact path, package name, version code, and signature must be checked before touching a connected device.
+
 ## Change Control
 
 - If product direction changes and photos must become syncable, implementation must be gated by an explicit architecture decision document that includes:
