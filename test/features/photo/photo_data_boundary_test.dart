@@ -248,6 +248,12 @@ final class _PhotoLocalDataSourceFake implements PhotoLocalDataSource {
   }
 
   @override
+  Future<int> unlinkPhotosFromProject({
+    required int projectId,
+    required String projectName,
+  }) async => 0;
+
+  @override
   Future<List<PhotoItem>> getAllPhotos() async => photosById.values.toList();
 
   @override

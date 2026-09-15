@@ -898,6 +898,29 @@ class DbService {
     });
   }
 
+  Future<int> unlinkPhotosFromProject({
+    required int projectId,
+    required String projectName,
+  }) async {
+    final normalizedName = projectName.trim().toLowerCase();
+    return await isar.writeTxn(() async {
+      final photos = await isar.photoItems.where().findAll();
+      var changed = 0;
+      for (final photo in photos) {
+        if (!_isVisibleToCurrentUser(photo.ownerUserId)) continue;
+        final matchesId = photo.projectId == projectId;
+        final matchesName =
+            photo.projectName?.trim().toLowerCase() == normalizedName;
+        if (!matchesId && !matchesName) continue;
+        photo.projectId = null;
+        photo.projectName = null;
+        await isar.photoItems.put(photo);
+        changed++;
+      }
+      return changed;
+    });
+  }
+
   Future<void> deletePhoto(int id) async {
     await isar.writeTxn(() async {
       final photo = await isar.photoItems.get(id);
@@ -1449,6 +1472,20 @@ class DbService {
   Future<void> updateProjectRemoteId(Project project) async {
     await isar.writeTxn(() async {
       await isar.projects.put(project);
+    });
+  }
+
+  /// Saves local-only cover metadata without changing sync dirty state.
+  Future<Project?> updateProjectCover(Project project) async {
+    return await isar.writeTxn(() async {
+      final existing = await isar.projects.get(project.id);
+      if (existing == null || !_isVisibleToCurrentUser(existing.ownerUserId)) {
+        return null;
+      }
+      existing.localCoverPath = project.localCoverPath;
+      existing.coverImagePath = project.coverImagePath;
+      await isar.projects.put(existing);
+      return existing;
     });
   }
 

@@ -27,6 +27,14 @@ class ExpenseRecordRepository {
     return _localDataSource.getAllExpenseRecords();
   }
 
+  Future<List<ExpenseRecord>> getExpenseRecordsByProject(String projectName) {
+    return _localDataSource.getExpenseRecordsByProject(projectName);
+  }
+
+  Future<List<ExpenseRecord>> getExpenseRecordsByProjectId(int projectId) {
+    return _localDataSource.getExpenseRecordsByProjectId(projectId);
+  }
+
   Stream<void> watchExpenseRecords() {
     return _localDataSource.watchExpenseRecords();
   }
@@ -41,6 +49,10 @@ class ExpenseRecordRepository {
       record.projectId = project.id;
       record.projectName = project.name;
       record.projectSyncId = project.syncId;
+    } else {
+      record.projectId = null;
+      record.projectSyncId = null;
+      record.projectName = null;
     }
 
     await _localDataSource.addExpenseRecord(record);

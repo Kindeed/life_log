@@ -300,6 +300,12 @@ final class ExpenseRecordEditorCubit extends Cubit<ExpenseRecordEditorState> {
       return null;
     }
 
+    final projectName = _emptyToNull(state.projectName);
+    final hasProject = projectName != null;
+    final isSameProject =
+        hasProject &&
+        _normalizeText(state.existingEntry?.projectName) == projectName;
+
     return ExpenseRecordEntry(
       id: state.existingEntry?.id ?? 0,
       expenseDate: state.selectedDate,
@@ -307,10 +313,12 @@ final class ExpenseRecordEditorCubit extends Cubit<ExpenseRecordEditorState> {
       currency: state.currency,
       category: state.category,
       merchant: _emptyToNull(state.merchant),
-      projectId: state.existingEntry?.projectId,
-      projectSyncId: state.existingEntry?.projectSyncId,
-      projectName: _emptyToNull(state.projectName),
-      projectStageName: _emptyToNull(state.projectStageName),
+      projectId: isSameProject ? state.existingEntry?.projectId : null,
+      projectSyncId: isSameProject ? state.existingEntry?.projectSyncId : null,
+      projectName: projectName,
+      projectStageName: hasProject
+          ? _emptyToNull(state.projectStageName)
+          : null,
       tripWorkLogId: state.tripWorkLogId,
       tripWorkLogSyncId: _emptyToNull(state.tripWorkLogSyncId ?? ''),
       note: _emptyToNull(state.note),

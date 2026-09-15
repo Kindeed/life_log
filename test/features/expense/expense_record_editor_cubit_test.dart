@@ -120,6 +120,95 @@ void main() {
       },
     );
 
+    test(
+      'clearing project name unbinds projectId and projectSyncId (U289)',
+      () async {
+        final repository = _EditorRepository();
+        final existing = _entry(
+          id: 15,
+          amount: 88,
+          projectId: 77,
+          projectSyncId: 'project-sync-77',
+          projectName: '原有项目',
+          projectStageName: '设计阶段',
+        );
+        final cubit = _editor(repository: repository, existingEntry: existing);
+        addTearDown(cubit.close);
+
+        cubit.changeProjectName('   ');
+
+        await cubit.submit();
+
+        final saved = repository.savedEntries.single;
+        expect(saved.markDirty, isTrue);
+        expect(saved.entry.id, 15);
+        expect(saved.entry.projectName, isNull);
+        expect(saved.entry.projectId, isNull);
+        expect(saved.entry.projectSyncId, isNull);
+        expect(saved.entry.projectStageName, isNull);
+        expect(cubit.state.status, ExpenseRecordEditorStatus.saved);
+      },
+    );
+
+    test(
+      'retaining unchanged project name preserves projectId and projectSyncId',
+      () async {
+        final repository = _EditorRepository();
+        final existing = _entry(
+          id: 16,
+          amount: 88,
+          projectId: 77,
+          projectSyncId: 'project-sync-77',
+          projectName: '原有项目',
+          projectStageName: '设计阶段',
+        );
+        final cubit = _editor(repository: repository, existingEntry: existing);
+        addTearDown(cubit.close);
+
+        // Only change amount
+        cubit.changeAmountText('99');
+
+        await cubit.submit();
+
+        final saved = repository.savedEntries.single;
+        expect(saved.markDirty, isTrue);
+        expect(saved.entry.id, 16);
+        expect(saved.entry.amount, 99);
+        expect(saved.entry.projectName, '原有项目');
+        expect(saved.entry.projectId, 77);
+        expect(saved.entry.projectSyncId, 'project-sync-77');
+        expect(saved.entry.projectStageName, '设计阶段');
+      },
+    );
+
+    test(
+      'switching project name unbinds old projectId and projectSyncId on draft',
+      () async {
+        final repository = _EditorRepository();
+        final existing = _entry(
+          id: 17,
+          amount: 88,
+          projectId: 77,
+          projectSyncId: 'project-sync-77',
+          projectName: '原有项目',
+          projectStageName: '设计阶段',
+        );
+        final cubit = _editor(repository: repository, existingEntry: existing);
+        addTearDown(cubit.close);
+
+        cubit.changeProjectName('新项目');
+
+        await cubit.submit();
+
+        final saved = repository.savedEntries.single;
+        expect(saved.markDirty, isTrue);
+        expect(saved.entry.id, 17);
+        expect(saved.entry.projectName, '新项目');
+        expect(saved.entry.projectId, isNull);
+        expect(saved.entry.projectSyncId, isNull);
+      },
+    );
+
     test('deletes the existing entry through the delete command', () async {
       final repository = _EditorRepository();
       final cubit = _editor(
@@ -229,7 +318,10 @@ ExpenseRecordEntry _entry({
   double amount = 12,
   ExpenseRecordEntryCategory category = ExpenseRecordEntryCategory.meal,
   String? merchant,
+  int? projectId,
+  String? projectSyncId,
   String? projectName,
+  String? projectStageName,
   int? tripWorkLogId,
   String? tripWorkLogSyncId,
   String? note,
@@ -240,7 +332,10 @@ ExpenseRecordEntry _entry({
     amount: amount,
     category: category,
     merchant: merchant,
+    projectId: projectId,
+    projectSyncId: projectSyncId,
     projectName: projectName,
+    projectStageName: projectStageName,
     tripWorkLogId: tripWorkLogId,
     tripWorkLogSyncId: tripWorkLogSyncId,
     note: note,

@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:intl/intl.dart';
 import 'package:life_log/common/theme/app_radius.dart';
+import 'package:life_log/common/theme/app_spacing.dart';
 import 'package:life_log/common/theme/theme_extensions.dart';
 import 'package:life_log/common/widgets/app_date_picker.dart';
 
@@ -30,7 +31,12 @@ class CalendarHeader extends StatelessWidget {
     final theme = Theme.of(context);
     final semantic = theme.semanticColors;
     return Padding(
-      padding: EdgeInsets.fromLTRB(20.w, 18.h, 20.w, 14.h),
+      padding: EdgeInsets.fromLTRB(
+        16.w,
+        AppSpacing.sm.h,
+        16.w,
+        AppSpacing.sm.h,
+      ),
       child: Row(
         children: [
           Expanded(
@@ -55,28 +61,29 @@ class CalendarHeader extends StatelessWidget {
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
                       style: TextStyle(
-                        fontSize: 27.sp,
+                        fontSize: 22.sp,
                         fontWeight: FontWeight.w700,
                         color: textPrimary,
                         letterSpacing: 0,
-                        height: 1.08,
+                        height: 1.1,
                       ),
                     ),
                   ),
                   Icon(
                     Icons.arrow_drop_down,
+                    size: 22.sp,
                     color: Theme.of(context).colorScheme.onSurfaceVariant,
                   ),
                 ],
               ),
             ),
           ),
-          SizedBox(width: 10.w),
+          SizedBox(width: AppSpacing.sm.w),
           Container(
-            padding: EdgeInsets.all(4.w),
+            padding: EdgeInsets.all(3.w),
             decoration: BoxDecoration(
               color: theme.cardColor,
-              borderRadius: BorderRadius.circular(AppRadius.xl),
+              borderRadius: BorderRadius.circular(AppRadius.lg),
               border: Border.all(color: semantic.border, width: 1),
             ),
             child: Row(
@@ -102,12 +109,12 @@ class CalendarHeader extends StatelessWidget {
       onTap: onTap,
       child: AnimatedContainer(
         duration: const Duration(milliseconds: 200),
-        padding: EdgeInsets.symmetric(horizontal: 14.w, vertical: 8.h),
+        padding: EdgeInsets.symmetric(horizontal: 12.w, vertical: 5.h),
         decoration: BoxDecoration(
           color: isActive
               ? Theme.of(context).colorScheme.primary.withValues(alpha: 0.12)
               : Colors.transparent,
-          borderRadius: BorderRadius.circular(AppRadius.lg),
+          borderRadius: BorderRadius.circular(AppRadius.md),
           boxShadow: isActive
               ? [
                   BoxShadow(
@@ -126,7 +133,7 @@ class CalendarHeader extends StatelessWidget {
                 ? Theme.of(context).colorScheme.primary
                 : Theme.of(context).colorScheme.onSurfaceVariant,
             fontWeight: isActive ? FontWeight.w700 : FontWeight.w500,
-            fontSize: 13.sp,
+            fontSize: 12.5.sp,
           ),
         ),
       ),

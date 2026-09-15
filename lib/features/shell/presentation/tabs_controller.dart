@@ -1,6 +1,16 @@
 import 'package:flutter/widgets.dart';
 
-enum TabsDestination { work, subscription, project, settings }
+enum TabsDestination {
+  work,
+  project,
+  more;
+
+  /// Compatibility alias for subscription, which now lives under [more].
+  static const TabsDestination subscription = more;
+
+  /// Compatibility alias for settings, which now lives under [more].
+  static const TabsDestination settings = more;
+}
 
 class TabsController extends ChangeNotifier {
   int _currentIndex = 0;
@@ -17,6 +27,12 @@ class TabsController extends ChangeNotifier {
   void goTo(TabsDestination destination) {
     changePage(destination.index);
   }
+
+  void goToWork() => goTo(TabsDestination.work);
+
+  void goToProject() => goTo(TabsDestination.project);
+
+  void goToMore() => goTo(TabsDestination.more);
 }
 
 class TabsScope extends InheritedNotifier<TabsController> {

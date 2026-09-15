@@ -147,16 +147,36 @@ class _PhotoPreviewViewState extends State<PhotoPreviewView> {
   }
 
   Future<void> _deletePhoto(PhotoEntry photo) async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (dialogContext) => AlertDialog(
+        title: const Text('删除照片'),
+        content: const Text('确定删除这张照片吗？删除后无法恢复。'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(dialogContext).pop(false),
+            child: const Text('取消'),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.of(dialogContext).pop(true),
+            child: const Text('删除'),
+          ),
+        ],
+      ),
+    );
+    if (confirmed != true || !mounted) return;
+
     final messenger = ScaffoldMessenger.of(context);
     final result = await serviceLocator<DeletePhotoEntries>().call([photo]);
+    if (!mounted) return;
     final failure = result.failureOrNull;
     if (failure != null) {
-      messenger.showSnackBar(SnackBar(content: Text(failure.message)));
+      messenger.showSnackBar(
+        SnackBar(content: Text('删除失败：${failure.message}')),
+      );
       return;
     }
-    if (mounted) {
-      Navigator.of(context).pop();
-    }
+    Navigator.of(context).pop(true);
   }
 
   void _editDescription(PhotoEntry photo) {

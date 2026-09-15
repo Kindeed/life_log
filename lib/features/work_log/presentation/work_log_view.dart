@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:life_log/common/layout/constrained_page.dart';
+import 'package:life_log/common/theme/app_spacing.dart';
 import 'package:life_log/common/widgets/app_card.dart';
 import 'package:life_log/common/widgets/app_empty_state.dart';
 import 'package:life_log/common/widgets/app_loading.dart';
@@ -89,7 +90,12 @@ class _WorkLogContent extends StatelessWidget {
                   ConstrainedPage(
                     padding: EdgeInsets.symmetric(horizontal: 14.w),
                     child: AppCard(
-                      padding: EdgeInsets.fromLTRB(6.w, 8.h, 6.w, 8.h),
+                      padding: EdgeInsets.fromLTRB(
+                        6.w,
+                        AppSpacing.xs.h,
+                        6.w,
+                        AppSpacing.xs.h,
+                      ),
                       child: BlocBuilder<WorkLogCubit, WorkLogState>(
                         buildWhen: (previous, current) =>
                             previous.focusedDay != current.focusedDay ||
@@ -153,12 +159,11 @@ class _WorkLogContent extends StatelessWidget {
                       ),
                     ),
                   ),
-                  SizedBox(height: 16.h),
+                  SizedBox(height: AppSpacing.sm.h),
                 ],
               ),
             ),
-            SliverFillRemaining(
-              hasScrollBody: false,
+            SliverToBoxAdapter(
               child: ConstrainedPage(
                 padding: EdgeInsets.symmetric(horizontal: 14.w),
                 child: BlocBuilder<WorkLogCubit, WorkLogState>(
@@ -172,8 +177,8 @@ class _WorkLogContent extends StatelessWidget {
                     if (isInitialLoading) {
                       return AppCard(
                         padding: EdgeInsets.symmetric(
-                          horizontal: 16.w,
-                          vertical: 26.h,
+                          horizontal: AppSpacing.lg.w,
+                          vertical: AppSpacing.xl.h,
                         ),
                         child: const AppLoading(label: '正在加载工时'),
                       );
@@ -182,8 +187,8 @@ class _WorkLogContent extends StatelessWidget {
                     if (events.isEmpty) {
                       return AppCard(
                         padding: EdgeInsets.symmetric(
-                          horizontal: 16.w,
-                          vertical: 26.h,
+                          horizontal: AppSpacing.lg.w,
+                          vertical: AppSpacing.lg.h,
                         ),
                         child: const AppEmptyState(
                           icon: Icons.edit_calendar_rounded,
@@ -193,23 +198,21 @@ class _WorkLogContent extends StatelessWidget {
                       );
                     }
 
-                    return Padding(
-                      padding: EdgeInsets.only(bottom: 16.h),
-                      child: DayLogList(
-                        date: selectedDate,
-                        logs: events,
-                        onEditLog: (log) => _openLogSheet(
-                          context,
-                          selectedDate: selectedDate,
-                          existingEntry: log,
-                        ),
-                        onDeleteLog: (log) => _deleteLog(context, log),
+                    return DayLogList(
+                      date: selectedDate,
+                      logs: events,
+                      onEditLog: (log) => _openLogSheet(
+                        context,
+                        selectedDate: selectedDate,
+                        existingEntry: log,
                       ),
+                      onDeleteLog: (log) => _deleteLog(context, log),
                     );
                   },
                 ),
               ),
             ),
+            SliverPadding(padding: EdgeInsets.only(bottom: 76.h)),
           ],
         ),
       ),
@@ -222,7 +225,14 @@ class _WorkLogContent extends StatelessWidget {
 
   WorkLogEntry? _firstEntryForDay(WorkLogState cubitState, DateTime day) {
     final events = _entriesForDay(cubitState, day);
-    return events.isEmpty ? null : events.first;
+    if (events.isEmpty) return null;
+    WorkLogEntry? latest;
+    for (final entry in events) {
+      if (latest == null || entry.isNewerThan(latest)) {
+        latest = entry;
+      }
+    }
+    return latest;
   }
 
   WorkLogEntry? _existingWorkEntryForDay(

@@ -7,6 +7,7 @@ abstract interface class ProjectLocalDataSource {
   Stream<void> watchProjects();
   Future<Project> ensureProject(String name, {bool syncable = false});
   Future<void> addProject(Project project);
+  Future<Project?> updateProjectCover(Project project);
   Future<Project?> markProjectDeleted(int id);
   Future<void> purgeDeletedProject(int id);
 }
@@ -27,6 +28,11 @@ final class DbProjectLocalDataSource implements ProjectLocalDataSource {
   @override
   Future<List<Project>> getAllProjects() {
     return serviceLocator<DbService>().getAllProjects();
+  }
+
+  @override
+  Future<Project?> updateProjectCover(Project project) {
+    return serviceLocator<DbService>().updateProjectCover(project);
   }
 
   @override

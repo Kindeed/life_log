@@ -65,22 +65,28 @@ class SubscriptionRepository {
   Future<void> deleteSubscription(int id) async {
     final sub = await _localDataSource.markSubscriptionDeleted(id);
 
+    if (sub == null) {
+      throw StateError('订阅不存在或无权删除');
+    }
+
     try {
-      if (sub == null || (sub.remoteId == null && sub.syncId == null)) {
+      if (sub.remoteId == null && sub.syncId == null) {
         await _localDataSource.purgeDeletedSubscription(id);
       } else if (!_syncGateway.isAvailable) {
-        LogService.to.info('SubscriptionRepository', '本地模式：跳过云端删除');
+        LogService.to.info('SubscriptionRepository', '本地模式：已标记删除，等待云端同步');
       } else {
         final success = await _syncGateway.requestSync(
           sub,
           reason: 'subscription-delete',
         );
-        if (success) {
-          await _localDataSource.purgeDeletedSubscription(id);
+        if (!success) {
+          throw StateError('云端删除未完成，记录已保留待同步');
         }
+        await _localDataSource.purgeDeletedSubscription(id);
       }
     } catch (e, stackTrace) {
       LogService.to.error('SubscriptionRepository', '云端删除失败: $e', stackTrace);
+      rethrow;
     }
   }
 

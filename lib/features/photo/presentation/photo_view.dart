@@ -25,7 +25,7 @@ import 'package:life_log/features/project/presentation/project_cubit.dart';
 import 'package:life_log/features/photo/domain/entities/photo_entry.dart';
 import 'package:life_log/features/photo/presentation/photo_cubit.dart';
 import 'package:life_log/features/photo/presentation/create_project_sheet.dart';
-import 'package:life_log/features/photo/presentation/project_gallery_view.dart';
+import 'package:life_log/features/project/presentation/project_detail_view.dart';
 
 class PhotoView extends StatefulWidget {
   const PhotoView({super.key});
@@ -239,7 +239,7 @@ class _PhotoViewState extends State<PhotoView> {
   Future<void> _openProjectGallery(String projectName) {
     return Navigator.of(context).push<void>(
       MaterialPageRoute<void>(
-        builder: (_) => ProjectGalleryView(projectName: projectName),
+        builder: (_) => ProjectDetailView(projectName: projectName),
       ),
     );
   }

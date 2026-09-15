@@ -247,6 +247,52 @@ void main() {
       },
     );
 
+    test(
+      'rejects missing or unauthorized subscription instead of purging by id',
+      () async {
+        final localDataSource = _SubscriptionLocalDataSourceSpy();
+        final repository = SubscriptionRepository(
+          localDataSource: localDataSource,
+          syncGateway: _SubscriptionSyncGatewaySpy(isAvailable: true),
+        );
+
+        expect(
+          () => repository.deleteSubscription(404),
+          throwsA(isA<StateError>()),
+        );
+        expect(localDataSource.purgedIds, isEmpty);
+      },
+    );
+
+    test(
+      'surfaces an unsuccessful remote delete and keeps tombstone',
+      () async {
+        final deleted = Subscription()
+          ..id = 18
+          ..name = 'Cloud'
+          ..price = 18
+          ..cycle = SubscriptionCycle.monthly
+          ..nextPaymentDate = DateTime(2026, 5, 10)
+          ..remoteId = 100;
+        final localDataSource = _SubscriptionLocalDataSourceSpy(
+          markedDeleted: deleted,
+        );
+        final repository = SubscriptionRepository(
+          localDataSource: localDataSource,
+          syncGateway: _SubscriptionSyncGatewaySpy(
+            isAvailable: true,
+            result: false,
+          ),
+        );
+
+        expect(
+          () => repository.deleteSubscription(18),
+          throwsA(isA<StateError>()),
+        );
+        expect(localDataSource.purgedIds, isEmpty);
+      },
+    );
+
     test('routes changed reorder rows through injected sync seam', () async {
       final first = Subscription()
         ..id = 1
@@ -602,7 +648,9 @@ final class _SubscriptionSyncGatewaySpy implements SubscriptionSyncGateway {
   final List<Subscription> syncRequests = [];
   final List<String> syncReasons = [];
 
-  _SubscriptionSyncGatewaySpy({required this.isAvailable});
+  final bool result;
+
+  _SubscriptionSyncGatewaySpy({required this.isAvailable, this.result = true});
 
   @override
   Future<bool> requestSync(
@@ -611,7 +659,7 @@ final class _SubscriptionSyncGatewaySpy implements SubscriptionSyncGateway {
   }) async {
     syncRequests.add(subscription);
     syncReasons.add(reason);
-    return true;
+    return result;
   }
 }
 

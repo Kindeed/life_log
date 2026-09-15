@@ -85,6 +85,29 @@ void main() {
       },
     );
 
+    test(
+      'photo preview confirms destructive deletion and refreshes its caller',
+      () {
+        final preview = File(
+          'lib/features/photo/presentation/photo_preview_view.dart',
+        ).readAsStringSync();
+        final gallery = File(
+          'lib/features/photo/presentation/project_gallery_view.dart',
+        ).readAsStringSync();
+
+        expect(preview, contains("title: const Text('删除照片')"));
+        expect(preview, contains('showDialog<bool>'));
+        expect(preview, contains("content: const Text('确定删除这张照片吗？删除后无法恢复。')"));
+        expect(preview, contains('Navigator.of(context).pop(true)'));
+        expect(
+          gallery,
+          contains('final deleted = await Navigator.of(context).push<bool>'),
+        );
+        expect(gallery, contains('if (deleted == true && mounted)'));
+        expect(gallery, contains('await photoCubit.loadEntries();'));
+      },
+    );
+
     test('keeps GPS metadata hidden by default behind a user setting', () {
       final preferences = File(
         'lib/features/photo/presentation/photo_display_preferences.dart',

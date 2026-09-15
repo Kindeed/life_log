@@ -469,8 +469,15 @@ class _SubscriptionCard extends StatelessWidget {
                   ),
                 ),
               ),
+              IconButton(
+                icon: const Icon(Icons.delete_outline_rounded),
+                color: Theme.of(context).colorScheme.error,
+                tooltip: '删除订阅',
+                visualDensity: VisualDensity.compact,
+                onPressed: onDelete,
+              ),
               if (showDragHandle) ...[
-                SizedBox(height: 6.h),
+                SizedBox(height: 2.h),
                 Icon(
                   Icons.drag_indicator_rounded,
                   color: textSecondary,

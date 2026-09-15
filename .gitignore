@@ -63,3 +63,8 @@ analyze.txt
 doctor_output.txt
 diff*.txt
 *.code-workspace
+
+# Local prototype server authentication/runtime state; keep design content visible
+/.superpowers/brainstorm/.last-token
+/.superpowers/brainstorm/.last-port
+/.superpowers/brainstorm/*/state/

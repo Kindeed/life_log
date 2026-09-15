@@ -252,6 +252,12 @@ final class _FakePhotoRepository implements PhotoRepositoryPort {
   _FakePhotoRepository(this.entries);
 
   @override
+  Future<int> unlinkEntriesFromProject({
+    required int projectId,
+    required String projectName,
+  }) async => 0;
+
+  @override
   Future<List<PhotoEntry>> getAllEntries() async => entries;
 
   @override

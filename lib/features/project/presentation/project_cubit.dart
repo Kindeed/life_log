@@ -110,6 +110,31 @@ final class ProjectCubit extends Cubit<ProjectState> {
     );
   }
 
+  Future<AppFailure?> saveCoverPath(
+    ProjectEntry entry, {
+    required String? localCoverPath,
+    required String? coverImagePath,
+  }) async {
+    try {
+      final result = await _saveEntry.saveCoverPath(
+        entry,
+        localCoverPath: localCoverPath,
+        coverImagePath: coverImagePath,
+      );
+      final failure = result.failureOrNull;
+      if (failure != null) return failure;
+    } catch (error, stackTrace) {
+      return AppFailure(
+        code: 'project/save-cover',
+        message: error.toString(),
+        cause: error,
+        stackTrace: stackTrace,
+      );
+    }
+    await loadEntries();
+    return null;
+  }
+
   Future<AppFailure?> saveStageNames(
     ProjectEntry entry,
     List<String> stageNames,
