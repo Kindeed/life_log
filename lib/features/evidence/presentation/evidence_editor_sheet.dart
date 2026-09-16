@@ -6,7 +6,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:image_picker/image_picker.dart';
-import 'package:life_log/common/theme/app_colors.dart';
 import 'package:life_log/common/theme/theme_extensions.dart';
 import 'package:life_log/common/utils/date_utils.dart';
 import 'package:life_log/common/utils/formatters.dart';
@@ -629,7 +628,7 @@ class _EvidenceEditorSheetState extends State<EvidenceEditorSheet> {
 
   ButtonStyle _primaryButtonStyle(BuildContext context) {
     return ElevatedButton.styleFrom(
-      backgroundColor: AppColors.primaryBlue,
+      backgroundColor: Theme.of(context).colorScheme.primary,
       foregroundColor: Theme.of(context).colorScheme.onPrimary,
       padding: EdgeInsets.symmetric(vertical: 13.h),
       elevation: 0,

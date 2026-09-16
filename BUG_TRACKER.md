@@ -730,3 +730,29 @@ This is the active defect ledger. `REVIEW_REPORT.md` is historical context only.
 | U312 | High | fixed | foreign-currency totals in dashboards | Today and Statistics could sum a USD/EUR subscription's original number into CNY totals. | Fixed: both dashboard paths use the subscription exchange-rate reader; unavailable foreign rates are excluded from CNY totals and surfaced as a warning. |
 | U313 | Low | fixed | reminder window copy | Today displayed a fixed “7 天内扣款” label even though each subscription can remind on the payment day or 1/3/7/14 days ahead. | Fixed: Today now labels the section “扣费提醒”, and the subscription empty state lists all supported reminder choices. |
 | U314 | High | fixed | duplicate migration versions | Several historical migration files used the same date-only version (`20260426`, `20260621`, `20260623`), while `supabase_migrations.schema_migrations` can store each version only once; CLI dry-run proposed six already-applied files again. | Fixed: SQL files retain their contents but use unique full timestamps, and remote migration history is repaired to match the unique local chain. |
+
+## UI unification (2026-09-16)
+
+| ID | Severity | Status | Area | Finding | Resolution |
+| --- | --- | --- | --- | --- | --- |
+| U315 | Medium | fixed | UI system | Duplicated themes, fixed calendar blue, dynamic onPrimary override and inconsistent surfaces weakened theme consistency. | Unify theme construction, surfaces, typography and interaction geometry; verify both brightness modes. |
+| U316 | High | fixed | Read feedback | Work/project failures appeared empty; partial timeline failures were hidden. | Add retryable failure and partial-data states without discarding visible content. |
+| U317 | High | fixed | Subscription editor | Async save/delete remained repeatable without a busy state. | Disable conflicting actions and guard re-entry. |
+| U318 | Medium | fixed | Editor navigation | Work/subscription changes could be dismissed without confirmation. | Guard changed forms and provide explicit sheet dismissal. |
+| U319 | Medium | fixed | UI contracts | UI contract retained superseded navigation; timeline directory label implied expenses only. | Align with ADR 0002 and preserve one primary daily calendar status per user direction. |
+| U320 | Medium | fixed | Accessibility | Calendar toggles/filter chips lacked stable touch targets and selected semantics. | Standardize accessible controls and reduced-motion behavior. |
+
+| U321 | Medium | fixed | Timeline actions and currency | Unified records were non-actionable and foreign subscription amounts used the generic CNY formatter. | Open existing feature editors/details from each row; show original subscription currency and code. |
+
+U34/U40 and D15 describe historical single-entry normalization. Their destructive
+same-day deduplication direction is superseded by ADR 0002; preserve all existing
+multi-entry records. The calendar's single primary status is intentional per the
+2026-09-16 user clarification, not a requirement to add visible multi-entry badges.
+
+
+Validation: 608 Flutter tests passed, including new draft-exit, subscription
+single-flight/failure-recovery, dynamic contrast, work-read failure and 320px
+large-text layout coverage. Work/more light and dark screens were rendered with
+local test fonts and visually inspected. Debug APK built successfully. No device
+installation or on-device font/keyboard verification was performed. No database,
+sync protocol, dependency, cloud configuration or local photo behavior changed.

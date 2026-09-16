@@ -25,7 +25,6 @@ class DeveloperView extends StatelessWidget {
       backgroundColor: theme.scaffoldBackgroundColor,
       appBar: AppBar(
         title: const Text('开发者选项'),
-        centerTitle: true,
         actions: [
           IconButton(
             icon: const Icon(Icons.delete_outline),

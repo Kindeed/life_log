@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
-import 'package:life_log/common/theme/app_colors.dart';
 import 'package:package_info_plus/package_info_plus.dart';
 
 /// 关于页面
@@ -22,7 +21,7 @@ class AboutView extends StatelessWidget {
 
     return Scaffold(
       backgroundColor: theme.scaffoldBackgroundColor,
-      appBar: AppBar(title: const Text('关于'), centerTitle: true),
+      appBar: AppBar(title: const Text('关于')),
       body: SingleChildScrollView(
         padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 24.h),
         child: Column(
@@ -32,11 +31,13 @@ class AboutView extends StatelessWidget {
               width: 80.w,
               height: 80.w,
               decoration: BoxDecoration(
-                color: AppColors.primaryBlue,
+                color: Theme.of(context).colorScheme.primary,
                 borderRadius: BorderRadius.circular(20.r),
                 boxShadow: [
                   BoxShadow(
-                    color: AppColors.primaryBlue.withValues(alpha: 0.3),
+                    color: Theme.of(
+                      context,
+                    ).colorScheme.primary.withValues(alpha: 0.3),
                     blurRadius: 20,
                     offset: const Offset(0, 8),
                   ),
@@ -44,7 +45,7 @@ class AboutView extends StatelessWidget {
               ),
               child: Icon(
                 Icons.calendar_month_rounded,
-                color: Colors.white,
+                color: theme.colorScheme.onPrimary,
                 size: 40.sp,
               ),
             ),

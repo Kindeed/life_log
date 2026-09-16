@@ -46,3 +46,23 @@ Use existing tokens and components before adding new UI primitives.
 
 Every component must cover loading, empty, failure, disabled, and narrow-screen
 states when those states apply to the screen.
+
+## Interaction and verification additions (2026-09-16)
+
+- `AppLoadFailure`: retryable local-read failures. Use compact mode above retained
+  content for partial failures; never replace a failed read with an empty state.
+- `AppUnsavedChangesGuard`: protects changed work/subscription form drafts on
+  back navigation; busy commands block dismissal. It is independent of sync dirty
+  metadata. Guarded editor sheets use an explicit close action rather than drag
+  or barrier dismissal. Successful explicit save/delete may close the route.
+- `AppListPage.embedded`: suppresses the page app bar when a list is hosted under
+  another page's navigation/filter header (for example, timeline subscriptions).
+- `AppMotion.duration`: respects the platform reduced-motion setting. Use it for
+  shared transitions and calculator workbench expansion/results.
+
+`test/ui_refinement_test.dart` covers dynamic-color text contrast, guarded draft
+exit, subscription single-flight saves/failure recovery, work-read failure, and
+work/more layout at 390px normal text and 320px double text scale in both themes.
+Optional `UI_REVIEW_DIR`, `UI_REVIEW_FONT`, and `UI_REVIEW_ICONS` dart defines
+produce local render previews. Fonts are local test inputs only, not redistributed
+application assets. These previews do not replace Android device verification.

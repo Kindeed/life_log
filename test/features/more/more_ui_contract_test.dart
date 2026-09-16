@@ -16,7 +16,7 @@ void main() {
     expect(source, contains("title: '记录与分析'"));
     expect(source, contains("title: '工具'"));
     expect(source, contains("title: '应用'"));
-    expect(source, contains("title: '全部费用记录'"));
+    expect(source, contains("title: '全部记录'"));
     expect(source, contains("title: '统计面板'"));
     expect(source, contains("title: '订阅管理'"));
     expect(source, contains("title: '遥测计算器'"));

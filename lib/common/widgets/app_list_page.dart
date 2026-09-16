@@ -7,6 +7,7 @@ typedef AppSliverBuilder = Widget Function(BuildContext context);
 
 class AppListPage extends StatelessWidget {
   final String title;
+  final bool embedded;
   final Widget? overview;
   final AppSliverBuilder sliverBuilder;
   final bool isLoading;
@@ -21,6 +22,7 @@ class AppListPage extends StatelessWidget {
   const AppListPage({
     super.key,
     required this.title,
+    this.embedded = false,
     required this.sliverBuilder,
     this.overview,
     this.isLoading = false,
@@ -40,12 +42,12 @@ class AppListPage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final body = SafeArea(child: _body(context));
+    final body = SafeArea(top: !embedded, child: _body(context));
 
     return Scaffold(
       backgroundColor:
           backgroundColor ?? Theme.of(context).scaffoldBackgroundColor,
-      appBar: AppBar(title: Text(title)),
+      appBar: embedded ? null : AppBar(title: Text(title)),
       body: body,
       floatingActionButton: floatingActionButton,
     );

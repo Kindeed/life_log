@@ -3,6 +3,7 @@ import 'package:life_log/common/theme/theme_extensions.dart';
 import 'package:flutter/services.dart';
 
 import '../theme/app_radius.dart';
+import '../theme/app_motion.dart';
 import '../theme/app_spacing.dart';
 
 class AppFilterChipItem<T> {
@@ -37,58 +38,64 @@ class AppFilterChipBar<T> extends StatelessWidget {
     final semantic = theme.semanticColors;
     final chips = items.map((item) {
       final selected = item.value == value;
-      return GestureDetector(
-        onTap: () {
-          HapticFeedback.lightImpact();
-          onChanged(item.value);
-        },
-        child: AnimatedContainer(
-          duration: const Duration(milliseconds: 160),
-          padding: const EdgeInsets.symmetric(
-            horizontal: AppSpacing.md,
-            vertical: AppSpacing.sm,
-          ),
-          decoration: BoxDecoration(
-            color: selected
-                ? theme.colorScheme.primary.withValues(alpha: 0.12)
-                : theme.cardColor,
-            borderRadius: BorderRadius.circular(AppRadius.lg),
-            border: Border.all(
-              color: selected
-                  ? theme.colorScheme.primary.withValues(alpha: 0.35)
-                  : semantic.border,
-              width: 1,
+      return Semantics(
+        button: true,
+        selected: selected,
+        child: InkWell(
+          borderRadius: BorderRadius.circular(AppRadius.lg),
+          onTap: () {
+            HapticFeedback.lightImpact();
+            onChanged(item.value);
+          },
+          child: AnimatedContainer(
+            duration: AppMotion.duration(context, AppMotion.fast),
+            constraints: const BoxConstraints(minHeight: 48),
+            padding: const EdgeInsets.symmetric(
+              horizontal: AppSpacing.md,
+              vertical: AppSpacing.sm,
             ),
-          ),
-          child: Row(
-            mainAxisAlignment: MainAxisAlignment.center,
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Icon(
-                selected
-                    ? Icons.check_rounded
-                    : item.icon ?? Icons.tune_rounded,
-                size: 15,
+            decoration: BoxDecoration(
+              color: selected
+                  ? theme.colorScheme.primary.withValues(alpha: 0.12)
+                  : theme.cardColor,
+              borderRadius: BorderRadius.circular(AppRadius.lg),
+              border: Border.all(
                 color: selected
-                    ? theme.colorScheme.primary
-                    : theme.colorScheme.onSurfaceVariant,
+                    ? theme.colorScheme.primary.withValues(alpha: 0.35)
+                    : semantic.border,
+                width: 1,
               ),
-              const SizedBox(width: AppSpacing.xs),
-              Flexible(
-                child: Text(
-                  item.label,
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  style: theme.textTheme.labelMedium?.copyWith(
-                    color: selected
-                        ? theme.colorScheme.primary
-                        : theme.colorScheme.onSurface,
-                    fontWeight: selected ? FontWeight.w700 : FontWeight.w500,
-                    letterSpacing: 0,
+            ),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Icon(
+                  selected
+                      ? Icons.check_rounded
+                      : item.icon ?? Icons.tune_rounded,
+                  size: 15,
+                  color: selected
+                      ? theme.colorScheme.primary
+                      : theme.colorScheme.onSurfaceVariant,
+                ),
+                const SizedBox(width: AppSpacing.xs),
+                Flexible(
+                  child: Text(
+                    item.label,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: theme.textTheme.labelMedium?.copyWith(
+                      color: selected
+                          ? theme.colorScheme.primary
+                          : theme.colorScheme.onSurface,
+                      fontWeight: selected ? FontWeight.w700 : FontWeight.w500,
+                      letterSpacing: 0,
+                    ),
                   ),
                 ),
-              ),
-            ],
+              ],
+            ),
           ),
         ),
       );
@@ -98,8 +105,16 @@ class AppFilterChipBar<T> extends StatelessWidget {
     if (fixedColumns != null) {
       return LayoutBuilder(
         builder: (context, constraints) {
-          final totalGap = AppSpacing.sm * (fixedColumns - 1);
-          final itemWidth = (constraints.maxWidth - totalGap) / fixedColumns;
+          final scale = MediaQuery.textScalerOf(context).scale(13) / 13;
+          final effectiveColumns = scale > 1.3
+              ? (constraints.maxWidth / (110 * scale)).floor().clamp(
+                  1,
+                  fixedColumns,
+                )
+              : fixedColumns;
+          final totalGap = AppSpacing.sm * (effectiveColumns - 1);
+          final itemWidth =
+              (constraints.maxWidth - totalGap) / effectiveColumns;
           return Wrap(
             spacing: AppSpacing.sm,
             runSpacing: AppSpacing.sm,

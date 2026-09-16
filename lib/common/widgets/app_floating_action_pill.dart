@@ -24,35 +24,47 @@ class AppFloatingActionPill extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return AnimatedSlide(
-      duration: AppMotion.normal,
-      curve: AppMotion.standardDecelerate,
-      offset: visible ? Offset.zero : const Offset(0, 0.2),
-      child: AnimatedOpacity(
-        duration: AppMotion.normal,
-        curve: AppMotion.standardDecelerate,
-        opacity: visible ? 1 : 0,
-        child: FloatingActionButton.extended(
-          heroTag: heroTag,
-          backgroundColor: color,
-          elevation: 0,
-          highlightElevation: 0,
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(AppRadius.xl),
-          ),
-          icon: Icon(icon, color: Colors.white),
-          label: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: AppSpacing.xs),
-            child: Text(
-              label,
-              style: Theme.of(context).textTheme.labelLarge?.copyWith(
-                color: Colors.white,
-                fontWeight: FontWeight.w600,
-                letterSpacing: 0,
+    final colors = Theme.of(context).colorScheme;
+    final foreground = color == colors.primary
+        ? colors.onPrimary
+        : ThemeData.estimateBrightnessForColor(color) == Brightness.dark
+        ? Colors.white
+        : Colors.black;
+    return ExcludeSemantics(
+      excluding: !visible,
+      child: IgnorePointer(
+        ignoring: !visible,
+        child: AnimatedSlide(
+          duration: AppMotion.duration(context, AppMotion.normal),
+          curve: AppMotion.standardDecelerate,
+          offset: visible ? Offset.zero : const Offset(0, 0.2),
+          child: AnimatedOpacity(
+            duration: AppMotion.duration(context, AppMotion.normal),
+            curve: AppMotion.standardDecelerate,
+            opacity: visible ? 1 : 0,
+            child: FloatingActionButton.extended(
+              heroTag: heroTag,
+              backgroundColor: color,
+              elevation: 0,
+              highlightElevation: 0,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(AppRadius.xl),
               ),
+              icon: Icon(icon, color: foreground),
+              label: Padding(
+                padding: const EdgeInsets.symmetric(horizontal: AppSpacing.xs),
+                child: Text(
+                  label,
+                  style: Theme.of(context).textTheme.labelLarge?.copyWith(
+                    color: foreground,
+                    fontWeight: FontWeight.w600,
+                    letterSpacing: 0,
+                  ),
+                ),
+              ),
+              onPressed: visible ? onPressed : null,
             ),
           ),
-          onPressed: visible ? onPressed : null,
         ),
       ),
     );

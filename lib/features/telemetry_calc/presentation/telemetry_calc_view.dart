@@ -929,7 +929,7 @@ class _CalculationWorkbench extends StatelessWidget {
       color: color,
       emphasized: true,
       child: AnimatedSwitcher(
-        duration: AppMotion.normal,
+        duration: AppMotion.duration(context, AppMotion.normal),
         switchInCurve: AppMotion.standardDecelerate,
         switchOutCurve: AppMotion.standard,
         transitionBuilder: (child, animation) {
@@ -963,7 +963,7 @@ class _CalculationWorkbench extends StatelessWidget {
             SizedBox(height: AppSpacing.sm.h),
             _AdvancedToggle(expanded: showAdvanced, onTap: onToggleAdvanced),
             AnimatedSize(
-              duration: AppMotion.normal,
+              duration: AppMotion.duration(context, AppMotion.normal),
               curve: AppMotion.standardDecelerate,
               alignment: Alignment.topCenter,
               child: showAdvanced

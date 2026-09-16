@@ -39,7 +39,7 @@ class AppSemanticColors extends ThemeExtension<AppSemanticColors> {
     expense: Color(0xFFBF8CFF),
     project: Color(0xFF40C8B4),
     stats: Color(0xFF64D2FF),
-    success: AppColors.successGreen,
+    success: Color(0xFF81C995),
     warning: Color(0xFFFF9F0A),
     mutedSurface: AppColors.darkMutedSurface,
     border: AppColors.darkDivider,

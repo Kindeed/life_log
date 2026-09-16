@@ -11,7 +11,7 @@ class AppColors {
   static const Color cyan = Color(0xFF64D2FF);
 
   // --- 浅色模式 ---
-  static const Color lightBackground = Color(0xFFF5F5F7);
+  static const Color lightBackground = Color(0xFFF5F6FA);
   static const Color lightCard = Colors.white;
   static const Color lightTextPrimary = Color(0xFF1D1D1F);
   static const Color lightTextSecondary = Color(0xFF6B6B70);
@@ -19,8 +19,8 @@ class AppColors {
   static const Color lightMutedSurface = Color(0xFFF2F2F7);
 
   // --- 深色模式 ---
-  static const Color darkBackground = Color(0xFF000000);
-  static const Color darkCard = Color(0xFF1C1C1E);
+  static const Color darkBackground = Color(0xFF101216);
+  static const Color darkCard = Color(0xFF191C22);
   static const Color darkTextPrimary = Color(0xFFFFFFFF);
   static const Color darkTextSecondary = Color(0xFFA1A1A6);
   static const Color darkDivider = Color(0xFF38383A);

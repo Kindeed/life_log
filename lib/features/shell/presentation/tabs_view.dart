@@ -124,6 +124,10 @@ class _TabsViewState extends State<TabsView> {
     if (!pageController.hasClients) return;
     final page = pageController.page?.round() ?? pageController.initialPage;
     if (page == index) return;
+    if (MediaQuery.disableAnimationsOf(context)) {
+      pageController.jumpToPage(index);
+      return;
+    }
     pageController.animateToPage(
       index,
       duration: AppMotion.normal,

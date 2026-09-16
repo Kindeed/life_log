@@ -42,7 +42,7 @@ class AppSheetScaffold extends StatelessWidget {
     final resizedByKeyboard = rootHeight - MediaQuery.sizeOf(context).height;
     final isKeyboardVisible = bottomInset > 0 || resizedByKeyboard > 120;
     final content = AnimatedPadding(
-      duration: AppMotion.fast,
+      duration: AppMotion.duration(context, AppMotion.fast),
       curve: AppMotion.standardDecelerate,
       padding: EdgeInsets.only(
         bottom:
@@ -143,13 +143,6 @@ class _SheetTitle extends StatelessWidget {
       ),
     );
 
-    if (!isPage) {
-      return Padding(
-        padding: const EdgeInsets.symmetric(horizontal: AppSpacing.lg),
-        child: titleText,
-      );
-    }
-
     final canPop = Navigator.canPop(context);
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: AppSpacing.md),
@@ -166,8 +159,12 @@ class _SheetTitle extends StatelessWidget {
               Align(
                 alignment: Alignment.centerLeft,
                 child: IconButton(
-                  tooltip: MaterialLocalizations.of(context).backButtonTooltip,
-                  icon: const Icon(Icons.arrow_back_rounded),
+                  tooltip: isPage
+                      ? MaterialLocalizations.of(context).backButtonTooltip
+                      : MaterialLocalizations.of(context).closeButtonTooltip,
+                  icon: Icon(
+                    isPage ? Icons.arrow_back_rounded : Icons.close_rounded,
+                  ),
                   onPressed: () => Navigator.of(context).maybePop(),
                 ),
               ),

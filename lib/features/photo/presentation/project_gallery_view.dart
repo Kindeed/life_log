@@ -27,7 +27,6 @@ import 'package:life_log/features/photo/presentation/photo_add_action_launcher.d
 import 'package:life_log/features/photo/presentation/photo_cubit.dart';
 import 'package:life_log/features/photo/presentation/photo_preview_view.dart';
 import 'package:life_log/common/utils/formatters.dart';
-import 'package:life_log/common/theme/app_colors.dart';
 import 'package:life_log/common/widgets/app_button.dart';
 import 'package:life_log/common/widgets/app_floating_action_pill.dart';
 import 'package:life_log/common/widgets/app_safe_bottom_bar.dart';
@@ -335,7 +334,9 @@ class _ProjectGalleryViewState extends State<ProjectGalleryView>
                                                 child: Container(
                                                   decoration: BoxDecoration(
                                                     color: isSelected
-                                                        ? AppColors.primaryBlue
+                                                        ? Theme.of(
+                                                            context,
+                                                          ).colorScheme.primary
                                                         : Colors.black26,
                                                     shape: BoxShape.circle,
                                                     border: Border.all(
@@ -348,7 +349,9 @@ class _ProjectGalleryViewState extends State<ProjectGalleryView>
                                                         ? Icons.check
                                                         : null,
                                                     size: 18,
-                                                    color: Colors.white,
+                                                    color: Theme.of(
+                                                      context,
+                                                    ).colorScheme.onPrimary,
                                                   ),
                                                 ),
                                               ),

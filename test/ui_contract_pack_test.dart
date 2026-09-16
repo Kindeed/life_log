@@ -12,7 +12,7 @@ void main() {
       expect(catalog.existsSync(), isTrue);
 
       final contractSource = contract.readAsStringSync();
-      expect(contractSource, contains('Today / Records / Projects'));
+      expect(contractSource, contains('工时 / 项目 / 更多'));
       expect(contractSource, contains('UI models may edit'));
       expect(contractSource, contains('UI models must not edit'));
       expect(contractSource, contains('lib/features/*/presentation/'));
@@ -60,7 +60,7 @@ void main() {
 
       expect(source, contains('docs/ui/ui-contract.md'));
       expect(source, contains('docs/ui/component-catalog.md'));
-      expect(source, contains('Today / Records / Projects'));
+      expect(source, contains('工时 / 项目 / 更多'));
       expect(source, contains('mock state'));
     });
   });

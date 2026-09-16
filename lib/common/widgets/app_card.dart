@@ -17,12 +17,7 @@ class AppCard extends StatelessWidget {
     final semantic = theme.semanticColors;
     final isDark = theme.brightness == Brightness.dark;
     final radius = BorderRadius.circular(AppRadius.lg);
-    final color = Color.alphaBlend(
-      theme.colorScheme.primary.withValues(alpha: isDark ? 0.05 : 0.025),
-      theme.colorScheme.surfaceContainerHighest.withValues(
-        alpha: isDark ? 0.36 : 0.52,
-      ),
-    );
+    final color = theme.colorScheme.surface;
 
     final content = Padding(
       padding: padding ?? const EdgeInsets.all(AppSpacing.lg),
@@ -38,7 +33,7 @@ class AppCard extends StatelessWidget {
       shape: RoundedRectangleBorder(
         borderRadius: radius,
         side: BorderSide(
-          color: semantic.border.withValues(alpha: isDark ? 0.5 : 0.72),
+          color: semantic.border.withValues(alpha: isDark ? 0.5 : 0.55),
           width: 1,
         ),
       ),

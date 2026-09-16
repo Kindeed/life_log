@@ -1,4 +1,10 @@
 import 'package:flutter/material.dart';
+import 'package:life_log/features/work_log/presentation/work_log_editor_launcher.dart';
+import 'package:life_log/features/expense/presentation/expense_record_editor_launcher.dart';
+import 'package:life_log/features/subscription/presentation/subscription_editor_launcher.dart';
+import 'package:life_log/features/subscription/domain/entities/subscription_currency.dart';
+import 'package:life_log/features/evidence/presentation/evidence_detail_launcher.dart';
+import 'package:life_log/features/evidence/presentation/evidence_legacy_view_adapter.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:life_log/common/theme/app_spacing.dart';
 import 'package:life_log/common/utils/date_utils.dart';
@@ -7,6 +13,7 @@ import 'package:life_log/common/widgets/app_card.dart';
 import 'package:life_log/common/widgets/app_empty_state.dart';
 import 'package:life_log/common/widgets/app_filter_chip_bar.dart';
 import 'package:life_log/common/widgets/app_loading.dart';
+import 'package:life_log/common/widgets/app_load_failure.dart';
 import 'package:life_log/core/di/service_locator.dart';
 import 'package:life_log/features/evidence/domain/entities/evidence_entry.dart';
 import 'package:life_log/features/evidence/presentation/evidence_cubit.dart';
@@ -96,7 +103,7 @@ class _TimelineViewState extends State<TimelineView> {
       TimelineFilter.work => const WorkLogView(),
       TimelineFilter.expense => const _ExpenseRecordTimeline(),
       TimelineFilter.evidence => const EvidenceListView(),
-      TimelineFilter.subscription => const SubscriptionView(),
+      TimelineFilter.subscription => const SubscriptionView(embedded: true),
     };
   }
 }
@@ -107,6 +114,7 @@ class TimelineItem {
   final String title;
   final String subtitle;
   final IconData icon;
+  final Future<void> Function(BuildContext context) open;
 
   const TimelineItem({
     required this.date,
@@ -114,6 +122,7 @@ class TimelineItem {
     required this.title,
     required this.subtitle,
     required this.icon,
+    required this.open,
   });
 }
 
@@ -167,9 +176,17 @@ class _UnifiedTimeline extends StatelessWidget {
                       if (items.isEmpty && isLoading) {
                         return const AppLoading(label: '正在加载记录');
                       }
+                      void retry() {
+                        context.read<WorkLogCubit>().loadFocusedMonth();
+                        context.read<ExpenseRecordCubit>().loadEntries();
+                        context.read<EvidenceCubit>().loadEntries();
+                        context.read<SubscriptionCubit>().loadEntries();
+                      }
+
                       if (items.isEmpty && failures.isNotEmpty) {
-                        return const _TimelineLoadFailure(
-                          message: '部分记录加载失败，请重试或切换到对应分类查看。',
+                        return AppLoadFailure(
+                          message: '部分记录加载失败，请重试。',
+                          onRetry: retry,
                         );
                       }
                       if (items.isEmpty) {
@@ -189,6 +206,12 @@ class _UnifiedTimeline extends StatelessWidget {
                           AppSpacing.xxl,
                         ),
                         children: [
+                          if (failures.isNotEmpty)
+                            AppLoadFailure(
+                              compact: true,
+                              message: '部分记录未能加载，当前时间线可能不完整。',
+                              onRetry: retry,
+                            ),
                           for (final group in groups.entries) ...[
                             Padding(
                               padding: const EdgeInsets.only(
@@ -238,6 +261,11 @@ class _UnifiedTimeline extends StatelessWidget {
               if (entry.note?.trim().isNotEmpty == true) entry.note!.trim(),
             ].join(' · '),
             icon: Icons.work_history_rounded,
+            open: (context) => openWorkLogEditorPage(
+              context,
+              selectedDate: entry.date,
+              existingEntry: entry,
+            ),
           ),
         )
         .toList();
@@ -258,6 +286,8 @@ class _UnifiedTimeline extends StatelessWidget {
                 entry.projectName!.trim(),
             ].join(' · '),
             icon: Icons.payments_rounded,
+            open: (context) =>
+                openExpenseRecordEditorPage(context, entry: entry),
           ),
         )
         .toList();
@@ -278,6 +308,10 @@ class _UnifiedTimeline extends StatelessWidget {
               entry.projectName,
             ].join(' · '),
             icon: Icons.receipt_long_rounded,
+            open: (context) => showEvidenceDetailSheet(
+              context,
+              legacyEvidenceFromEntry(entry),
+            ),
           ),
         )
         .toList();
@@ -291,40 +325,16 @@ class _UnifiedTimeline extends StatelessWidget {
             typeLabel: '订阅',
             title: entry.name,
             subtitle: [
-              if ((entry.price ?? 0) > 0) formatMoney(entry.price ?? 0),
+              if ((entry.price ?? 0) > 0)
+                '${formatSubscriptionAmount(entry.price!, entry.currency)} ${entry.currency.code}',
               _subscriptionCycleLabel(entry.cycle),
             ].join(' · '),
             icon: Icons.subscriptions_rounded,
+            open: (context) =>
+                openSubscriptionEditorPage(context, entry: entry),
           ),
         )
         .toList();
-  }
-}
-
-class _TimelineLoadFailure extends StatelessWidget {
-  final String message;
-
-  const _TimelineLoadFailure({required this.message});
-
-  @override
-  Widget build(BuildContext context) {
-    return Center(
-      child: Padding(
-        padding: const EdgeInsets.all(AppSpacing.xl),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Icon(
-              Icons.cloud_off_rounded,
-              size: 40,
-              color: Theme.of(context).colorScheme.error,
-            ),
-            const SizedBox(height: AppSpacing.md),
-            Text(message, textAlign: TextAlign.center),
-          ],
-        ),
-      ),
-    );
   }
 }
 
@@ -338,6 +348,7 @@ class _TimelineItemRow extends StatelessWidget {
     final theme = Theme.of(context);
     final secondary = theme.colorScheme.onSurfaceVariant;
     return AppCard(
+      onTap: () => item.open(context),
       padding: const EdgeInsets.all(AppSpacing.md),
       child: Row(
         children: [

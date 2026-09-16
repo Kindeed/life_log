@@ -80,7 +80,7 @@ class _MoreViewState extends State<MoreView> {
                               subtitle: !state.isCloudConfigured
                                   ? '云同步未配置 · 本地数据模式'
                                   : state.isLoggedIn
-                                  ? '已登录 · 数据多端云同步'
+                                  ? '已登录 · 查看同步状态'
                                   : '登录后可开启多端云同步',
                               onTap: () => _openPage(const ProfileView()),
                             );
@@ -105,8 +105,8 @@ class _MoreViewState extends State<MoreView> {
                     _MoreDestination(
                       icon: Icons.receipt_long_outlined,
                       iconColor: semantic.warning,
-                      title: '全部费用记录',
-                      subtitle: '消费明细、收支流水与统一时间线',
+                      title: '全部记录',
+                      subtitle: '工时、支出、凭证与订阅时间线',
                       page: const TimelineView(),
                     ),
                     _MoreDestination(
@@ -214,15 +214,15 @@ class _MoreViewState extends State<MoreView> {
                     overflow: TextOverflow.ellipsis,
                     style: theme.textTheme.titleMedium?.copyWith(
                       fontWeight: FontWeight.w700,
-                      fontSize: 15.sp,
+                      fontSize: 16,
                     ),
                   ),
                   SizedBox(height: 2.h),
                   Text(
                     subtitle,
-                    maxLines: 1,
+                    maxLines: 2,
                     overflow: TextOverflow.ellipsis,
-                    style: TextStyle(fontSize: 12.sp, color: textSecondary),
+                    style: TextStyle(fontSize: 13, color: textSecondary),
                   ),
                 ],
               ),
@@ -283,17 +283,17 @@ class _MoreItemTile extends StatelessWidget {
                     title,
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
-                    style: TextStyle(
-                      fontSize: 14.5.sp,
+                    style: const TextStyle(
+                      fontSize: 15,
                       fontWeight: FontWeight.w600,
                     ),
                   ),
                   SizedBox(height: 2.h),
                   Text(
                     subtitle,
-                    maxLines: 1,
+                    maxLines: 2,
                     overflow: TextOverflow.ellipsis,
-                    style: TextStyle(fontSize: 12.sp, color: textSecondary),
+                    style: TextStyle(fontSize: 13, color: textSecondary),
                   ),
                 ],
               ),

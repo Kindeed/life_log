@@ -1,9 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:intl/intl.dart';
-import 'package:life_log/common/theme/app_radius.dart';
 import 'package:life_log/common/theme/app_spacing.dart';
-import 'package:life_log/common/theme/theme_extensions.dart';
 import 'package:life_log/common/widgets/app_date_picker.dart';
 
 class CalendarHeader extends StatelessWidget {
@@ -28,8 +26,6 @@ class CalendarHeader extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    final semantic = theme.semanticColors;
     return Padding(
       padding: EdgeInsets.fromLTRB(
         16.w,
@@ -40,7 +36,7 @@ class CalendarHeader extends StatelessWidget {
       child: Row(
         children: [
           Expanded(
-            child: GestureDetector(
+            child: InkWell(
               onTap: () async {
                 final picked = await showLifeLogDatePicker(
                   context: context,
@@ -61,7 +57,7 @@ class CalendarHeader extends StatelessWidget {
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
                       style: TextStyle(
-                        fontSize: 22.sp,
+                        fontSize: 22,
                         fontWeight: FontWeight.w700,
                         color: textPrimary,
                         letterSpacing: 0,
@@ -79,63 +75,21 @@ class CalendarHeader extends StatelessWidget {
             ),
           ),
           SizedBox(width: AppSpacing.sm.w),
-          Container(
-            padding: EdgeInsets.all(3.w),
-            decoration: BoxDecoration(
-              color: theme.cardColor,
-              borderRadius: BorderRadius.circular(AppRadius.lg),
-              border: Border.all(color: semantic.border, width: 1),
-            ),
-            child: Row(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                _buildToggleItem(context, "月", isMonth, onMonthSelected),
-                _buildToggleItem(context, "周", !isMonth, onWeekSelected),
-              ],
+          SegmentedButton<bool>(
+            showSelectedIcon: false,
+            segments: const [
+              ButtonSegment(value: true, label: Text('月'), tooltip: '月视图'),
+              ButtonSegment(value: false, label: Text('周'), tooltip: '周视图'),
+            ],
+            selected: {isMonth},
+            onSelectionChanged: (value) =>
+                value.first ? onMonthSelected() : onWeekSelected(),
+            style: SegmentedButton.styleFrom(
+              minimumSize: const Size(48, 48),
+              visualDensity: VisualDensity.standard,
             ),
           ),
         ],
-      ),
-    );
-  }
-
-  Widget _buildToggleItem(
-    BuildContext context,
-    String text,
-    bool isActive,
-    VoidCallback onTap,
-  ) {
-    return GestureDetector(
-      onTap: onTap,
-      child: AnimatedContainer(
-        duration: const Duration(milliseconds: 200),
-        padding: EdgeInsets.symmetric(horizontal: 12.w, vertical: 5.h),
-        decoration: BoxDecoration(
-          color: isActive
-              ? Theme.of(context).colorScheme.primary.withValues(alpha: 0.12)
-              : Colors.transparent,
-          borderRadius: BorderRadius.circular(AppRadius.md),
-          boxShadow: isActive
-              ? [
-                  BoxShadow(
-                    color: Theme.of(
-                      context,
-                    ).shadowColor.withValues(alpha: isDark ? 0.18 : 0.08),
-                    blurRadius: 10,
-                  ),
-                ]
-              : [],
-        ),
-        child: Text(
-          text,
-          style: TextStyle(
-            color: isActive
-                ? Theme.of(context).colorScheme.primary
-                : Theme.of(context).colorScheme.onSurfaceVariant,
-            fontWeight: isActive ? FontWeight.w700 : FontWeight.w500,
-            fontSize: 12.5.sp,
-          ),
-        ),
       ),
     );
   }

@@ -31,19 +31,21 @@ import 'subscription_dialogs.dart';
 import 'subscription_editor_launcher.dart';
 
 class SubscriptionView extends StatelessWidget {
-  const SubscriptionView({super.key});
+  final bool embedded;
+  const SubscriptionView({super.key, this.embedded = false});
 
   @override
   Widget build(BuildContext context) {
     return BlocProvider<SubscriptionCubit>(
       create: (_) => serviceLocator<SubscriptionCubit>()..start(),
-      child: const _SubscriptionContent(),
+      child: _SubscriptionContent(embedded: embedded),
     );
   }
 }
 
 class _SubscriptionContent extends StatelessWidget {
-  const _SubscriptionContent();
+  final bool embedded;
+  const _SubscriptionContent({required this.embedded});
 
   @override
   Widget build(BuildContext context) {
@@ -62,6 +64,7 @@ class _SubscriptionContent extends StatelessWidget {
         final showPageState = isFailure || state.entries.isEmpty;
         return AppListPage(
           title: "订阅",
+          embedded: embedded,
           isLoading: isLoading,
           loading: const AppLoading(label: '正在加载订阅'),
           isEmpty: !isLoading && showPageState,

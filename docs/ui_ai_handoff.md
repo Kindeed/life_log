@@ -8,7 +8,7 @@ Start from the UI Contract Pack:
 - `docs/ui/ui-contract.md`
 - `docs/ui/component-catalog.md`
 
-The current primary information architecture is Today / Records / Projects.
+The current primary information architecture is 工时 / 项目 / 更多.
 Design work should use mock state from `presentation/fixtures/` before touching
 live Cubit integration.
 

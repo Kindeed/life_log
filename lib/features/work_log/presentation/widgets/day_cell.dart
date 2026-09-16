@@ -57,11 +57,13 @@ class DayCell extends StatelessWidget {
     var dayColor = textPrimary;
     if (isSelected) {
       decoration = BoxDecoration(
-        color: AppColors.primaryBlue,
+        color: Theme.of(context).colorScheme.primary,
         borderRadius: BorderRadius.circular(12),
         boxShadow: [
           BoxShadow(
-            color: AppColors.primaryBlue.withValues(alpha: 0.28),
+            color: Theme.of(
+              context,
+            ).colorScheme.primary.withValues(alpha: 0.28),
             blurRadius: 16,
             offset: const Offset(0, 4),
           ),
@@ -71,11 +73,14 @@ class DayCell extends StatelessWidget {
       bottomColor = colorScheme.onPrimary.withValues(alpha: 0.95);
     } else if (isToday) {
       decoration = BoxDecoration(
-        color: AppColors.primaryBlue.withValues(alpha: 0.08),
-        border: Border.all(color: AppColors.primaryBlue, width: 1),
+        color: Theme.of(context).colorScheme.primary.withValues(alpha: 0.08),
+        border: Border.all(
+          color: Theme.of(context).colorScheme.primary,
+          width: 1,
+        ),
         borderRadius: BorderRadius.circular(12),
       );
-      dayColor = AppColors.primaryBlue;
+      dayColor = Theme.of(context).colorScheme.primary;
     }
 
     if (calendarFormat == CalendarFormat.month &&
@@ -104,7 +109,8 @@ class DayCell extends StatelessWidget {
     return Center(
       child: Container(
         width: 44.w,
-        height: 50.h,
+        height:
+            50.h * math.max(1, MediaQuery.textScalerOf(context).scale(14) / 14),
         margin: EdgeInsets.all(2.h),
         decoration:
             decoration ??
@@ -126,8 +132,8 @@ class DayCell extends StatelessWidget {
               math.max(9.0, contentHeight * 0.38),
             );
             final statusFontSize = math.min(
-              9.sp,
-              math.max(6.5, contentHeight * 0.26),
+              11.sp,
+              math.max(8.0, contentHeight * 0.26),
             );
             final verticalGap = math.min(
               2.h,
@@ -220,7 +226,7 @@ class DayCell extends StatelessWidget {
                       child: Text(
                         holidayIsWork ? "班" : "休",
                         style: TextStyle(
-                          fontSize: math.min(7.5.sp, compact ? 6.5 : 7.5.sp),
+                          fontSize: math.min(9.sp, compact ? 8 : 9.sp),
                           color: holidayIsWork
                               ? colorScheme.onSurfaceVariant
                               : colorScheme.onErrorContainer,
@@ -251,7 +257,7 @@ class DayCell extends StatelessWidget {
     if (metadata.kind == WorkLogDayMetadataKind.solarTerm) {
       return _DayCellStatus(
         text: metadata.text,
-        color: AppColors.primaryBlue.withValues(alpha: 0.7),
+        color: Theme.of(context).colorScheme.primary.withValues(alpha: 0.7),
       );
     }
     if (metadata.kind == WorkLogDayMetadataKind.festival) {

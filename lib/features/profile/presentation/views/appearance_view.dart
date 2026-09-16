@@ -19,7 +19,7 @@ class AppearanceView extends StatelessWidget {
 
     return Scaffold(
       backgroundColor: theme.scaffoldBackgroundColor,
-      appBar: AppBar(title: const Text('外观设置'), centerTitle: true),
+      appBar: AppBar(title: const Text('外观设置')),
       body: AnimatedBuilder(
         animation: Listenable.merge([themeController, photoDisplayPreferences]),
         builder: (context, _) {

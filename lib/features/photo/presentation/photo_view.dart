@@ -12,6 +12,7 @@ import 'package:life_log/common/widgets/app_card.dart';
 import 'package:life_log/common/widgets/app_empty_state.dart';
 import 'package:life_log/common/widgets/app_filter_chip_bar.dart';
 import 'package:life_log/common/widgets/app_loading.dart';
+import 'package:life_log/common/widgets/app_load_failure.dart';
 import 'package:life_log/common/widgets/app_metric_tile.dart';
 import 'package:life_log/common/widgets/app_pill.dart';
 import 'package:life_log/common/widgets/app_text_field.dart';
@@ -103,6 +104,11 @@ class _PhotoViewState extends State<PhotoView> {
                               evidenceState.entries.isEmpty) ||
                           (expenseState.status == ExpenseRecordStatus.loading &&
                               expenseState.entries.isEmpty);
+                      final hasFailure =
+                          projectState.failure != null ||
+                          photoState.failure != null ||
+                          evidenceState.failure != null ||
+                          expenseState.failure != null;
                       final expenseRecords = expenseState.entries;
                       final projectCount = projectState.totalProjectCount;
 
@@ -119,6 +125,12 @@ class _PhotoViewState extends State<PhotoView> {
                         sortMode: photoState.sortMode,
                       );
 
+                      if (projectCount == 0 && projects.isEmpty && hasFailure) {
+                        return AppLoadFailure(
+                          message: '暂时无法读取项目，请重试。',
+                          onRetry: _reloadProjectOverview,
+                        );
+                      }
                       if (projectCount == 0 && projects.isEmpty) {
                         return const AppEmptyState(
                           icon: Icons.folder_open_rounded,
@@ -129,6 +141,16 @@ class _PhotoViewState extends State<PhotoView> {
 
                       return CustomScrollView(
                         slivers: [
+                          if (hasFailure)
+                            SliverToBoxAdapter(
+                              child: ConstrainedPage(
+                                child: AppLoadFailure(
+                                  compact: true,
+                                  message: '部分数据未能刷新，项目汇总可能不完整。',
+                                  onRetry: _reloadProjectOverview,
+                                ),
+                              ),
+                            ),
                           SliverToBoxAdapter(
                             child: ConstrainedPage(
                               child: _ProjectOverview(

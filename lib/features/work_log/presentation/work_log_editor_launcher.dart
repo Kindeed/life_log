@@ -38,6 +38,8 @@ Future<void> openWorkLogEditorSheet(
   await showModalBottomSheet<void>(
     context: context,
     isScrollControlled: true,
+    isDismissible: false,
+    enableDrag: false,
     backgroundColor: Colors.transparent,
     builder: (_) => AddLogSheet(
       selectedDate: selectedDate,

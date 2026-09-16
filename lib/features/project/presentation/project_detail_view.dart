@@ -7,7 +7,6 @@ import 'package:life_log/features/project/data/project_cover_file_store.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
-import 'package:life_log/common/theme/app_colors.dart';
 import 'package:life_log/common/utils/formatters.dart';
 import 'package:life_log/common/widgets/app_button.dart';
 import 'package:life_log/common/widgets/app_safe_bottom_bar.dart';
@@ -342,7 +341,10 @@ class _ProjectDetailViewState extends State<ProjectDetailView>
                   ),
                   child: Text(
                     '已归档',
-                    style: TextStyle(fontSize: 10.sp, color: Colors.grey[700]),
+                    style: TextStyle(
+                      fontSize: 10.sp,
+                      color: theme.colorScheme.onSurfaceVariant,
+                    ),
                   ),
                 ),
               ],
@@ -933,7 +935,7 @@ class _ProjectDetailViewState extends State<ProjectDetailView>
                         child: Container(
                           decoration: BoxDecoration(
                             color: isSelected
-                                ? AppColors.primaryBlue
+                                ? Theme.of(context).colorScheme.primary
                                 : Colors.black26,
                             shape: BoxShape.circle,
                             border: Border.all(color: Colors.white, width: 1.5),
@@ -941,7 +943,7 @@ class _ProjectDetailViewState extends State<ProjectDetailView>
                           child: Icon(
                             isSelected ? Icons.check : null,
                             size: 16.sp,
-                            color: Colors.white,
+                            color: Theme.of(context).colorScheme.onPrimary,
                           ),
                         ),
                       ),

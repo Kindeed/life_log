@@ -1,7 +1,21 @@
 # LifeLog UI Contract
 
-LifeLog primary information architecture is **Today / Records / Projects**.
-UI work must preserve that shape unless a new architecture decision updates it.
+LifeLog primary information architecture is **工时 / 项目 / 更多**, as approved
+in ADR 0002. Work logs are the default destination. A calendar day presents one
+primary work status; existing multiple entries remain available in day details.
+Do not delete or normalize historical entries to simplify presentation.
+
+## Visual baseline (2026-09-16)
+
+Use one shared Material 3 theme builder for both brightness modes. Preserve
+paired dynamic foreground/background colors. Pages use surfaceContainerLowest,
+cards use surface, and inputs use the semantic muted surface. Avoid per-screen
+primary blue overrides. Use AppTypography roles, AppSpacing and AppRadius.
+Page titles are left aligned; form-sheet titles retain their explicit layout.
+Keep compact engineering input/output layouts and local-only photo semantics.
+Interactive controls should retain at least 48 logical pixels of touch height;
+large text should reflow rather than be globally clamped. Loading, failure,
+empty and partial-data states must remain distinguishable.
 
 ## UI Models May Edit
 

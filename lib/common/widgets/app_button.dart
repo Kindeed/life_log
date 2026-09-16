@@ -79,7 +79,7 @@ class AppButton extends StatelessWidget {
       isLoading: isLoading,
     );
     final shape = RoundedRectangleBorder(
-      borderRadius: BorderRadius.circular(AppRadius.xl),
+      borderRadius: BorderRadius.circular(AppRadius.md),
     );
     final minimumSize = Size.fromHeight(height);
     final textStyle = Theme.of(context).textTheme.labelLarge?.copyWith(
@@ -156,7 +156,7 @@ class _ButtonContent extends StatelessWidget {
             children: [
               Icon(icon, size: 18),
               const SizedBox(width: AppSpacing.sm),
-              Text(label),
+              Flexible(child: Text(label, textAlign: TextAlign.center)),
             ],
           );
 

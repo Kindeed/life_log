@@ -56,7 +56,7 @@ void main() {
         expect(tabsView, isNot(contains("label: '财务'")));
         expect(tabsView, contains("label: '订阅'"));
         expect(tabsView, contains('SubscriptionView()'));
-        expect(timeline, contains('SubscriptionView()'));
+        expect(timeline, contains('SubscriptionView(embedded: true)'));
         expect(timeline, contains("static const title = '记录'"));
         expect(timeline, contains('title: const Text(TimelineView.title)'));
       },

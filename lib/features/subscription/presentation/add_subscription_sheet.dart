@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:life_log/common/widgets/app_unsaved_changes_guard.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:intl/intl.dart';
 import 'package:life_log/common/theme/theme_extensions.dart';
@@ -39,6 +40,25 @@ class _AddSubscriptionSheetState extends State<AddSubscriptionSheet> {
   SubscriptionCurrency _currency = SubscriptionCurrency.cny;
   int _reminderDays = 1;
   DateTime _nextPaymentDate = DateTime.now();
+  bool _busy = false;
+  late final List<Object?> _initialDraft;
+  List<Object?> get _draft => [
+    _nameController.text,
+    _priceController.text,
+    _cycle,
+    _currency,
+    _reminderDays,
+    dateOnlyLocal(_nextPaymentDate),
+  ];
+  bool get _hasChanges {
+    final current = _draft;
+    for (var i = 0; i < current.length; i++) {
+      if (current[i] != _initialDraft[i]) return true;
+    }
+    return false;
+  }
+
+  void _refreshDraft() => setState(() {});
 
   @override
   void initState() {
@@ -54,6 +74,9 @@ class _AddSubscriptionSheetState extends State<AddSubscriptionSheet> {
       _reminderDays = existingEntry.reminderDays;
       _nextPaymentDate = dateOnlyLocal(existingEntry.nextPaymentDate);
     }
+    _initialDraft = _draft;
+    _nameController.addListener(_refreshDraft);
+    _priceController.addListener(_refreshDraft);
   }
 
   @override
@@ -68,125 +91,135 @@ class _AddSubscriptionSheetState extends State<AddSubscriptionSheet> {
 
     final double sheetHeight = MediaQuery.of(context).size.height * 0.85;
 
-    return AppSheetScaffold(
-      presentation: widget.asPage
-          ? AppSheetPresentation.page
-          : AppSheetPresentation.sheet,
-      title: widget.existingEntry == null ? "添加订阅" : "编辑订阅",
-      height: widget.asPage ? null : sheetHeight,
-      padding: EdgeInsets.symmetric(horizontal: 24.w),
-      bottomBar: AppSafeBottomBar(
-        padding: EdgeInsets.symmetric(horizontal: 24.w, vertical: 10.h),
-        child: widget.existingEntry == null
-            ? SizedBox(
-                width: double.infinity,
-                child: AppButton.primary(
-                  label: "保存订阅",
-                  onPressed: _onSave,
-                  height: 50.h,
-                ),
-              )
-            : Row(
-                children: [
-                  Expanded(
-                    child: AppButton.destructive(
-                      label: "删除",
-                      icon: Icons.delete_outline_rounded,
-                      onPressed: _onDelete,
-                      height: 50.h,
-                    ),
-                  ),
-                  SizedBox(width: 12.w),
-                  Expanded(
+    return AppUnsavedChangesGuard(
+      hasChanges: _hasChanges,
+      busy: _busy,
+      child: AbsorbPointer(
+        absorbing: _busy,
+        child: AppSheetScaffold(
+          hideBottomBarWhenKeyboardVisible: false,
+          presentation: widget.asPage
+              ? AppSheetPresentation.page
+              : AppSheetPresentation.sheet,
+          title: widget.existingEntry == null ? "添加订阅" : "编辑订阅",
+          height: widget.asPage ? null : sheetHeight,
+          padding: EdgeInsets.symmetric(horizontal: 24.w),
+          bottomBar: AppSafeBottomBar(
+            padding: EdgeInsets.symmetric(horizontal: 24.w, vertical: 10.h),
+            child: widget.existingEntry == null
+                ? SizedBox(
+                    width: double.infinity,
                     child: AppButton.primary(
-                      label: "保存修改",
-                      onPressed: _onSave,
+                      label: "保存订阅",
+                      onPressed: _busy ? null : _onSave,
+                      isLoading: _busy,
                       height: 50.h,
                     ),
+                  )
+                : Row(
+                    children: [
+                      Expanded(
+                        child: AppButton.destructive(
+                          label: "删除",
+                          icon: Icons.delete_outline_rounded,
+                          onPressed: _busy ? null : _onDelete,
+                          height: 50.h,
+                        ),
+                      ),
+                      SizedBox(width: 12.w),
+                      Expanded(
+                        child: AppButton.primary(
+                          label: "保存修改",
+                          onPressed: _busy ? null : _onSave,
+                          isLoading: _busy,
+                          height: 50.h,
+                        ),
+                      ),
+                    ],
                   ),
-                ],
-              ),
-      ),
-      child: SingleChildScrollView(
-        keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
-        physics: const BouncingScrollPhysics(),
-        child: Column(
-          children: [
-            _buildTextField(
-              "服务名称",
-              _nameController,
-              icon: Icons.subscriptions_outlined,
-              hint: "如: Netflix, 百度网盘",
-              isDark: isDark,
-              bgColor: bgColor,
-              textPrimary: textPrimary,
-              textSecondary: textSecondary,
-              borderColor: borderColor,
+          ),
+          child: SingleChildScrollView(
+            keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
+            physics: const BouncingScrollPhysics(),
+            child: Column(
+              children: [
+                _buildTextField(
+                  "服务名称",
+                  _nameController,
+                  icon: Icons.subscriptions_outlined,
+                  hint: "如: Netflix, 百度网盘",
+                  isDark: isDark,
+                  bgColor: bgColor,
+                  textPrimary: textPrimary,
+                  textSecondary: textSecondary,
+                  borderColor: borderColor,
+                ),
+                SizedBox(height: 16.h),
+                _buildTextField(
+                  "价格",
+                  _priceController,
+                  isNumber: true,
+                  icon: Icons.attach_money,
+                  hint: "0.00",
+                  suffix: _currency.symbol,
+                  isDark: isDark,
+                  bgColor: bgColor,
+                  textPrimary: textPrimary,
+                  textSecondary: textSecondary,
+                  borderColor: borderColor,
+                ),
+                SizedBox(height: 16.h),
+                _buildSelector(
+                  "币种",
+                  Icons.currency_exchange_rounded,
+                  _currency.displayLabel,
+                  _showCurrencyPicker,
+                  isDark: isDark,
+                  bgColor: bgColor,
+                  textPrimary: textPrimary,
+                  textSecondary: textSecondary,
+                  borderColor: borderColor,
+                ),
+                SizedBox(height: 16.h),
+                _buildSelector(
+                  "付款周期",
+                  Icons.update,
+                  _getCycleText(_cycle),
+                  _showCyclePicker,
+                  isDark: isDark,
+                  bgColor: bgColor,
+                  textPrimary: textPrimary,
+                  textSecondary: textSecondary,
+                  borderColor: borderColor,
+                ),
+                SizedBox(height: 16.h),
+                _buildSelector(
+                  "扣费提醒",
+                  Icons.notifications_active_outlined,
+                  _reminderLabel(_reminderDays),
+                  _showReminderPicker,
+                  isDark: isDark,
+                  bgColor: bgColor,
+                  textPrimary: textPrimary,
+                  textSecondary: textSecondary,
+                  borderColor: borderColor,
+                ),
+                SizedBox(height: 16.h),
+                _buildSelector(
+                  "下次扣款日期",
+                  Icons.calendar_today_outlined,
+                  DateFormat('yyyy-MM-dd').format(_nextPaymentDate),
+                  _pickDate,
+                  isDark: isDark,
+                  bgColor: bgColor,
+                  textPrimary: textPrimary,
+                  textSecondary: textSecondary,
+                  borderColor: borderColor,
+                ),
+                SizedBox(height: 24.h),
+              ],
             ),
-            SizedBox(height: 16.h),
-            _buildTextField(
-              "价格",
-              _priceController,
-              isNumber: true,
-              icon: Icons.attach_money,
-              hint: "0.00",
-              suffix: _currency.symbol,
-              isDark: isDark,
-              bgColor: bgColor,
-              textPrimary: textPrimary,
-              textSecondary: textSecondary,
-              borderColor: borderColor,
-            ),
-            SizedBox(height: 16.h),
-            _buildSelector(
-              "币种",
-              Icons.currency_exchange_rounded,
-              _currency.displayLabel,
-              _showCurrencyPicker,
-              isDark: isDark,
-              bgColor: bgColor,
-              textPrimary: textPrimary,
-              textSecondary: textSecondary,
-              borderColor: borderColor,
-            ),
-            SizedBox(height: 16.h),
-            _buildSelector(
-              "付款周期",
-              Icons.update,
-              _getCycleText(_cycle),
-              _showCyclePicker,
-              isDark: isDark,
-              bgColor: bgColor,
-              textPrimary: textPrimary,
-              textSecondary: textSecondary,
-              borderColor: borderColor,
-            ),
-            SizedBox(height: 16.h),
-            _buildSelector(
-              "扣费提醒",
-              Icons.notifications_active_outlined,
-              _reminderLabel(_reminderDays),
-              _showReminderPicker,
-              isDark: isDark,
-              bgColor: bgColor,
-              textPrimary: textPrimary,
-              textSecondary: textSecondary,
-              borderColor: borderColor,
-            ),
-            SizedBox(height: 16.h),
-            _buildSelector(
-              "下次扣款日期",
-              Icons.calendar_today_outlined,
-              DateFormat('yyyy-MM-dd').format(_nextPaymentDate),
-              _pickDate,
-              isDark: isDark,
-              bgColor: bgColor,
-              textPrimary: textPrimary,
-              textSecondary: textSecondary,
-              borderColor: borderColor,
-            ),
-            SizedBox(height: 24.h),
-          ],
+          ),
         ),
       ),
     );
@@ -374,12 +407,13 @@ class _AddSubscriptionSheetState extends State<AddSubscriptionSheet> {
       firstDate: DateTime.now().subtract(const Duration(days: 365)),
       lastDate: DateTime(2030),
     );
-    if (picked != null) {
+    if (picked != null && mounted) {
       setState(() => _nextPaymentDate = dateOnlyLocal(picked));
     }
   }
 
   Future<void> _onSave() async {
+    if (_busy) return;
     final name = _nameController.text.trim();
     if (name.isEmpty) {
       _showMessage("请输入服务名称", isError: true);
@@ -419,11 +453,13 @@ class _AddSubscriptionSheetState extends State<AddSubscriptionSheet> {
     final navigator = Navigator.of(context);
     final messenger = ScaffoldMessenger.of(context);
     final successColor = Theme.of(context).semanticColors.success;
+    setState(() => _busy = true);
     final result = await serviceLocator<SaveSubscriptionEntry>().call(
       entry,
       markDirty: markDirty,
     );
     if (!mounted) return;
+    setState(() => _busy = false);
 
     result.when(
       success: (_) {
@@ -446,20 +482,27 @@ class _AddSubscriptionSheetState extends State<AddSubscriptionSheet> {
   }
 
   Future<void> _onDelete() async {
+    if (_busy) return;
     final existingEntry = widget.existingEntry;
     if (existingEntry == null) return;
 
+    setState(() => _busy = true);
     final confirmed = await confirmSubscriptionDelete(
       context,
       name: existingEntry.name,
     );
-    if (!confirmed || !mounted) return;
+    if (!mounted) return;
+    if (!confirmed) {
+      setState(() => _busy = false);
+      return;
+    }
 
     final result = await serviceLocator<DeleteSubscriptionEntry>().call(
       existingEntry.id,
     );
     if (!mounted) return;
 
+    setState(() => _busy = false);
     final failure = result.failureOrNull;
     if (failure != null) {
       _showMessage("删除失败：${_errorText(failure.message)}", isError: true);

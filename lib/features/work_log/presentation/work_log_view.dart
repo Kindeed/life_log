@@ -6,6 +6,7 @@ import 'package:life_log/common/theme/app_spacing.dart';
 import 'package:life_log/common/widgets/app_card.dart';
 import 'package:life_log/common/widgets/app_empty_state.dart';
 import 'package:life_log/common/widgets/app_loading.dart';
+import 'package:life_log/common/widgets/app_load_failure.dart';
 import 'package:life_log/core/di/service_locator.dart';
 import 'package:life_log/features/work_log/application/delete_work_log_entry.dart';
 import 'package:life_log/features/work_log/domain/entities/work_log_entry.dart';
@@ -124,7 +125,16 @@ class _WorkLogContent extends StatelessWidget {
                                 fontSize: 12.sp,
                               ),
                             ),
-                            rowHeight: 58.h,
+                            rowHeight:
+                                58.h *
+                                (MediaQuery.textScalerOf(context).scale(14) /
+                                        14)
+                                    .clamp(1, double.infinity),
+                            daysOfWeekHeight:
+                                24 *
+                                (MediaQuery.textScalerOf(context).scale(12) /
+                                        12)
+                                    .clamp(1, double.infinity),
                             calendarStyle: const CalendarStyle(
                               markersMaxCount: 0,
                             ),
@@ -184,6 +194,13 @@ class _WorkLogContent extends StatelessWidget {
                       );
                     }
 
+                    if (cubitState.status == WorkLogStatus.failure &&
+                        events.isEmpty) {
+                      return AppLoadFailure(
+                        message: '暂时无法读取工时记录，已有数据不会被删除。',
+                        onRetry: context.read<WorkLogCubit>().loadFocusedMonth,
+                      );
+                    }
                     if (events.isEmpty) {
                       return AppCard(
                         padding: EdgeInsets.symmetric(
@@ -198,7 +215,7 @@ class _WorkLogContent extends StatelessWidget {
                       );
                     }
 
-                    return DayLogList(
+                    final list = DayLogList(
                       date: selectedDate,
                       logs: events,
                       onEditLog: (log) => _openLogSheet(
@@ -207,6 +224,19 @@ class _WorkLogContent extends StatelessWidget {
                         existingEntry: log,
                       ),
                       onDeleteLog: (log) => _deleteLog(context, log),
+                    );
+                    return Column(
+                      children: [
+                        if (cubitState.status == WorkLogStatus.failure)
+                          AppLoadFailure(
+                            compact: true,
+                            message: '刷新失败，当前显示上次读取的记录。',
+                            onRetry: context
+                                .read<WorkLogCubit>()
+                                .loadFocusedMonth,
+                          ),
+                        list,
+                      ],
                     );
                   },
                 ),

@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
+import 'package:life_log/common/widgets/app_unsaved_changes_guard.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:life_log/common/theme/app_colors.dart';
 import 'package:life_log/common/theme/theme_extensions.dart';
@@ -44,6 +45,7 @@ class AddLogSheet extends StatefulWidget {
 
 class _AddLogSheetState extends State<AddLogSheet> {
   late final WorkLogEditorCubit _editorCubit;
+  late final WorkLogEditorState _initialDraft;
   late final Future<List<ProjectEntry>> _projectEntriesFuture;
   final TextEditingController _noteController = TextEditingController();
   final FocusNode _noteFocusNode = FocusNode();
@@ -71,6 +73,7 @@ class _AddLogSheetState extends State<AddLogSheet> {
     _projectEntriesFuture = _loadProjectEntries();
 
     final editorState = _editorCubit.state;
+    _initialDraft = editorState;
     _noteController.text = editorState.note;
     _tripCityController.text = editorState.tripLocation;
     _expenseController.text = editorState.expenseText;
@@ -132,78 +135,94 @@ class _AddLogSheetState extends State<AddLogSheet> {
           },
           child: BlocBuilder<WorkLogEditorCubit, WorkLogEditorState>(
             builder: (context, editorState) {
-              return AppSheetScaffold(
-                presentation: widget.asPage
-                    ? AppSheetPresentation.page
-                    : AppSheetPresentation.sheet,
-                height: widget.asPage ? null : sheetHeight,
-                title: widget.existingEntry != null ? "修改记录" : "记录一下",
-                padding: EdgeInsets.zero,
-                hideBottomBarWhenKeyboardVisible: false,
-                bottomBar: AppSafeBottomBar(
-                  padding: EdgeInsets.fromLTRB(24.w, 8.h, 24.w, 16.h),
-                  child: _buildBottomActions(editorState),
-                ),
-                child: Column(
-                  children: [
-                    _buildTypeSelector(
-                      editorState,
-                      isDark,
-                      bgColor,
-                      textPrimary,
-                      textSecondary,
-                    ),
+              final isCommitted =
+                  editorState.status == WorkLogEditorStatus.saved ||
+                  editorState.status == WorkLogEditorStatus.deleted;
+              final isBusy =
+                  editorState.status == WorkLogEditorStatus.submitting ||
+                  editorState.status == WorkLogEditorStatus.deleting;
+              return AppUnsavedChangesGuard(
+                hasChanges:
+                    !isCommitted &&
+                    editorState.copyWith(
+                          status: WorkLogEditorStatus.editing,
+                          clearFailure: true,
+                        ) !=
+                        _initialDraft,
+                busy: isBusy,
+                child: AppSheetScaffold(
+                  presentation: widget.asPage
+                      ? AppSheetPresentation.page
+                      : AppSheetPresentation.sheet,
+                  height: widget.asPage ? null : sheetHeight,
+                  title: widget.existingEntry != null ? "修改记录" : "记录一下",
+                  padding: EdgeInsets.zero,
+                  hideBottomBarWhenKeyboardVisible: false,
+                  bottomBar: AppSafeBottomBar(
+                    padding: EdgeInsets.fromLTRB(24.w, 8.h, 24.w, 16.h),
+                    child: _buildBottomActions(editorState),
+                  ),
+                  child: Column(
+                    children: [
+                      _buildTypeSelector(
+                        editorState,
+                        isDark,
+                        bgColor,
+                        textPrimary,
+                        textSecondary,
+                      ),
 
-                    Expanded(
-                      child: SingleChildScrollView(
-                        keyboardDismissBehavior:
-                            ScrollViewKeyboardDismissBehavior.onDrag,
-                        padding: EdgeInsets.symmetric(
-                          horizontal: 24.w,
-                          vertical: 20.h,
-                        ),
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            if (editorState.type == WorkLogEntryType.work)
-                              _buildWorkForm(
-                                editorState,
-                                isDark,
-                                bgColor,
-                                textPrimary,
-                              ),
-                            if (editorState.type ==
-                                WorkLogEntryType.businessTrip)
-                              _buildTripForm(
-                                editorState,
-                                isDark,
-                                bgColor,
-                                textPrimary,
-                              ),
-                            if (editorState.type == WorkLogEntryType.leave)
-                              _buildLeaveForm(
-                                editorState,
-                                isDark,
-                                bgColor,
-                                textPrimary,
-                                textSecondary,
-                              ),
-                            if (editorState.type == WorkLogEntryType.rest)
-                              _buildRestForm(isDark, textSecondary),
+                      Expanded(
+                        child: SingleChildScrollView(
+                          keyboardDismissBehavior:
+                              ScrollViewKeyboardDismissBehavior.onDrag,
+                          padding: EdgeInsets.symmetric(
+                            horizontal: 24.w,
+                            vertical: 20.h,
+                          ),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              if (editorState.type == WorkLogEntryType.work)
+                                _buildWorkForm(
+                                  editorState,
+                                  isDark,
+                                  bgColor,
+                                  textPrimary,
+                                ),
+                              if (editorState.type ==
+                                  WorkLogEntryType.businessTrip)
+                                _buildTripForm(
+                                  editorState,
+                                  isDark,
+                                  bgColor,
+                                  textPrimary,
+                                ),
+                              if (editorState.type == WorkLogEntryType.leave)
+                                _buildLeaveForm(
+                                  editorState,
+                                  isDark,
+                                  bgColor,
+                                  textPrimary,
+                                  textSecondary,
+                                ),
+                              if (editorState.type == WorkLogEntryType.rest)
+                                _buildRestForm(isDark, textSecondary),
 
-                            SizedBox(height: 20.h),
-                            AppTextField(
-                              controller: _noteController,
-                              focusNode: _noteFocusNode,
-                              hintText: "备注 (可选)...",
-                              maxLines: 3,
-                              onChanged: _editorCubit.changeNote,
-                            ),
-                          ],
+                              SizedBox(height: 20.h),
+                              AppTextField(
+                                controller: _noteController,
+                                focusNode: _noteFocusNode,
+                                hintText: "备注 (可选)...",
+                                maxLines: 3,
+                                onChanged: _editorCubit.changeNote,
+                              ),
+                            ],
+                          ),
                         ),
                       ),
-                    ),
-                  ],
+                    ],
+                  ),
                 ),
               );
             },
@@ -592,11 +611,15 @@ class _AddLogSheetState extends State<AddLogSheet> {
         padding: EdgeInsets.symmetric(vertical: 8.h),
         decoration: BoxDecoration(
           color: isSelected
-              ? AppColors.primaryBlue.withValues(alpha: isDark ? 0.2 : 0.1)
+              ? Theme.of(
+                  context,
+                ).colorScheme.primary.withValues(alpha: isDark ? 0.2 : 0.1)
               : bgColor,
           borderRadius: BorderRadius.circular(8),
           border: Border.all(
-            color: isSelected ? AppColors.primaryBlue : Colors.transparent,
+            color: isSelected
+                ? Theme.of(context).colorScheme.primary
+                : Colors.transparent,
           ),
         ),
         alignment: Alignment.center,
@@ -604,7 +627,7 @@ class _AddLogSheetState extends State<AddLogSheet> {
           value == 0 ? "无" : "$value h",
           style: TextStyle(
             color: isSelected
-                ? AppColors.primaryBlue
+                ? Theme.of(context).colorScheme.primary
                 : Theme.of(context).colorScheme.onSurface,
             fontWeight: FontWeight.bold,
           ),
