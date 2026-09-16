@@ -55,6 +55,8 @@ void main() {
         ).readAsStringSync();
 
         expect(source, contains('待处理'));
+        expect(source, contains("label: '扣费提醒'"));
+        expect(source, isNot(contains('7 天内扣款')));
         expect(source, contains('最近工时'));
         expect(source, isNot(contains('AppMetricTile')));
         expect(source, isNot(contains('本月工时')));

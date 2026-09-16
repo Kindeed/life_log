@@ -1,6 +1,7 @@
 import 'package:isar_community/isar.dart';
 import 'package:life_log/features/subscription/domain/entities/subscription_edit_draft.dart';
 import 'package:life_log/features/subscription/domain/entities/subscription_entry.dart';
+import 'package:life_log/features/subscription/domain/entities/subscription_currency.dart';
 import 'package:life_log/features/subscription/domain/repositories/subscription_repository_port.dart';
 import 'package:life_log/features/subscription/data/subscription_model.dart';
 import 'package:life_log/features/subscription/data/subscription_repository.dart';
@@ -74,6 +75,7 @@ extension LegacySubscriptionMapper on Subscription {
       id: id,
       name: name,
       price: price,
+      currency: subscriptionCurrencyFromCode(currency),
       cycle: cycle.toSubscriptionBillingCycle(),
       nextPaymentDate: nextPaymentDate,
       anchorDate: anchorDate,
@@ -92,6 +94,7 @@ extension SubscriptionEntryLegacyMapper on SubscriptionEntry {
       ..id = id == 0 ? Isar.autoIncrement : id
       ..name = name
       ..price = price
+      ..currency = currency.code
       ..cycle = cycle.toLegacySubscriptionCycle()
       ..nextPaymentDate = nextPaymentDate
       ..anchorDate = anchorDate

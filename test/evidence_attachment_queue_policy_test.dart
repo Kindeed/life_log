@@ -96,7 +96,7 @@ void main() {
 
     test('Supabase migration creates remote evidence attachments table', () {
       final migration = File(
-        'supabase/migrations/20260621_evidence_attachments.sql',
+        'supabase/migrations/20260621000000_evidence_attachments.sql',
       );
 
       expect(migration.existsSync(), isTrue);

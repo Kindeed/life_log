@@ -1,5 +1,7 @@
 import 'package:life_log/common/utils/date_utils.dart';
 import 'package:life_log/features/subscription/domain/entities/subscription_entry.dart';
+import 'subscription_currency.dart';
+import 'subscription_exchange_rates.dart';
 
 extension SubscriptionEntryStats on SubscriptionEntry {
   double get yearlyCost {
@@ -39,6 +41,17 @@ extension SubscriptionEntryStats on SubscriptionEntry {
         amount,
       _ => 0.0,
     };
+  }
+
+  double? yearlyCostInCny(SubscriptionExchangeRates rates) {
+    return rates.convertToCny(yearlyCost, currency);
+  }
+
+  double? costForMonthInCny(
+    DateTime targetMonth,
+    SubscriptionExchangeRates rates,
+  ) {
+    return rates.convertToCny(costForMonth(targetMonth), currency);
   }
 
   DateTime nextOccurrenceAfter(DateTime referenceDay) {
@@ -87,6 +100,42 @@ extension SubscriptionEntryListStats on Iterable<SubscriptionEntry> {
 
     dueSoon.sort((a, b) => a.nextPaymentDate.compareTo(b.nextPaymentDate));
     return dueSoon;
+  }
+
+  /// Returns only entries whose own reminder window includes today.
+  /// `reminderDays == 0` means notify on the payment day itself.
+  List<SubscriptionEntry> dueForReminderFrom(DateTime referenceDay) {
+    final start = dateOnlyLocal(referenceDay);
+    final due = where((entry) {
+      if (!entry.status.isBillable) return false;
+      final paymentDay = dateOnlyLocal(entry.nextPaymentDate);
+      final end = start.add(Duration(days: entry.reminderDays));
+      return !paymentDay.isBefore(start) && !paymentDay.isAfter(end);
+    }).toList();
+    due.sort((a, b) => a.nextPaymentDate.compareTo(b.nextPaymentDate));
+    return due;
+  }
+
+  double totalYearlyCostInCny(SubscriptionExchangeRates rates) {
+    return fold(0.0, (sum, entry) => sum + (entry.yearlyCostInCny(rates) ?? 0));
+  }
+
+  double totalCostForMonthInCny(
+    DateTime targetMonth,
+    SubscriptionExchangeRates rates,
+  ) {
+    return fold(
+      0.0,
+      (sum, entry) => sum + (entry.costForMonthInCny(targetMonth, rates) ?? 0),
+    );
+  }
+
+  Set<SubscriptionCurrency> currenciesWithoutRates(
+    SubscriptionExchangeRates rates,
+  ) {
+    return where(
+      (entry) => (entry.price ?? 0) > 0 && !rates.hasRateFor(entry.currency),
+    ).map((entry) => entry.currency).toSet();
   }
 }
 

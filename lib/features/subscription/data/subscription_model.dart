@@ -24,6 +24,9 @@ class Subscription {
 
   double? price; // 价格
 
+  /// Original billing currency. Conversion to CNY is display-only data.
+  String currency = 'CNY';
+
   @enumerated
   SubscriptionCycle cycle = SubscriptionCycle.monthly;
 
@@ -130,6 +133,7 @@ extension SubscriptionBusinessChanges on Subscription {
   bool hasBusinessChangesComparedTo(Subscription other) {
     return name != other.name ||
         price != other.price ||
+        currency != other.currency ||
         cycle != other.cycle ||
         nextPaymentDate != other.nextPaymentDate ||
         anchorDate != other.anchorDate ||

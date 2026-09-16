@@ -37,6 +37,14 @@ void main() {
       expect(adapterSource, contains("'end_date'"));
       expect(adapterSource, contains("'status'"));
       expect(adapterSource, contains("'reminder_days'"));
+      expect(adapterSource, contains("'currency'"));
+
+      final migration = File(
+        'supabase/migrations/20260916100000_subscription_currency.sql',
+      ).readAsStringSync();
+      expect(migration, contains('add column if not exists currency'));
+      expect(migration, contains('subscriptions_currency_check'));
+      expect(migration, contains("'USD'"));
 
       expect(syncService, contains('SubscriptionSyncAdapter('));
       expect(syncService, contains('SyncEngine('));

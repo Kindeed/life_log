@@ -89,6 +89,7 @@ final class SubscriptionSyncAdapter implements SyncAdapter<Subscription> {
       'local_id': entity.id,
       'name': entity.name,
       'price': entity.price,
+      'currency': entity.currency,
       'cycle': entity.cycle.name,
       'anchor_date': entity.anchorDate?.toIso8601String(),
       'next_due_date': entity.nextPaymentDate.toIso8601String(),

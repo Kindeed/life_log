@@ -1,4 +1,5 @@
 import 'package:get_it/get_it.dart';
+import 'package:get_storage/get_storage.dart';
 import 'package:life_log/core/di/service_locator.dart';
 import 'package:life_log/features/subscription/application/delete_subscription_entry.dart';
 import 'package:life_log/features/subscription/application/load_subscription_edit_draft.dart';
@@ -9,7 +10,9 @@ import 'package:life_log/features/subscription/application/save_subscription_ent
 import 'package:life_log/features/subscription/application/watch_subscription_entries.dart';
 import 'package:life_log/features/subscription/data/legacy_subscription_repository_adapter.dart';
 import 'package:life_log/features/subscription/data/subscription_repository.dart';
+import 'package:life_log/features/subscription/data/subscription_exchange_rate_service.dart';
 import 'package:life_log/features/subscription/domain/repositories/subscription_repository_port.dart';
+import 'package:life_log/features/subscription/domain/services/subscription_exchange_rate_reader.dart';
 import 'package:life_log/features/subscription/presentation/subscription_cubit.dart';
 import 'package:life_log/features/subscription/presentation/subscription_today_cubit.dart';
 
@@ -23,6 +26,26 @@ GetIt configureSubscriptionFeatureDependencies({
   if (!activeLocator.isRegistered<SubscriptionRepository>()) {
     activeLocator.registerLazySingleton<SubscriptionRepository>(
       SubscriptionRepository.new,
+    );
+  }
+
+  if (!activeLocator.isRegistered<SubscriptionExchangeRateProvider>()) {
+    activeLocator.registerLazySingleton<SubscriptionExchangeRateProvider>(
+      FrankfurterSubscriptionExchangeRateProvider.new,
+    );
+  }
+
+  if (!activeLocator.isRegistered<SubscriptionExchangeRateService>()) {
+    activeLocator.registerLazySingleton<SubscriptionExchangeRateService>(
+      () => SubscriptionExchangeRateService(
+        provider: activeLocator<SubscriptionExchangeRateProvider>(),
+        cache: GetStorageSubscriptionRateCache(storage: GetStorage()),
+      ),
+    );
+  }
+  if (!activeLocator.isRegistered<SubscriptionExchangeRateReader>()) {
+    activeLocator.registerLazySingleton<SubscriptionExchangeRateReader>(
+      () => activeLocator<SubscriptionExchangeRateService>(),
     );
   }
 
@@ -52,7 +75,10 @@ GetIt configureSubscriptionFeatureDependencies({
 
   if (!activeLocator.isRegistered<LoadSubscriptionToday>()) {
     activeLocator.registerLazySingleton<LoadSubscriptionToday>(
-      () => LoadSubscriptionToday(activeLocator<SubscriptionRepositoryPort>()),
+      () => LoadSubscriptionToday(
+        activeLocator<SubscriptionRepositoryPort>(),
+        loadRates: activeLocator<SubscriptionExchangeRateService>().load,
+      ),
     );
   }
 
@@ -91,6 +117,8 @@ GetIt configureSubscriptionFeatureDependencies({
         loadEntries: activeLocator<LoadSubscriptionEntries>(),
         watchEntries: activeLocator<WatchSubscriptionEntries>(),
         initialNow: initialNow,
+        loadExchangeRates:
+            activeLocator<SubscriptionExchangeRateService>().load,
       ),
     );
   }

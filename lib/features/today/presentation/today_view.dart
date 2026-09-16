@@ -136,6 +136,8 @@ class _TodayContent extends StatelessWidget {
                                 return _PendingCard(
                                   subs:
                                       subscriptionState.snapshot.dueSoonEntries,
+                                  dueAmountCny:
+                                      subscriptionState.snapshot.dueSoonCostCny,
                                   pendingEvidenceAmount:
                                       evidenceState.totalPendingAmount,
                                   textSecondary: textSecondary,
@@ -263,11 +265,13 @@ class _TodayLogCard extends StatelessWidget {
 
 class _PendingCard extends StatelessWidget {
   final List<SubscriptionEntry> subs;
+  final double dueAmountCny;
   final double pendingEvidenceAmount;
   final Color textSecondary;
 
   const _PendingCard({
     required this.subs,
+    required this.dueAmountCny,
     required this.pendingEvidenceAmount,
     required this.textSecondary,
   });
@@ -276,10 +280,6 @@ class _PendingCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final semantic = theme.semanticColors;
-    final dueAmount = subs.fold<double>(
-      0,
-      (total, sub) => total + (sub.price ?? 0),
-    );
     final hasDueSoon = subs.isNotEmpty;
     final hasPendingEvidence = pendingEvidenceAmount > 0;
 
@@ -314,8 +314,8 @@ class _PendingCard extends StatelessWidget {
               _PendingRow(
                 icon: Icons.account_balance_wallet_rounded,
                 color: semantic.expense,
-                label: '7 天内扣款',
-                value: '${subs.length} 项 · ${formatMoney(dueAmount)}',
+                label: '扣费提醒',
+                value: '${subs.length} 项 · ${formatMoney(dueAmountCny)}',
               ),
             if (hasPendingEvidence) ...[
               if (hasDueSoon) SizedBox(height: 8.h),

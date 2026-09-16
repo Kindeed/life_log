@@ -28,6 +28,7 @@ import 'package:life_log/features/project/data/project_model.dart';
 import '../utils/date_utils.dart';
 import '../services/auth_service.dart';
 import '../utils/sync_id_policy.dart';
+import '../../features/subscription/domain/entities/subscription_currency.dart';
 // import '../services/sync_service.dart'; // Removed cyclic dependency
 
 class DbService {
@@ -1996,6 +1997,7 @@ class DbService {
     sub.price = data['price'] == null
         ? null
         : _parseRemoteDouble(data['price']);
+    sub.currency = subscriptionCurrencyFromCode(data['currency']).code;
 
     final cycleStr = _parseRemoteString(data['cycle']);
     sub.cycle = SubscriptionCycle.values.firstWhere(

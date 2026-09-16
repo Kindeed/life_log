@@ -162,6 +162,8 @@ void main() {
       expect(view, contains('state.visibleEntries'));
       expect(view, contains('state.currentMonthCost'));
       expect(view, contains('state.yearlyCost'));
+      expect(view, contains('扣费提醒'));
+      expect(view, contains('提前 1、3、7、14 天提醒'));
       expect(view, contains('state.filter'));
       expect(view, contains('state.sortMode'));
       expect(view, isNot(contains('Obx')));

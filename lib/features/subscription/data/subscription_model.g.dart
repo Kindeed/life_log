@@ -22,71 +22,76 @@ const SubscriptionSchema = CollectionSchema(
       name: r'anchorDate',
       type: IsarType.dateTime,
     ),
-    r'cycle': PropertySchema(
+    r'currency': PropertySchema(
       id: 1,
+      name: r'currency',
+      type: IsarType.string,
+    ),
+    r'cycle': PropertySchema(
+      id: 2,
       name: r'cycle',
       type: IsarType.byte,
       enumMap: _SubscriptioncycleEnumValueMap,
     ),
     r'deletedAt': PropertySchema(
-      id: 2,
+      id: 3,
       name: r'deletedAt',
       type: IsarType.dateTime,
     ),
     r'endDate': PropertySchema(
-      id: 3,
+      id: 4,
       name: r'endDate',
       type: IsarType.dateTime,
     ),
-    r'isDirty': PropertySchema(id: 4, name: r'isDirty', type: IsarType.bool),
-    r'name': PropertySchema(id: 5, name: r'name', type: IsarType.string),
+    r'isDirty': PropertySchema(id: 5, name: r'isDirty', type: IsarType.bool),
+    r'name': PropertySchema(id: 6, name: r'name', type: IsarType.string),
     r'nextPaymentDate': PropertySchema(
-      id: 6,
+      id: 7,
       name: r'nextPaymentDate',
       type: IsarType.dateTime,
     ),
-    r'note': PropertySchema(id: 7, name: r'note', type: IsarType.string),
+    r'note': PropertySchema(id: 8, name: r'note', type: IsarType.string),
     r'ownerUserId': PropertySchema(
-      id: 8,
+      id: 9,
       name: r'ownerUserId',
       type: IsarType.string,
     ),
     r'pendingDelete': PropertySchema(
-      id: 9,
+      id: 10,
       name: r'pendingDelete',
       type: IsarType.bool,
     ),
-    r'price': PropertySchema(id: 10, name: r'price', type: IsarType.double),
+    r'price': PropertySchema(id: 11, name: r'price', type: IsarType.double),
     r'reminderDays': PropertySchema(
-      id: 11,
+      id: 12,
       name: r'reminderDays',
       type: IsarType.long,
     ),
-    r'remoteId': PropertySchema(id: 12, name: r'remoteId', type: IsarType.long),
+    r'remoteId': PropertySchema(id: 13, name: r'remoteId', type: IsarType.long),
     r'remoteUpdatedAt': PropertySchema(
-      id: 13,
+      id: 14,
       name: r'remoteUpdatedAt',
       type: IsarType.dateTime,
     ),
     r'remoteVersion': PropertySchema(
-      id: 14,
+      id: 15,
       name: r'remoteVersion',
       type: IsarType.long,
     ),
     r'sortIndex': PropertySchema(
-      id: 15,
+      id: 16,
       name: r'sortIndex',
       type: IsarType.long,
     ),
     r'status': PropertySchema(
-      id: 16,
+      id: 17,
       name: r'status',
       type: IsarType.byte,
       enumMap: _SubscriptionstatusEnumValueMap,
     ),
-    r'syncId': PropertySchema(id: 17, name: r'syncId', type: IsarType.string),
+    r'syncId': PropertySchema(id: 18, name: r'syncId', type: IsarType.string),
     r'syncedAt': PropertySchema(
-      id: 18,
+      id: 19,
       name: r'syncedAt',
       type: IsarType.dateTime,
     ),
@@ -127,6 +132,7 @@ int _subscriptionEstimateSize(
   Map<Type, List<int>> allOffsets,
 ) {
   var bytesCount = offsets.last;
+  bytesCount += 3 + object.currency.length * 3;
   bytesCount += 3 + object.name.length * 3;
   {
     final value = object.note;
@@ -156,24 +162,25 @@ void _subscriptionSerialize(
   Map<Type, List<int>> allOffsets,
 ) {
   writer.writeDateTime(offsets[0], object.anchorDate);
-  writer.writeByte(offsets[1], object.cycle.index);
-  writer.writeDateTime(offsets[2], object.deletedAt);
-  writer.writeDateTime(offsets[3], object.endDate);
-  writer.writeBool(offsets[4], object.isDirty);
-  writer.writeString(offsets[5], object.name);
-  writer.writeDateTime(offsets[6], object.nextPaymentDate);
-  writer.writeString(offsets[7], object.note);
-  writer.writeString(offsets[8], object.ownerUserId);
-  writer.writeBool(offsets[9], object.pendingDelete);
-  writer.writeDouble(offsets[10], object.price);
-  writer.writeLong(offsets[11], object.reminderDays);
-  writer.writeLong(offsets[12], object.remoteId);
-  writer.writeDateTime(offsets[13], object.remoteUpdatedAt);
-  writer.writeLong(offsets[14], object.remoteVersion);
-  writer.writeLong(offsets[15], object.sortIndex);
-  writer.writeByte(offsets[16], object.status.index);
-  writer.writeString(offsets[17], object.syncId);
-  writer.writeDateTime(offsets[18], object.syncedAt);
+  writer.writeString(offsets[1], object.currency);
+  writer.writeByte(offsets[2], object.cycle.index);
+  writer.writeDateTime(offsets[3], object.deletedAt);
+  writer.writeDateTime(offsets[4], object.endDate);
+  writer.writeBool(offsets[5], object.isDirty);
+  writer.writeString(offsets[6], object.name);
+  writer.writeDateTime(offsets[7], object.nextPaymentDate);
+  writer.writeString(offsets[8], object.note);
+  writer.writeString(offsets[9], object.ownerUserId);
+  writer.writeBool(offsets[10], object.pendingDelete);
+  writer.writeDouble(offsets[11], object.price);
+  writer.writeLong(offsets[12], object.reminderDays);
+  writer.writeLong(offsets[13], object.remoteId);
+  writer.writeDateTime(offsets[14], object.remoteUpdatedAt);
+  writer.writeLong(offsets[15], object.remoteVersion);
+  writer.writeLong(offsets[16], object.sortIndex);
+  writer.writeByte(offsets[17], object.status.index);
+  writer.writeString(offsets[18], object.syncId);
+  writer.writeDateTime(offsets[19], object.syncedAt);
 }
 
 Subscription _subscriptionDeserialize(
@@ -184,29 +191,30 @@ Subscription _subscriptionDeserialize(
 ) {
   final object = Subscription();
   object.anchorDate = reader.readDateTimeOrNull(offsets[0]);
+  object.currency = reader.readString(offsets[1]);
   object.cycle =
-      _SubscriptioncycleValueEnumMap[reader.readByteOrNull(offsets[1])] ??
+      _SubscriptioncycleValueEnumMap[reader.readByteOrNull(offsets[2])] ??
       SubscriptionCycle.monthly;
-  object.deletedAt = reader.readDateTimeOrNull(offsets[2]);
-  object.endDate = reader.readDateTimeOrNull(offsets[3]);
+  object.deletedAt = reader.readDateTimeOrNull(offsets[3]);
+  object.endDate = reader.readDateTimeOrNull(offsets[4]);
   object.id = id;
-  object.isDirty = reader.readBool(offsets[4]);
-  object.name = reader.readString(offsets[5]);
-  object.nextPaymentDate = reader.readDateTime(offsets[6]);
-  object.note = reader.readStringOrNull(offsets[7]);
-  object.ownerUserId = reader.readStringOrNull(offsets[8]);
-  object.pendingDelete = reader.readBool(offsets[9]);
-  object.price = reader.readDoubleOrNull(offsets[10]);
-  object.reminderDays = reader.readLong(offsets[11]);
-  object.remoteId = reader.readLongOrNull(offsets[12]);
-  object.remoteUpdatedAt = reader.readDateTimeOrNull(offsets[13]);
-  object.remoteVersion = reader.readLong(offsets[14]);
-  object.sortIndex = reader.readLongOrNull(offsets[15]);
+  object.isDirty = reader.readBool(offsets[5]);
+  object.name = reader.readString(offsets[6]);
+  object.nextPaymentDate = reader.readDateTime(offsets[7]);
+  object.note = reader.readStringOrNull(offsets[8]);
+  object.ownerUserId = reader.readStringOrNull(offsets[9]);
+  object.pendingDelete = reader.readBool(offsets[10]);
+  object.price = reader.readDoubleOrNull(offsets[11]);
+  object.reminderDays = reader.readLong(offsets[12]);
+  object.remoteId = reader.readLongOrNull(offsets[13]);
+  object.remoteUpdatedAt = reader.readDateTimeOrNull(offsets[14]);
+  object.remoteVersion = reader.readLong(offsets[15]);
+  object.sortIndex = reader.readLongOrNull(offsets[16]);
   object.status =
-      _SubscriptionstatusValueEnumMap[reader.readByteOrNull(offsets[16])] ??
+      _SubscriptionstatusValueEnumMap[reader.readByteOrNull(offsets[17])] ??
       SubscriptionRecordStatus.active;
-  object.syncId = reader.readStringOrNull(offsets[17]);
-  object.syncedAt = reader.readDateTimeOrNull(offsets[18]);
+  object.syncId = reader.readStringOrNull(offsets[18]);
+  object.syncedAt = reader.readDateTimeOrNull(offsets[19]);
   return object;
 }
 
@@ -220,44 +228,46 @@ P _subscriptionDeserializeProp<P>(
     case 0:
       return (reader.readDateTimeOrNull(offset)) as P;
     case 1:
+      return (reader.readString(offset)) as P;
+    case 2:
       return (_SubscriptioncycleValueEnumMap[reader.readByteOrNull(offset)] ??
               SubscriptionCycle.monthly)
           as P;
-    case 2:
-      return (reader.readDateTimeOrNull(offset)) as P;
     case 3:
       return (reader.readDateTimeOrNull(offset)) as P;
     case 4:
-      return (reader.readBool(offset)) as P;
+      return (reader.readDateTimeOrNull(offset)) as P;
     case 5:
-      return (reader.readString(offset)) as P;
+      return (reader.readBool(offset)) as P;
     case 6:
-      return (reader.readDateTime(offset)) as P;
+      return (reader.readString(offset)) as P;
     case 7:
-      return (reader.readStringOrNull(offset)) as P;
+      return (reader.readDateTime(offset)) as P;
     case 8:
       return (reader.readStringOrNull(offset)) as P;
     case 9:
-      return (reader.readBool(offset)) as P;
+      return (reader.readStringOrNull(offset)) as P;
     case 10:
-      return (reader.readDoubleOrNull(offset)) as P;
+      return (reader.readBool(offset)) as P;
     case 11:
-      return (reader.readLong(offset)) as P;
+      return (reader.readDoubleOrNull(offset)) as P;
     case 12:
-      return (reader.readLongOrNull(offset)) as P;
-    case 13:
-      return (reader.readDateTimeOrNull(offset)) as P;
-    case 14:
       return (reader.readLong(offset)) as P;
-    case 15:
+    case 13:
       return (reader.readLongOrNull(offset)) as P;
+    case 14:
+      return (reader.readDateTimeOrNull(offset)) as P;
+    case 15:
+      return (reader.readLong(offset)) as P;
     case 16:
+      return (reader.readLongOrNull(offset)) as P;
+    case 17:
       return (_SubscriptionstatusValueEnumMap[reader.readByteOrNull(offset)] ??
               SubscriptionRecordStatus.active)
           as P;
-    case 17:
-      return (reader.readStringOrNull(offset)) as P;
     case 18:
+      return (reader.readStringOrNull(offset)) as P;
+    case 19:
       return (reader.readDateTimeOrNull(offset)) as P;
     default:
       throw IsarError('Unknown property with id $propertyId');
@@ -591,6 +601,147 @@ extension SubscriptionQueryFilter
           upper: upper,
           includeUpper: includeUpper,
         ),
+      );
+    });
+  }
+
+  QueryBuilder<Subscription, Subscription, QAfterFilterCondition>
+  currencyEqualTo(String value, {bool caseSensitive = true}) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(
+        FilterCondition.equalTo(
+          property: r'currency',
+          value: value,
+          caseSensitive: caseSensitive,
+        ),
+      );
+    });
+  }
+
+  QueryBuilder<Subscription, Subscription, QAfterFilterCondition>
+  currencyGreaterThan(
+    String value, {
+    bool include = false,
+    bool caseSensitive = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(
+        FilterCondition.greaterThan(
+          include: include,
+          property: r'currency',
+          value: value,
+          caseSensitive: caseSensitive,
+        ),
+      );
+    });
+  }
+
+  QueryBuilder<Subscription, Subscription, QAfterFilterCondition>
+  currencyLessThan(
+    String value, {
+    bool include = false,
+    bool caseSensitive = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(
+        FilterCondition.lessThan(
+          include: include,
+          property: r'currency',
+          value: value,
+          caseSensitive: caseSensitive,
+        ),
+      );
+    });
+  }
+
+  QueryBuilder<Subscription, Subscription, QAfterFilterCondition>
+  currencyBetween(
+    String lower,
+    String upper, {
+    bool includeLower = true,
+    bool includeUpper = true,
+    bool caseSensitive = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(
+        FilterCondition.between(
+          property: r'currency',
+          lower: lower,
+          includeLower: includeLower,
+          upper: upper,
+          includeUpper: includeUpper,
+          caseSensitive: caseSensitive,
+        ),
+      );
+    });
+  }
+
+  QueryBuilder<Subscription, Subscription, QAfterFilterCondition>
+  currencyStartsWith(String value, {bool caseSensitive = true}) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(
+        FilterCondition.startsWith(
+          property: r'currency',
+          value: value,
+          caseSensitive: caseSensitive,
+        ),
+      );
+    });
+  }
+
+  QueryBuilder<Subscription, Subscription, QAfterFilterCondition>
+  currencyEndsWith(String value, {bool caseSensitive = true}) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(
+        FilterCondition.endsWith(
+          property: r'currency',
+          value: value,
+          caseSensitive: caseSensitive,
+        ),
+      );
+    });
+  }
+
+  QueryBuilder<Subscription, Subscription, QAfterFilterCondition>
+  currencyContains(String value, {bool caseSensitive = true}) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(
+        FilterCondition.contains(
+          property: r'currency',
+          value: value,
+          caseSensitive: caseSensitive,
+        ),
+      );
+    });
+  }
+
+  QueryBuilder<Subscription, Subscription, QAfterFilterCondition>
+  currencyMatches(String pattern, {bool caseSensitive = true}) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(
+        FilterCondition.matches(
+          property: r'currency',
+          wildcard: pattern,
+          caseSensitive: caseSensitive,
+        ),
+      );
+    });
+  }
+
+  QueryBuilder<Subscription, Subscription, QAfterFilterCondition>
+  currencyIsEmpty() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(
+        FilterCondition.equalTo(property: r'currency', value: ''),
+      );
+    });
+  }
+
+  QueryBuilder<Subscription, Subscription, QAfterFilterCondition>
+  currencyIsNotEmpty() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(
+        FilterCondition.greaterThan(property: r'currency', value: ''),
       );
     });
   }
@@ -2134,6 +2285,18 @@ extension SubscriptionQuerySortBy
     });
   }
 
+  QueryBuilder<Subscription, Subscription, QAfterSortBy> sortByCurrency() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'currency', Sort.asc);
+    });
+  }
+
+  QueryBuilder<Subscription, Subscription, QAfterSortBy> sortByCurrencyDesc() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'currency', Sort.desc);
+    });
+  }
+
   QueryBuilder<Subscription, Subscription, QAfterSortBy> sortByCycle() {
     return QueryBuilder.apply(this, (query) {
       return query.addSortBy(r'cycle', Sort.asc);
@@ -2371,6 +2534,18 @@ extension SubscriptionQuerySortThenBy
   thenByAnchorDateDesc() {
     return QueryBuilder.apply(this, (query) {
       return query.addSortBy(r'anchorDate', Sort.desc);
+    });
+  }
+
+  QueryBuilder<Subscription, Subscription, QAfterSortBy> thenByCurrency() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'currency', Sort.asc);
+    });
+  }
+
+  QueryBuilder<Subscription, Subscription, QAfterSortBy> thenByCurrencyDesc() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'currency', Sort.desc);
     });
   }
 
@@ -2619,6 +2794,14 @@ extension SubscriptionQueryWhereDistinct
     });
   }
 
+  QueryBuilder<Subscription, Subscription, QDistinct> distinctByCurrency({
+    bool caseSensitive = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addDistinctBy(r'currency', caseSensitive: caseSensitive);
+    });
+  }
+
   QueryBuilder<Subscription, Subscription, QDistinct> distinctByCycle() {
     return QueryBuilder.apply(this, (query) {
       return query.addDistinctBy(r'cycle');
@@ -2751,6 +2934,12 @@ extension SubscriptionQueryProperty
   QueryBuilder<Subscription, DateTime?, QQueryOperations> anchorDateProperty() {
     return QueryBuilder.apply(this, (query) {
       return query.addPropertyName(r'anchorDate');
+    });
+  }
+
+  QueryBuilder<Subscription, String, QQueryOperations> currencyProperty() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addPropertyName(r'currency');
     });
   }
 

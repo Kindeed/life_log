@@ -1,5 +1,26 @@
 # Changelog
 
+## [1.4.29] - 2026-09-16
+
+### 订阅多币种与数据库一致性修复
+
+#### 变更 (Changed)
+- 应用版本升级到 `1.4.29+35`。
+- 订阅管理支持 CNY、USD、EUR、JPY、HKD 原始金额，并使用每日汇率快照显示人民币估算。
+- 订阅提醒支持按支付日、提前 1/3/7/14 天配置，管理页合并筛选与排序并展示待扣费信息。
+
+#### 修复 (Fixed)
+- 修复外币订阅被错误当作人民币参与 Today 和统计面板汇总的问题；汇率不可用时不再使用错误的 1:1 fallback。
+- 修复订阅 `currency` 未进入本地 Isar、Supabase 同步和远端约束的问题。
+- 修复 Supabase 历史迁移使用重复日期版本导致 `db push` 重复执行已应用 SQL 的问题；保留 SQL 内容，仅改用唯一完整时间戳文件名。
+- 修复 `evidence_attachments` 四条 RLS 策略逐行重复计算 `auth.uid()` 的问题。
+
+#### 验证 (Validation)
+- 全量 `flutter test`：600 项通过。
+- `flutter analyze --fatal-infos --fatal-warnings` 通过。
+- Supabase `db lint --linked --schema public` 通过。
+- Supabase 迁移历史与本地逐项匹配，`db push --linked --dry-run` 返回数据库已是最新状态。
+
 ## [1.4.28] - 2026-09-16
 
 ### 更多栏目精简与入口去重
@@ -659,9 +680,9 @@
 
 使用此版本前，需在 Supabase 执行 `supabase/migrations/` 下的迁移脚本：
 
-1. `20260426_sync_identity_version.sql` — 添加 `sync_id`、`version` 列和唯一约束
-2. `20260426_soft_delete_sync.sql` — 添加 `deleted_at`、`expenses`、`transport` 等列
-3. `20260426_server_time_rpc.sql` — 创建 `get_server_time()` RPC 函数
+1. `20260426000002_sync_identity_version.sql` — 添加 `sync_id`、`version` 列和唯一约束
+2. `20260426000000_soft_delete_sync.sql` — 添加 `deleted_at`、`expenses`、`transport` 等列
+3. `20260426000001_server_time_rpc.sql` — 创建 `get_server_time()` RPC 函数
 
 ---
 

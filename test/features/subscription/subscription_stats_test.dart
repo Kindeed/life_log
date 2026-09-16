@@ -6,6 +6,7 @@ import 'package:get_it/get_it.dart';
 import 'package:life_log/features/subscription/application/watch_subscription_entries.dart';
 import 'package:life_log/features/subscription/domain/entities/subscription_edit_draft.dart';
 import 'package:life_log/features/subscription/domain/entities/subscription_entry.dart';
+import 'package:life_log/features/subscription/domain/entities/subscription_currency.dart';
 import 'package:life_log/features/subscription/domain/entities/subscription_entry_stats.dart';
 import 'package:life_log/features/subscription/domain/repositories/subscription_repository_port.dart';
 import 'package:life_log/features/subscription/subscription_feature_di.dart';
@@ -117,6 +118,7 @@ void main() {
         ..id = 7
         ..name = 'Cloud'
         ..price = 15
+        ..currency = 'USD'
         ..cycle = SubscriptionCycle.yearly
         ..nextPaymentDate = DateTime(2026, 5, 12)
         ..reminderDays = 3
@@ -131,6 +133,7 @@ void main() {
       expect(entry.id, 7);
       expect(entry.name, 'Cloud');
       expect(entry.price, 15);
+      expect(entry.currency, SubscriptionCurrency.usd);
       expect(entry.cycle, SubscriptionBillingCycle.yearly);
       expect(entry.nextPaymentDate, DateTime(2026, 5, 12));
       expect(entry.reminderDays, 3);

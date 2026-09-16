@@ -12,6 +12,9 @@ import 'package:life_log/features/expense/domain/repositories/expense_record_rep
 import 'package:life_log/features/subscription/application/watch_subscription_entries.dart';
 import 'package:life_log/features/subscription/domain/entities/subscription_entry.dart';
 import 'package:life_log/features/subscription/domain/entities/subscription_entry_stats.dart';
+import 'package:life_log/features/subscription/domain/entities/subscription_currency.dart';
+import 'package:life_log/features/subscription/domain/entities/subscription_exchange_rates.dart';
+import 'package:life_log/features/subscription/domain/services/subscription_exchange_rate_reader.dart';
 import 'package:life_log/features/subscription/domain/repositories/subscription_repository_port.dart';
 import 'package:life_log/features/work_log/application/watch_work_log_entries.dart';
 import 'package:life_log/features/work_log/domain/entities/work_log_entry.dart';
@@ -36,6 +39,7 @@ class StatisticsController extends ChangeNotifier {
     Stream<void> Function()? watchEvidenceEntries,
     Future<List<ExpenseRecordEntry>> Function()? getAllExpenseRecords,
     Stream<void> Function()? watchExpenseRecordEntries,
+    SubscriptionExchangeRateReader? exchangeRateReader,
   }) : _getAllWorkLogEntries =
            getAllWorkLogEntries ??
            (() => serviceLocator<WorkLogRepositoryPort>().getAllEntries()),
@@ -48,6 +52,11 @@ class StatisticsController extends ChangeNotifier {
        _watchSubscriptionEntries =
            watchSubscriptionEntries ??
            (() => serviceLocator<WatchSubscriptionEntries>()()),
+       _exchangeRateReader =
+           exchangeRateReader ??
+           (serviceLocator.isRegistered<SubscriptionExchangeRateReader>()
+               ? serviceLocator<SubscriptionExchangeRateReader>()
+               : null),
        _getAllEvidence =
            getAllEvidence ??
            (() => serviceLocator<EvidenceRepositoryPort>().getAllEntries()),
@@ -86,12 +95,15 @@ class StatisticsController extends ChangeNotifier {
   StreamSubscription? _expenseRecordSub;
   List<WorkLogEntry> _workLogEntries = const [];
   List<SubscriptionEntry> _subs = const [];
+  SubscriptionExchangeRates _subscriptionRates =
+      SubscriptionExchangeRates.cnyOnly(DateTime.now());
   List<EvidenceEntry> _evidence = const [];
   List<ExpenseRecordEntry> _expenseRecords = const [];
   final Future<List<WorkLogEntry>> Function() _getAllWorkLogEntries;
   final Stream<void> Function() _watchWorkLogEntries;
   final Future<List<SubscriptionEntry>> Function() _getAllSubscriptions;
   final Stream<void> Function() _watchSubscriptionEntries;
+  final SubscriptionExchangeRateReader? _exchangeRateReader;
   final Future<List<EvidenceEntry>> Function() _getAllEvidence;
   final Stream<void> Function() _watchEvidenceEntries;
   final Future<List<ExpenseRecordEntry>> Function() _getAllExpenseRecords;
@@ -213,6 +225,14 @@ class StatisticsController extends ChangeNotifier {
           return true;
         case StatisticsRefreshSource.subscriptions:
           _subs = await _getAllSubscriptions();
+          if (_exchangeRateReader != null &&
+              _subs.any(
+                (entry) =>
+                    entry.currency != SubscriptionCurrency.cny &&
+                    (entry.price ?? 0) > 0,
+              )) {
+            _subscriptionRates = await _exchangeRateReader.load(DateTime.now());
+          }
           return true;
         case StatisticsRefreshSource.evidence:
           _evidence = await _getAllEvidence();
@@ -317,8 +337,11 @@ class StatisticsController extends ChangeNotifier {
   }) {
     if (updateTimestamp) _touchLastUpdated();
     final month = selectedMonth;
-    selectedMonthSubCost = _subs.totalCostForMonth(month);
-    yearSubCost = _subs.totalYearlyCost;
+    selectedMonthSubCost = _subs.totalCostForMonthInCny(
+      month,
+      _subscriptionRates,
+    );
+    yearSubCost = _subs.totalYearlyCostInCny(_subscriptionRates);
     _calculateSelectedMonthTotalCost();
     if (notify) notifyListeners();
   }

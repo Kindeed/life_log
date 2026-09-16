@@ -121,16 +121,20 @@ void main() {
     },
   );
 
-  test('subscription and project filter controls use fixed columns', () {
-    final subscription = File(
-      'lib/features/subscription/presentation/subscription_view.dart',
-    ).readAsStringSync();
-    final project = File(
-      'lib/features/photo/presentation/photo_view.dart',
-    ).readAsStringSync();
+  test(
+    'subscription and project filter controls use current compact layouts',
+    () {
+      final subscription = File(
+        'lib/features/subscription/presentation/subscription_view.dart',
+      ).readAsStringSync();
+      final project = File(
+        'lib/features/photo/presentation/photo_view.dart',
+      ).readAsStringSync();
 
-    expect(subscription, contains('columns: 2'));
-    expect(subscription, contains('columns: 3'));
-    expect(project, contains('columns: 3'));
-  });
+      expect(subscription, contains('AppSection('));
+      expect(subscription, contains('columns: 4'));
+      expect(subscription, contains('PopupMenuButton<SubscriptionSortMode>'));
+      expect(project, contains('columns: 3'));
+    },
+  );
 }

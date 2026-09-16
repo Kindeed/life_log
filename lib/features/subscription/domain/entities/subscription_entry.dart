@@ -1,5 +1,7 @@
 import 'package:equatable/equatable.dart';
 
+import 'subscription_currency.dart';
+
 enum SubscriptionBillingCycle { monthly, yearly, oneTime, custom }
 
 enum SubscriptionStatus { active, paused, canceled, archived }
@@ -8,6 +10,7 @@ final class SubscriptionEntry extends Equatable {
   final int id;
   final String name;
   final double? price;
+  final SubscriptionCurrency currency;
   final SubscriptionBillingCycle cycle;
   final DateTime nextPaymentDate;
   final DateTime? anchorDate;
@@ -21,6 +24,7 @@ final class SubscriptionEntry extends Equatable {
     required this.id,
     required this.name,
     required this.price,
+    this.currency = SubscriptionCurrency.cny,
     required this.cycle,
     required this.nextPaymentDate,
     this.anchorDate,
@@ -36,6 +40,7 @@ final class SubscriptionEntry extends Equatable {
     id,
     name,
     price,
+    currency,
     cycle,
     nextPaymentDate,
     anchorDate,
@@ -51,6 +56,7 @@ extension SubscriptionEntryBusinessChanges on SubscriptionEntry {
   bool hasBusinessChangesComparedTo(SubscriptionEntry other) {
     return name != other.name ||
         price != other.price ||
+        currency != other.currency ||
         cycle != other.cycle ||
         nextPaymentDate != other.nextPaymentDate ||
         anchorDate != other.anchorDate ||

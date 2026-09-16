@@ -11,6 +11,7 @@ import 'package:life_log/common/widgets/app_text_field.dart';
 import 'package:life_log/core/di/service_locator.dart';
 import 'package:life_log/features/subscription/application/delete_subscription_entry.dart';
 import 'package:life_log/features/subscription/application/save_subscription_entry.dart';
+import 'package:life_log/features/subscription/domain/entities/subscription_currency.dart';
 import 'package:life_log/features/subscription/domain/entities/subscription_entry.dart';
 
 import 'subscription_dialogs.dart';
@@ -35,6 +36,8 @@ class _AddSubscriptionSheetState extends State<AddSubscriptionSheet> {
   final _nameController = TextEditingController();
   final _priceController = TextEditingController();
   SubscriptionBillingCycle _cycle = SubscriptionBillingCycle.monthly;
+  SubscriptionCurrency _currency = SubscriptionCurrency.cny;
+  int _reminderDays = 1;
   DateTime _nextPaymentDate = DateTime.now();
 
   @override
@@ -47,6 +50,8 @@ class _AddSubscriptionSheetState extends State<AddSubscriptionSheet> {
         _priceController.text = existingEntry.price.toString();
       }
       _cycle = existingEntry.cycle;
+      _currency = existingEntry.currency;
+      _reminderDays = existingEntry.reminderDays;
       _nextPaymentDate = dateOnlyLocal(existingEntry.nextPaymentDate);
     }
   }
@@ -125,7 +130,19 @@ class _AddSubscriptionSheetState extends State<AddSubscriptionSheet> {
               isNumber: true,
               icon: Icons.attach_money,
               hint: "0.00",
-              suffix: "元",
+              suffix: _currency.symbol,
+              isDark: isDark,
+              bgColor: bgColor,
+              textPrimary: textPrimary,
+              textSecondary: textSecondary,
+              borderColor: borderColor,
+            ),
+            SizedBox(height: 16.h),
+            _buildSelector(
+              "币种",
+              Icons.currency_exchange_rounded,
+              _currency.displayLabel,
+              _showCurrencyPicker,
               isDark: isDark,
               bgColor: bgColor,
               textPrimary: textPrimary,
@@ -138,6 +155,18 @@ class _AddSubscriptionSheetState extends State<AddSubscriptionSheet> {
               Icons.update,
               _getCycleText(_cycle),
               _showCyclePicker,
+              isDark: isDark,
+              bgColor: bgColor,
+              textPrimary: textPrimary,
+              textSecondary: textSecondary,
+              borderColor: borderColor,
+            ),
+            SizedBox(height: 16.h),
+            _buildSelector(
+              "扣费提醒",
+              Icons.notifications_active_outlined,
+              _reminderLabel(_reminderDays),
+              _showReminderPicker,
               isDark: isDark,
               bgColor: bgColor,
               textPrimary: textPrimary,
@@ -161,6 +190,13 @@ class _AddSubscriptionSheetState extends State<AddSubscriptionSheet> {
         ),
       ),
     );
+  }
+
+  @override
+  void dispose() {
+    _nameController.dispose();
+    _priceController.dispose();
+    super.dispose();
   }
 
   void _showCyclePicker() {
@@ -194,6 +230,85 @@ class _AddSubscriptionSheetState extends State<AddSubscriptionSheet> {
                 "自定义",
                 SubscriptionBillingCycle.custom,
               ),
+              SizedBox(height: 16.h),
+            ],
+          ),
+        );
+      },
+    );
+  }
+
+  void _showCurrencyPicker() {
+    showModalBottomSheet<void>(
+      context: context,
+      backgroundColor: Colors.transparent,
+      builder: (sheetContext) {
+        return AppSheetScaffold(
+          title: "选择币种",
+          padding: EdgeInsets.symmetric(horizontal: 16.w),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              for (final currency in SubscriptionCurrency.values)
+                ListTile(
+                  leading: Text(
+                    currency.symbol,
+                    style: TextStyle(
+                      fontSize: 18.sp,
+                      fontWeight: FontWeight.w700,
+                    ),
+                  ),
+                  title: Text(currency.displayLabel),
+                  trailing: _currency == currency
+                      ? Icon(
+                          Icons.check_circle,
+                          color: Theme.of(context).colorScheme.primary,
+                        )
+                      : const Icon(Icons.circle_outlined),
+                  onTap: () {
+                    setState(() => _currency = currency);
+                    Navigator.of(sheetContext).pop();
+                  },
+                ),
+              SizedBox(height: 16.h),
+            ],
+          ),
+        );
+      },
+    );
+  }
+
+  void _showReminderPicker() {
+    const options = <int>[0, 1, 3, 7, 14];
+    showModalBottomSheet<void>(
+      context: context,
+      backgroundColor: Colors.transparent,
+      builder: (sheetContext) {
+        return AppSheetScaffold(
+          title: "选择扣费提醒",
+          padding: EdgeInsets.symmetric(horizontal: 16.w),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              for (final days in options)
+                ListTile(
+                  leading: Icon(
+                    days == 0
+                        ? Icons.today_rounded
+                        : Icons.notifications_none_rounded,
+                  ),
+                  title: Text(_reminderLabel(days)),
+                  trailing: _reminderDays == days
+                      ? Icon(
+                          Icons.check_circle,
+                          color: Theme.of(context).colorScheme.primary,
+                        )
+                      : const Icon(Icons.circle_outlined),
+                  onTap: () {
+                    setState(() => _reminderDays = days);
+                    Navigator.of(sheetContext).pop();
+                  },
+                ),
               SizedBox(height: 16.h),
             ],
           ),
@@ -285,12 +400,13 @@ class _AddSubscriptionSheetState extends State<AddSubscriptionSheet> {
       id: existingEntry?.id ?? 0,
       name: name,
       price: price,
+      currency: _currency,
       cycle: _cycle,
       nextPaymentDate: dateOnlyLocal(_nextPaymentDate),
       anchorDate: existingEntry?.anchorDate ?? dateOnlyLocal(_nextPaymentDate),
       endDate: existingEntry?.endDate,
       status: existingEntry?.status ?? SubscriptionStatus.active,
-      reminderDays: existingEntry?.reminderDays ?? 1,
+      reminderDays: _reminderDays,
       note: existingEntry?.note,
       sortIndex: existingEntry?.sortIndex,
     );
@@ -366,6 +482,11 @@ class _AddSubscriptionSheetState extends State<AddSubscriptionSheet> {
 
   String _errorText(Object error) {
     return error.toString().replaceFirst('Exception: ', '');
+  }
+
+  String _reminderLabel(int days) {
+    if (days == 0) return "扣费当天提醒";
+    return "提前 $days 天提醒";
   }
 
   Widget _buildTextField(
