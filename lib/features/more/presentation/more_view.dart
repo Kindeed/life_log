@@ -50,8 +50,6 @@ class _MoreViewState extends State<MoreView> {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final semantic = theme.semanticColors;
-    final isDark = theme.brightness == Brightness.dark;
-    final dividerColor = semantic.border.withValues(alpha: isDark ? 0.35 : 0.6);
 
     return Scaffold(
       appBar: AppBar(title: const Text('更多')),
@@ -100,112 +98,72 @@ class _MoreViewState extends State<MoreView> {
                 ),
                 SizedBox(height: 18.h),
 
-                // 2. 生活与记账
-                const AppSectionHeader(title: '生活与记账'),
-                SizedBox(height: 6.h),
-                AppCard(
-                  padding: EdgeInsets.zero,
-                  child: Column(
-                    children: [
-                      _MoreItemTile(
-                        icon: Icons.subscriptions_outlined,
-                        iconColor: semantic.expense,
-                        title: '订阅管理',
-                        subtitle: '固定支出、周期扣费与续费提醒',
-                        onTap: () => _openPage(const SubscriptionView()),
-                      ),
-                      Divider(
-                        height: 1,
-                        indent: 58.w,
-                        endIndent: 14.w,
-                        color: dividerColor,
-                      ),
-                      _MoreItemTile(
-                        icon: Icons.receipt_long_outlined,
-                        iconColor: semantic.warning,
-                        title: '全部费用记录',
-                        subtitle: '消费明细、收支流水与统一时间线',
-                        onTap: () => _openPage(const TimelineView()),
-                      ),
-                    ],
-                  ),
+                // 二级功能只在“更多”目录出现一次，账户与同步由 ProfileView 负责。
+                _MoreGroup(
+                  title: '记录与分析',
+                  destinations: [
+                    _MoreDestination(
+                      icon: Icons.receipt_long_outlined,
+                      iconColor: semantic.warning,
+                      title: '全部费用记录',
+                      subtitle: '消费明细、收支流水与统一时间线',
+                      page: const TimelineView(),
+                    ),
+                    _MoreDestination(
+                      icon: Icons.analytics_outlined,
+                      iconColor: semantic.stats,
+                      title: '统计面板',
+                      subtitle: '工时结构、月度支出与项目投入透视',
+                      page: const StatisticsView(),
+                    ),
+                    _MoreDestination(
+                      icon: Icons.subscriptions_outlined,
+                      iconColor: semantic.expense,
+                      title: '订阅管理',
+                      subtitle: '固定支出、周期扣费与续费提醒',
+                      page: const SubscriptionView(),
+                    ),
+                  ],
                 ),
                 SizedBox(height: 18.h),
-
-                // 3. 工具箱
-                const AppSectionHeader(title: '工具箱'),
-                SizedBox(height: 6.h),
-                AppCard(
-                  padding: EdgeInsets.zero,
-                  child: Column(
-                    children: [
-                      _MoreItemTile(
-                        icon: Icons.analytics_outlined,
-                        iconColor: semantic.stats,
-                        title: '统计面板',
-                        subtitle: '工时结构、月度支出与项目投入透视',
-                        onTap: () => _openPage(const StatisticsView()),
-                      ),
-                      Divider(
-                        height: 1,
-                        indent: 58.w,
-                        endIndent: 14.w,
-                        color: dividerColor,
-                      ),
-                      _MoreItemTile(
-                        icon: Icons.settings_input_antenna_rounded,
-                        iconColor: semantic.work,
-                        title: '遥测计算器',
-                        subtitle: '链路预算、码率与 PCM 专业参数计算',
-                        onTap: () => _openPage(const TelemetryCalcView()),
-                      ),
-                    ],
-                  ),
+                _MoreGroup(
+                  title: '工具',
+                  destinations: [
+                    _MoreDestination(
+                      icon: Icons.settings_input_antenna_rounded,
+                      iconColor: semantic.work,
+                      title: '遥测计算器',
+                      subtitle: '链路预算、码率与 PCM 专业参数计算',
+                      page: const TelemetryCalcView(),
+                    ),
+                  ],
                 ),
                 SizedBox(height: 18.h),
-
-                // 4. 应用设置
-                const AppSectionHeader(title: '应用设置'),
-                SizedBox(height: 6.h),
-                AppCard(
-                  padding: EdgeInsets.zero,
-                  child: Column(
-                    children: [
-                      _MoreItemTile(
-                        icon: Icons.palette_outlined,
-                        iconColor: semantic.expense,
-                        title: '外观设置',
-                        subtitle: '主题风格、深色模式与动态取色',
-                        onTap: () => _openPage(const AppearanceView()),
-                      ),
-                      Divider(
-                        height: 1,
-                        indent: 58.w,
-                        endIndent: 14.w,
-                        color: dividerColor,
-                      ),
-                      _MoreItemTile(
-                        icon: Icons.storage_outlined,
-                        iconColor: semantic.work,
-                        title: '数据备份与恢复',
-                        subtitle: '本地数据库备份、恢复与数据安全',
-                        onTap: () => _openPage(const DataManagementView()),
-                      ),
-                      Divider(
-                        height: 1,
-                        indent: 58.w,
-                        endIndent: 14.w,
-                        color: dividerColor,
-                      ),
-                      _MoreItemTile(
-                        icon: Icons.info_outline_rounded,
-                        iconColor: semantic.success,
-                        title: '关于应用',
-                        subtitle: '版本信息、技术架构与开源说明',
-                        onTap: () => _openPage(const AboutView()),
-                      ),
-                    ],
-                  ),
+                _MoreGroup(
+                  title: '应用',
+                  destinations: [
+                    _MoreDestination(
+                      icon: Icons.palette_outlined,
+                      iconColor: semantic.expense,
+                      title: '外观设置',
+                      subtitle: '主题风格、深色模式与动态取色',
+                      page: const AppearanceView(),
+                    ),
+                    _MoreDestination(
+                      icon: Icons.storage_outlined,
+                      iconColor: semantic.work,
+                      title: '数据备份与恢复',
+                      subtitle: '本地数据库备份、恢复与数据安全',
+                      page: const DataManagementView(),
+                    ),
+                    _MoreDestination(
+                      icon: Icons.info_outline_rounded,
+                      iconColor: semantic.success,
+                      title: '关于应用',
+                      subtitle: '版本信息、技术架构与开源说明',
+                      page: const AboutView(),
+                    ),
+                  ],
                 ),
               ],
             ),
@@ -348,6 +306,78 @@ class _MoreItemTile extends StatelessWidget {
           ],
         ),
       ),
+    );
+  }
+}
+
+class _MoreDestination {
+  final IconData icon;
+  final Color iconColor;
+  final String title;
+  final String subtitle;
+  final Widget page;
+
+  const _MoreDestination({
+    required this.icon,
+    required this.iconColor,
+    required this.title,
+    required this.subtitle,
+    required this.page,
+  });
+}
+
+class _MoreGroup extends StatelessWidget {
+  final String title;
+  final List<_MoreDestination> destinations;
+
+  const _MoreGroup({required this.title, required this.destinations});
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
+    final dividerColor = theme.semanticColors.border.withValues(
+      alpha: isDark ? 0.35 : 0.6,
+    );
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        AppSectionHeader(title: title),
+        SizedBox(height: 6.h),
+        AppCard(
+          padding: EdgeInsets.zero,
+          child: Column(
+            children: [
+              for (var index = 0; index < destinations.length; index++) ...[
+                _buildDestinationTile(context, destinations[index]),
+                if (index < destinations.length - 1)
+                  Divider(
+                    height: 1,
+                    indent: 58.w,
+                    endIndent: 14.w,
+                    color: dividerColor,
+                  ),
+              ],
+            ],
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildDestinationTile(
+    BuildContext context,
+    _MoreDestination destination,
+  ) {
+    return _MoreItemTile(
+      icon: destination.icon,
+      iconColor: destination.iconColor,
+      title: destination.title,
+      subtitle: destination.subtitle,
+      onTap: () => Navigator.of(
+        context,
+      ).push<void>(MaterialPageRoute<void>(builder: (_) => destination.page)),
     );
   }
 }

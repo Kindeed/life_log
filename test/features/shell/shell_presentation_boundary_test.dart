@@ -195,26 +195,31 @@ void main() {
     });
 
     test(
-      'MoreView aggregates personal, finance, tools, and settings entries',
+      'MoreView owns secondary destinations without duplicating profile settings',
       () {
         final diFile = File('lib/features/more/more_feature_di.dart');
         final moreViewFile = File(
           'lib/features/more/presentation/more_view.dart',
         );
+        final profileViewFile = File(
+          'lib/features/profile/presentation/profile_view.dart',
+        );
 
         expect(diFile.existsSync(), isTrue);
         expect(moreViewFile.existsSync(), isTrue);
+        expect(profileViewFile.existsSync(), isTrue);
 
         final diSource = diFile.readAsStringSync();
         final moreSource = moreViewFile.readAsStringSync();
+        final profileSource = profileViewFile.readAsStringSync();
 
         expect(diSource, contains('configureMoreFeatureDependencies'));
 
         expect(moreSource, contains('class MoreView'));
         expect(moreSource, contains('个人与账户'));
-        expect(moreSource, contains('生活与记账'));
-        expect(moreSource, contains('工具箱'));
-        expect(moreSource, contains('应用设置'));
+        expect(moreSource, contains('记录与分析'));
+        expect(moreSource, contains('工具'));
+        expect(moreSource, contains('应用'));
 
         expect(moreSource, contains('ProfileView'));
         expect(moreSource, isNot(contains('SyncCenterView')));
@@ -225,6 +230,14 @@ void main() {
         expect(moreSource, contains('AppearanceView'));
         expect(moreSource, contains('DataManagementView'));
         expect(moreSource, contains('AboutView'));
+
+        expect(profileSource, contains('SyncCenterView'));
+        expect(profileSource, contains('DeveloperView'));
+        expect(profileSource, isNot(contains('StatisticsView')));
+        expect(profileSource, isNot(contains('DataManagementView')));
+        expect(profileSource, isNot(contains('AppearanceView')));
+        expect(profileSource, isNot(contains('TelemetryCalcView')));
+        expect(profileSource, isNot(contains('AboutView')));
 
         expect(moreSource, isNot(contains("package:get/get.dart")));
         expect(moreSource, isNot(contains('Get.')));

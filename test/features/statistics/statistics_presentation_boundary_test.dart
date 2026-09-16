@@ -29,7 +29,7 @@ void main() {
       final sources = [
         'lib/common/bindings/tabs_binding.dart',
         'lib/common/db/backup_service.dart',
-        'lib/features/profile/presentation/profile_view.dart',
+        'lib/features/more/presentation/more_view.dart',
       ];
 
       for (final path in sources) {
@@ -38,21 +38,19 @@ void main() {
         expect(source, isNot(contains('../../modules/statistics/')));
       }
 
-      final profileView = File(
-        'lib/features/profile/presentation/profile_view.dart',
+      final moreView = File(
+        'lib/features/more/presentation/more_view.dart',
+      ).readAsStringSync();
+      final statisticsView = File(
+        'lib/features/statistics/presentation/statistics_view.dart',
       ).readAsStringSync();
       expect(
-        profileView,
+        moreView,
         contains(
           'package:life_log/features/statistics/presentation/statistics_view.dart',
         ),
       );
-      expect(
-        profileView,
-        contains(
-          'package:life_log/features/statistics/presentation/statistics_controller.dart',
-        ),
-      );
+      expect(statisticsView, contains("import 'statistics_controller.dart';"));
     });
 
     test('owns statistics presentation state without GetX coupling', () {

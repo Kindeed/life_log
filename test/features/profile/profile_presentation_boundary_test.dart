@@ -102,9 +102,15 @@ void main() {
       expect(view, isNot(contains('Get.toNamed')));
       expect(view, isNot(contains('Get.offAllNamed')));
       expect(view, isNot(contains('Get.snackbar')));
-      expect(view, isNot(contains('Get.find<StatisticsController>')));
       expect(view, isNot(contains('AppConfirmDialog')));
-      expect(view, contains('serviceLocator<StatisticsController>()'));
+      expect(view, contains('SyncCenterView'));
+      expect(view, contains('DeveloperView'));
+      expect(view, isNot(contains('StatisticsController')));
+      expect(view, isNot(contains('StatisticsView')));
+      expect(view, isNot(contains('DataManagementView')));
+      expect(view, isNot(contains('AppearanceView')));
+      expect(view, isNot(contains('TelemetryCalcView')));
+      expect(view, isNot(contains('AboutView')));
       expect(
         binding,
         contains('serviceLocator.registerLazySingleton<StatisticsController>'),

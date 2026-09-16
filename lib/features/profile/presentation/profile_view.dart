@@ -6,23 +6,15 @@ import 'package:life_log/common/layout/constrained_page.dart';
 import 'package:life_log/common/theme/app_semantic_colors.dart';
 import 'package:life_log/common/theme/app_spacing.dart';
 import 'package:life_log/common/theme/theme_extensions.dart';
-import 'package:life_log/common/utils/formatters.dart';
 import 'package:life_log/common/widgets/app_card.dart';
-import 'package:life_log/common/widgets/app_metric_tile.dart';
 import 'package:life_log/common/widgets/app_section_header.dart';
 import 'package:life_log/core/di/service_locator.dart';
 import 'package:life_log/core/routing/app_routes.dart';
 import 'package:life_log/features/profile/application/sign_out_profile_account.dart';
 import 'package:life_log/features/profile/application/sync_profile_data.dart';
 import 'package:life_log/features/profile/presentation/profile_account_cubit.dart';
-import 'package:life_log/features/profile/presentation/views/about_view.dart';
-import 'package:life_log/features/profile/presentation/views/appearance_view.dart';
-import 'package:life_log/features/profile/presentation/views/data_management_view.dart';
 import 'package:life_log/features/profile/presentation/views/developer_view.dart';
-import 'package:life_log/features/statistics/presentation/statistics_controller.dart';
-import 'package:life_log/features/statistics/presentation/statistics_view.dart';
 import 'package:life_log/features/sync_center/presentation/sync_center_view.dart';
-import 'package:life_log/features/telemetry_calc/presentation/telemetry_calc_view.dart';
 
 class ProfileView extends StatefulWidget {
   const ProfileView({super.key});
@@ -51,7 +43,7 @@ class _ProfileViewState extends State<ProfileView> {
     final semantic = Theme.of(context).semanticColors;
 
     return Scaffold(
-      appBar: AppBar(title: const Text('设置')),
+      appBar: AppBar(title: const Text('账户与同步')),
       body: SafeArea(
         child: ConstrainedPage(
           child: SingleChildScrollView(
@@ -70,19 +62,9 @@ class _ProfileViewState extends State<ProfileView> {
                   },
                 ),
                 SizedBox(height: 22.h),
-                _StatsSummaryCard(semantic: semantic),
-                SizedBox(height: 22.h),
                 _SettingsGroup(
-                  title: '数据',
+                  title: '同步',
                   children: [
-                    _SettingsTile(
-                      icon: Icons.storage_outlined,
-                      iconColor: semantic.work,
-                      title: '数据管理',
-                      subtitle: '备份、恢复、本地数据安全',
-                      onTap: () =>
-                          _openProfilePage(context, const DataManagementView()),
-                    ),
                     _SettingsTile(
                       icon: Icons.sync_problem_rounded,
                       iconColor: semantic.warning,
@@ -90,47 +72,6 @@ class _ProfileViewState extends State<ProfileView> {
                       subtitle: '冲突、失败任务、附件同步状态',
                       onTap: () =>
                           _openProfilePage(context, const SyncCenterView()),
-                    ),
-                  ],
-                ),
-                SizedBox(height: 18.h),
-                _SettingsGroup(
-                  title: '偏好',
-                  children: [
-                    _SettingsTile(
-                      icon: Icons.palette_outlined,
-                      iconColor: semantic.expense,
-                      title: '外观设置',
-                      subtitle: '主题、深色模式、动态取色',
-                      onTap: () =>
-                          _openProfilePage(context, const AppearanceView()),
-                    ),
-                  ],
-                ),
-                SizedBox(height: 18.h),
-                _SettingsGroup(
-                  title: '专业工具',
-                  children: [
-                    _SettingsTile(
-                      icon: Icons.settings_input_antenna_rounded,
-                      iconColor: semantic.stats,
-                      title: '遥测遥控计算',
-                      subtitle: '链路、码率、PCM、测距与公式模板',
-                      onTap: () =>
-                          _openProfilePage(context, const TelemetryCalcView()),
-                    ),
-                  ],
-                ),
-                SizedBox(height: 18.h),
-                _SettingsGroup(
-                  title: '关于',
-                  children: [
-                    _SettingsTile(
-                      icon: Icons.info_outline_rounded,
-                      iconColor: semantic.success,
-                      title: '关于',
-                      subtitle: '版本信息',
-                      onTap: () => _openProfilePage(context, const AboutView()),
                     ),
                   ],
                 ),
@@ -361,70 +302,6 @@ class _AccountAction extends StatelessWidget {
             ),
           ],
         ),
-      ),
-    );
-  }
-}
-
-class _StatsSummaryCard extends StatelessWidget {
-  final AppSemanticColors semantic;
-
-  const _StatsSummaryCard({required this.semantic});
-
-  @override
-  Widget build(BuildContext context) {
-    final stats = serviceLocator<StatisticsController>();
-    return AppCard(
-      onTap: () => _openProfilePage(context, const StatisticsView()),
-      padding: EdgeInsets.all(14.w),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            children: [
-              Expanded(
-                child: Text(
-                  '数据总览',
-                  style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                    fontWeight: FontWeight.w800,
-                  ),
-                ),
-              ),
-              Icon(
-                Icons.chevron_right_rounded,
-                color: Theme.of(context).colorScheme.onSurfaceVariant,
-              ),
-            ],
-          ),
-          SizedBox(height: 12.h),
-          AnimatedBuilder(
-            animation: stats,
-            builder: (context, _) => Row(
-              children: [
-                Expanded(
-                  child: AppMetricTile(
-                    label: '本月工时',
-                    value: stats.workHours.toStringAsFixed(1),
-                    icon: Icons.timelapse_rounded,
-                    color: semantic.work,
-                  ),
-                ),
-                SizedBox(width: 10.w),
-                Expanded(
-                  child: AppMetricTile(
-                    label: '本月支出',
-                    value: formatMoney(
-                      stats.selectedMonthSubCost +
-                          stats.selectedMonthExpenseRecordCost,
-                    ),
-                    icon: Icons.payments_rounded,
-                    color: semantic.expense,
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ],
       ),
     );
   }
