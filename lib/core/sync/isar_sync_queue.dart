@@ -1,4 +1,4 @@
-import 'package:isar/isar.dart';
+import 'package:isar_community/isar.dart';
 import 'package:life_log/core/db/isar_database.dart';
 import 'package:life_log/core/sync/sync_queue.dart';
 import 'package:life_log/core/sync/sync_queue_record.dart';

@@ -114,6 +114,7 @@ const WorkLogSchema = CollectionSchema(
       type: IsarType.dateTime,
     ),
   },
+
   estimateSize: _workLogEstimateSize,
   serialize: _workLogSerialize,
   deserialize: _workLogDeserialize,
@@ -188,10 +189,11 @@ const WorkLogSchema = CollectionSchema(
   },
   links: {},
   embeddedSchemas: {},
+
   getId: _workLogGetId,
   getLinks: _workLogGetLinks,
   attach: _workLogAttach,
-  version: '3.1.0+1',
+  version: '3.3.2',
 );
 
 int _workLogEstimateSize(
@@ -1220,6 +1222,7 @@ extension WorkLogQueryFilter
         FilterCondition.equalTo(
           property: r'expenses',
           value: value,
+
           epsilon: epsilon,
         ),
       );
@@ -1237,6 +1240,7 @@ extension WorkLogQueryFilter
           include: include,
           property: r'expenses',
           value: value,
+
           epsilon: epsilon,
         ),
       );
@@ -1254,6 +1258,7 @@ extension WorkLogQueryFilter
           include: include,
           property: r'expenses',
           value: value,
+
           epsilon: epsilon,
         ),
       );
@@ -1275,6 +1280,7 @@ extension WorkLogQueryFilter
           includeLower: includeLower,
           upper: upper,
           includeUpper: includeUpper,
+
           epsilon: epsilon,
         ),
       );
@@ -1708,6 +1714,7 @@ extension WorkLogQueryFilter
         FilterCondition.equalTo(
           property: r'overtimeHours',
           value: value,
+
           epsilon: epsilon,
         ),
       );
@@ -1726,6 +1733,7 @@ extension WorkLogQueryFilter
           include: include,
           property: r'overtimeHours',
           value: value,
+
           epsilon: epsilon,
         ),
       );
@@ -1743,6 +1751,7 @@ extension WorkLogQueryFilter
           include: include,
           property: r'overtimeHours',
           value: value,
+
           epsilon: epsilon,
         ),
       );
@@ -1764,6 +1773,7 @@ extension WorkLogQueryFilter
           includeLower: includeLower,
           upper: upper,
           includeUpper: includeUpper,
+
           epsilon: epsilon,
         ),
       );

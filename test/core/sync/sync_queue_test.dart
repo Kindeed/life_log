@@ -2,7 +2,7 @@ import 'dart:ffi';
 import 'dart:io';
 
 import 'package:flutter_test/flutter_test.dart';
-import 'package:isar/isar.dart';
+import 'package:isar_community/isar.dart';
 import 'package:life_log/common/db/db_service.dart';
 import 'package:life_log/core/db/isar_database.dart';
 import 'package:life_log/core/sync/isar_sync_queue.dart';

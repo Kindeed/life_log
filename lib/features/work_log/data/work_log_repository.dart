@@ -1,6 +1,6 @@
 import 'dart:async';
 
-import 'package:isar/isar.dart';
+import 'package:isar_community/isar.dart';
 import 'package:life_log/common/services/log_service.dart';
 import 'package:life_log/common/utils/date_utils.dart';
 import 'package:life_log/common/utils/record_validators.dart';

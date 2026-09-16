@@ -1,4 +1,4 @@
-import 'package:isar/isar.dart';
+import 'package:isar_community/isar.dart';
 import 'package:life_log/features/expense/domain/entities/expense_record_entry.dart';
 import 'package:life_log/features/expense/domain/entities/expense_record_edit_draft.dart';
 import 'package:life_log/features/expense/domain/repositories/expense_record_repository_port.dart';

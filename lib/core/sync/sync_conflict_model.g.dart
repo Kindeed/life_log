@@ -76,6 +76,7 @@ const SyncConflictRecordSchema = CollectionSchema(
       type: IsarType.dateTime,
     ),
   },
+
   estimateSize: _syncConflictRecordEstimateSize,
   serialize: _syncConflictRecordSerialize,
   deserialize: _syncConflictRecordDeserialize,
@@ -111,10 +112,11 @@ const SyncConflictRecordSchema = CollectionSchema(
   },
   links: {},
   embeddedSchemas: {},
+
   getId: _syncConflictRecordGetId,
   getLinks: _syncConflictRecordGetLinks,
   attach: _syncConflictRecordAttach,
-  version: '3.1.0+1',
+  version: '3.3.2',
 );
 
 int _syncConflictRecordEstimateSize(

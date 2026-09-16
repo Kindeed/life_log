@@ -2,7 +2,7 @@ import 'dart:ffi';
 import 'dart:io';
 
 import 'package:flutter_test/flutter_test.dart';
-import 'package:isar/isar.dart';
+import 'package:isar_community/isar.dart';
 import 'package:life_log/common/db/db_service.dart';
 import 'package:life_log/common/services/auth_service.dart';
 import 'package:life_log/core/db/isar_database.dart';
@@ -150,6 +150,111 @@ void main() {
       expect(await db.getAllEvidence(), isEmpty);
       expect(await db.isar.expenseEvidences.get(id), isNull);
     }, skip: isarSkip);
+
+    test(
+      'deletes a project cascade in one transaction while preserving photos',
+      () async {
+        final deletedProjectId = await db.addProject(
+          Project()
+            ..name = 'Alpha'
+            ..createdAt = DateTime(2026, 6, 15)
+            ..updatedAt = DateTime(2026, 6, 15),
+        );
+        final survivorProjectId = await db.addProject(
+          Project()
+            ..name = 'Beta'
+            ..createdAt = DateTime(2026, 6, 15)
+            ..updatedAt = DateTime(2026, 6, 15),
+        );
+        final sameNameProjectId = await db.addProject(
+          Project()
+            ..name = 'Alpha'
+            ..createdAt = DateTime(2026, 6, 15)
+            ..updatedAt = DateTime(2026, 6, 15),
+        );
+
+        final deletedEvidenceId = await db.addEvidence(
+          ExpenseEvidence()
+            ..projectId = deletedProjectId
+            ..projectName = ' Alpha '
+            ..evidenceDate = DateTime(2026, 6, 15)
+            ..amount = 42,
+        );
+        final deletedExpenseId = await db.addExpenseRecord(
+          ExpenseRecord()
+            ..projectId = deletedProjectId
+            ..projectName = ' Alpha '
+            ..expenseDate = DateTime(2026, 6, 15)
+            ..amount = 18,
+        );
+        final deletedTrip = WorkLog()
+          ..date = DateTime(2026, 6, 15)
+          ..type = LogType.businessTrip
+          ..projectId = deletedProjectId
+          ..projectName = ' Alpha '
+          ..location = '上海';
+        final deletedTripId = await db.addLog(deletedTrip);
+        final deletedPhoto = PhotoItem()
+          ..createdAt = DateTime(2026, 6, 15)
+          ..dateIndexed = DateTime(2026, 6, 15)
+          ..fileName = 'alpha.jpg'
+          ..filePath = r'C:\LifeLog\alpha.jpg'
+          ..projectId = deletedProjectId
+          ..projectName = ' Alpha ';
+        await db.addPhoto(deletedPhoto);
+        final survivorExpenseId = await db.addExpenseRecord(
+          ExpenseRecord()
+            ..projectId = survivorProjectId
+            ..projectName = 'Beta'
+            ..expenseDate = DateTime(2026, 6, 15)
+            ..amount = 7,
+        );
+        final sameNameExpenseId = await db.addExpenseRecord(
+          ExpenseRecord()
+            ..projectId = sameNameProjectId
+            ..projectName = 'Alpha'
+            ..expenseDate = DateTime(2026, 6, 15)
+            ..amount = 9,
+        );
+
+        final result = await db.deleteProjectCascade(
+          projectId: deletedProjectId,
+          projectName: 'Alpha',
+        );
+
+        expect(result, isNotNull);
+        expect(result!.deletedProject, isNull);
+        expect(await db.isar.projects.get(deletedProjectId), isNull);
+        expect(await db.isar.expenseEvidences.get(deletedEvidenceId), isNull);
+        expect(await db.isar.expenseRecords.get(deletedExpenseId), isNull);
+
+        final trip = await db.isar.workLogs.get(deletedTripId);
+        expect(trip, isNotNull);
+        expect(trip!.projectId, isNull);
+        expect(trip.projectSyncId, isNull);
+        expect(trip.projectName, isNull);
+        expect(trip.projectStageName, isNull);
+        expect(trip.isDirty, isTrue);
+
+        final photo = await db.isar.photoItems.get(deletedPhoto.id);
+        expect(photo, isNotNull);
+        expect(photo!.projectId, isNull);
+        expect(photo.projectName, isNull);
+        expect(photo.filePath, r'C:\LifeLog\alpha.jpg');
+
+        expect((await db.isar.projects.get(survivorProjectId))!.name, 'Beta');
+        expect(
+          (await db.isar.expenseRecords.get(survivorExpenseId))!.amount,
+          7,
+        );
+        expect((await db.isar.projects.get(sameNameProjectId))!.name, 'Alpha');
+        expect(
+          (await db.isar.expenseRecords.get(sameNameExpenseId))!.amount,
+          9,
+        );
+      },
+      skip: isarSkip,
+    );
 
     test('work log edit preserves existing sync identity', () async {
       final remoteUpdatedAt = DateTime.utc(2026, 6, 23, 9);

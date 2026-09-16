@@ -151,6 +151,7 @@ final class SubscriptionCubit extends Cubit<SubscriptionState> {
   final WatchSubscriptionEntries _watchEntries;
   final DateTime Function() _now;
   StreamSubscription<void>? _entriesSubscription;
+  int _loadRequestId = 0;
 
   SubscriptionCubit({
     required LoadSubscriptionEntries loadEntries,
@@ -172,6 +173,7 @@ final class SubscriptionCubit extends Cubit<SubscriptionState> {
 
   Future<void> loadEntries() async {
     if (isClosed) return;
+    final requestId = ++_loadRequestId;
     emit(
       state.copyWith(
         status: SubscriptionReadStatus.loading,
@@ -180,7 +182,7 @@ final class SubscriptionCubit extends Cubit<SubscriptionState> {
     );
 
     final result = await _loadEntries();
-    if (isClosed) return;
+    if (isClosed || requestId != _loadRequestId) return;
     result.when(
       success: (entries) {
         emit(

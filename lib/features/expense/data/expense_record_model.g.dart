@@ -114,6 +114,7 @@ const ExpenseRecordSchema = CollectionSchema(
       type: IsarType.dateTime,
     ),
   },
+
   estimateSize: _expenseRecordEstimateSize,
   serialize: _expenseRecordSerialize,
   deserialize: _expenseRecordDeserialize,
@@ -227,10 +228,11 @@ const ExpenseRecordSchema = CollectionSchema(
   },
   links: {},
   embeddedSchemas: {},
+
   getId: _expenseRecordGetId,
   getLinks: _expenseRecordGetLinks,
   attach: _expenseRecordAttach,
-  version: '3.1.0+1',
+  version: '3.3.2',
 );
 
 int _expenseRecordEstimateSize(
@@ -1368,6 +1370,7 @@ extension ExpenseRecordQueryFilter
         FilterCondition.equalTo(
           property: r'amount',
           value: value,
+
           epsilon: epsilon,
         ),
       );
@@ -1386,6 +1389,7 @@ extension ExpenseRecordQueryFilter
           include: include,
           property: r'amount',
           value: value,
+
           epsilon: epsilon,
         ),
       );
@@ -1404,6 +1408,7 @@ extension ExpenseRecordQueryFilter
           include: include,
           property: r'amount',
           value: value,
+
           epsilon: epsilon,
         ),
       );
@@ -1426,6 +1431,7 @@ extension ExpenseRecordQueryFilter
           includeLower: includeLower,
           upper: upper,
           includeUpper: includeUpper,
+
           epsilon: epsilon,
         ),
       );

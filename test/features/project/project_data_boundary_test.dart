@@ -2,7 +2,8 @@ import 'dart:async';
 import 'dart:io';
 
 import 'package:flutter_test/flutter_test.dart';
-import 'package:isar/isar.dart';
+import 'package:isar_community/isar.dart';
+import 'package:life_log/features/project/data/project_cascade_delete_result.dart';
 import 'package:life_log/features/project/data/project_local_data_source.dart';
 import 'package:life_log/features/project/data/project_model.dart';
 import 'package:life_log/features/project/data/project_repository.dart';
@@ -151,7 +152,7 @@ void main() {
     });
 
     test(
-      'skips clean remote project push and purges local-only delete',
+      'skips clean remote project push and completes local-only cascade',
       () async {
         final cleanRemote = _project(id: 7, name: 'Remote')
           ..remoteId = 70
@@ -173,7 +174,8 @@ void main() {
 
         expect(ensured, same(cleanRemote));
         expect(sync.syncRequests, isEmpty);
-        expect(local.purgedIds, [8]);
+        expect(local.cascadeDeleteRequests, [(8, 'Local deleted')]);
+        expect(local.purgedIds, isEmpty);
       },
     );
   });
@@ -191,6 +193,7 @@ final class _ProjectLocalDataSourceFake implements ProjectLocalDataSource {
   final changes = StreamController<void>.broadcast();
   final List<Project> projects;
   final List<Project> addedProjects = [];
+  final List<(int, String)> cascadeDeleteRequests = [];
   final List<int> purgedIds = [];
   final Project? ensureResult;
   final Project? deletedResult;
@@ -214,6 +217,21 @@ final class _ProjectLocalDataSourceFake implements ProjectLocalDataSource {
 
   @override
   Future<List<Project>> getAllProjects() async => projects;
+
+  @override
+  Future<ProjectCascadeDeleteResult?> deleteProjectCascade(
+    int id,
+    String name,
+  ) async {
+    cascadeDeleteRequests.add((id, name));
+    final deleted = deletedResult;
+    if (deleted == null) return null;
+    return ProjectCascadeDeleteResult(
+      deletedProject: deleted.remoteId == null && deleted.syncId == null
+          ? null
+          : deleted,
+    );
+  }
 
   @override
   Future<Project?> markProjectDeleted(int id) async => deletedResult;

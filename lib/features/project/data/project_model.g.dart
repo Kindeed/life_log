@@ -83,6 +83,7 @@ const ProjectSchema = CollectionSchema(
       type: IsarType.dateTime,
     ),
   },
+
   estimateSize: _projectEstimateSize,
   serialize: _projectSerialize,
   deserialize: _projectDeserialize,
@@ -118,10 +119,11 @@ const ProjectSchema = CollectionSchema(
   },
   links: {},
   embeddedSchemas: {},
+
   getId: _projectGetId,
   getLinks: _projectGetLinks,
   attach: _projectAttach,
-  version: '3.1.0+1',
+  version: '3.3.2',
 );
 
 int _projectEstimateSize(

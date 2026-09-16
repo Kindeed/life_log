@@ -54,6 +54,9 @@ android/app/upload-keystore.jks
 # Local machine config
 android/local.properties
 
+# Supabase CLI local link/session cache
+supabase/.temp/
+
 # Local diagnostics / review scratch files
 .claude/
 .agent/

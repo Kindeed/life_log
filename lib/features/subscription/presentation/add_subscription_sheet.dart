@@ -9,8 +9,11 @@ import 'package:life_log/common/widgets/app_safe_bottom_bar.dart';
 import 'package:life_log/common/widgets/app_sheet_scaffold.dart';
 import 'package:life_log/common/widgets/app_text_field.dart';
 import 'package:life_log/core/di/service_locator.dart';
+import 'package:life_log/features/subscription/application/delete_subscription_entry.dart';
 import 'package:life_log/features/subscription/application/save_subscription_entry.dart';
 import 'package:life_log/features/subscription/domain/entities/subscription_entry.dart';
+
+import 'subscription_dialogs.dart';
 
 class AddSubscriptionSheet extends StatefulWidget {
   final SubscriptionEntry? existingEntry;
@@ -69,14 +72,35 @@ class _AddSubscriptionSheetState extends State<AddSubscriptionSheet> {
       padding: EdgeInsets.symmetric(horizontal: 24.w),
       bottomBar: AppSafeBottomBar(
         padding: EdgeInsets.symmetric(horizontal: 24.w, vertical: 10.h),
-        child: SizedBox(
-          width: double.infinity,
-          child: AppButton.primary(
-            label: "保存订阅",
-            onPressed: _onSave,
-            height: 50.h,
-          ),
-        ),
+        child: widget.existingEntry == null
+            ? SizedBox(
+                width: double.infinity,
+                child: AppButton.primary(
+                  label: "保存订阅",
+                  onPressed: _onSave,
+                  height: 50.h,
+                ),
+              )
+            : Row(
+                children: [
+                  Expanded(
+                    child: AppButton.destructive(
+                      label: "删除",
+                      icon: Icons.delete_outline_rounded,
+                      onPressed: _onDelete,
+                      height: 50.h,
+                    ),
+                  ),
+                  SizedBox(width: 12.w),
+                  Expanded(
+                    child: AppButton.primary(
+                      label: "保存修改",
+                      onPressed: _onSave,
+                      height: 50.h,
+                    ),
+                  ),
+                ],
+              ),
       ),
       child: SingleChildScrollView(
         keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
@@ -303,6 +327,41 @@ class _AddSubscriptionSheetState extends State<AddSubscriptionSheet> {
         _showMessage("保存失败：${_errorText(failure.message)}", isError: true);
       },
     );
+  }
+
+  Future<void> _onDelete() async {
+    final existingEntry = widget.existingEntry;
+    if (existingEntry == null) return;
+
+    final confirmed = await confirmSubscriptionDelete(
+      context,
+      name: existingEntry.name,
+    );
+    if (!confirmed || !mounted) return;
+
+    final result = await serviceLocator<DeleteSubscriptionEntry>().call(
+      existingEntry.id,
+    );
+    if (!mounted) return;
+
+    final failure = result.failureOrNull;
+    if (failure != null) {
+      _showMessage("删除失败：${_errorText(failure.message)}", isError: true);
+      return;
+    }
+
+    final navigator = Navigator.of(context);
+    final messenger = ScaffoldMessenger.of(context);
+    navigator.pop();
+    messenger
+      ..hideCurrentSnackBar()
+      ..showSnackBar(
+        const SnackBar(
+          content: Text("订阅已删除"),
+          behavior: SnackBarBehavior.floating,
+          duration: Duration(seconds: 1),
+        ),
+      );
   }
 
   String _errorText(Object error) {

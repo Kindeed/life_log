@@ -1,4 +1,4 @@
-import 'package:isar/isar.dart';
+import 'package:isar_community/isar.dart';
 import 'package:life_log/features/subscription/domain/entities/subscription_edit_draft.dart';
 import 'package:life_log/features/subscription/domain/entities/subscription_entry.dart';
 import 'package:life_log/features/subscription/domain/repositories/subscription_repository_port.dart';

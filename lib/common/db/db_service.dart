@@ -3,7 +3,7 @@ import 'dart:io';
 import 'package:crypto/crypto.dart';
 import 'package:flutter/foundation.dart';
 import 'package:get_storage/get_storage.dart';
-import 'package:isar/isar.dart';
+import 'package:isar_community/isar.dart';
 import 'package:life_log/core/db/isar_database.dart';
 import 'package:life_log/core/di/service_locator.dart';
 import 'package:life_log/core/sync/sync_conflict_model.dart';
@@ -19,6 +19,7 @@ import 'package:path/path.dart' as p;
 import 'package:path_provider/path_provider.dart';
 import 'package:life_log/features/photo/data/photo_model.dart';
 import 'package:life_log/features/project/data/project_dao.dart';
+import 'package:life_log/features/project/data/project_cascade_delete_result.dart';
 import 'package:life_log/features/evidence/data/evidence_dao.dart';
 import 'package:life_log/features/evidence/data/evidence_model.dart';
 import 'package:life_log/features/expense/data/expense_record_dao.dart';
@@ -1462,6 +1463,157 @@ class DbService {
       project.isDirty = true;
       await isar.projects.put(project);
       return project;
+    });
+  }
+
+  /// Applies the local part of a project cascade in one Isar transaction.
+  ///
+  /// Photos are deliberately unlinked, never deleted. Syncable records are
+  /// retained as tombstones or dirty relationship updates for the normal sync
+  /// pipeline; records without a remote identity are removed in this same
+  /// transaction. Filesystem cleanup is returned to the repository because it
+  /// cannot be rolled back by Isar.
+  Future<ProjectCascadeDeleteResult?> deleteProjectCascade({
+    required int projectId,
+    required String projectName,
+  }) async {
+    return await isar.writeTxn(() async {
+      final project = await isar.projects.get(projectId);
+      if (project == null || !_isVisibleToCurrentUser(project.ownerUserId)) {
+        return null;
+      }
+
+      final projectNames = {
+        project.name.trim().toLowerCase(),
+        projectName.trim().toLowerCase(),
+      }..removeWhere((name) => name.isEmpty);
+
+      bool matchesProject(int? linkedProjectId, String? linkedProjectName) {
+        if (linkedProjectId != null) return linkedProjectId == projectId;
+        return projectNames.contains(linkedProjectName?.trim().toLowerCase());
+      }
+
+      final localEvidenceFiles = <ExpenseEvidence>[];
+      final pendingEvidenceFiles = <ExpenseEvidence>[];
+      final attachments = await isar.evidenceAttachments.where().findAll();
+
+      final evidence = await isar.expenseEvidences.where().findAll();
+      for (final item in evidence) {
+        if (item.deletedAt != null ||
+            !_isVisibleToCurrentUser(item.ownerUserId) ||
+            !matchesProject(item.projectId, item.projectName)) {
+          continue;
+        }
+
+        final hasRemoteIdentity = item.remoteId != null || item.syncId != null;
+        final localFilePath = item.localFilePath?.trim();
+        if (hasRemoteIdentity) {
+          final now = DateTime.now().toUtc();
+          item
+            ..deletedAt = now
+            ..updatedAt = now
+            ..pendingDelete = true
+            ..isDirty = true;
+          if (item.localFilePath != null || item.remoteStoragePath != null) {
+            item.syncId = ensureSyncId(item.syncId);
+            await _queueEvidenceAttachmentDeleteInTxn(item);
+          }
+          await isar.expenseEvidences.put(item);
+          if (localFilePath != null && localFilePath.isNotEmpty) {
+            pendingEvidenceFiles.add(item);
+          }
+        } else {
+          final attachmentIds = attachments
+              .where(
+                (attachment) =>
+                    _isVisibleToCurrentUser(attachment.ownerUserId) &&
+                    (attachment.evidenceLocalId == item.id ||
+                        attachment.evidenceSyncId == item.syncId),
+              )
+              .map((attachment) => attachment.id)
+              .toList();
+          if (attachmentIds.isNotEmpty) {
+            await isar.evidenceAttachments.deleteAll(attachmentIds);
+          }
+          await isar.expenseEvidences.delete(item.id);
+          if (localFilePath != null && localFilePath.isNotEmpty) {
+            localEvidenceFiles.add(item);
+          }
+        }
+      }
+
+      final records = await isar.expenseRecords.where().findAll();
+      for (final record in records) {
+        if (record.deletedAt != null ||
+            !_isVisibleToCurrentUser(record.ownerUserId) ||
+            !matchesProject(record.projectId, record.projectName)) {
+          continue;
+        }
+
+        if (record.remoteId == null && record.syncId == null) {
+          await isar.expenseRecords.delete(record.id);
+        } else {
+          final now = DateTime.now().toUtc();
+          record
+            ..deletedAt = now
+            ..updatedAt = now
+            ..pendingDelete = true
+            ..isDirty = true;
+          await isar.expenseRecords.put(record);
+        }
+      }
+
+      final logs = await isar.workLogs.where().findAll();
+      for (final log in logs) {
+        if (log.deletedAt != null ||
+            log.type != LogType.businessTrip ||
+            !_isVisibleToCurrentUser(log.ownerUserId) ||
+            !matchesProject(log.projectId, log.projectName)) {
+          continue;
+        }
+
+        log
+          ..projectId = null
+          ..projectSyncId = null
+          ..projectName = null
+          ..projectStageName = null
+          ..updatedAt = DateTime.now().toUtc()
+          ..isDirty = true;
+        await isar.workLogs.put(log);
+      }
+
+      final photos = await isar.photoItems.where().findAll();
+      for (final photo in photos) {
+        if (!_isVisibleToCurrentUser(photo.ownerUserId) ||
+            !matchesProject(photo.projectId, photo.projectName)) {
+          continue;
+        }
+
+        photo
+          ..projectId = null
+          ..projectName = null;
+        await isar.photoItems.put(photo);
+      }
+
+      Project? deletedProject;
+      if (project.remoteId == null && project.syncId == null) {
+        await isar.projects.delete(project.id);
+      } else {
+        final now = DateTime.now().toUtc();
+        project
+          ..deletedAt = now
+          ..updatedAt = now
+          ..pendingDelete = true
+          ..isDirty = true;
+        await isar.projects.put(project);
+        deletedProject = project;
+      }
+
+      return ProjectCascadeDeleteResult(
+        deletedProject: deletedProject,
+        localEvidenceFiles: localEvidenceFiles,
+        pendingEvidenceFiles: pendingEvidenceFiles,
+      );
     });
   }
 

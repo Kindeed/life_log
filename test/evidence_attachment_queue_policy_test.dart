@@ -133,5 +133,21 @@ void main() {
         reason: 'Photo sync must remain invalidated by AGENTS.md.',
       );
     });
+
+    test('RLS corrective migration uses an initplan-safe auth expression', () {
+      final migration = File(
+        'supabase/migrations/20260915090000_evidence_attachments_rls_initplan.sql',
+      );
+
+      expect(migration.existsSync(), isTrue);
+
+      final source = migration.readAsStringSync();
+      expect(source, contains('begin;'));
+      expect(source, contains('commit;'));
+      expect(source, contains('using ((select auth.uid()) = user_id);'));
+      expect(source, contains('with check ((select auth.uid()) = user_id);'));
+      expect(source, isNot(contains('using (auth.uid() = user_id);')));
+      expect(source, isNot(contains('with check (auth.uid() = user_id);')));
+    });
   });
 }

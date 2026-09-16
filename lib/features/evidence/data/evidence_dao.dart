@@ -1,4 +1,4 @@
-import 'package:isar/isar.dart';
+import 'package:isar_community/isar.dart';
 import 'package:life_log/core/db/isar_database.dart';
 import 'package:life_log/features/evidence/data/evidence_model.dart';
 

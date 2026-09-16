@@ -259,6 +259,40 @@ void main() {
       expect(find.text('无关联项目'), findsOneWidget);
     });
 
+    testWidgets('editor semantics remain stable while switching entry types', (
+      tester,
+    ) async {
+      tester.view.devicePixelRatio = 1;
+      tester.view.physicalSize = const Size(375, 812);
+      addTearDown(tester.view.resetPhysicalSize);
+      addTearDown(tester.view.resetDevicePixelRatio);
+
+      configureWorkLogFeatureDependencies(repository: _EditorRepository());
+      final semanticsHandle = tester.ensureSemantics();
+
+      await tester.pumpWidget(
+        ScreenUtilInit(
+          designSize: const Size(375, 812),
+          builder: (context, _) => MaterialApp(
+            home: LogEditView(selectedDate: DateTime(2026, 5, 9)),
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      final editorFinder = find.byKey(
+        const ValueKey('work-log-editor-semantics'),
+      );
+      expect(tester.getSemantics(editorFinder).label, '工时记录编辑器');
+
+      for (final type in ['出差', '请假', '休息', '工作']) {
+        await tester.tap(find.text(type));
+        await tester.pumpAndSettle();
+        expect(tester.getSemantics(editorFinder).label, '工时记录编辑器');
+      }
+      semanticsHandle.dispose();
+    });
+
     test(
       'submits through WorkLogEditorCubit instead of controller write methods',
       () {

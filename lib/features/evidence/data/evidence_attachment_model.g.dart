@@ -96,6 +96,7 @@ const EvidenceAttachmentSchema = CollectionSchema(
       type: IsarType.dateTime,
     ),
   },
+
   estimateSize: _evidenceAttachmentEstimateSize,
   serialize: _evidenceAttachmentSerialize,
   deserialize: _evidenceAttachmentDeserialize,
@@ -157,10 +158,11 @@ const EvidenceAttachmentSchema = CollectionSchema(
   },
   links: {},
   embeddedSchemas: {},
+
   getId: _evidenceAttachmentGetId,
   getLinks: _evidenceAttachmentGetLinks,
   attach: _evidenceAttachmentAttach,
-  version: '3.1.0+1',
+  version: '3.3.2',
 );
 
 int _evidenceAttachmentEstimateSize(

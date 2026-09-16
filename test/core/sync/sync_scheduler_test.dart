@@ -50,5 +50,70 @@ void main() {
       expect(await second, isTrue);
       expect(runCount, 1);
     });
+
+    test('queues entity mutations behind an active sync', () async {
+      var runCount = 0;
+      final first = Completer<bool>();
+      final second = Completer<bool>();
+      final scheduler = SyncScheduler(
+        runSync:
+            ({required reason, forceFullRefresh = false, forceNew = false}) {
+              runCount++;
+              return runCount == 1 ? first.future : second.future;
+            },
+      );
+
+      final startup = scheduler.requestSync(reason: 'startup');
+      final delete = scheduler.requestSync(
+        reason: 'delete',
+        entityName: 'subscription',
+        entityKey: 'sub-1',
+      );
+
+      first.complete(true);
+      await Future<void>.delayed(Duration.zero);
+      expect(runCount, 2);
+      expect(delete, isNot(same(startup)));
+
+      second.complete(true);
+      expect(await startup, isTrue);
+      expect(await delete, isTrue);
+    });
+
+    test(
+      'coalesces multiple entity mutations into one follow-up sync',
+      () async {
+        var runCount = 0;
+        final first = Completer<bool>();
+        final second = Completer<bool>();
+        final scheduler = SyncScheduler(
+          runSync:
+              ({required reason, forceFullRefresh = false, forceNew = false}) {
+                runCount++;
+                return runCount == 1 ? first.future : second.future;
+              },
+        );
+
+        scheduler.requestSync(reason: 'startup');
+        final deleteOne = scheduler.requestSync(
+          reason: 'delete',
+          entityName: 'subscription',
+          entityKey: 'sub-1',
+        );
+        final deleteTwo = scheduler.requestSync(
+          reason: 'delete',
+          entityName: 'subscription',
+          entityKey: 'sub-2',
+        );
+
+        first.complete(true);
+        await Future<void>.delayed(Duration.zero);
+        expect(runCount, 2);
+        expect(deleteTwo, same(deleteOne));
+
+        second.complete(true);
+        expect(await deleteOne, isTrue);
+      },
+    );
   });
 }

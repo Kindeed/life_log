@@ -91,6 +91,7 @@ const SubscriptionSchema = CollectionSchema(
       type: IsarType.dateTime,
     ),
   },
+
   estimateSize: _subscriptionEstimateSize,
   serialize: _subscriptionSerialize,
   deserialize: _subscriptionDeserialize,
@@ -113,10 +114,11 @@ const SubscriptionSchema = CollectionSchema(
   },
   links: {},
   embeddedSchemas: {},
+
   getId: _subscriptionGetId,
   getLinks: _subscriptionGetLinks,
   attach: _subscriptionAttach,
-  version: '3.1.0+1',
+  version: '3.3.2',
 );
 
 int _subscriptionEstimateSize(
@@ -1425,6 +1427,7 @@ extension SubscriptionQueryFilter
         FilterCondition.equalTo(
           property: r'price',
           value: value,
+
           epsilon: epsilon,
         ),
       );
@@ -1443,6 +1446,7 @@ extension SubscriptionQueryFilter
           include: include,
           property: r'price',
           value: value,
+
           epsilon: epsilon,
         ),
       );
@@ -1460,6 +1464,7 @@ extension SubscriptionQueryFilter
           include: include,
           property: r'price',
           value: value,
+
           epsilon: epsilon,
         ),
       );
@@ -1481,6 +1486,7 @@ extension SubscriptionQueryFilter
           includeLower: includeLower,
           upper: upper,
           includeUpper: includeUpper,
+
           epsilon: epsilon,
         ),
       );

@@ -121,6 +121,29 @@ void main() {
       expect(cubit.state.failure?.code, 'subscription/load-entries');
       expect(cubit.state.failure?.message, contains('subscriptions down'));
     });
+
+    test(
+      'ignores a stale load completion after a newer delete refresh',
+      () async {
+        final staleLoad = Completer<List<SubscriptionEntry>>();
+        final repository = _SubscriptionCubitRepository(
+          entries: [_entry(id: 1, name: 'Deleted')],
+          queuedLoads: [staleLoad.future, Future.value(const [])],
+        );
+        final cubit = _cubit(repository);
+        addTearDown(cubit.close);
+
+        final firstLoad = cubit.loadEntries();
+        final secondLoad = cubit.loadEntries();
+        await secondLoad;
+
+        staleLoad.complete([_entry(id: 1, name: 'Deleted')]);
+        await firstLoad;
+
+        expect(cubit.state.entries, isEmpty);
+        expect(cubit.state.visibleEntries, isEmpty);
+      },
+    );
   });
 }
 
@@ -154,11 +177,19 @@ final class _SubscriptionCubitRepository implements SubscriptionRepositoryPort {
   final _controller = StreamController<void>.broadcast();
   Object? loadError;
   List<SubscriptionEntry> entries;
+  final List<Future<List<SubscriptionEntry>>> queuedLoads;
 
-  _SubscriptionCubitRepository({required this.entries, this.loadError});
+  _SubscriptionCubitRepository({
+    required this.entries,
+    this.loadError,
+    this.queuedLoads = const [],
+  });
 
   @override
   Future<List<SubscriptionEntry>> getAllEntries() async {
+    if (queuedLoads.isNotEmpty) {
+      return queuedLoads.removeAt(0);
+    }
     final error = loadError;
     if (error != null) {
       throw error;

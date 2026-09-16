@@ -48,6 +48,7 @@ const SyncQueueRecordSchema = CollectionSchema(
       type: IsarType.dateTime,
     ),
   },
+
   estimateSize: _syncQueueRecordEstimateSize,
   serialize: _syncQueueRecordSerialize,
   deserialize: _syncQueueRecordDeserialize,
@@ -83,10 +84,11 @@ const SyncQueueRecordSchema = CollectionSchema(
   },
   links: {},
   embeddedSchemas: {},
+
   getId: _syncQueueRecordGetId,
   getLinks: _syncQueueRecordGetLinks,
   attach: _syncQueueRecordAttach,
-  version: '3.1.0+1',
+  version: '3.3.2',
 );
 
 int _syncQueueRecordEstimateSize(

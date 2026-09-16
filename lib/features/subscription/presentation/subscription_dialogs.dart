@@ -14,7 +14,7 @@ Future<bool> confirmSubscriptionDelete(
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(AppRadius.xl),
         ),
-        title: const Text('删除支出'),
+        title: const Text('删除订阅'),
         content: Text('确定删除「$name」吗？删除后无法恢复。'),
         actions: [
           AppButton.text(

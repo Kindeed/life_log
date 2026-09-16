@@ -1,4 +1,4 @@
-import 'package:isar/isar.dart';
+import 'package:isar_community/isar.dart';
 import 'package:life_log/common/db/db_service.dart';
 import 'package:life_log/core/di/service_locator.dart';
 import 'package:life_log/features/expense/data/expense_record_model.dart';

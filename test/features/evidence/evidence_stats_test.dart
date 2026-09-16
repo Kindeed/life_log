@@ -2,7 +2,7 @@ import 'dart:async';
 import 'dart:io';
 
 import 'package:flutter_test/flutter_test.dart';
-import 'package:isar/isar.dart';
+import 'package:isar_community/isar.dart';
 import 'package:life_log/features/evidence/application/delete_evidence_entry.dart';
 import 'package:life_log/features/evidence/application/load_evidence_edit_draft.dart';
 import 'package:life_log/features/evidence/application/save_evidence_entry.dart';
@@ -122,20 +122,20 @@ void main() {
   });
 
   group('Project delete Evidence boundary', () {
-    test('routes project evidence deletes through feature commands', () {
+    test('keeps project cascade ownership in the project data boundary', () {
       final source = File(
         'lib/features/project/application/delete_project_entry.dart',
       ).readAsStringSync();
 
-      expect(source, contains('LoadEvidenceEntries'));
-      expect(source, contains('DeleteEvidenceEntry'));
+      expect(source, contains('ProjectRepositoryPort'));
+      expect(source, contains('_repository.deleteEntry(entry)'));
       expect(
         source,
         isNot(contains('modules/evidence/evidence_repository.dart')),
       );
       expect(source, isNot(contains('EvidenceRepository.to')));
-      expect(source, isNot(contains('getAllEvidence()')));
-      expect(source, isNot(contains('deleteEvidence(')));
+      expect(source, isNot(contains('LoadEvidenceEntries')));
+      expect(source, isNot(contains('DeleteEvidenceEntry')));
     });
   });
 

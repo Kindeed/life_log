@@ -1,6 +1,8 @@
-import 'package:isar/isar.dart';
+import 'package:isar_community/isar.dart';
 import 'package:life_log/common/services/log_service.dart';
 import 'package:life_log/common/utils/sync_id_policy.dart';
+import 'package:life_log/features/evidence/data/evidence_file_store.dart';
+import 'package:life_log/features/evidence/data/evidence_model.dart';
 import 'package:life_log/features/project/data/project_local_data_source.dart';
 import 'package:life_log/features/project/data/project_sync_gateway.dart';
 
@@ -10,11 +12,14 @@ class ProjectRepository {
   ProjectRepository({
     ProjectLocalDataSource? localDataSource,
     ProjectSyncGateway? syncGateway,
+    EvidenceFileStore? evidenceFileStore,
   }) : _localDataSource = localDataSource ?? const DbProjectLocalDataSource(),
-       _syncGateway = syncGateway ?? const ServiceLocatorProjectSyncGateway();
+       _syncGateway = syncGateway ?? const ServiceLocatorProjectSyncGateway(),
+       _evidenceFileStore = evidenceFileStore ?? const AppEvidenceFileStore();
 
   final ProjectLocalDataSource _localDataSource;
   final ProjectSyncGateway _syncGateway;
+  final EvidenceFileStore _evidenceFileStore;
 
   Future<List<Project>> getAllProjects() {
     return _localDataSource.getAllProjects();
@@ -91,26 +96,51 @@ class ProjectRepository {
   }
 
   Future<void> deleteProject(Project project) async {
-    final deleted = await _localDataSource.markProjectDeleted(project.id);
-    if (deleted == null) return;
+    final result = await _localDataSource.deleteProjectCascade(
+      project.id,
+      project.name,
+    );
+    if (result == null) return;
+
+    await _deleteEvidenceFiles(result.localEvidenceFiles);
 
     try {
-      if (deleted.remoteId == null && deleted.syncId == null) {
-        await _localDataSource.purgeDeletedProject(project.id);
-      } else if (!_syncGateway.isAvailable) {
-        LogService.to.info('ProjectRepository', '本地模式：跳过云端删除');
-      } else {
-        final success = await _syncGateway.requestSync(
-          deleted,
-          reason: 'project-delete',
-        );
-        if (success) {
-          await _localDataSource.purgeDeletedProject(project.id);
-        }
+      final deleted = result.deletedProject;
+      if (deleted == null) return;
+
+      if (!_syncGateway.isAvailable) {
+        LogService.to.info('ProjectRepository', '本地模式：保留级联删除待同步状态');
+        return;
       }
+
+      final success = await _syncGateway.requestSync(
+        deleted,
+        reason: 'project-delete',
+      );
+      if (!success) {
+        LogService.to.error('ProjectRepository', '项目级联删除云端同步未完成，保留待同步状态');
+        return;
+      }
+
+      await _deleteEvidenceFiles(result.pendingEvidenceFiles);
+      await _localDataSource.purgeDeletedProject(project.id);
     } catch (e, stackTrace) {
-      LogService.to.error('ProjectRepository', '云端删除失败: $e', stackTrace);
+      LogService.to.error('ProjectRepository', '项目级联删除云端同步失败: $e', stackTrace);
       rethrow;
+    }
+  }
+
+  Future<void> _deleteEvidenceFiles(Iterable<ExpenseEvidence> evidence) async {
+    for (final item in evidence) {
+      try {
+        await _evidenceFileStore.deleteEvidenceFile(item);
+      } catch (e, stackTrace) {
+        LogService.to.error(
+          'ProjectRepository',
+          '项目级联删除凭证文件失败: $e',
+          stackTrace,
+        );
+      }
     }
   }
 }

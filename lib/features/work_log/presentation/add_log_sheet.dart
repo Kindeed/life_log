@@ -116,91 +116,98 @@ class _AddLogSheetState extends State<AddLogSheet> {
     final textSecondary = theme.colorScheme.onSurfaceVariant;
     final sheetHeight = MediaQuery.of(context).size.height * 0.85;
 
-    return BlocProvider.value(
-      value: _editorCubit,
-      child: BlocListener<WorkLogEditorCubit, WorkLogEditorState>(
-        listenWhen: (previous, current) =>
-            previous.status != current.status ||
-            previous.failure != current.failure,
-        listener: (context, editorState) {
-          unawaited(_handleEditorState(context, editorState));
-        },
-        child: BlocBuilder<WorkLogEditorCubit, WorkLogEditorState>(
-          builder: (context, editorState) {
-            return AppSheetScaffold(
-              presentation: widget.asPage
-                  ? AppSheetPresentation.page
-                  : AppSheetPresentation.sheet,
-              height: widget.asPage ? null : sheetHeight,
-              title: widget.existingEntry != null ? "修改记录" : "记录一下",
-              padding: EdgeInsets.zero,
-              hideBottomBarWhenKeyboardVisible: false,
-              bottomBar: AppSafeBottomBar(
-                padding: EdgeInsets.fromLTRB(24.w, 8.h, 24.w, 16.h),
-                child: _buildBottomActions(editorState),
-              ),
-              child: Column(
-                children: [
-                  _buildTypeSelector(
-                    editorState,
-                    isDark,
-                    bgColor,
-                    textPrimary,
-                    textSecondary,
-                  ),
+    return Semantics(
+      key: const ValueKey('work-log-editor-semantics'),
+      container: true,
+      explicitChildNodes: true,
+      label: '工时记录编辑器',
+      child: BlocProvider.value(
+        value: _editorCubit,
+        child: BlocListener<WorkLogEditorCubit, WorkLogEditorState>(
+          listenWhen: (previous, current) =>
+              previous.status != current.status ||
+              previous.failure != current.failure,
+          listener: (context, editorState) {
+            unawaited(_handleEditorState(context, editorState));
+          },
+          child: BlocBuilder<WorkLogEditorCubit, WorkLogEditorState>(
+            builder: (context, editorState) {
+              return AppSheetScaffold(
+                presentation: widget.asPage
+                    ? AppSheetPresentation.page
+                    : AppSheetPresentation.sheet,
+                height: widget.asPage ? null : sheetHeight,
+                title: widget.existingEntry != null ? "修改记录" : "记录一下",
+                padding: EdgeInsets.zero,
+                hideBottomBarWhenKeyboardVisible: false,
+                bottomBar: AppSafeBottomBar(
+                  padding: EdgeInsets.fromLTRB(24.w, 8.h, 24.w, 16.h),
+                  child: _buildBottomActions(editorState),
+                ),
+                child: Column(
+                  children: [
+                    _buildTypeSelector(
+                      editorState,
+                      isDark,
+                      bgColor,
+                      textPrimary,
+                      textSecondary,
+                    ),
 
-                  Expanded(
-                    child: SingleChildScrollView(
-                      keyboardDismissBehavior:
-                          ScrollViewKeyboardDismissBehavior.onDrag,
-                      padding: EdgeInsets.symmetric(
-                        horizontal: 24.w,
-                        vertical: 20.h,
-                      ),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          if (editorState.type == WorkLogEntryType.work)
-                            _buildWorkForm(
-                              editorState,
-                              isDark,
-                              bgColor,
-                              textPrimary,
-                            ),
-                          if (editorState.type == WorkLogEntryType.businessTrip)
-                            _buildTripForm(
-                              editorState,
-                              isDark,
-                              bgColor,
-                              textPrimary,
-                            ),
-                          if (editorState.type == WorkLogEntryType.leave)
-                            _buildLeaveForm(
-                              editorState,
-                              isDark,
-                              bgColor,
-                              textPrimary,
-                              textSecondary,
-                            ),
-                          if (editorState.type == WorkLogEntryType.rest)
-                            _buildRestForm(isDark, textSecondary),
+                    Expanded(
+                      child: SingleChildScrollView(
+                        keyboardDismissBehavior:
+                            ScrollViewKeyboardDismissBehavior.onDrag,
+                        padding: EdgeInsets.symmetric(
+                          horizontal: 24.w,
+                          vertical: 20.h,
+                        ),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            if (editorState.type == WorkLogEntryType.work)
+                              _buildWorkForm(
+                                editorState,
+                                isDark,
+                                bgColor,
+                                textPrimary,
+                              ),
+                            if (editorState.type ==
+                                WorkLogEntryType.businessTrip)
+                              _buildTripForm(
+                                editorState,
+                                isDark,
+                                bgColor,
+                                textPrimary,
+                              ),
+                            if (editorState.type == WorkLogEntryType.leave)
+                              _buildLeaveForm(
+                                editorState,
+                                isDark,
+                                bgColor,
+                                textPrimary,
+                                textSecondary,
+                              ),
+                            if (editorState.type == WorkLogEntryType.rest)
+                              _buildRestForm(isDark, textSecondary),
 
-                          SizedBox(height: 20.h),
-                          AppTextField(
-                            controller: _noteController,
-                            focusNode: _noteFocusNode,
-                            hintText: "备注 (可选)...",
-                            maxLines: 3,
-                            onChanged: _editorCubit.changeNote,
-                          ),
-                        ],
+                            SizedBox(height: 20.h),
+                            AppTextField(
+                              controller: _noteController,
+                              focusNode: _noteFocusNode,
+                              hintText: "备注 (可选)...",
+                              maxLines: 3,
+                              onChanged: _editorCubit.changeNote,
+                            ),
+                          ],
+                        ),
                       ),
                     ),
-                  ),
-                ],
-              ),
-            );
-          },
+                  ],
+                ),
+              );
+            },
+          ),
         ),
       ),
     );

@@ -1,5 +1,27 @@
 # Changelog
 
+## [1.4.27] - 2026-09-16
+
+### 订阅删除、数据一致性与 Supabase 对齐
+
+#### 变更 (Changed)
+- 应用版本升级到 `1.4.27+33`。
+- Supabase 远端 schema 与 App 同步契约完成只读对照，确认 `work_logs`、`subscriptions`、`projects`、`expense_records`、`expense_evidence`、`evidence_attachments` 六张云表及客户端依赖字段对应。
+- 新增 `evidence_attachments` RLS 性能 corrective migration，避免每行重复计算 `auth.uid()`。
+
+#### 修复 (Fixed)
+- 修复订阅列表和订阅编辑页无法删除的问题，补齐本地清理、云端 tombstone、失败保留和删除后刷新链路。
+- 修复订阅刷新竞态、加载失败空态误导和删除确认文案错误。
+- 修复项目级联删除非原子问题，并保持本地照片只存本地、不进入云同步。
+- 修复实体变更在已有同步运行期间可能过早清理本地删除记录的问题。
+- 修复 WorkLog 编辑器 Semantics 树断言风险，并迁移到兼容当前 Dart SDK 的 Isar 社区工具链。
+
+#### 验证 (Validation)
+- 本地 `flutter test`：594 项通过；Supabase/缺陷契约相关回归测试通过。
+- `flutter analyze --fatal-infos --fatal-warnings` 通过。
+- `flutter build apk --debug` 通过。
+- Supabase `public` schema lint 通过，远端字段契约对照通过。
+
 ## [1.4.26] - 2026-07-08
 
 ### 相机恢复与同日工时修复

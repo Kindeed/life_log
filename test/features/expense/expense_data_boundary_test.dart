@@ -38,10 +38,6 @@ void main() {
         'lib/common/utils/record_validators.dart': [
           'features/expense/data/expense_record_model.dart',
         ],
-        'lib/features/project/application/delete_project_entry.dart': [
-          'features/expense/application/load_expense_record_entries.dart',
-          'features/expense/application/delete_expense_record_entry.dart',
-        ],
         'lib/features/expense/expense_feature_di.dart': [
           'features/expense/data/expense_record_repository.dart',
         ],

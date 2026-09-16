@@ -71,7 +71,6 @@ void main() {
       final repositoryPaths = [
         'lib/features/work_log/data/work_log_repository.dart',
         'lib/features/subscription/data/subscription_repository.dart',
-        'lib/features/project/data/project_repository.dart',
         'lib/features/expense/data/expense_record_repository.dart',
         'lib/features/evidence/data/evidence_repository.dart',
       ];
@@ -92,6 +91,16 @@ void main() {
               '$path must keep remoteId-missing records with syncId for sync tombstone.',
         );
       }
+
+      final projectDbSource = File(
+        'lib/common/db/db_service.dart',
+      ).readAsStringSync();
+      expect(
+        projectDbSource,
+        contains('if (project.remoteId == null && project.syncId == null)'),
+        reason:
+            'Project cascade deletion must purge only projects without remote or sync identity.',
+      );
     });
 
     test('Supabase migrations keep unique sync identity per user', () {

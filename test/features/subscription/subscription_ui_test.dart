@@ -179,10 +179,45 @@ void main() {
         'lib/features/subscription/presentation/subscription_view.dart',
       ).readAsStringSync();
 
-      expect(view, contains('isEmpty: state.entries.isEmpty'));
+      expect(view, contains('isEmpty: !isLoading && showPageState'));
       expect(view, contains('该分类暂无支出'));
       expect(view, isNot(contains('isEmpty: visibleEntries.isEmpty')));
     });
+
+    test(
+      'keeps loading and failure states distinct from an empty database',
+      () {
+        final view = File(
+          'lib/features/subscription/presentation/subscription_view.dart',
+        ).readAsStringSync();
+
+        expect(view, contains('isLoading: isLoading'));
+        expect(view, contains("AppLoading(label: '正在加载订阅')"));
+        expect(view, contains('_SubscriptionLoadFailure'));
+        expect(view, contains("'订阅加载失败'"));
+        expect(view, contains("'重试'"));
+      },
+    );
+
+    test(
+      'exposes deletion from the subscription editor as well as the list',
+      () {
+        final sheet = File(
+          'lib/features/subscription/presentation/add_subscription_sheet.dart',
+        ).readAsStringSync();
+
+        expect(sheet, contains('DeleteSubscriptionEntry'));
+        expect(sheet, contains('confirmSubscriptionDelete'));
+        expect(sheet, contains('label: "删除"'));
+        expect(sheet, contains('content: Text("订阅已删除")'));
+
+        final dialogs = File(
+          'lib/features/subscription/presentation/subscription_dialogs.dart',
+        ).readAsStringSync();
+        expect(dialogs, contains("title: const Text('删除订阅')"));
+        expect(dialogs, isNot(contains("title: const Text('删除支出')")));
+      },
+    );
 
     test('moves editor routing and delete confirmation behind local helpers', () {
       final view = File(

@@ -9,8 +9,10 @@ import 'package:life_log/common/theme/theme_extensions.dart';
 import 'package:life_log/common/utils/date_utils.dart';
 import 'package:life_log/common/utils/formatters.dart';
 import 'package:life_log/common/widgets/app_card.dart';
+import 'package:life_log/common/widgets/app_button.dart';
 import 'package:life_log/common/widgets/app_empty_state.dart';
 import 'package:life_log/common/widgets/app_filter_chip_bar.dart';
+import 'package:life_log/common/widgets/app_loading.dart';
 import 'package:life_log/common/widgets/app_list_page.dart';
 import 'package:life_log/common/widgets/app_metric_grid.dart';
 import 'package:life_log/common/widgets/app_metric_tile.dart';
@@ -50,20 +52,33 @@ class _SubscriptionContent extends StatelessWidget {
     return BlocBuilder<SubscriptionCubit, SubscriptionState>(
       builder: (context, state) {
         final visibleEntries = state.visibleEntries;
+        final cubit = context.read<SubscriptionCubit>();
+        final isLoading =
+            state.status == SubscriptionReadStatus.initial ||
+            state.status == SubscriptionReadStatus.loading;
+        final isFailure = state.status == SubscriptionReadStatus.failure;
+        final showPageState = isFailure || state.entries.isEmpty;
         return AppListPage(
           title: "订阅",
-          isEmpty: state.entries.isEmpty,
-          empty: const AppEmptyState(
-            icon: Icons.subscriptions_outlined,
-            title: "还没有固定支出",
-            message: "使用右下角「添加支出」新增订阅、房租或月度开销。",
-          ),
-          overview: _SubscriptionOverview(
-            state: state,
-            cubit: context.read<SubscriptionCubit>(),
-            semantic: semantic,
-            textSecondary: textSecondary,
-          ),
+          isLoading: isLoading,
+          loading: const AppLoading(label: '正在加载订阅'),
+          isEmpty: !isLoading && showPageState,
+          empty: isFailure
+              ? _SubscriptionLoadFailure(onRetry: cubit.loadEntries)
+              : const AppEmptyState(
+                  icon: Icons.subscriptions_outlined,
+                  title: "还没有固定支出",
+                  message: "使用右下角「添加支出」新增订阅、房租或月度开销。",
+                ),
+          overview: showPageState
+              ? null
+              : _SubscriptionOverview(
+                  state: state,
+                  cubit: cubit,
+                  semantic: semantic,
+                  textSecondary: textSecondary,
+                ),
+          onRefresh: cubit.loadEntries,
           sliverBuilder: (_) {
             if (visibleEntries.isEmpty) {
               return SliverPadding(
@@ -207,6 +222,10 @@ class _SubscriptionContent extends StatelessWidget {
 
       final failure = result.failureOrNull;
       if (failure != null) {
+        // A repository error may be reported after a local tombstone was
+        // committed. Reload so a stale in-memory snapshot cannot restore it.
+        await context.read<SubscriptionCubit>().loadEntries();
+        if (!context.mounted) return false;
         _showSubscriptionMessage(
           context,
           "删除失败：${_errorText(failure.message)}",
@@ -241,6 +260,51 @@ class _SubscriptionContent extends StatelessWidget {
 
   String _errorText(Object error) {
     return error.toString().replaceFirst('Exception: ', '');
+  }
+}
+
+class _SubscriptionLoadFailure extends StatelessWidget {
+  final VoidCallback onRetry;
+
+  const _SubscriptionLoadFailure({required this.onRetry});
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    return Center(
+      child: Padding(
+        padding: EdgeInsets.all(24.w),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(
+              Icons.error_outline_rounded,
+              size: 42.sp,
+              color: theme.colorScheme.error,
+            ),
+            SizedBox(height: 12.h),
+            Text(
+              '订阅加载失败',
+              style: theme.textTheme.titleMedium?.copyWith(
+                fontWeight: FontWeight.w700,
+              ),
+            ),
+            SizedBox(height: 6.h),
+            Text(
+              '本地记录暂时无法读取，请重试。',
+              textAlign: TextAlign.center,
+              style: TextStyle(color: theme.colorScheme.onSurfaceVariant),
+            ),
+            SizedBox(height: 16.h),
+            AppButton.secondary(
+              label: '重试',
+              icon: Icons.refresh_rounded,
+              onPressed: onRetry,
+            ),
+          ],
+        ),
+      ),
+    );
   }
 }
 

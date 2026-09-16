@@ -45,6 +45,7 @@ const LocalDataMigrationBatchSchema = CollectionSchema(
       type: IsarType.string,
     ),
   },
+
   estimateSize: _localDataMigrationBatchEstimateSize,
   serialize: _localDataMigrationBatchSerialize,
   deserialize: _localDataMigrationBatchDeserialize,
@@ -53,10 +54,11 @@ const LocalDataMigrationBatchSchema = CollectionSchema(
   indexes: {},
   links: {},
   embeddedSchemas: {},
+
   getId: _localDataMigrationBatchGetId,
   getLinks: _localDataMigrationBatchGetLinks,
   attach: _localDataMigrationBatchAttach,
-  version: '3.1.0+1',
+  version: '3.3.2',
 );
 
 int _localDataMigrationBatchEstimateSize(

@@ -1,5 +1,6 @@
 import 'package:life_log/common/db/db_service.dart';
 import 'package:life_log/core/di/service_locator.dart';
+import 'package:life_log/features/project/data/project_cascade_delete_result.dart';
 import 'package:life_log/features/project/data/project_model.dart';
 
 abstract interface class ProjectLocalDataSource {
@@ -8,6 +9,7 @@ abstract interface class ProjectLocalDataSource {
   Future<Project> ensureProject(String name, {bool syncable = false});
   Future<void> addProject(Project project);
   Future<Project?> updateProjectCover(Project project);
+  Future<ProjectCascadeDeleteResult?> deleteProjectCascade(int id, String name);
   Future<Project?> markProjectDeleted(int id);
   Future<void> purgeDeletedProject(int id);
 }
@@ -33,6 +35,17 @@ final class DbProjectLocalDataSource implements ProjectLocalDataSource {
   @override
   Future<Project?> updateProjectCover(Project project) {
     return serviceLocator<DbService>().updateProjectCover(project);
+  }
+
+  @override
+  Future<ProjectCascadeDeleteResult?> deleteProjectCascade(
+    int id,
+    String name,
+  ) {
+    return serviceLocator<DbService>().deleteProjectCascade(
+      projectId: id,
+      projectName: name,
+    );
   }
 
   @override

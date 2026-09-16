@@ -1,4 +1,4 @@
-import 'package:isar/isar.dart';
+import 'package:isar_community/isar.dart';
 import 'package:life_log/features/work_log/domain/entities/work_log_entry.dart';
 import 'package:life_log/features/work_log/domain/entities/work_log_edit_draft.dart';
 import 'package:life_log/features/work_log/domain/repositories/work_log_repository_port.dart';

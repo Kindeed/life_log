@@ -2,18 +2,6 @@ import 'dart:async';
 import 'dart:io';
 
 import 'package:flutter_test/flutter_test.dart';
-import 'package:life_log/features/evidence/application/delete_evidence_entry.dart';
-import 'package:life_log/features/evidence/application/load_evidence_entries.dart';
-import 'package:life_log/features/evidence/domain/entities/evidence_edit_draft.dart';
-import 'package:life_log/features/evidence/domain/entities/evidence_entry.dart';
-import 'package:life_log/features/evidence/domain/repositories/evidence_repository_port.dart';
-import 'package:life_log/features/expense/application/delete_expense_record_entry.dart';
-import 'package:life_log/features/expense/application/load_expense_record_entries.dart';
-import 'package:life_log/features/expense/domain/entities/expense_record_edit_draft.dart';
-import 'package:life_log/features/expense/domain/entities/expense_record_entry.dart';
-import 'package:life_log/features/expense/domain/repositories/expense_record_repository_port.dart';
-import 'package:life_log/features/photo/domain/entities/photo_entry.dart';
-import 'package:life_log/features/photo/domain/repositories/photo_repository_port.dart';
 import 'package:life_log/features/project/application/create_project_entry.dart';
 import 'package:life_log/features/project/application/delete_project_entry.dart';
 import 'package:life_log/features/project/application/load_project_entries.dart';
@@ -23,7 +11,6 @@ import 'package:life_log/features/project/domain/entities/project_entry.dart';
 import 'package:life_log/features/project/domain/repositories/project_repository_port.dart';
 import 'package:life_log/features/project/presentation/project_cubit.dart';
 import 'package:life_log/features/work_log/application/load_project_work_log_trips.dart';
-import 'package:life_log/features/work_log/application/save_work_log_entry.dart';
 import 'package:life_log/features/work_log/domain/entities/work_log_edit_draft.dart';
 import 'package:life_log/features/work_log/domain/entities/work_log_entry.dart';
 import 'package:life_log/features/work_log/domain/repositories/work_log_repository_port.dart';
@@ -130,70 +117,21 @@ void main() {
   });
 
   group('DeleteProjectEntry', () {
-    test('deletes project children before deleting the project', () async {
+    test('delegates the atomic cascade to the project repository', () async {
       final projectRepository = _ProjectCubitRepository(
-        entries: [
-          _entry(id: 1, name: 'Alpha'),
-          _entry(id: 2, name: 'Beta'),
-        ],
+        entries: [_entry(id: 1, name: 'Alpha')],
       );
-      final photoRepository = _ProjectPhotoRepository([
-        _photo(id: 10, projectName: 'Alpha'),
-        _photo(id: 11, projectName: 'Beta'),
-      ]);
-      final evidenceRepository = _ProjectEvidenceRepository([
-        _evidence(id: 20, projectName: 'Alpha'),
-        _evidence(id: 21, projectName: 'Beta'),
-      ]);
-      final expenseRepository = _ProjectExpenseRepository([
-        _expense(id: 30, projectName: 'Alpha'),
-        _expense(id: 31, projectName: 'Beta'),
-      ]);
-      final workLogRepository = _ProjectWorkLogRepository([
-        _trip(id: 40, projectName: 'Alpha'),
-        _trip(id: 41, projectName: 'Beta'),
-      ]);
-      final deleteProject = DeleteProjectEntry(
-        repository: projectRepository,
-        photoRepository: photoRepository,
-        loadEvidenceEntries: LoadEvidenceEntries(evidenceRepository),
-        deleteEvidenceEntry: DeleteEvidenceEntry(evidenceRepository),
-        loadExpenseRecordEntries: LoadExpenseRecordEntries(expenseRepository),
-        deleteExpenseRecordEntry: DeleteExpenseRecordEntry(expenseRepository),
-        loadProjectWorkLogTrips: LoadProjectWorkLogTrips(workLogRepository),
-        saveWorkLogEntry: SaveWorkLogEntry(workLogRepository),
-      );
+      final deleteProject = DeleteProjectEntry(projectRepository);
 
       final result = await deleteProject(_entry(id: 1, name: 'Alpha'));
 
       expect(result.failureOrNull, isNull);
-      expect(photoRepository.deletedIds, isEmpty);
-      expect(
-        photoRepository.photos.singleWhere((photo) => photo.id == 10).projectId,
-        isNull,
-      );
-      expect(
-        photoRepository.photos
-            .singleWhere((photo) => photo.id == 10)
-            .projectName,
-        isNull,
-      );
-      expect(
-        photoRepository.photos
-            .singleWhere((photo) => photo.id == 11)
-            .projectName,
-        'Beta',
-      );
-      expect(evidenceRepository.deletedIds, [20]);
-      expect(expenseRepository.deletedIds, [30]);
-      expect(workLogRepository.savedEntries.single.projectName, isNull);
-      expect(workLogRepository.savedEntries.single.projectId, isNull);
       expect(projectRepository.deletedEntries.map((entry) => entry.name), [
         'Alpha',
       ]);
     });
 
-    test('stays on feature application commands for child deletion', () {
+    test('keeps cascade ownership in the project data boundary', () {
       final source = File(
         'lib/features/project/application/delete_project_entry.dart',
       ).readAsStringSync();
@@ -201,11 +139,13 @@ void main() {
         'lib/features/project/project_feature_di.dart',
       ).readAsStringSync();
 
+      expect(source, contains('ProjectRepositoryPort'));
+      expect(source, contains('_repository.deleteEntry(entry)'));
       expect(source, isNot(contains('DeletePhotoEntries')));
-      expect(source, contains('LoadExpenseRecordEntries'));
-      expect(source, contains('DeleteExpenseRecordEntry'));
-      expect(source, contains('LoadProjectWorkLogTrips'));
-      expect(source, contains('SaveWorkLogEntry'));
+      expect(source, isNot(contains('LoadExpenseRecordEntries')));
+      expect(source, isNot(contains('DeleteExpenseRecordEntry')));
+      expect(source, isNot(contains('LoadProjectWorkLogTrips')));
+      expect(source, isNot(contains('SaveWorkLogEntry')));
       expect(
         source,
         isNot(contains('features/photo/data/photo_repository.dart')),
@@ -423,39 +363,6 @@ final class _ProjectCubitRepository implements ProjectRepositoryPort {
   }
 }
 
-PhotoEntry _photo({required int id, required String projectName}) {
-  return PhotoEntry(
-    id: id,
-    ownerUserId: null,
-    createdAt: DateTime(2026, 5, 1),
-    fileName: 'photo-$id.jpg',
-    filePath: 'C:/tmp/photo-$id.jpg',
-    description: null,
-    deviceName: null,
-    projectName: projectName,
-    projectId: null,
-    dateIndexed: DateTime(2026, 5, 1),
-  );
-}
-
-EvidenceEntry _evidence({required int id, required String projectName}) {
-  return EvidenceEntry(
-    id: id,
-    projectName: projectName,
-    evidenceDate: DateTime(2026, 5, 1),
-  );
-}
-
-ExpenseRecordEntry _expense({required int id, required String projectName}) {
-  return ExpenseRecordEntry(
-    id: id,
-    projectName: projectName,
-    expenseDate: DateTime(2026, 5, 1),
-    amount: 10,
-    category: ExpenseRecordEntryCategory.other,
-  );
-}
-
 WorkLogEntry _trip({required int id, required String projectName}) {
   return WorkLogEntry(
     id: id,
@@ -465,137 +372,6 @@ WorkLogEntry _trip({required int id, required String projectName}) {
     projectId: id,
     projectName: projectName,
   );
-}
-
-final class _ProjectPhotoRepository implements PhotoRepositoryPort {
-  final List<PhotoEntry> photos;
-  final deletedIds = <int>[];
-
-  _ProjectPhotoRepository(this.photos);
-
-  @override
-  Future<List<PhotoEntry>> getAllEntries() async => photos;
-
-  @override
-  Future<int> unlinkEntriesFromProject({
-    required int projectId,
-    required String projectName,
-  }) async {
-    for (final photo in photos.where(
-      (photo) =>
-          photo.projectId == projectId || photo.projectName == projectName,
-    )) {
-      final index = photos.indexOf(photo);
-      photos[index] = PhotoEntry(
-        id: photo.id,
-        ownerUserId: photo.ownerUserId,
-        createdAt: photo.createdAt,
-        capturedAt: photo.capturedAt,
-        capturedAtSource: photo.capturedAtSource,
-        gpsLatitude: photo.gpsLatitude,
-        gpsLongitude: photo.gpsLongitude,
-        fileName: photo.fileName,
-        filePath: photo.filePath,
-        description: photo.description,
-        deviceName: photo.deviceName,
-        projectName: null,
-        projectId: null,
-        dateIndexed: photo.dateIndexed,
-      );
-    }
-    return photos.where((photo) => photo.projectName == null).length;
-  }
-
-  @override
-  Future<void> deleteEntries(List<PhotoEntry> itemsToDelete) async {
-    deletedIds.addAll(itemsToDelete.map((photo) => photo.id));
-  }
-
-  @override
-  Future<int> exportEntries(
-    List<PhotoEntry> entries,
-    String targetDirectory,
-  ) async => 0;
-
-  @override
-  Future<PhotoEntry> saveEntryFromPath({
-    required String tempPath,
-    required String projectName,
-    required String description,
-    required String deviceName,
-    required bool deleteSource,
-    DateTime? capturedAt,
-    String? capturedAtSource,
-    double? gpsLatitude,
-    double? gpsLongitude,
-  }) async => throw UnimplementedError();
-
-  @override
-  Future<String?> updateEntryDescription(
-    PhotoEntry entry,
-    String description,
-  ) async => null;
-
-  @override
-  Stream<void> watchEntries() => const Stream.empty();
-}
-
-final class _ProjectEvidenceRepository implements EvidenceRepositoryPort {
-  final entries = <EvidenceEntry>[];
-  final deletedIds = <int>[];
-
-  _ProjectEvidenceRepository(List<EvidenceEntry> initialEntries) {
-    entries.addAll(initialEntries);
-  }
-
-  @override
-  Future<List<EvidenceEntry>> getAllEntries() async => entries;
-
-  @override
-  Future<EvidenceEditDraft?> getEditDraft(int id) async => null;
-
-  @override
-  Future<void> saveEntry(
-    EvidenceEntry entry, {
-    required bool markDirty,
-    String? sourcePath,
-    String? sourceExtension,
-  }) async {}
-
-  @override
-  Future<void> deleteEntry(int id) async {
-    deletedIds.add(id);
-  }
-
-  @override
-  Stream<void> watchEntries() => const Stream.empty();
-}
-
-final class _ProjectExpenseRepository implements ExpenseRecordRepositoryPort {
-  final List<ExpenseRecordEntry> records;
-  final deletedIds = <int>[];
-
-  _ProjectExpenseRepository(this.records);
-
-  @override
-  Future<List<ExpenseRecordEntry>> getAllEntries() async => records;
-
-  @override
-  Future<void> deleteEntry(int id) async {
-    deletedIds.add(id);
-  }
-
-  @override
-  Future<ExpenseRecordEditDraft?> getEditDraft(int id) async => null;
-
-  @override
-  Future<void> saveEntry(
-    ExpenseRecordEntry entry, {
-    required bool markDirty,
-  }) async {}
-
-  @override
-  Stream<void> watchEntries() => const Stream.empty();
 }
 
 final class _ProjectWorkLogRepository implements WorkLogRepositoryPort {

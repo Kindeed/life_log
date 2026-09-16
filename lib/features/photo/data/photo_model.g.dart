@@ -83,6 +83,7 @@ const PhotoItemSchema = CollectionSchema(
       type: IsarType.string,
     ),
   },
+
   estimateSize: _photoItemEstimateSize,
   serialize: _photoItemSerialize,
   deserialize: _photoItemDeserialize,
@@ -105,10 +106,11 @@ const PhotoItemSchema = CollectionSchema(
   },
   links: {},
   embeddedSchemas: {},
+
   getId: _photoItemGetId,
   getLinks: _photoItemGetLinks,
   attach: _photoItemAttach,
-  version: '3.1.0+1',
+  version: '3.3.2',
 );
 
 int _photoItemEstimateSize(
@@ -1442,6 +1444,7 @@ extension PhotoItemQueryFilter
         FilterCondition.equalTo(
           property: r'gpsLatitude',
           value: value,
+
           epsilon: epsilon,
         ),
       );
@@ -1460,6 +1463,7 @@ extension PhotoItemQueryFilter
           include: include,
           property: r'gpsLatitude',
           value: value,
+
           epsilon: epsilon,
         ),
       );
@@ -1477,6 +1481,7 @@ extension PhotoItemQueryFilter
           include: include,
           property: r'gpsLatitude',
           value: value,
+
           epsilon: epsilon,
         ),
       );
@@ -1498,6 +1503,7 @@ extension PhotoItemQueryFilter
           includeLower: includeLower,
           upper: upper,
           includeUpper: includeUpper,
+
           epsilon: epsilon,
         ),
       );
@@ -1531,6 +1537,7 @@ extension PhotoItemQueryFilter
         FilterCondition.equalTo(
           property: r'gpsLongitude',
           value: value,
+
           epsilon: epsilon,
         ),
       );
@@ -1549,6 +1556,7 @@ extension PhotoItemQueryFilter
           include: include,
           property: r'gpsLongitude',
           value: value,
+
           epsilon: epsilon,
         ),
       );
@@ -1567,6 +1575,7 @@ extension PhotoItemQueryFilter
           include: include,
           property: r'gpsLongitude',
           value: value,
+
           epsilon: epsilon,
         ),
       );
@@ -1588,6 +1597,7 @@ extension PhotoItemQueryFilter
           includeLower: includeLower,
           upper: upper,
           includeUpper: includeUpper,
+
           epsilon: epsilon,
         ),
       );

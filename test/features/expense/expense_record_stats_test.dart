@@ -2,7 +2,7 @@ import 'dart:async';
 import 'dart:io';
 
 import 'package:flutter_test/flutter_test.dart';
-import 'package:isar/isar.dart';
+import 'package:isar_community/isar.dart';
 import 'package:life_log/features/expense/application/delete_expense_record_entry.dart';
 import 'package:life_log/features/expense/application/load_expense_record_edit_draft.dart';
 import 'package:life_log/features/expense/application/save_expense_record_entry.dart';
