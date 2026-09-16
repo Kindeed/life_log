@@ -40,8 +40,6 @@ void main() {
       ).readAsStringSync();
 
       expect(subscription, contains('AppListPage('));
-      expect(subscription, contains('AppMetricGrid('));
-      expect(subscription, contains('AppSection('));
       expect(subscription, contains('AppSwipeAction.delete('));
       expect(subscription, isNot(contains('class _DeleteBackground')));
 
@@ -131,8 +129,6 @@ void main() {
         'lib/features/photo/presentation/photo_view.dart',
       ).readAsStringSync();
 
-      expect(subscription, contains('AppSection('));
-      expect(subscription, contains('columns: 4'));
       expect(subscription, contains('PopupMenuButton<SubscriptionSortMode>'));
       expect(project, contains('columns: 3'));
     },

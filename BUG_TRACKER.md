@@ -7,6 +7,14 @@ This is the active defect ledger. `REVIEW_REPORT.md` is historical context only.
 
 ## Latest Audit (2026-09-16)
 
+## U322 — Subscription overview and rows obscure primary information
+- Status: fixed
+- Evidence: duplicate overview padding, equal-weight metric cards, permanent reminder instructions, nested filter cards and red delete controls overwhelm subscription names and prices. Unbounded price layout risks overflow on narrow screens; the initial character could split an emoji. Row urgency also used a fixed seven-day window instead of the configured reminder window.
+- Change: a single monthly estimate panel with secondary annual estimate, expandable actionable reminders, lightweight filters, responsive name/price rows and explicit edit/delete menus. Use the Cubit's reference day and each item's reminder window; preserve foreign-currency exclusions and deletion confirmation.
+- Verification: actual SubscriptionView rendered in both themes at 390px/1x and 320px/2x text. Widget checks cover long names, large amounts, missing exchange rates, empty-category recovery and delete cancellation. All 612 tests pass; strict Flutter analyze and the 416-file format check pass. No device install or Android runtime verification in this change.
+
+## Audit notes (2026-09-16)
+
 - Scope: rechecked the current source at `81c1035`, the More/Profile secondary navigation, the subscription delete/read/sync paths, focused feature tests, and the latest open tracker entries.
 - Newly discovered and fixed: U302. Entity-scoped mutations could reuse an already-running sync and be purged locally before that sync had observed the new mutation; the scheduler now queues one follow-up sync for entity mutations.
 - Newly discovered and fixed: U303. Subscription Cubit loads could complete out of order and restore a deleted entry from a stale snapshot; stale load completions are now ignored.

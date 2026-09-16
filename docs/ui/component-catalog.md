@@ -62,7 +62,12 @@ states when those states apply to the screen.
 
 `test/ui_refinement_test.dart` covers dynamic-color text contrast, guarded draft
 exit, subscription single-flight saves/failure recovery, work-read failure, and
-work/more layout at 390px normal text and 320px double text scale in both themes.
+work/more/subscription layout at 390px normal text and 320px double text scale
+in both themes. Subscription checks exercise empty-category filtering, large
+amounts, long names, currency conversion and confirmed deletion cancellation.
+The subscription overview emphasizes the current-month estimate, with a secondary
+annual estimate. Reminder details expand on demand; item actions use an explicit
+overflow menu. Missing exchange rates must remain visible beside estimated totals.
 Optional `UI_REVIEW_DIR`, `UI_REVIEW_FONT`, and `UI_REVIEW_ICONS` dart defines
 produce local render previews. Fonts are local test inputs only, not redistributed
 application assets. These previews do not replace Android device verification.
