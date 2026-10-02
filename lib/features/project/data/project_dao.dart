@@ -83,7 +83,7 @@ class ProjectDao {
   }
 
   Stream<void> watch() {
-    return _isar.projects.watchLazy();
+    return database.watch((isar) => isar.projects.watchLazy());
   }
 
   Future<void> delete(int id) async {

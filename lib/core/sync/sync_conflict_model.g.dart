@@ -50,28 +50,33 @@ const SyncConflictRecordSchema = CollectionSchema(
       type: IsarType.long,
     ),
     r'message': PropertySchema(id: 7, name: r'message', type: IsarType.string),
-    r'remoteId': PropertySchema(
+    r'ownerUserId': PropertySchema(
       id: 8,
+      name: r'ownerUserId',
+      type: IsarType.string,
+    ),
+    r'remoteId': PropertySchema(
+      id: 9,
       name: r'remoteId',
       type: IsarType.string,
     ),
     r'remoteUpdatedAt': PropertySchema(
-      id: 9,
+      id: 10,
       name: r'remoteUpdatedAt',
       type: IsarType.dateTime,
     ),
     r'remoteVersion': PropertySchema(
-      id: 10,
+      id: 11,
       name: r'remoteVersion',
       type: IsarType.long,
     ),
     r'resolution': PropertySchema(
-      id: 11,
+      id: 12,
       name: r'resolution',
       type: IsarType.string,
     ),
     r'resolvedAt': PropertySchema(
-      id: 12,
+      id: 13,
       name: r'resolvedAt',
       type: IsarType.dateTime,
     ),
@@ -141,6 +146,12 @@ int _syncConflictRecordEstimateSize(
   }
   bytesCount += 3 + object.message.length * 3;
   {
+    final value = object.ownerUserId;
+    if (value != null) {
+      bytesCount += 3 + value.length * 3;
+    }
+  }
+  {
     final value = object.remoteId;
     if (value != null) {
       bytesCount += 3 + value.length * 3;
@@ -169,11 +180,12 @@ void _syncConflictRecordSerialize(
   writer.writeDateTime(offsets[5], object.localUpdatedAt);
   writer.writeLong(offsets[6], object.localVersion);
   writer.writeString(offsets[7], object.message);
-  writer.writeString(offsets[8], object.remoteId);
-  writer.writeDateTime(offsets[9], object.remoteUpdatedAt);
-  writer.writeLong(offsets[10], object.remoteVersion);
-  writer.writeString(offsets[11], object.resolution);
-  writer.writeDateTime(offsets[12], object.resolvedAt);
+  writer.writeString(offsets[8], object.ownerUserId);
+  writer.writeString(offsets[9], object.remoteId);
+  writer.writeDateTime(offsets[10], object.remoteUpdatedAt);
+  writer.writeLong(offsets[11], object.remoteVersion);
+  writer.writeString(offsets[12], object.resolution);
+  writer.writeDateTime(offsets[13], object.resolvedAt);
 }
 
 SyncConflictRecord _syncConflictRecordDeserialize(
@@ -192,11 +204,12 @@ SyncConflictRecord _syncConflictRecordDeserialize(
   object.localUpdatedAt = reader.readDateTimeOrNull(offsets[5]);
   object.localVersion = reader.readLongOrNull(offsets[6]);
   object.message = reader.readString(offsets[7]);
-  object.remoteId = reader.readStringOrNull(offsets[8]);
-  object.remoteUpdatedAt = reader.readDateTimeOrNull(offsets[9]);
-  object.remoteVersion = reader.readLongOrNull(offsets[10]);
-  object.resolution = reader.readStringOrNull(offsets[11]);
-  object.resolvedAt = reader.readDateTimeOrNull(offsets[12]);
+  object.ownerUserId = reader.readStringOrNull(offsets[8]);
+  object.remoteId = reader.readStringOrNull(offsets[9]);
+  object.remoteUpdatedAt = reader.readDateTimeOrNull(offsets[10]);
+  object.remoteVersion = reader.readLongOrNull(offsets[11]);
+  object.resolution = reader.readStringOrNull(offsets[12]);
+  object.resolvedAt = reader.readDateTimeOrNull(offsets[13]);
   return object;
 }
 
@@ -226,12 +239,14 @@ P _syncConflictRecordDeserializeProp<P>(
     case 8:
       return (reader.readStringOrNull(offset)) as P;
     case 9:
-      return (reader.readDateTimeOrNull(offset)) as P;
-    case 10:
-      return (reader.readLongOrNull(offset)) as P;
-    case 11:
       return (reader.readStringOrNull(offset)) as P;
+    case 10:
+      return (reader.readDateTimeOrNull(offset)) as P;
+    case 11:
+      return (reader.readLongOrNull(offset)) as P;
     case 12:
+      return (reader.readStringOrNull(offset)) as P;
+    case 13:
       return (reader.readDateTimeOrNull(offset)) as P;
     default:
       throw IsarError('Unknown property with id $propertyId');
@@ -1465,6 +1480,165 @@ extension SyncConflictRecordQueryFilter
   }
 
   QueryBuilder<SyncConflictRecord, SyncConflictRecord, QAfterFilterCondition>
+  ownerUserIdIsNull() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(
+        const FilterCondition.isNull(property: r'ownerUserId'),
+      );
+    });
+  }
+
+  QueryBuilder<SyncConflictRecord, SyncConflictRecord, QAfterFilterCondition>
+  ownerUserIdIsNotNull() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(
+        const FilterCondition.isNotNull(property: r'ownerUserId'),
+      );
+    });
+  }
+
+  QueryBuilder<SyncConflictRecord, SyncConflictRecord, QAfterFilterCondition>
+  ownerUserIdEqualTo(String? value, {bool caseSensitive = true}) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(
+        FilterCondition.equalTo(
+          property: r'ownerUserId',
+          value: value,
+          caseSensitive: caseSensitive,
+        ),
+      );
+    });
+  }
+
+  QueryBuilder<SyncConflictRecord, SyncConflictRecord, QAfterFilterCondition>
+  ownerUserIdGreaterThan(
+    String? value, {
+    bool include = false,
+    bool caseSensitive = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(
+        FilterCondition.greaterThan(
+          include: include,
+          property: r'ownerUserId',
+          value: value,
+          caseSensitive: caseSensitive,
+        ),
+      );
+    });
+  }
+
+  QueryBuilder<SyncConflictRecord, SyncConflictRecord, QAfterFilterCondition>
+  ownerUserIdLessThan(
+    String? value, {
+    bool include = false,
+    bool caseSensitive = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(
+        FilterCondition.lessThan(
+          include: include,
+          property: r'ownerUserId',
+          value: value,
+          caseSensitive: caseSensitive,
+        ),
+      );
+    });
+  }
+
+  QueryBuilder<SyncConflictRecord, SyncConflictRecord, QAfterFilterCondition>
+  ownerUserIdBetween(
+    String? lower,
+    String? upper, {
+    bool includeLower = true,
+    bool includeUpper = true,
+    bool caseSensitive = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(
+        FilterCondition.between(
+          property: r'ownerUserId',
+          lower: lower,
+          includeLower: includeLower,
+          upper: upper,
+          includeUpper: includeUpper,
+          caseSensitive: caseSensitive,
+        ),
+      );
+    });
+  }
+
+  QueryBuilder<SyncConflictRecord, SyncConflictRecord, QAfterFilterCondition>
+  ownerUserIdStartsWith(String value, {bool caseSensitive = true}) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(
+        FilterCondition.startsWith(
+          property: r'ownerUserId',
+          value: value,
+          caseSensitive: caseSensitive,
+        ),
+      );
+    });
+  }
+
+  QueryBuilder<SyncConflictRecord, SyncConflictRecord, QAfterFilterCondition>
+  ownerUserIdEndsWith(String value, {bool caseSensitive = true}) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(
+        FilterCondition.endsWith(
+          property: r'ownerUserId',
+          value: value,
+          caseSensitive: caseSensitive,
+        ),
+      );
+    });
+  }
+
+  QueryBuilder<SyncConflictRecord, SyncConflictRecord, QAfterFilterCondition>
+  ownerUserIdContains(String value, {bool caseSensitive = true}) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(
+        FilterCondition.contains(
+          property: r'ownerUserId',
+          value: value,
+          caseSensitive: caseSensitive,
+        ),
+      );
+    });
+  }
+
+  QueryBuilder<SyncConflictRecord, SyncConflictRecord, QAfterFilterCondition>
+  ownerUserIdMatches(String pattern, {bool caseSensitive = true}) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(
+        FilterCondition.matches(
+          property: r'ownerUserId',
+          wildcard: pattern,
+          caseSensitive: caseSensitive,
+        ),
+      );
+    });
+  }
+
+  QueryBuilder<SyncConflictRecord, SyncConflictRecord, QAfterFilterCondition>
+  ownerUserIdIsEmpty() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(
+        FilterCondition.equalTo(property: r'ownerUserId', value: ''),
+      );
+    });
+  }
+
+  QueryBuilder<SyncConflictRecord, SyncConflictRecord, QAfterFilterCondition>
+  ownerUserIdIsNotEmpty() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(
+        FilterCondition.greaterThan(property: r'ownerUserId', value: ''),
+      );
+    });
+  }
+
+  QueryBuilder<SyncConflictRecord, SyncConflictRecord, QAfterFilterCondition>
   remoteIdIsNull() {
     return QueryBuilder.apply(this, (query) {
       return query.addFilterCondition(
@@ -2123,6 +2297,20 @@ extension SyncConflictRecordQuerySortBy
   }
 
   QueryBuilder<SyncConflictRecord, SyncConflictRecord, QAfterSortBy>
+  sortByOwnerUserId() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'ownerUserId', Sort.asc);
+    });
+  }
+
+  QueryBuilder<SyncConflictRecord, SyncConflictRecord, QAfterSortBy>
+  sortByOwnerUserIdDesc() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'ownerUserId', Sort.desc);
+    });
+  }
+
+  QueryBuilder<SyncConflictRecord, SyncConflictRecord, QAfterSortBy>
   sortByRemoteId() {
     return QueryBuilder.apply(this, (query) {
       return query.addSortBy(r'remoteId', Sort.asc);
@@ -2322,6 +2510,20 @@ extension SyncConflictRecordQuerySortThenBy
   }
 
   QueryBuilder<SyncConflictRecord, SyncConflictRecord, QAfterSortBy>
+  thenByOwnerUserId() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'ownerUserId', Sort.asc);
+    });
+  }
+
+  QueryBuilder<SyncConflictRecord, SyncConflictRecord, QAfterSortBy>
+  thenByOwnerUserIdDesc() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'ownerUserId', Sort.desc);
+    });
+  }
+
+  QueryBuilder<SyncConflictRecord, SyncConflictRecord, QAfterSortBy>
   thenByRemoteId() {
     return QueryBuilder.apply(this, (query) {
       return query.addSortBy(r'remoteId', Sort.asc);
@@ -2451,6 +2653,13 @@ extension SyncConflictRecordQueryWhereDistinct
   }
 
   QueryBuilder<SyncConflictRecord, SyncConflictRecord, QDistinct>
+  distinctByOwnerUserId({bool caseSensitive = true}) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addDistinctBy(r'ownerUserId', caseSensitive: caseSensitive);
+    });
+  }
+
+  QueryBuilder<SyncConflictRecord, SyncConflictRecord, QDistinct>
   distinctByRemoteId({bool caseSensitive = true}) {
     return QueryBuilder.apply(this, (query) {
       return query.addDistinctBy(r'remoteId', caseSensitive: caseSensitive);
@@ -2546,6 +2755,13 @@ extension SyncConflictRecordQueryProperty
   QueryBuilder<SyncConflictRecord, String, QQueryOperations> messageProperty() {
     return QueryBuilder.apply(this, (query) {
       return query.addPropertyName(r'message');
+    });
+  }
+
+  QueryBuilder<SyncConflictRecord, String?, QQueryOperations>
+  ownerUserIdProperty() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addPropertyName(r'ownerUserId');
     });
   }
 

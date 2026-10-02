@@ -21,6 +21,12 @@ Use existing tokens and components before adding new UI primitives.
 
 ## Reusable Components
 
+- `AppTabHeader`, `AppTabAction` and `AppTabIconAction`: consistent primary-tab
+  titles and 48px header actions; contextual appearance/account actions in More.
+- `AppPressFeedback`: shared subtle press feedback, including cancellation and
+  disabled-state reset; respects reduced motion through AppMotion.
+- `AppPageRoute`: shared directional navigation between primary and detail views.
+
 - `AppCard`: use for individual repeated items, dashboard summaries, and
   tappable rows. Do not nest cards inside cards.
 - `AppButton`: use for explicit commands and empty-state actions.

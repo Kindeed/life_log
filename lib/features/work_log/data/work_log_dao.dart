@@ -149,7 +149,7 @@ class WorkLogDao {
   }
 
   Stream<void> watch() {
-    return _isar.workLogs.watchLazy();
+    return database.watch((isar) => isar.workLogs.watchLazy());
   }
 
   Future<void> delete(int id) async {

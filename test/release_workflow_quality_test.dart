@@ -24,6 +24,9 @@ void main() {
           'flutter analyze --fatal-infos --fatal-warnings',
         );
         final testIndex = source.indexOf('flutter test');
+        final nativeIsarIndex = source.indexOf(
+          'dart run tool/isar_test_runtime.dart',
+        );
         final firstBuildIndex = source.indexOf('flutter build apk');
 
         expect(formatIndex, isNonNegative, reason: '$path must check format.');
@@ -43,6 +46,17 @@ void main() {
           reason: '$path must use fatal analyzer gates.',
         );
         expect(testIndex, isNonNegative, reason: '$path must run tests.');
+        expect(
+          nativeIsarIndex,
+          isNonNegative,
+          reason: '$path must load the native Isar core before testing.',
+        );
+        expect(
+          nativeIsarIndex,
+          lessThan(testIndex),
+          reason:
+              '$path must fail if required database coverage is unavailable.',
+        );
         expect(
           source,
           isNot(contains('flutter analyze --no-fatal-infos')),

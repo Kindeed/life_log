@@ -48,7 +48,7 @@ class AppTextField extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final semantic = theme.semanticColors;
-    final radius = BorderRadius.circular(AppRadius.lg);
+    final radius = BorderRadius.circular(AppRadius.md);
     final borderSide = BorderSide(color: semantic.border, width: 1);
 
     return TextFormField(

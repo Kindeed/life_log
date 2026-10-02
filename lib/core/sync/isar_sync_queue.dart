@@ -2,25 +2,30 @@ import 'package:isar_community/isar.dart';
 import 'package:life_log/core/db/isar_database.dart';
 import 'package:life_log/core/sync/sync_queue.dart';
 import 'package:life_log/core/sync/sync_queue_record.dart';
+import 'package:life_log/core/sync/sync_run_context.dart';
 
 final class IsarSyncQueue implements SyncQueue {
   final IsarDatabase database;
   SyncClock clock;
   final Duration baseDelay;
   final Duration maxDelay;
+  final SyncRunContext? context;
 
   IsarSyncQueue(
     this.database, {
     this.clock = const SystemSyncClock(),
     this.baseDelay = const Duration(seconds: 30),
     this.maxDelay = const Duration(minutes: 30),
+    this.context,
   });
 
   Future<SyncQueueRecord?> peek(String entityName, String entityKey) async {
+    context?.checkCurrent();
     final candidates = await database.isar.syncQueueRecords
         .where()
         .anyId()
         .findAll();
+    context?.checkCurrent();
     for (final record in candidates) {
       if (record.entityName == entityName && record.entityKey == entityKey) {
         return record;
@@ -56,6 +61,7 @@ final class IsarSyncQueue implements SyncQueue {
     Object? error,
   }) async {
     final previous = await peek(entityName, entityKey);
+    context?.checkCurrent();
     final attemptCount = (previous?.attemptCount ?? 0) + 1;
     final now = clock.now;
     final record = previous ?? SyncQueueRecord()
@@ -67,7 +73,8 @@ final class IsarSyncQueue implements SyncQueue {
       ..nextAttemptAt = now.add(_delayForAttempt(attemptCount))
       ..lastError = error?.toString();
 
-    await database.isar.writeTxn(() {
+    await database.writeTxn(() async {
+      context?.checkCurrent();
       return database.isar.syncQueueRecords.put(record);
     });
   }
@@ -75,8 +82,10 @@ final class IsarSyncQueue implements SyncQueue {
   @override
   Future<void> recordSuccess(String entityName, String entityKey) async {
     final record = await peek(entityName, entityKey);
+    context?.checkCurrent();
     if (record == null) return;
-    await database.isar.writeTxn(() {
+    await database.writeTxn(() async {
+      context?.checkCurrent();
       return database.isar.syncQueueRecords.delete(record.id);
     });
   }

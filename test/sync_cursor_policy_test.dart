@@ -61,7 +61,8 @@ void main() {
       ).readAsStringSync();
 
       expect(source, contains('last_sync_time'));
-      expect(source, contains('Legacy pull skipped; adapters own pull'));
+      expect(source, contains('await SyncEngine('));
+      expect(source, contains(').syncAll('));
       expect(source, isNot(contains('_legacyLastSyncKey')));
       expect(
         source,

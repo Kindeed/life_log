@@ -3,7 +3,10 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:life_log/common/layout/constrained_page.dart';
 import 'package:life_log/common/theme/theme_extensions.dart';
+import 'package:life_log/common/theme/app_radius.dart';
 import 'package:life_log/common/widgets/app_card.dart';
+import 'package:life_log/common/widgets/app_tab_header.dart';
+import 'package:life_log/common/widgets/app_page_route.dart';
 import 'package:life_log/common/widgets/app_section_header.dart';
 import 'package:life_log/core/di/service_locator.dart';
 import 'package:life_log/features/profile/presentation/profile_account_cubit.dart';
@@ -41,9 +44,7 @@ class _MoreViewState extends State<MoreView> {
   }
 
   void _openPage(Widget page) {
-    Navigator.of(
-      context,
-    ).push<void>(MaterialPageRoute<void>(builder: (_) => page));
+    Navigator.of(context).push<void>(appPageRoute<void>(context, page));
   }
 
   @override
@@ -52,122 +53,144 @@ class _MoreViewState extends State<MoreView> {
     final semantic = theme.semanticColors;
 
     return Scaffold(
-      appBar: AppBar(title: const Text('更多')),
       body: SafeArea(
-        child: ConstrainedPage(
-          child: SingleChildScrollView(
-            padding: EdgeInsets.fromLTRB(16.w, 12.h, 16.w, 28.h),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                // 1. 个人与账户
-                const AppSectionHeader(title: '个人与账户'),
-                SizedBox(height: 6.h),
-                AppCard(
-                  padding: EdgeInsets.zero,
+        child: Column(
+          children: [
+            ConstrainedPage(
+              child: AppTabHeader(
+                title: '更多',
+                eyebrow: '记录之外，也照顾好自己',
+                action: AppTabIconAction(
+                  label: '个人与账户',
+                  icon: Icons.person_outline_rounded,
+                  onPressed: () => _openPage(const ProfileView()),
+                ),
+              ),
+            ),
+            Expanded(
+              child: ConstrainedPage(
+                child: SingleChildScrollView(
+                  key: const PageStorageKey('more-scroll'),
+                  padding: const EdgeInsets.fromLTRB(22, 0, 22, 28),
                   child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      if (_profileAccountCubit != null)
-                        BlocBuilder<ProfileAccountCubit, ProfileAccountState>(
-                          bloc: _profileAccountCubit,
-                          builder: (context, state) {
-                            return _buildAccountTile(
-                              context,
-                              userName:
-                                  state.isLoggedIn || !state.isCloudConfigured
-                                  ? state.userName
-                                  : '点击登录',
-                              subtitle: !state.isCloudConfigured
-                                  ? '云同步未配置 · 本地数据模式'
-                                  : state.isLoggedIn
-                                  ? '已登录 · 查看同步状态'
-                                  : '登录后可开启多端云同步',
-                              onTap: () => _openPage(const ProfileView()),
-                            );
-                          },
-                        )
-                      else
-                        _buildAccountTile(
-                          context,
-                          userName: '个人信息',
-                          subtitle: '查看个人账户与同步偏好',
-                          onTap: () => _openPage(const ProfileView()),
+                      // 1. 个人与账户
+                      const AppSectionHeader(title: '个人与账户'),
+                      SizedBox(height: 6.h),
+                      AppCard(
+                        radius: AppRadius.group,
+                        padding: EdgeInsets.zero,
+                        child: Column(
+                          children: [
+                            if (_profileAccountCubit != null)
+                              BlocBuilder<
+                                ProfileAccountCubit,
+                                ProfileAccountState
+                              >(
+                                bloc: _profileAccountCubit,
+                                builder: (context, state) {
+                                  return _buildAccountTile(
+                                    context,
+                                    userName:
+                                        state.isLoggedIn ||
+                                            !state.isCloudConfigured
+                                        ? state.userName
+                                        : '点击登录',
+                                    subtitle: !state.isCloudConfigured
+                                        ? '云同步未配置 · 本地数据模式'
+                                        : state.isLoggedIn
+                                        ? '已登录 · 查看同步状态'
+                                        : '登录后可开启多端云同步',
+                                    onTap: () => _openPage(const ProfileView()),
+                                  );
+                                },
+                              )
+                            else
+                              _buildAccountTile(
+                                context,
+                                userName: '个人信息',
+                                subtitle: '查看个人账户与同步偏好',
+                                onTap: () => _openPage(const ProfileView()),
+                              ),
+                          ],
                         ),
+                      ),
+                      SizedBox(height: 18.h),
+
+                      // 二级功能只在“更多”目录出现一次，账户与同步由 ProfileView 负责。
+                      _MoreGroup(
+                        title: '记录与分析',
+                        destinations: [
+                          _MoreDestination(
+                            icon: Icons.receipt_long_outlined,
+                            iconColor: semantic.warning,
+                            title: '全部记录',
+                            subtitle: '工时、支出、凭证与订阅时间线',
+                            page: const TimelineView(),
+                          ),
+                          _MoreDestination(
+                            icon: Icons.analytics_outlined,
+                            iconColor: semantic.stats,
+                            title: '统计面板',
+                            subtitle: '工时结构、月度支出与项目投入透视',
+                            page: const StatisticsView(),
+                          ),
+                          _MoreDestination(
+                            icon: Icons.subscriptions_outlined,
+                            iconColor: semantic.expense,
+                            title: '订阅管理',
+                            subtitle: '固定支出、周期扣费与续费提醒',
+                            page: const SubscriptionView(),
+                          ),
+                        ],
+                      ),
+                      SizedBox(height: 18.h),
+                      _MoreGroup(
+                        title: '工具',
+                        destinations: [
+                          _MoreDestination(
+                            icon: Icons.settings_input_antenna_rounded,
+                            iconColor: semantic.work,
+                            title: '遥测计算器',
+                            subtitle: '链路预算、码率与 PCM 专业参数计算',
+                            page: const TelemetryCalcView(),
+                          ),
+                        ],
+                      ),
+                      SizedBox(height: 18.h),
+                      _MoreGroup(
+                        title: '应用',
+                        destinations: [
+                          _MoreDestination(
+                            icon: Icons.palette_outlined,
+                            iconColor: semantic.expense,
+                            title: '外观设置',
+                            subtitle: '主题风格、深色模式与动态取色',
+                            page: const AppearanceView(),
+                          ),
+                          _MoreDestination(
+                            icon: Icons.storage_outlined,
+                            iconColor: semantic.work,
+                            title: '数据备份与恢复',
+                            subtitle: '本地数据库备份、恢复与数据安全',
+                            page: const DataManagementView(),
+                          ),
+                          _MoreDestination(
+                            icon: Icons.info_outline_rounded,
+                            iconColor: semantic.success,
+                            title: '关于应用',
+                            subtitle: '版本信息、技术架构与开源说明',
+                            page: const AboutView(),
+                          ),
+                        ],
+                      ),
                     ],
                   ),
                 ),
-                SizedBox(height: 18.h),
-
-                // 二级功能只在“更多”目录出现一次，账户与同步由 ProfileView 负责。
-                _MoreGroup(
-                  title: '记录与分析',
-                  destinations: [
-                    _MoreDestination(
-                      icon: Icons.receipt_long_outlined,
-                      iconColor: semantic.warning,
-                      title: '全部记录',
-                      subtitle: '工时、支出、凭证与订阅时间线',
-                      page: const TimelineView(),
-                    ),
-                    _MoreDestination(
-                      icon: Icons.analytics_outlined,
-                      iconColor: semantic.stats,
-                      title: '统计面板',
-                      subtitle: '工时结构、月度支出与项目投入透视',
-                      page: const StatisticsView(),
-                    ),
-                    _MoreDestination(
-                      icon: Icons.subscriptions_outlined,
-                      iconColor: semantic.expense,
-                      title: '订阅管理',
-                      subtitle: '固定支出、周期扣费与续费提醒',
-                      page: const SubscriptionView(),
-                    ),
-                  ],
-                ),
-                SizedBox(height: 18.h),
-                _MoreGroup(
-                  title: '工具',
-                  destinations: [
-                    _MoreDestination(
-                      icon: Icons.settings_input_antenna_rounded,
-                      iconColor: semantic.work,
-                      title: '遥测计算器',
-                      subtitle: '链路预算、码率与 PCM 专业参数计算',
-                      page: const TelemetryCalcView(),
-                    ),
-                  ],
-                ),
-                SizedBox(height: 18.h),
-                _MoreGroup(
-                  title: '应用',
-                  destinations: [
-                    _MoreDestination(
-                      icon: Icons.palette_outlined,
-                      iconColor: semantic.expense,
-                      title: '外观设置',
-                      subtitle: '主题风格、深色模式与动态取色',
-                      page: const AppearanceView(),
-                    ),
-                    _MoreDestination(
-                      icon: Icons.storage_outlined,
-                      iconColor: semantic.work,
-                      title: '数据备份与恢复',
-                      subtitle: '本地数据库备份、恢复与数据安全',
-                      page: const DataManagementView(),
-                    ),
-                    _MoreDestination(
-                      icon: Icons.info_outline_rounded,
-                      iconColor: semantic.success,
-                      title: '关于应用',
-                      subtitle: '版本信息、技术架构与开源说明',
-                      page: const AboutView(),
-                    ),
-                  ],
-                ),
-              ],
+              ),
             ),
-          ),
+          ],
         ),
       ),
     );
@@ -346,6 +369,7 @@ class _MoreGroup extends StatelessWidget {
         AppSectionHeader(title: title),
         SizedBox(height: 6.h),
         AppCard(
+          radius: AppRadius.group,
           padding: EdgeInsets.zero,
           child: Column(
             children: [

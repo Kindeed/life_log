@@ -87,7 +87,7 @@ class ExpenseRecordDao {
   }
 
   Stream<void> watch() {
-    return _isar.expenseRecords.watchLazy();
+    return database.watch((isar) => isar.expenseRecords.watchLazy());
   }
 
   Future<void> delete(int id) async {

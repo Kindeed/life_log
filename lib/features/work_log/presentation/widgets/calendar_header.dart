@@ -27,12 +27,7 @@ class CalendarHeader extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Padding(
-      padding: EdgeInsets.fromLTRB(
-        16.w,
-        AppSpacing.sm.h,
-        16.w,
-        AppSpacing.sm.h,
-      ),
+      padding: const EdgeInsets.symmetric(horizontal: 22, vertical: 12),
       child: Row(
         children: [
           Expanded(
@@ -48,29 +43,33 @@ class CalendarHeader extends StatelessWidget {
                   onDatePicked(picked);
                 }
               },
-              child: Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Flexible(
-                    child: Text(
-                      DateFormat("yyyy年M月").format(focusedDay),
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                      style: TextStyle(
-                        fontSize: 22,
-                        fontWeight: FontWeight.w700,
-                        color: textPrimary,
-                        letterSpacing: 0,
-                        height: 1.1,
+              borderRadius: BorderRadius.circular(22),
+              child: ConstrainedBox(
+                constraints: const BoxConstraints(minHeight: 48),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Flexible(
+                      child: Text(
+                        DateFormat("yyyy年M月").format(focusedDay),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: TextStyle(
+                          fontSize: 22,
+                          fontWeight: FontWeight.w700,
+                          color: textPrimary,
+                          letterSpacing: 0,
+                          height: 1.1,
+                        ),
                       ),
                     ),
-                  ),
-                  Icon(
-                    Icons.arrow_drop_down,
-                    size: 22.sp,
-                    color: Theme.of(context).colorScheme.onSurfaceVariant,
-                  ),
-                ],
+                    Icon(
+                      Icons.arrow_drop_down,
+                      size: 22.sp,
+                      color: Theme.of(context).colorScheme.onSurfaceVariant,
+                    ),
+                  ],
+                ),
               ),
             ),
           ),

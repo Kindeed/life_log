@@ -4,6 +4,7 @@ import 'package:life_log/common/utils/sync_id_policy.dart';
 import 'package:life_log/core/sync/sync_adapter.dart';
 import 'package:life_log/core/sync/sync_conflict.dart';
 import 'package:life_log/core/sync/sync_pull_page.dart';
+import 'package:life_log/core/sync/sync_run_context.dart';
 import 'package:life_log/features/subscription/data/subscription_model.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
@@ -12,12 +13,15 @@ final class SubscriptionSyncAdapter implements SyncAdapter<Subscription> {
   final DbService dbService;
   final String userId;
   final int pageSize;
+  final SyncRunContext? context;
+  final _sentSnapshots = <int, Subscription>{};
 
   SubscriptionSyncAdapter({
     required this.client,
     required this.dbService,
     required this.userId,
     this.pageSize = 500,
+    this.context,
   });
 
   @override
@@ -27,8 +31,29 @@ final class SubscriptionSyncAdapter implements SyncAdapter<Subscription> {
   String get tableName => 'subscriptions';
 
   @override
-  Future<List<Subscription>> pendingLocalChanges() {
-    return dbService.getPendingSubscriptionsForSync();
+  Future<List<Subscription>> pendingLocalChanges() async {
+    _checkCurrent();
+    final entities = await dbService.getPendingSubscriptionsForSync(
+      context: context,
+    );
+    _checkCurrent();
+    return entities.where((entity) => entity.ownerUserId == userId).toList();
+  }
+
+  @override
+  String syncQueueKey(Subscription entity) => ownerScopedSyncEntityKey(
+    ownerId: userId,
+    syncId: entity.syncId,
+    localId: entity.id,
+  );
+
+  void _checkCurrent() => context?.checkCurrent();
+
+  void _checkRemoteRow(Map<String, dynamic> row) {
+    _checkCurrent();
+    if (row['user_id'] != userId) {
+      throw StateError('Remote sync row belongs to a different owner');
+    }
   }
 
   @override
@@ -42,6 +67,7 @@ final class SubscriptionSyncAdapter implements SyncAdapter<Subscription> {
     );
 
     while (true) {
+      _checkCurrent();
       dynamic query = client.from(tableName).select().eq('user_id', userId);
       query = pullPage.applyTo(query);
 
@@ -49,6 +75,7 @@ final class SubscriptionSyncAdapter implements SyncAdapter<Subscription> {
           .order('updated_at', ascending: true)
           .order('id', ascending: true)
           .limit(pullPage.pageSize);
+      _checkCurrent();
       final pageRows = (page as List)
           .cast<Map>()
           .map((row) => Map<String, dynamic>.from(row))
@@ -67,11 +94,17 @@ final class SubscriptionSyncAdapter implements SyncAdapter<Subscription> {
 
   @override
   Future<void> mergeRemoteRow(Map<String, dynamic> row) {
-    return dbService.syncRemoteSubscriptionToLocal(row);
+    _checkRemoteRow(row);
+    return dbService.syncRemoteSubscriptionToLocal(row, context: context);
   }
 
   @override
   Future<PushResult> pushLocalChange(Subscription entity) async {
+    _checkCurrent();
+    if (entity.ownerUserId != userId) {
+      throw StateError('Local sync entity belongs to a different owner');
+    }
+    _sentSnapshots[entity.id] = DbService.snapshotSubscription(entity);
     if (entity.pendingDelete) {
       if (entity.remoteId == null) {
         return _deleteRemoteBySyncId(entity);
@@ -111,6 +144,7 @@ final class SubscriptionSyncAdapter implements SyncAdapter<Subscription> {
               .select('id, sync_id, version, updated_at')
               .single()
         : await _updateRemote(entity, data);
+    _checkCurrent();
     if (response == null) {
       final remote = await _refreshRemote(entity);
       return PushResult(
@@ -125,13 +159,23 @@ final class SubscriptionSyncAdapter implements SyncAdapter<Subscription> {
     }
 
     _applySyncResult(entity, response);
-    await dbService.updateSubscriptionRemoteId(entity);
+    await dbService.updateSubscriptionRemoteId(
+      entity,
+      context: context,
+      sentSnapshot: _sentSnapshots[entity.id],
+    );
+    _checkCurrent();
     return const PushResult(success: true);
   }
 
   @override
   Future<void> purgeLocalDeleted(Subscription entity) {
-    return dbService.purgeDeletedSubscription(entity.id);
+    _checkCurrent();
+    return dbService.purgeDeletedSubscription(
+      entity.id,
+      context: context,
+      sentSnapshot: _sentSnapshots[entity.id],
+    );
   }
 
   Future<Map<String, dynamic>?> _updateRemote(
@@ -143,9 +187,7 @@ final class SubscriptionSyncAdapter implements SyncAdapter<Subscription> {
         .update(data)
         .eq('id', entity.remoteId!)
         .eq('user_id', userId);
-    if (entity.remoteVersion > 0) {
-      query = query.eq('version', entity.remoteVersion);
-    }
+    query = query.eq('version', entity.remoteVersion);
     return await query.select('id, sync_id, version, updated_at').maybeSingle();
   }
 
@@ -158,12 +200,11 @@ final class SubscriptionSyncAdapter implements SyncAdapter<Subscription> {
         })
         .eq('id', entity.remoteId!)
         .eq('user_id', userId);
-    if (entity.remoteVersion > 0) {
-      query = query.eq('version', entity.remoteVersion);
-    }
+    query = query.eq('version', entity.remoteVersion);
     final response = await query
         .select('id, sync_id, version, updated_at')
         .maybeSingle();
+    _checkCurrent();
     if (response == null) {
       final remote = await _refreshRemote(entity);
       return PushResult(
@@ -195,6 +236,7 @@ final class SubscriptionSyncAdapter implements SyncAdapter<Subscription> {
         .eq('sync_id', syncId)
         .select('id, sync_id, version, updated_at')
         .maybeSingle();
+    _checkCurrent();
     if (response == null) {
       return const PushResult(success: true, purgeLocalDeleted: true);
     }
@@ -212,9 +254,13 @@ final class SubscriptionSyncAdapter implements SyncAdapter<Subscription> {
       if (syncId == null || syncId.isEmpty) return null;
       query = query.eq('sync_id', syncId);
     }
+    _checkCurrent();
     final remote = await query.maybeSingle();
+    _checkCurrent();
     if (remote != null) {
-      await dbService.syncRemoteSubscriptionToLocal(remote);
+      _checkRemoteRow(remote);
+      await dbService.syncRemoteSubscriptionToLocal(remote, context: context);
+      _checkCurrent();
     }
     return remote == null ? null : Map<String, dynamic>.from(remote);
   }
@@ -227,6 +273,7 @@ final class SubscriptionSyncAdapter implements SyncAdapter<Subscription> {
   ) {
     return SyncConflictDraft(
       entityName: entityName,
+      ownerUserId: userId,
       entitySyncId: entity.syncId,
       localId: entity.id.toString(),
       remoteId: entity.remoteId?.toString(),
@@ -239,6 +286,7 @@ final class SubscriptionSyncAdapter implements SyncAdapter<Subscription> {
   }
 
   void _applySyncResult(Subscription entity, Map<String, dynamic> response) {
+    _checkCurrent();
     entity.remoteId = _requireRemoteId(response);
     entity.syncId = _parseRemoteString(response['sync_id']) ?? entity.syncId;
     entity.remoteVersion = _parseRemoteInt(response['version']) ?? 0;

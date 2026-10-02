@@ -96,6 +96,9 @@ jobs:
       - name: Analyze code
         run: flutter analyze --fatal-infos --fatal-warnings
 
+      - name: Verify native Isar test runtime
+        run: dart run tool/isar_test_runtime.dart
+
       - name: Run tests
         run: flutter test
 
@@ -124,24 +127,21 @@ jobs:
         run: echo "TAG_NAME=${GITHUB_REF#refs/tags/}" >> $GITHUB_OUTPUT
 
       # ── 10. 创建 GitHub Release 并上传 APK ────────────
+      - name: Prepare release notes
+        shell: bash
+        run: |
+          notes="docs/releases/${GITHUB_REF_NAME}.md"
+          if [[ -f "$notes" ]]; then
+            cp "$notes" "$RUNNER_TEMP/lifelog-release-notes.md"
+          else
+            printf '# LifeLog %s\n\n由 GitHub Actions 正式签名构建。请下载对应手机架构的 APK，升级前导出备份，并直接覆盖安装保留应用数据。\n' "$GITHUB_REF_NAME" > "$RUNNER_TEMP/lifelog-release-notes.md"
+          fi
+
       - name: Create GitHub Release
         uses: softprops/action-gh-release@v2
         with:
           name: "LifeLog ${{ steps.version.outputs.TAG_NAME }}"
-          body: |
-            ## 📱 LifeLog ${{ steps.version.outputs.TAG_NAME }}
-
-            ### 下载安装包
-            - **LifeLog-${{ steps.version.outputs.TAG_NAME }}-arm64-v8a-release.apk** (推荐，适用于绝大多数现代手机)
-            - **LifeLog-${{ steps.version.outputs.TAG_NAME }}-armeabi-v7a-release.apk** (旧款32位手机)
-            - **LifeLog-${{ steps.version.outputs.TAG_NAME }}-x86_64-release.apk** (模拟器/特殊设备)
-
-            ### 安装方式
-            1. 下载对应你手机架构的 APK 文件
-            2. 传输到手机并安装（可能需要允许"未知来源"）
-
-            ---
-            *此版本由 GitHub Actions 自动构建*
+          body_path: ${{ runner.temp }}/lifelog-release-notes.md
           draft: false
           prerelease: false
           files: |

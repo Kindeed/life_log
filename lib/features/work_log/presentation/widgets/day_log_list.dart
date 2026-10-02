@@ -32,37 +32,26 @@ class DayLogList extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        AppSectionHeader(
-          title: "${date.month}月${date.day}日",
-          trailing: Row(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              if (logs.length > 1) ...[
-                Container(
-                  padding: EdgeInsets.symmetric(horizontal: 6.w, vertical: 2.h),
-                  decoration: BoxDecoration(
-                    color: Theme.of(
-                      context,
-                    ).colorScheme.primary.withValues(alpha: 0.1),
-                    borderRadius: BorderRadius.circular(AppRadius.xs),
-                  ),
-                  child: Text(
-                    "共 ${logs.length} 条记录",
-                    style: TextStyle(
-                      color: Theme.of(context).colorScheme.primary,
-                      fontSize: 11.sp,
-                      fontWeight: FontWeight.w600,
-                    ),
-                  ),
-                ),
-                SizedBox(width: AppSpacing.xs.w + 2.w),
-              ],
+        AppSectionHeader(title: '${date.month}月${date.day}日'),
+        const SizedBox(height: 6),
+        Wrap(
+          spacing: 8,
+          runSpacing: 6,
+          children: [
+            Text(
+              '农历${lunar.getMonthInChinese()}月${lunar.getDayInChinese()} · 星期${lunar.getWeekInChinese()}',
+              style: TextStyle(color: textSecondary, fontSize: 12),
+            ),
+            if (logs.length > 1)
               Text(
-                "农历${lunar.getMonthInChinese()}${lunar.getDayInChinese()}",
-                style: TextStyle(color: textSecondary, fontSize: 12.sp),
+                '共 ${logs.length} 条记录',
+                style: TextStyle(
+                  color: Theme.of(context).colorScheme.primary,
+                  fontWeight: FontWeight.w600,
+                  fontSize: 12,
+                ),
               ),
-            ],
-          ),
+          ],
         ),
         SizedBox(height: AppSpacing.sm.h),
         ...logs.map(
@@ -118,7 +107,10 @@ class _DayLogCard extends StatelessWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Row(
+                Wrap(
+                  spacing: 8,
+                  runSpacing: 6,
+                  crossAxisAlignment: WrapCrossAlignment.center,
                   children: [
                     Text(
                       meta.title,
@@ -127,15 +119,18 @@ class _DayLogCard extends StatelessWidget {
                         fontSize: 15.sp,
                       ),
                     ),
-                    SizedBox(width: AppSpacing.sm.w),
                     _DurationBadge(label: meta.duration, color: meta.color),
-                    const Spacer(),
+                  ],
+                ),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.end,
+                  children: [
                     _IconAction(
                       icon: Icons.edit_rounded,
                       color: meta.color,
                       onTap: () => onEditLog(log),
                     ),
-                    SizedBox(width: AppSpacing.xs.w),
+                    const SizedBox(width: 4),
                     _IconAction(
                       icon: Icons.delete_outline_rounded,
                       color: Theme.of(context).colorScheme.error,
@@ -378,15 +373,18 @@ class _IconAction extends StatelessWidget {
   Widget build(BuildContext context) {
     return InkWell(
       onTap: onTap,
-      borderRadius: BorderRadius.circular(AppRadius.xs),
-      child: Container(
-        width: 30.w,
-        height: 30.w,
-        decoration: BoxDecoration(
-          color: color.withValues(alpha: 0.08),
-          borderRadius: BorderRadius.circular(AppRadius.xs),
+      child: Semantics(
+        button: true,
+        label: icon == Icons.edit_rounded ? '编辑记录' : '删除记录',
+        child: Container(
+          width: 48,
+          height: 48,
+          decoration: BoxDecoration(
+            color: color.withValues(alpha: 0.08),
+            shape: BoxShape.circle,
+          ),
+          child: Icon(icon, color: color, size: 18),
         ),
-        child: Icon(icon, color: color, size: 16.sp),
       ),
     );
   }

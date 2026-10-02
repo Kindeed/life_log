@@ -51,7 +51,13 @@ void main() {
         source,
         contains('getActiveByDayForOwner(date, currentOwnerUserId)'),
       );
-      expect(source, contains('getPendingForSyncForOwner(currentOwnerUserId)'));
+      expect(source, contains('getPendingForSyncForOwner(owner)'));
+      expect(source, contains('context?.ownerId ?? currentOwnerUserId'));
+      expect(
+        source,
+        isNot(contains('getPendingForSyncForOwner(currentOwnerUserId)')),
+        reason: 'Cloud reads must use the owner captured for the sync run.',
+      );
       expect(source, contains('_isVisibleToCurrentUser'));
       expect(source, contains('_belongsToCurrentUser'));
       expect(

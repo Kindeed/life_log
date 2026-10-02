@@ -46,8 +46,9 @@ void main() {
         );
         expect(
           dbService,
-          contains('_subscriptionDao.getPendingForSyncForOwner('),
+          contains('_subscriptionDao.getPendingForSyncForOwner(owner)'),
         );
+        expect(dbService, contains('_preparePendingSyncRows('));
         expect(dbService, contains('_subscriptionDao.getById('));
         expect(dbService, contains('_subscriptionDao.watch()'));
         expect(dbService, contains('_subscriptionDao.delete('));

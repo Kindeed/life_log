@@ -2,6 +2,7 @@ import 'package:life_log/common/db/db_service.dart';
 import 'package:life_log/core/sync/sync_adapter.dart';
 import 'package:life_log/core/sync/sync_pull_page.dart';
 import 'package:life_log/core/sync/sync_queue.dart';
+import 'package:life_log/core/sync/sync_run_context.dart';
 import 'package:life_log/features/evidence/data/evidence_attachment_model.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
@@ -20,6 +21,7 @@ final class EvidenceAttachmentSyncAdapter
   final EvidenceAttachmentRowSync syncAttachment;
   final EvidenceAttachmentDownload? downloadAttachment;
   final int pageSize;
+  final SyncRunContext? context;
 
   EvidenceAttachmentSyncAdapter({
     required this.client,
@@ -28,6 +30,7 @@ final class EvidenceAttachmentSyncAdapter
     required this.syncAttachment,
     this.downloadAttachment,
     this.pageSize = 500,
+    this.context,
   });
 
   @override
@@ -37,8 +40,13 @@ final class EvidenceAttachmentSyncAdapter
   String get tableName => 'evidence_attachments';
 
   @override
-  Future<List<EvidenceAttachment>> pendingLocalChanges() {
-    return dbService.getPendingEvidenceAttachmentsForSync();
+  Future<List<EvidenceAttachment>> pendingLocalChanges() async {
+    context?.checkCurrent();
+    final pending = await dbService.getPendingEvidenceAttachmentsForSync(
+      context: context,
+    );
+    context?.checkCurrent();
+    return pending.where((entity) => entity.ownerUserId == userId).toList();
   }
 
   @override
@@ -52,6 +60,7 @@ final class EvidenceAttachmentSyncAdapter
     );
 
     while (true) {
+      context?.checkCurrent();
       dynamic query = client.from(tableName).select().eq('user_id', userId);
       query = pullPage.applyTo(query);
 
@@ -59,6 +68,7 @@ final class EvidenceAttachmentSyncAdapter
           .order('updated_at', ascending: true)
           .order('id', ascending: true)
           .limit(pullPage.pageSize);
+      context?.checkCurrent();
       final pageRows = (page as List)
           .cast<Map>()
           .map((row) => Map<String, dynamic>.from(row))
@@ -77,12 +87,18 @@ final class EvidenceAttachmentSyncAdapter
 
   @override
   Future<void> mergeRemoteRow(Map<String, dynamic> row) async {
-    await dbService.syncRemoteEvidenceAttachmentToLocal(row);
+    context?.checkCurrent();
+    if (row['user_id'] != userId) {
+      throw StateError('Remote attachment belongs to a different owner');
+    }
+    await dbService.syncRemoteEvidenceAttachmentToLocal(row, context: context);
+    context?.checkCurrent();
     if (row['deleted_at'] != null || downloadAttachment == null) return;
 
     final syncId = _parseRemoteString(row['sync_id']);
     if (syncId == null) return;
     final attachment = await dbService.getEvidenceAttachmentBySyncId(syncId);
+    context?.checkCurrent();
     if (attachment != null) {
       await downloadAttachment!(attachment);
     }
@@ -90,7 +106,12 @@ final class EvidenceAttachmentSyncAdapter
 
   @override
   Future<PushResult> pushLocalChange(EvidenceAttachment entity) async {
+    context?.checkCurrent();
+    if (entity.ownerUserId != userId) {
+      throw StateError('Local attachment belongs to a different owner');
+    }
     final success = await syncAttachment(entity);
+    context?.checkCurrent();
     return PushResult(success: success);
   }
 
@@ -98,7 +119,11 @@ final class EvidenceAttachmentSyncAdapter
   Future<void> purgeLocalDeleted(EvidenceAttachment entity) async {}
 
   @override
-  String syncQueueKey(EvidenceAttachment entity) => entity.syncId;
+  String syncQueueKey(EvidenceAttachment entity) => ownerScopedSyncEntityKey(
+    ownerId: userId,
+    syncId: entity.syncId,
+    localId: entity.id,
+  );
 
   String? _parseRemoteString(dynamic value) {
     if (value == null) return null;

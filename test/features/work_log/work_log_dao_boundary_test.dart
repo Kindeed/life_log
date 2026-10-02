@@ -41,7 +41,11 @@ void main() {
       expect(dbService, contains('_workLogDao.getActiveByMonthForOwner('));
       expect(dbService, contains('_workLogDao.getActiveSortedForOwner('));
       expect(dbService, contains('_workLogDao.getActiveByDayForOwner('));
-      expect(dbService, contains('_workLogDao.getPendingForSyncForOwner('));
+      expect(
+        dbService,
+        contains('_workLogDao.getPendingForSyncForOwner(owner)'),
+      );
+      expect(dbService, contains('_preparePendingSyncRows('));
       expect(dbService, contains('_workLogDao.watch()'));
       expect(dbService, contains('_workLogDao.delete('));
     });

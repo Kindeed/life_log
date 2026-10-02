@@ -291,14 +291,70 @@ class _QueueEntryTile extends StatelessWidget {
   }
 }
 
-class _ConflictTile extends StatelessWidget {
+class _ConflictTile extends StatefulWidget {
   final SyncConflictEntry entry;
   final VoidCallback onResolved;
 
   const _ConflictTile({required this.entry, required this.onResolved});
 
   @override
+  State<_ConflictTile> createState() => _ConflictTileState();
+}
+
+class _ConflictTileState extends State<_ConflictTile> {
+  bool _resolving = false;
+
+  Future<void> _resolve(String resolution) async {
+    if (_resolving) return;
+    setState(() => _resolving = true);
+    try {
+      if (resolution == 'use-remote') {
+        final confirmed = await showDialog<bool>(
+          context: context,
+          builder: (dialogContext) => AlertDialog(
+            title: const Text('采用远端版本'),
+            content: const Text('这会替换本地修改；远端已删除的记录也会从列表中移除。'),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(dialogContext, false),
+                child: const Text('取消'),
+              ),
+              FilledButton(
+                onPressed: () => Navigator.pop(dialogContext, true),
+                child: const Text('采用远端'),
+              ),
+            ],
+          ),
+        );
+        if (confirmed != true || !mounted) return;
+      }
+      await serviceLocator<ResolveSyncConflict>().call(
+        widget.entry.id,
+        resolution: resolution,
+      );
+      if (!mounted) return;
+      final message = switch (resolution) {
+        'keep-local' => '已保留本地修改，等待同步',
+        'copy' => '已复制本地记录并采用远端版本，副本等待同步',
+        _ => '已采用远端版本',
+      };
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text(message)));
+      widget.onResolved();
+    } catch (error) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text('处理失败，冲突已保留：$error')));
+    } finally {
+      if (mounted) setState(() => _resolving = false);
+    }
+  }
+
+  @override
   Widget build(BuildContext context) {
+    final entry = widget.entry;
     final theme = Theme.of(context);
     final secondary = theme.colorScheme.onSurfaceVariant;
     return Padding(
@@ -346,26 +402,28 @@ class _ConflictTile extends StatelessWidget {
               children: [
                 _ConflictActionButton(
                   label: '保留本地',
-                  resolution: 'keep-local',
-                  entryId: entry.id,
-                  onResolved: onResolved,
+                  onPressed: _resolving ? null : () => _resolve('keep-local'),
                 ),
                 _ConflictActionButton(
                   label: '采用远端',
-                  resolution: 'use-remote',
-                  entryId: entry.id,
-                  onResolved: onResolved,
+                  onPressed: _resolving ? null : () => _resolve('use-remote'),
                 ),
                 _ConflictActionButton(
                   label: '复制为新记录',
-                  resolution: 'copy',
-                  entryId: entry.id,
-                  onResolved: onResolved,
+                  onPressed: _resolving ? null : () => _resolve('copy'),
                 ),
                 OutlinedButton(
-                  onPressed: onResolved,
+                  onPressed: _resolving ? null : widget.onResolved,
                   child: const Text('稍后处理'),
                 ),
+                if (_resolving)
+                  const Padding(
+                    padding: EdgeInsets.all(AppSpacing.sm),
+                    child: SizedBox.square(
+                      dimension: 18,
+                      child: CircularProgressIndicator(strokeWidth: 2),
+                    ),
+                  ),
               ],
             ),
           ],
@@ -377,31 +435,13 @@ class _ConflictTile extends StatelessWidget {
 
 class _ConflictActionButton extends StatelessWidget {
   final String label;
-  final String resolution;
-  final int entryId;
-  final VoidCallback onResolved;
+  final VoidCallback? onPressed;
 
-  const _ConflictActionButton({
-    required this.label,
-    required this.resolution,
-    required this.entryId,
-    required this.onResolved,
-  });
+  const _ConflictActionButton({required this.label, required this.onPressed});
 
   @override
   Widget build(BuildContext context) {
-    return FilledButton.tonal(
-      onPressed: () async {
-        final messenger = ScaffoldMessenger.of(context);
-        await serviceLocator<ResolveSyncConflict>().call(
-          entryId,
-          resolution: resolution,
-        );
-        messenger.showSnackBar(SnackBar(content: Text('$label 已记录')));
-        onResolved();
-      },
-      child: Text(label),
-    );
+    return FilledButton.tonal(onPressed: onPressed, child: Text(label));
   }
 }
 

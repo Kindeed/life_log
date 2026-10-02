@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:life_log/common/theme/app_motion.dart';
+import 'package:life_log/common/theme/app_radius.dart';
 import 'package:life_log/core/di/service_locator.dart';
 import 'package:life_log/features/more/presentation/more_view.dart';
 import 'package:life_log/features/photo/presentation/photo_view.dart';
@@ -95,17 +96,11 @@ class _TabsViewState extends State<TabsView> {
                 ),
                 bottomNavigationBar: useRail
                     ? null
-                    : NavigationBar(
+                    : _SlidingTabBar(
+                        pageController: pageController,
                         selectedIndex: controller.currentIndex,
-                        onDestinationSelected: _goToPage,
-                        destinations: [
-                          for (final destination in _destinations)
-                            NavigationDestination(
-                              selectedIcon: Icon(destination.selectedIcon),
-                              icon: Icon(destination.icon),
-                              label: destination.label,
-                            ),
-                        ],
+                        onSelected: _goToPage,
+                        destinations: _destinations,
                       ),
               );
             },
@@ -167,4 +162,123 @@ class _TabDestination {
     required this.selectedIcon,
     required this.icon,
   });
+}
+
+class _SlidingTabBar extends StatelessWidget {
+  final PageController pageController;
+  final int selectedIndex;
+  final ValueChanged<int> onSelected;
+  final List<_TabDestination> destinations;
+
+  const _SlidingTabBar({
+    required this.pageController,
+    required this.selectedIndex,
+    required this.onSelected,
+    required this.destinations,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
+    return Material(
+      color: scheme.surface,
+      child: SafeArea(
+        top: false,
+        child: Padding(
+          padding: const EdgeInsets.fromLTRB(12, 8, 12, 8),
+          child: LayoutBuilder(
+            builder: (context, constraints) {
+              final slot = constraints.maxWidth / destinations.length;
+              final height =
+                  64 *
+                  (MediaQuery.textScalerOf(context).scale(12) / 12).clamp(
+                    1.0,
+                    1.5,
+                  );
+              return SizedBox(
+                height: height,
+                child: Stack(
+                  children: [
+                    AnimatedBuilder(
+                      animation: pageController,
+                      builder: (context, _) {
+                        final page = pageController.hasClients
+                            ? pageController.page ?? selectedIndex.toDouble()
+                            : selectedIndex.toDouble();
+                        return Positioned(
+                          left:
+                              slot * page.clamp(0, destinations.length - 1) + 6,
+                          top: 0,
+                          bottom: 0,
+                          width: slot - 12,
+                          child: DecoratedBox(
+                            decoration: BoxDecoration(
+                              color: scheme.primaryContainer,
+                              borderRadius: BorderRadius.circular(
+                                AppRadius.pill,
+                              ),
+                            ),
+                          ),
+                        );
+                      },
+                    ),
+                    Row(
+                      children: [
+                        for (
+                          var index = 0;
+                          index < destinations.length;
+                          index++
+                        )
+                          Expanded(
+                            child: Semantics(
+                              selected: selectedIndex == index,
+                              button: true,
+                              label: destinations[index].label,
+                              child: InkWell(
+                                borderRadius: BorderRadius.circular(
+                                  AppRadius.pill,
+                                ),
+                                onTap: () => onSelected(index),
+                                child: ExcludeSemantics(
+                                  child: Column(
+                                    mainAxisAlignment: MainAxisAlignment.center,
+                                    children: [
+                                      Icon(
+                                        selectedIndex == index
+                                            ? destinations[index].selectedIcon
+                                            : destinations[index].icon,
+                                        color: selectedIndex == index
+                                            ? scheme.onPrimaryContainer
+                                            : scheme.onSurfaceVariant,
+                                      ),
+                                      const SizedBox(height: 4),
+                                      Text(
+                                        destinations[index].label,
+                                        style: TextStyle(
+                                          fontSize: 12,
+                                          fontWeight: selectedIndex == index
+                                              ? FontWeight.w700
+                                              : FontWeight.w500,
+                                          color: selectedIndex == index
+                                              ? scheme.onPrimaryContainer
+                                              : scheme.onSurfaceVariant,
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                              ),
+                            ),
+                          ),
+                      ],
+                    ),
+                  ],
+                ),
+              );
+            },
+          ),
+        ),
+      ),
+    );
+  }
 }

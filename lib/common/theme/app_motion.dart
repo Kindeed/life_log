@@ -4,8 +4,9 @@ class AppMotion {
   static Duration duration(BuildContext context, Duration value) =>
       MediaQuery.disableAnimationsOf(context) ? Duration.zero : value;
 
-  static const Duration fast = Duration(milliseconds: 150);
-  static const Duration normal = Duration(milliseconds: 250);
+  static const Duration fast = Duration(milliseconds: 140);
+  static const Duration normal = Duration(milliseconds: 240);
+  static const Duration sheet = Duration(milliseconds: 300);
   static const Duration slow = Duration(milliseconds: 400);
 
   static const Curve standard = Easing.standard;

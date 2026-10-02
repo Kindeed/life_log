@@ -6,6 +6,8 @@ part 'sync_conflict_model.g.dart';
 class SyncConflictRecord {
   Id id = Isar.autoIncrement;
 
+  String? ownerUserId;
+
   @Index(caseSensitive: false)
   late String entityName;
 

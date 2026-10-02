@@ -4,6 +4,7 @@ import 'package:life_log/common/utils/sync_id_policy.dart';
 import 'package:life_log/core/sync/sync_adapter.dart';
 import 'package:life_log/core/sync/sync_conflict.dart';
 import 'package:life_log/core/sync/sync_pull_page.dart';
+import 'package:life_log/core/sync/sync_run_context.dart';
 import 'package:life_log/features/evidence/data/evidence_model.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
@@ -18,6 +19,8 @@ final class EvidenceSyncAdapter implements SyncAdapter<ExpenseEvidence> {
   final EvidenceAttachmentSync syncAttachmentsForEvidence;
   final EvidenceDownload? downloadEvidenceFile;
   final int pageSize;
+  final SyncRunContext? context;
+  final _sentSnapshots = <int, ExpenseEvidence>{};
 
   EvidenceSyncAdapter({
     required this.client,
@@ -26,6 +29,7 @@ final class EvidenceSyncAdapter implements SyncAdapter<ExpenseEvidence> {
     required this.syncAttachmentsForEvidence,
     this.downloadEvidenceFile,
     this.pageSize = 500,
+    this.context,
   });
 
   @override
@@ -35,8 +39,29 @@ final class EvidenceSyncAdapter implements SyncAdapter<ExpenseEvidence> {
   String get tableName => 'expense_evidence';
 
   @override
-  Future<List<ExpenseEvidence>> pendingLocalChanges() {
-    return dbService.getPendingEvidenceForSync();
+  Future<List<ExpenseEvidence>> pendingLocalChanges() async {
+    _checkCurrent();
+    final entities = await dbService.getPendingEvidenceForSync(
+      context: context,
+    );
+    _checkCurrent();
+    return entities.where((entity) => entity.ownerUserId == userId).toList();
+  }
+
+  @override
+  String syncQueueKey(ExpenseEvidence entity) => ownerScopedSyncEntityKey(
+    ownerId: userId,
+    syncId: entity.syncId,
+    localId: entity.id,
+  );
+
+  void _checkCurrent() => context?.checkCurrent();
+
+  void _checkRemoteRow(Map<String, dynamic> row) {
+    _checkCurrent();
+    if (row['user_id'] != userId) {
+      throw StateError('Remote sync row belongs to a different owner');
+    }
   }
 
   @override
@@ -50,6 +75,7 @@ final class EvidenceSyncAdapter implements SyncAdapter<ExpenseEvidence> {
     );
 
     while (true) {
+      _checkCurrent();
       dynamic query = client.from(tableName).select().eq('user_id', userId);
       query = pullPage.applyTo(query);
 
@@ -57,6 +83,7 @@ final class EvidenceSyncAdapter implements SyncAdapter<ExpenseEvidence> {
           .order('updated_at', ascending: true)
           .order('id', ascending: true)
           .limit(pullPage.pageSize);
+      _checkCurrent();
       final pageRows = (page as List)
           .cast<Map>()
           .map((row) => Map<String, dynamic>.from(row))
@@ -75,12 +102,15 @@ final class EvidenceSyncAdapter implements SyncAdapter<ExpenseEvidence> {
 
   @override
   Future<void> mergeRemoteRow(Map<String, dynamic> row) async {
-    await dbService.syncRemoteEvidenceToLocal(row);
+    _checkRemoteRow(row);
+    await dbService.syncRemoteEvidenceToLocal(row, context: context);
+    _checkCurrent();
     if (row['deleted_at'] != null || downloadEvidenceFile == null) return;
 
     final syncId = _parseRemoteString(row['sync_id']);
     if (syncId == null) return;
     final evidence = await dbService.getEvidenceBySyncId(syncId);
+    _checkCurrent();
     if (evidence != null) {
       await downloadEvidenceFile!(evidence);
     }
@@ -88,6 +118,11 @@ final class EvidenceSyncAdapter implements SyncAdapter<ExpenseEvidence> {
 
   @override
   Future<PushResult> pushLocalChange(ExpenseEvidence entity) async {
+    _checkCurrent();
+    if (entity.ownerUserId != userId) {
+      throw StateError('Local sync entity belongs to a different owner');
+    }
+    _sentSnapshots[entity.id] = DbService.snapshotEvidence(entity);
     if (entity.pendingDelete) {
       if (entity.remoteId == null) {
         return _deleteRemoteBySyncId(entity);
@@ -100,7 +135,11 @@ final class EvidenceSyncAdapter implements SyncAdapter<ExpenseEvidence> {
       generator: SyncIdGenerator.newSyncId,
     );
     entity.syncId = syncId;
-    await dbService.ensureEvidenceAttachmentForEvidence(entity);
+    await dbService.ensureEvidenceAttachmentForEvidence(
+      entity,
+      context: context,
+    );
+    _checkCurrent();
 
     final data = {
       'user_id': userId,
@@ -132,6 +171,7 @@ final class EvidenceSyncAdapter implements SyncAdapter<ExpenseEvidence> {
               .select('id, sync_id, version, updated_at')
               .single()
         : await _updateRemote(entity, data);
+    _checkCurrent();
     if (response == null) {
       final remote = await _refreshRemote(entity);
       return PushResult(
@@ -146,14 +186,26 @@ final class EvidenceSyncAdapter implements SyncAdapter<ExpenseEvidence> {
     }
 
     _applySyncResult(entity, response);
-    await dbService.updateEvidenceRemoteId(entity);
+    await dbService.updateEvidenceRemoteId(
+      entity,
+      context: context,
+      sentSnapshot: _sentSnapshots[entity.id],
+    );
+    _checkCurrent();
+    _checkCurrent();
     final attachmentsSynced = await syncAttachmentsForEvidence(entity);
+    _checkCurrent();
     return PushResult(success: attachmentsSynced);
   }
 
   @override
   Future<void> purgeLocalDeleted(ExpenseEvidence entity) {
-    return dbService.purgeDeletedEvidence(entity.id);
+    _checkCurrent();
+    return dbService.purgeDeletedEvidence(
+      entity.id,
+      context: context,
+      sentSnapshot: _sentSnapshots[entity.id],
+    );
   }
 
   Future<Map<String, dynamic>?> _updateRemote(
@@ -165,9 +217,7 @@ final class EvidenceSyncAdapter implements SyncAdapter<ExpenseEvidence> {
         .update(data)
         .eq('id', entity.remoteId!)
         .eq('user_id', userId);
-    if (entity.remoteVersion > 0) {
-      query = query.eq('version', entity.remoteVersion);
-    }
+    query = query.eq('version', entity.remoteVersion);
     return await query.select('id, sync_id, version, updated_at').maybeSingle();
   }
 
@@ -180,12 +230,11 @@ final class EvidenceSyncAdapter implements SyncAdapter<ExpenseEvidence> {
         })
         .eq('id', entity.remoteId!)
         .eq('user_id', userId);
-    if (entity.remoteVersion > 0) {
-      query = query.eq('version', entity.remoteVersion);
-    }
+    query = query.eq('version', entity.remoteVersion);
     final response = await query
         .select('id, sync_id, version, updated_at')
         .maybeSingle();
+    _checkCurrent();
     if (response == null) {
       final remote = await _refreshRemote(entity);
       return PushResult(
@@ -201,7 +250,9 @@ final class EvidenceSyncAdapter implements SyncAdapter<ExpenseEvidence> {
 
     await dbService.queueEvidenceAttachmentDeleteForEvidence(entity);
     _applySyncResult(entity, response);
+    _checkCurrent();
     final attachmentsSynced = await syncAttachmentsForEvidence(entity);
+    _checkCurrent();
     return PushResult(
       success: attachmentsSynced,
       purgeLocalDeleted: attachmentsSynced,
@@ -227,7 +278,9 @@ final class EvidenceSyncAdapter implements SyncAdapter<ExpenseEvidence> {
     }
 
     await dbService.queueEvidenceAttachmentDeleteForEvidence(entity);
+    _checkCurrent();
     final attachmentsSynced = await syncAttachmentsForEvidence(entity);
+    _checkCurrent();
     return PushResult(
       success: attachmentsSynced,
       purgeLocalDeleted: attachmentsSynced,
@@ -243,9 +296,13 @@ final class EvidenceSyncAdapter implements SyncAdapter<ExpenseEvidence> {
       if (syncId == null || syncId.isEmpty) return null;
       query = query.eq('sync_id', syncId);
     }
+    _checkCurrent();
     final remote = await query.maybeSingle();
+    _checkCurrent();
     if (remote != null) {
-      await dbService.syncRemoteEvidenceToLocal(remote);
+      _checkRemoteRow(remote);
+      await dbService.syncRemoteEvidenceToLocal(remote, context: context);
+      _checkCurrent();
     }
     return remote == null ? null : Map<String, dynamic>.from(remote);
   }
@@ -258,6 +315,7 @@ final class EvidenceSyncAdapter implements SyncAdapter<ExpenseEvidence> {
   ) {
     return SyncConflictDraft(
       entityName: entityName,
+      ownerUserId: userId,
       entitySyncId: entity.syncId,
       localId: entity.id.toString(),
       remoteId: entity.remoteId?.toString(),
@@ -271,6 +329,7 @@ final class EvidenceSyncAdapter implements SyncAdapter<ExpenseEvidence> {
   }
 
   void _applySyncResult(ExpenseEvidence entity, Map<String, dynamic> response) {
+    _checkCurrent();
     entity.remoteId = _requireRemoteId(response);
     entity.syncId = _parseRemoteString(response['sync_id']) ?? entity.syncId;
     entity.remoteVersion = _parseRemoteInt(response['version']) ?? 0;

@@ -116,6 +116,9 @@ void main() {
 
 final class _FakeAdapter implements SyncAdapter<String> {
   @override
+  String syncQueueKey(String entity) => entity;
+
+  @override
   final String entityName;
 
   @override

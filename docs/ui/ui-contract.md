@@ -5,7 +5,7 @@ in ADR 0002. Work logs are the default destination. A calendar day presents one
 primary work status; existing multiple entries remain available in day details.
 Do not delete or normalize historical entries to simplify presentation.
 
-## Visual baseline (2026-09-16)
+## Visual baseline (2026-10-02)
 
 Use one shared Material 3 theme builder for both brightness modes. Preserve
 paired dynamic foreground/background colors. Pages use surfaceContainerLowest,
@@ -16,6 +16,19 @@ Keep compact engineering input/output layouts and local-only photo semantics.
 Interactive controls should retain at least 48 logical pixels of touch height;
 large text should reflow rather than be globally clamped. Loading, failure,
 empty and partial-data states must remain distinguishable.
+
+The primary tabs share `AppTabHeader`, 48px action geometry and surface insets.
+Use the warm neutral / green palette and paired light/dark roles, 30px cards,
+28px groups, 22px controls, pill actions and a 36px sheet contour. Calendar cells
+keep date, lunar/festival/solar-term metadata and work status in separate layers.
+The calendar rebuild predicate must include asynchronously loaded day metadata.
+System text scaling remains enabled; short or narrow cells use responsive gaps
+and bounded multi-entry markers with full labels in semantics/tooltips.
+
+Tab changes preserve page/search/scroll state and move the existing navigation
+indicator. Local calendar changes update selected content without replaying the
+whole page entrance. Use `AppMotion.duration` for transitions and reset pressed
+state when a control becomes disabled during a gesture.
 
 ## UI Models May Edit
 

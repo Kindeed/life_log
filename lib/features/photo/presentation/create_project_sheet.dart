@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:life_log/common/widgets/app_button.dart';
+import 'package:life_log/common/widgets/app_unsaved_changes_guard.dart';
+import 'package:life_log/common/theme/app_motion.dart';
 import 'package:life_log/common/widgets/app_sheet_scaffold.dart';
 import 'package:life_log/common/widgets/app_text_field.dart';
 import 'package:life_log/core/di/service_locator.dart';
@@ -15,6 +17,12 @@ void showCreateProjectSheet(
   showModalBottomSheet<void>(
     context: context,
     isScrollControlled: true,
+    isDismissible: false,
+    enableDrag: false,
+    sheetAnimationStyle: AnimationStyle(
+      duration: AppMotion.duration(context, AppMotion.sheet),
+      reverseDuration: AppMotion.duration(context, AppMotion.normal),
+    ),
     backgroundColor: Colors.transparent,
     builder: (_) =>
         _CreateProjectSheet(initialName: initialName, onCreated: onCreated),
@@ -49,39 +57,48 @@ class _CreateProjectSheetState extends State<_CreateProjectSheet> {
 
   @override
   Widget build(BuildContext context) {
-    return AppSheetScaffold(
-      title: '创建项目',
-      padding: EdgeInsets.fromLTRB(24.w, 0, 24.w, 24.h),
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          AppTextField(
-            controller: _nameController,
-            autofocus: true,
-            labelText: '项目名称',
-            hintText: '输入项目名称',
-            prefixIcon: Icon(
-              Icons.folder_special_rounded,
-              color: Theme.of(context).colorScheme.onSurfaceVariant,
-            ),
+    return AppUnsavedChangesGuard(
+      busy: _isSaving,
+      hasChanges: _nameController.text != (widget.initialName ?? ''),
+      child: AbsorbPointer(
+        absorbing: _isSaving,
+        child: AppSheetScaffold(
+          title: '创建项目',
+          padding: EdgeInsets.fromLTRB(24.w, 0, 24.w, 24.h),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              AppTextField(
+                controller: _nameController,
+                onChanged: (_) => setState(() {}),
+                autofocus: true,
+                labelText: '项目名称',
+                hintText: '输入项目名称',
+                prefixIcon: Icon(
+                  Icons.folder_special_rounded,
+                  color: Theme.of(context).colorScheme.onSurfaceVariant,
+                ),
+              ),
+              SizedBox(height: 24.h),
+              SizedBox(
+                width: double.infinity,
+                child: AppButton.primary(
+                  label: '创建项目',
+                  onPressed: _isSaving ? null : _create,
+                  isLoading: _isSaving,
+                  height: 52.h,
+                ),
+              ),
+            ],
           ),
-          SizedBox(height: 24.h),
-          SizedBox(
-            width: double.infinity,
-            child: AppButton.primary(
-              label: '创建项目',
-              onPressed: _isSaving ? null : _create,
-              isLoading: _isSaving,
-              height: 52.h,
-            ),
-          ),
-        ],
+        ),
       ),
     );
   }
 
   Future<void> _create() async {
+    if (_isSaving) return;
     final name = _nameController.text.trim();
     final messenger = ScaffoldMessenger.of(context);
     final navigator = Navigator.of(context);
@@ -95,6 +112,7 @@ class _CreateProjectSheetState extends State<_CreateProjectSheet> {
       final result = await serviceLocator<CreateProjectEntry>().call(name);
       await result.when(
         success: (project) async {
+          if (!mounted) return;
           navigator.pop();
           if (widget.onCreated != null) {
             await widget.onCreated!(project);
@@ -104,6 +122,7 @@ class _CreateProjectSheetState extends State<_CreateProjectSheet> {
           );
         },
         failure: (failure) async {
+          if (!mounted) return;
           messenger.showSnackBar(SnackBar(content: Text(failure.message)));
         },
       );

@@ -104,7 +104,7 @@ void main() {
       ).readAsStringSync();
       final protocol = File('docs/sync-protocol.md').readAsStringSync();
 
-      expect(metadata, contains('localSchemaVersion = 2026062101'));
+      expect(metadata, contains('localSchemaVersion = 2026100101'));
       expect(metadata, contains('syncProtocolVersion = 2'));
       expect(metadata, contains("minimumSupportedAppVersion = '1.4.19'"));
       expect(metadata, contains('minimumSupportedBuildNumber = 25'));

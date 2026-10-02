@@ -4,27 +4,29 @@ import 'package:flutter/material.dart';
 /// 统一管理所有颜色常量，支持浅色/深色模式
 class AppColors {
   // --- 语义化主色调 (两种模式共用) ---
-  static const Color primaryBlue = Color(0xFF007AFF);
+  // Retain the public token name for existing callers; the approved palette
+  // uses a calm green seed and Material derives paired foreground colors.
+  static const Color primaryBlue = Color(0xFF426B5A);
   static const Color orange = Color(0xFFFF9F0A);
   static const Color purple = Color(0xFF9B5CFF);
   static const Color green = Color(0xFF30D158);
   static const Color cyan = Color(0xFF64D2FF);
 
   // --- 浅色模式 ---
-  static const Color lightBackground = Color(0xFFF5F6FA);
+  static const Color lightBackground = Color(0xFFF6F5F1);
   static const Color lightCard = Colors.white;
   static const Color lightTextPrimary = Color(0xFF1D1D1F);
   static const Color lightTextSecondary = Color(0xFF6B6B70);
   static const Color lightDivider = Color(0xFFE0E0E6);
-  static const Color lightMutedSurface = Color(0xFFF2F2F7);
+  static const Color lightMutedSurface = Color(0xFFEFEEE8);
 
   // --- 深色模式 ---
-  static const Color darkBackground = Color(0xFF101216);
-  static const Color darkCard = Color(0xFF191C22);
+  static const Color darkBackground = Color(0xFF171A17);
+  static const Color darkCard = Color(0xFF212621);
   static const Color darkTextPrimary = Color(0xFFFFFFFF);
   static const Color darkTextSecondary = Color(0xFFA1A1A6);
   static const Color darkDivider = Color(0xFF38383A);
-  static const Color darkMutedSurface = Color(0xFF2C2C2E);
+  static const Color darkMutedSurface = Color(0xFF2B322C);
 
   // --- 语义化颜色 (Material 3 Standard) ---
   // Error - Light

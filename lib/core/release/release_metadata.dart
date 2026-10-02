@@ -1,5 +1,5 @@
 final class ReleaseMetadata {
-  static const int localSchemaVersion = 2026062101;
+  static const int localSchemaVersion = 2026100101;
   static const int syncProtocolVersion = 2;
   static const String minimumSupportedAppVersion = '1.4.19';
   static const int minimumSupportedBuildNumber = 25;

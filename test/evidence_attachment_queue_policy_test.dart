@@ -73,7 +73,16 @@ void main() {
       expect(source, contains('_uploadEvidenceAttachment('));
       expect(source, contains('_deleteEvidenceAttachment('));
       expect(source, contains('getPendingEvidenceAttachmentsForSync('));
-      expect(source, contains('syncAttachment: _syncEvidenceAttachment'));
+      expect(
+        source,
+        matches(
+          RegExp(
+            r'syncAttachment:\s*\(attachment\)\s*=>\s*'
+            r'_syncEvidenceAttachment\(attachment, context: context\)',
+          ),
+        ),
+        reason: 'Attachment uploads must retain the captured sync context.',
+      );
       expect(source, contains('markEvidenceAttachmentUploaded('));
       expect(source, isNot(contains('_uploadEvidenceFile(')));
       expect(

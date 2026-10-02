@@ -5,7 +5,7 @@ import 'package:flutter_test/flutter_test.dart';
 void main() {
   group('EvidenceDao boundary', () {
     test(
-      'DbService delegates Evidence storage primitives to a feature DAO',
+      'DbService uses feature DAO reads and owner-fenced Evidence mutations',
       () {
         final daoFile = File('lib/features/evidence/data/evidence_dao.dart');
         final dbService = File(
@@ -40,12 +40,19 @@ void main() {
         expect(dbService, contains('late EvidenceDao _evidenceDao'));
         expect(dbService, contains('_evidenceDao = EvidenceDao(database)'));
         expect(dbService, contains('_evidenceDao.getActiveSortedForOwner('));
-        expect(dbService, contains('_evidenceDao.getPendingForSyncForOwner('));
+        expect(
+          dbService,
+          contains('_evidenceDao.getPendingForSyncForOwner(owner)'),
+        );
+        expect(dbService, contains('_preparePendingSyncRows('));
         expect(dbService, contains('_evidenceDao.getById('));
         expect(dbService, contains('syncIdEqualTo(syncId)'));
         expect(dbService, contains('_firstForCurrentOwner'));
         expect(dbService, contains('_evidenceDao.watch()'));
-        expect(dbService, contains('_evidenceDao.delete('));
+        expect(dbService, contains('Future<void> purgeDeletedEvidence('));
+        expect(dbService, contains('_syncWrite(context, (owner) async'));
+        expect(dbService, contains('live.ownerUserId != owner'));
+        expect(dbService, contains('await isar.expenseEvidences.delete(id)'));
       },
     );
   });

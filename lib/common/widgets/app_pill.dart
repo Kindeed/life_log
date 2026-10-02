@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../theme/app_radius.dart';
+import '../theme/app_motion.dart';
 import '../theme/app_spacing.dart';
 
 class AppPill extends StatelessWidget {
@@ -21,15 +22,15 @@ class AppPill extends StatelessWidget {
   Widget build(BuildContext context) {
     final tint = selected ? 0.14 : 0.08;
     return AnimatedContainer(
-      duration: const Duration(milliseconds: 160),
-      curve: Curves.easeOutCubic,
+      duration: AppMotion.duration(context, AppMotion.fast),
+      curve: AppMotion.standardDecelerate,
       padding: const EdgeInsets.symmetric(
         horizontal: AppSpacing.md,
         vertical: AppSpacing.xs,
       ),
       decoration: BoxDecoration(
         color: color.withValues(alpha: tint),
-        borderRadius: BorderRadius.circular(AppRadius.lg),
+        borderRadius: BorderRadius.circular(AppRadius.pill),
         border: selected
             ? Border.all(color: color.withValues(alpha: 0.5))
             : null,

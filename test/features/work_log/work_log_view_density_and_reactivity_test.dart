@@ -133,7 +133,7 @@ void main() {
       await tester.pumpAndSettle();
 
       expect(find.text('这天还没有记录'), findsOneWidget);
-      expect(find.text('使用右下角「记工时」添加工作、出差、请假或休息。'), findsOneWidget);
+      expect(find.text('使用上方「记工时」添加工作、出差、请假或休息。'), findsOneWidget);
       expect(find.byIcon(Icons.edit_calendar_rounded), findsWidgets);
     },
   );

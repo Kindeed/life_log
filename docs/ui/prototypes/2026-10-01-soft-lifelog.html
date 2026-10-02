@@ -1,0 +1,586 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="color-scheme" content="light dark">
+  <title>LifeLog 柔和界面交互样稿</title>
+  <style>
+    :root { color-scheme:light; --canvas:#efede7; --bg:#f6f5f1; --surface:#fff; --muted:#efefe9; --text:#242923; --secondary:#687168; --line:#e5e8e0; --accent:#426b5a; --accent-on:#fff; --tint:#e6eee5; --orange:#94643a; --orange-tint:#f4ebdf; --purple:#79538c; --purple-tint:#f0e9f4; --blue:#476d92; --blue-tint:#e8eff6; --radius-card:30px; --radius-group:28px; --radius-control:22px; --radius-pill:999px; --shadow:0 16px 40px #283e2d0d; --fast:140ms; --normal:240ms; --sheet:300ms; }
+    :root[data-theme="dark"] { color-scheme:dark; --canvas:#191c19; --bg:#1d211e; --surface:#272d28; --muted:#303730; --text:#eff1e9; --secondary:#b0b9ad; --line:#3b443c; --accent:#acd1b3; --accent-on:#193624; --tint:#32473a; --orange:#e3bb91; --orange-tint:#43382a; --purple:#d6b5e6; --purple-tint:#413147; --blue:#adcae8; --blue-tint:#2c3d4c; --shadow:0 16px 40px #0002; }
+    * { box-sizing:border-box; }
+    body { margin:0; font-family:Inter,"Noto Sans CJK SC","PingFang SC","Microsoft YaHei",sans-serif; background:var(--canvas); color:var(--text); -webkit-font-smoothing:antialiased; font-size:15px; }
+    button,input,textarea { font:inherit; }
+    button { cursor:pointer; touch-action:manipulation; -webkit-tap-highlight-color:transparent; }
+    button:disabled { cursor:wait; opacity:.65; }
+    button,input,textarea { outline-offset:4px; }
+    :focus-visible { outline:2px solid var(--accent); }
+    button { border:0; color:inherit; background:none; }
+    svg { width:22px; height:22px; stroke:currentColor; stroke-width:1.7; fill:none; stroke-linecap:round; stroke-linejoin:round; flex-shrink:0; }
+    .studio { max-width:1320px; margin:auto; padding:38px 36px 32px; }
+    .studio-top { display:flex; align-items:center; justify-content:space-between; gap:24px; margin-bottom:30px; }
+    .brand { display:flex; gap:12px; align-items:center; }
+    .brand-mark { width:44px; height:44px; display:grid; place-items:center; background:var(--accent); color:var(--accent-on); border-radius:var(--radius-pill); }
+    .brand h1 { margin:0; font-size:21px; font-weight:650; letter-spacing:-.5px; }
+    .brand p { font-size:12px; color:var(--secondary); margin:3px 0 0; }
+    .studio-controls { display:flex; gap:8px; flex-wrap:wrap; }
+    .studio-controls button { display:flex; align-items:center; justify-content:center; gap:6px; padding:0 16px; min-height:48px; border:1px solid var(--line); background:var(--surface); border-radius:99px; font-size:13px; }
+    .phones { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:28px; align-items:start; }
+    .phone-label { display:flex; align-items:center; justify-content:space-between; margin:0 8px 12px; font-size:13px; }
+    .phone-label span { color:var(--secondary); font-size:11px; }
+    iframe { display:block; width:100%; height:906px; border:1px solid var(--line); border-radius:40px; box-shadow:var(--shadow); background:var(--bg); }
+    .studio-note { color:var(--secondary); margin:22px 8px 0; font-size:12px; line-height:1.8; }
+    body.embedded { background:var(--bg); }
+    .app { height:100dvh; max-width:600px; margin:auto; position:relative; overflow:hidden; display:flex; flex-direction:column; background:var(--bg); }
+    .status { padding:15px 24px 12px; height:44px; display:flex; justify-content:space-between; align-items:center; font-size:12px; font-weight:650; flex-shrink:0; }
+    .status-icons { display:flex; align-items:center; gap:5px; }
+    .status svg { height:14px; width:14px; }
+    .status .battery { width:20px; height:10px; border:1.2px solid currentColor; border-radius:3px; padding:1px; }
+    .battery:after { content:""; display:block; width:80%; height:100%; background:currentColor; border-radius:1px; }
+    .scroll { flex:1; min-height:0; overflow:auto; scrollbar-width:none; padding:12px 22px 95px; overscroll-behavior:contain; }
+    .scroll::-webkit-scrollbar { display:none; }
+    button { transition:transform var(--fast) ease-out,background var(--fast),color var(--fast); }
+    button:active:not(:disabled) { transform:scale(.97); }
+    .page { min-height:100%; }
+    @keyframes appear { from { opacity:.4; transform:translateY(6px); } to { opacity:1; transform:none; } }
+    .page-heading { display:flex; align-items:center; justify-content:space-between; gap:12px; min-height:60px; margin-bottom:24px; }
+    .page-action-slot { display:flex; align-items:center; flex-shrink:0; }
+    .eyebrow { color:var(--secondary); font-size:12px; margin:0 0 4px; }
+    h2 { margin:0; font-size:27px; line-height:1.35; letter-spacing:-.7px; font-weight:650; }
+    .icon-button { width:48px; height:48px; min-width:48px; border-radius:50%; display:flex; align-items:center; justify-content:center; transition:background var(--fast); }
+    .icon-button:hover { background:var(--muted); }
+    .avatar { width:44px; height:44px; border-radius:50%; background:var(--tint); color:var(--accent); display:grid; place-items:center; font-size:16px; font-weight:600; }
+    .summary { background:var(--surface); border:1px solid var(--line); border-radius:var(--radius-card); padding:22px 22px 20px; margin-bottom:23px; }
+    .summary-head { display:flex; justify-content:space-between; align-items:center; color:var(--secondary); font-size:13px; margin-bottom:14px; }
+    .small-status { display:inline-flex; gap:5px; align-items:center; font-size:11px; }
+    .dot { width:5px; height:5px; border-radius:50%; background:var(--accent); display:inline-block; }
+    .big-number { font-size:38px; font-weight:550; letter-spacing:-1.5px; line-height:1.1; font-variant-numeric:tabular-nums; }
+    .big-number span { color:var(--secondary); font-size:14px; font-weight:400; margin-left:8px; letter-spacing:0; }
+    .summary-foot { display:flex; gap:20px; color:var(--secondary); font-size:12px; margin-top:18px; }
+    .summary-foot b { font-weight:550; color:var(--text); margin-left:5px; }
+    .summary-foot .divider { width:1px; background:var(--line); }
+    .calendar-head { display:flex; justify-content:space-between; align-items:center; margin-bottom:5px; gap:6px; }
+    .month-button { min-height:48px; display:flex; align-items:center; gap:7px; padding:0; font-size:16px; font-weight:600; }
+    .month-button svg { width:16px; }
+    .segment { background:var(--muted); display:flex; padding:3px; border-radius:var(--radius-pill); gap:0; }
+    .segment button { min-height:42px; min-width:48px; font-size:12px; border-radius:var(--radius-pill); transition:background var(--normal),color var(--normal),box-shadow var(--normal); }
+    .segment button.active { background:var(--surface); box-shadow:0 2px 5px #00000008; color:var(--accent); font-weight:600; }
+    .weekdays,.days { display:grid; grid-template-columns:repeat(7,minmax(0,1fr)); }
+    .weekdays span { text-align:center; color:var(--secondary); padding:8px 0; font-size:11px; }
+    .weekdays span:nth-last-child(-n+2) { color:var(--orange); }
+    .days { gap:3px 1px; }
+    .day { min-width:0; min-height:72px; display:flex; flex-direction:column; justify-content:center; align-items:center; gap:5px; border-radius:var(--radius-control); font-size:13px; padding:12px 2px 8px; position:relative; transition:background var(--fast),color var(--fast); }
+    .day:hover { background:var(--muted); }
+    .day.selected { background:var(--accent); color:var(--accent-on); }
+    .day-number { font-size:15px; line-height:16px; font-weight:600; }
+    .day-lunar { font-size:10px; line-height:12px; color:var(--secondary); max-width:100%; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+    .day-lunar.season { color:var(--accent); font-weight:550; }
+    .day-lunar.festival { color:var(--orange); font-weight:550; }
+    .day-status { display:inline-flex; align-items:center; justify-content:center; gap:2px; border-radius:var(--radius-pill); font-size:10px; line-height:14px; min-height:16px; padding:1px 4px; color:var(--accent); background:var(--tint); max-width:100%; white-space:nowrap; }
+    .day-status.overtime,.day-status.leave { color:var(--purple); background:var(--purple-tint); }
+    .day-status.trip { color:var(--orange); background:var(--orange-tint); }
+    .day-status.rest { color:var(--blue); background:var(--blue-tint); }
+    .day-status.unrecorded { color:var(--secondary); background:none; }
+    .day-extra { font-size:8px; font-weight:600; }
+    .day-holiday { position:absolute; top:2px; right:2px; min-width:14px; height:14px; display:grid; place-items:center; font-size:8px; line-height:1; border-radius:var(--radius-pill); color:var(--orange); background:var(--orange-tint); }
+    .day-holiday.workday { color:var(--secondary); background:var(--muted); }
+    .day.today { box-shadow:inset 0 0 0 1.5px var(--accent); background:var(--tint); }
+    .day.today.selected { background:var(--accent); }
+    .day.selected .day-lunar { color:var(--accent-on); opacity:.9; }
+    .day.selected .day-status,.day.selected .day-holiday { color:var(--accent-on); background:color-mix(in srgb,var(--accent-on) 15%,transparent); }
+    .day.faint { opacity:.38; pointer-events:none; }
+    .calendar { margin:0 0 20px; padding:10px 10px 12px; background:var(--surface); border:1px solid var(--line); border-radius:var(--radius-card); }
+    .calendar-legend { display:flex; flex-wrap:wrap; gap:6px 12px; padding:13px 4px 1px; margin-top:6px; border-top:1px solid var(--line); font-size:9px; color:var(--secondary); }
+    .calendar-legend span { display:inline-flex; align-items:center; gap:4px; }
+    .calendar-legend i { width:5px; height:5px; border-radius:var(--radius-pill); background:var(--accent); }
+    .calendar-legend .trip { background:var(--orange); }.calendar-legend .leave { background:var(--purple); }.calendar-legend .rest { background:var(--blue); }
+    .overview { padding:14px 20px; margin-bottom:18px; }
+    .overview .summary-head { margin-bottom:6px; }
+    .work-summary .small-status { display:none; }
+    .work-summary .big-number { font-size:31px; }
+    .work-summary .summary-foot { margin-top:8px; gap:13px; }
+    .selected-day-meta { font-size:11px; color:var(--secondary); margin:-5px 0 12px; line-height:1.7; }
+    .section-head { display:flex; align-items:center; justify-content:space-between; gap:8px; margin:22px 0 12px; }
+    .section-head h3 { font-size:15px; font-weight:600; margin:0; }
+    .section-head span { font-size:11px; color:var(--secondary); }
+    .row-group { background:var(--surface); border-radius:var(--radius-group); padding:0 16px; border:1px solid var(--line); overflow:hidden; }
+    .record-row { width:100%; min-height:78px; display:flex; align-items:center; gap:12px; text-align:left; padding:15px 0; }
+    .record-row + .record-row { border-top:1px solid var(--line); }
+    .row-icon { height:40px; width:40px; min-width:40px; display:grid; place-items:center; border-radius:var(--radius-pill); background:var(--tint); color:var(--accent); }
+    .row-icon.orange { background:var(--orange-tint); color:var(--orange); }
+    .row-main { flex:1; min-width:0; }
+    .row-title { font-size:14px; font-weight:550; overflow-wrap:anywhere; }
+    .row-sub { color:var(--secondary); font-size:11px; margin-top:5px; line-height:1.5; }
+    .row-tail { font-size:16px; font-weight:550; white-space:nowrap; font-variant-numeric:tabular-nums; }
+    .row-tail small { font-size:11px; font-weight:400; color:var(--secondary); }
+    .nav { position:relative; height:80px; flex-shrink:0; background:var(--surface); border-top:1px solid var(--line); display:flex; align-items:center; justify-content:space-around; padding:5px 18px 12px; }
+    .nav button { position:relative; z-index:1; flex:1; min-height:54px; display:flex; align-items:center; flex-direction:column; gap:5px; color:var(--secondary); font-size:11px; }
+    .nav .nav-icon { width:54px; height:30px; display:grid; place-items:center; border-radius:var(--radius-pill); transition:background var(--normal),color var(--normal); }
+    .nav button.active { color:var(--accent); font-weight:600; }
+    .nav-indicator { position:absolute; left:0; top:0; width:54px; height:30px; border-radius:var(--radius-pill); background:var(--tint); pointer-events:none; transition:transform var(--normal) cubic-bezier(.2,.8,.2,1); }
+    .fab { position:absolute; right:22px; bottom:99px; display:flex; align-items:center; gap:7px; min-height:52px; padding:0 19px; border-radius:var(--radius-pill); background:var(--accent); color:var(--accent-on); font-size:13px; font-weight:550; box-shadow:0 8px 20px #365b3926; transition:transform var(--fast),filter var(--fast); z-index:3; }
+    .fab:hover { filter:brightness(1.06); }
+    .fab:active { transform:scale(.98); }
+    .header-action { position:static; display:flex; align-items:center; justify-content:center; gap:7px; min-height:48px; padding:0 16px; font-size:12px; font-weight:550; border-radius:var(--radius-pill); box-shadow:none; flex-shrink:0; }
+    .header-action svg { width:18px; height:18px; }
+    .secondary-action { background:var(--muted); color:var(--accent); }
+    .search { display:flex; align-items:center; gap:10px; background:var(--muted); border-radius:var(--radius-pill); padding:0 16px; min-height:48px; margin:16px 0; }
+    .search svg { width:18px; color:var(--secondary); }
+    .search input { min-width:0; flex:1; width:100%; border:0; background:none; color:var(--text); font-size:13px; padding:12px 0; }
+    .search input::placeholder { color:var(--secondary); }
+    .project-summary { display:flex; gap:24px; padding:5px 0; }
+    .project-summary b { font-size:26px; font-weight:550; font-variant-numeric:tabular-nums; }
+    .project-summary span { color:var(--secondary); font-size:12px; margin-left:6px; }
+    .chips { display:flex; gap:6px; margin:12px 0 16px; flex-wrap:wrap; }
+    .chip { min-height:48px; padding:0 15px; border-radius:99px; color:var(--secondary); font-size:12px; transition:background var(--fast); }
+    .chip.active { color:var(--accent); background:var(--tint); font-weight:600; }
+    .project { background:var(--surface); padding:18px; border:1px solid var(--line); border-radius:var(--radius-card); margin-bottom:12px; width:100%; text-align:left; transition:transform var(--fast),box-shadow var(--fast); }
+    .project:hover { transform:translateY(-2px); box-shadow:var(--shadow); }
+    .project-top { display:flex; gap:12px; align-items:center; }
+    .project-monogram { width:48px; height:48px; background:var(--tint); border-radius:var(--radius-pill); display:grid; place-items:center; color:var(--accent); font-size:18px; }
+    .project h3 { font-size:15px; font-weight:600; margin:0 0 5px; }
+    .project p { color:var(--secondary); font-size:11px; margin:0; }
+    .badge { display:inline-flex; padding:4px 10px; border-radius:var(--radius-pill); font-size:10px; background:var(--muted); color:var(--secondary); white-space:nowrap; }
+    .project-info { display:flex; gap:18px; margin-top:17px; color:var(--secondary); font-size:11px; }
+    .project-info span { display:flex; align-items:center; gap:5px; }
+    .project-info svg { width:14px; height:14px; }
+    .project-bottom { margin-top:16px; padding-top:13px; border-top:1px solid var(--line); display:flex; align-items:center; justify-content:space-between; font-size:11px; color:var(--secondary); }
+    .project-bottom b { color:var(--text); font-size:13px; font-weight:550; }
+    .chevron { width:17px; color:var(--secondary); }
+    .account { display:flex; gap:14px; align-items:center; padding:20px; background:var(--surface); border:1px solid var(--line); border-radius:var(--radius-card); margin-bottom:18px; }
+    .account .avatar { height:54px; width:54px; }
+    .account h3 { font-size:17px; margin:0; font-weight:600; }
+    .settings .record-row { min-height:66px; }
+    .settings .row-icon { width:36px; height:36px; min-width:36px; border-radius:var(--radius-pill); }
+    .settings .row-icon svg { width:18px; height:18px; }
+    .settings .row-title { font-size:13px; }
+    .quiet-note { text-align:center; font-size:10px; color:var(--secondary); margin:24px 0; }
+    .back-heading { margin:-2px -8px 20px; display:flex; align-items:center; justify-content:space-between; }
+    .detail-name { font-size:26px; font-weight:600; margin-bottom:8px; }
+    .detail-meta { display:flex; align-items:center; gap:8px; font-size:12px; color:var(--secondary); margin-bottom:23px; }
+    .detail-tabs { display:flex; border-bottom:1px solid var(--line); margin:20px 0; }
+    .detail-tabs button { flex:1; height:48px; font-size:13px; color:var(--secondary); position:relative; }
+    .detail-tabs button.active { color:var(--accent); font-weight:600; }
+    .detail-tabs button.active:after { content:""; background:var(--accent); height:3px; width:24px; border-radius:3px; position:absolute; bottom:-1px; left:calc(50% - 12px); }
+    .photo-grid { display:grid; grid-template-columns:repeat(2,1fr); gap:10px; }
+    .photo-placeholder { aspect-ratio:1; background:var(--muted); border-radius:var(--radius-group); display:flex; align-items:center; justify-content:center; flex-direction:column; gap:8px; color:var(--secondary); font-size:11px; }
+    .photo-placeholder svg { width:32px; height:32px; }
+    .empty { text-align:center; padding:32px 16px; color:var(--secondary); line-height:1.8; font-size:13px; }
+    .empty strong { display:block; color:var(--text); font-weight:550; margin-bottom:5px; }
+    #modal { position:absolute; inset:0; z-index:10; }
+    .overlay { position:absolute; inset:0; z-index:10; background:#131e1960; display:flex; align-items:flex-end; }
+    .sheet { background:var(--surface); width:100%; max-height:92%; border-radius:36px 36px 0 0; padding:0 22px 26px; display:flex; flex-direction:column; box-shadow:0 -10px 50px #0001; }
+    .handle { height:28px; margin:0 -22px; display:flex; align-items:center; justify-content:center; flex-shrink:0; touch-action:none; }
+    .handle:after { content:""; width:32px; height:4px; background:var(--line); border-radius:4px; }
+    .sheet-title { display:flex; align-items:center; justify-content:space-between; margin:0 0 8px; }
+    .sheet h3 { margin:0; font-size:22px; font-weight:600; }
+    .sheet-body { overflow:auto; padding:0 0 16px; }
+    .sheet label { color:var(--secondary); font-size:12px; display:block; margin:16px 0 8px; }
+    .sheet input,.sheet textarea { width:100%; min-height:52px; border:1px solid var(--line); border-radius:var(--radius-control); background:var(--bg); color:var(--text); padding:14px; outline-offset:2px; }
+    .sheet textarea { min-height:84px; resize:vertical; }
+    .type-picker { display:grid; grid-template-columns:repeat(4,minmax(0,1fr)); gap:6px; margin-bottom:4px; }
+    .type-picker button { min-height:68px; border-radius:var(--radius-control); background:var(--bg); display:flex; align-items:center; flex-direction:column; justify-content:center; gap:6px; font-size:12px; border:1px solid transparent; }
+    .type-picker button.active { background:var(--tint); color:var(--accent); border-color:var(--accent); }
+    .type-picker svg { width:20px; height:20px; }
+    .form-pair { display:grid; grid-template-columns:1.2fr 1fr; gap:12px; }
+    .primary { width:100%; min-height:52px; border-radius:var(--radius-pill); background:var(--accent); color:var(--accent-on); font-weight:550; font-size:14px; display:flex; align-items:center; justify-content:center; gap:8px; }
+    .secondary-button { width:100%; min-height:48px; margin-top:10px; border-radius:var(--radius-pill); background:var(--muted); font-size:13px; }
+    .form-info { color:var(--secondary); font-size:11px; line-height:1.7; margin:12px 0 0; }
+    .form-error { color:var(--orange); font-size:12px; min-height:20px; margin:8px 0; }
+    .toast { position:absolute; z-index:20; left:22px; right:22px; bottom:97px; background:var(--text); color:var(--bg); padding:14px 18px; border-radius:var(--radius-pill); box-shadow:var(--shadow); font-size:12px; animation:appear var(--normal) ease-out; pointer-events:none; }
+    .spinner { width:16px; height:16px; border:2px solid currentColor; border-right-color:transparent; border-radius:50%; animation:spin 700ms linear infinite; }
+    @keyframes spin { to { transform:rotate(360deg); } }
+    [hidden] { display:none!important; }
+    @media(max-width:1050px) { .phones { gap:16px; } .studio { padding:24px 18px; } }
+    @media(max-width:800px) { .phones { grid-template-columns:minmax(0,390px); justify-content:center; gap:28px; } .studio-top { align-items:flex-start; flex-direction:column; gap:16px; } }
+    @media(prefers-reduced-motion:reduce) { *,*::before,*::after { animation:none!important; transition:none!important; scroll-behavior:auto!important; } }
+  </style>
+</head>
+<body>
+  <main class="studio" id="studio" hidden>
+    <header class="studio-top">
+      <div class="brand"><span class="brand-mark" data-icon="leaf"></span><div><h1>LifeLog</h1><p>柔和界面 · 交互样稿</p></div></div>
+      <div class="studio-controls"><button id="theme-toggle" aria-pressed="false"><span data-icon="moon"></span>深色模式</button><button id="reset-demo"><span data-icon="refresh"></span>重置示例</button></div>
+    </header>
+    <section class="phones" aria-label="三个可交互页面">
+      <div><div class="phone-label">01 工时<span>日期选择 · 编辑弹窗</span></div><iframe title="工时页面样稿" id="frame-work"></iframe></div>
+      <div><div class="phone-label">02 项目<span>搜索筛选 · 项目详情</span></div><iframe title="项目页面样稿" id="frame-projects"></iframe></div>
+      <div><div class="phone-label">03 更多<span>分组列表 · 状态反馈</span></div><iframe title="更多页面样稿" id="frame-more"></iframe></div>
+    </section>
+    <p class="studio-note">点击样稿试用：三栏切换、项目详情进退、弹窗打开与下拉关闭；选择日期、切换周月、搜索项目、记工时并保存。记录与班休标注使用布局示例，刷新即恢复；不连接数据库或云端。可按 Tab 访问操作，按 Esc 关闭弹窗；尊重系统减少动态效果设置。</p>
+  </main>
+  <div class="app" id="app" hidden>
+    <div class="status" aria-hidden="true"><span>9:41</span><span class="status-icons"><span data-icon="signal"></span><span data-icon="wifi"></span><span class="battery"></span></span></div>
+    <main class="scroll" id="content" aria-label="页面内容"></main>
+    <button class="fab" id="fab"></button>
+    <nav class="nav" aria-label="主要导航">
+      <span class="nav-indicator" aria-hidden="true"></span>
+      <button data-page="work"><span class="nav-icon" data-icon="calendar"></span><span>工时</span></button>
+      <button data-page="projects"><span class="nav-icon" data-icon="folder"></span><span>项目</span></button>
+      <button data-page="more"><span class="nav-icon" data-icon="grid"></span><span>更多</span></button>
+    </nav>
+    <div id="modal" hidden></div>
+    <div class="toast" id="toast" role="status" hidden></div>
+  </div>
+  <script>
+    const paths = {
+      leaf:'<path d="M19 4c-8-1-15 4-13 11 7 3 14-4 13-11Z"/><path d="m5 20 9-10"/>',
+      calendar:'<rect x="3" y="5" width="18" height="16" rx="4"/><path d="M7 3v4m10-4v4M3 10h18m-13 5h2m4 0h2"/>',
+      folder:'<path d="M3 8V6a2 2 0 0 1 2-2h5l2 3h7a2 2 0 0 1 2 2v10a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2Z"/>',
+      grid:'<rect x="3" y="3" width="7" height="7" rx="2"/><rect x="14" y="3" width="7" height="7" rx="2"/><rect x="3" y="14" width="7" height="7" rx="2"/><rect x="14" y="14" width="7" height="7" rx="2"/>',
+      plus:'<path d="M12 5v14M5 12h14"/>', edit:'<path d="m16 3 5 5-12 12-6 1 1-6Z"/><path d="m13 6 5 5"/>',
+      arrow:'<path d="m9 5 7 7-7 7"/>', down:'<path d="m7 10 5 5 5-5"/>', back:'<path d="m14 5-7 7 7 7"/>',
+      briefcase:'<rect x="3" y="7" width="18" height="14" rx="3"/><path d="M8 7V4h8v3M3 12c6 4 12 4 18 0m-9 0v3"/>',
+      train:'<rect x="6" y="3" width="12" height="16" rx="4"/><path d="M6 10h12m-9 4h.1m5.9 0h.1M8 21l2-2m6 2-2-2"/>',
+      sun:'<circle cx="12" cy="12" r="4"/><path d="M12 2v2m0 16v2M2 12h2m16 0h2M5 5l1.5 1.5M17.5 17.5 19 19M5 19l1.5-1.5M17.5 6.5 19 5"/>',
+      coffee:'<path d="M4 9h12v7a4 4 0 0 1-4 4H8a4 4 0 0 1-4-4Zm12 1h3a3 3 0 0 1 0 6h-3M7 3v3m5-3v3"/>',
+      receipt:'<path d="M5 3v18l3-2 4 2 4-2 3 2V3Z"/><path d="M9 8h6m-6 4h6m-6 4h3"/>',
+      image:'<rect x="3" y="3" width="18" height="18" rx="4"/><circle cx="9" cy="8" r="1.5"/><path d="m3 17 6-5 4 4 4-5 4 6"/>',
+      search:'<circle cx="10.5" cy="10.5" r="6.5"/><path d="m16 16 5 5"/>',
+      moon:'<path d="M20 15A9 9 0 0 1 9 4a9 9 0 1 0 11 11Z"/>',
+      refresh:'<path d="M20 8a8 8 0 0 0-14-3L3 8m0-5v5h5m-4 8a8 8 0 0 0 14 3l3-3m0 5v-5h-5"/>',
+      chart:'<path d="M4 3v18h17M9 16v-5m5 5V7m5 9V4"/>',
+      card:'<rect x="3" y="5" width="18" height="14" rx="3"/><path d="M3 10h18M7 15h3"/>',
+      box:'<path d="m12 3 9 5v8l-9 5-9-5V8Zm-9 5 9 5 9-5m-9 5v8m-5-16 10 5"/>',
+      clock:'<circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/>',
+      close:'<path d="m6 6 12 12M6 18 18 6"/>', dots:'<circle cx="5" cy="12" r="1"/><circle cx="12" cy="12" r="1"/><circle cx="19" cy="12" r="1"/>',
+      check:'<path d="m5 12 4 4L19 6"/>', shield:'<path d="m12 3 8 3v6c0 5-8 9-8 9S4 17 4 12V6Z"/><path d="m8 12 3 3 5-6"/>',
+      signal:'<path d="M4 19v-3m5 3v-7m5 7V8m5 11V4"/>', wifi:'<path d="M3 8a14 14 0 0 1 18 0M6 12a9 9 0 0 1 12 0m-9 4a4 4 0 0 1 6 0m-3 4h.1"/>'
+    };
+    const icon = name => `<svg viewBox="0 0 24 24" aria-hidden="true">${paths[name] || paths.folder}</svg>`;
+    const icons = scope => scope.querySelectorAll('[data-icon]').forEach(el => el.innerHTML = icon(el.dataset.icon));
+    const escapeHtml = value => String(value).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+    const params = new URLSearchParams(location.search);
+    const embedded = params.get('embed') === '1';
+    const setTheme = theme => document.documentElement.dataset.theme = theme;
+    setTheme(params.get('theme') === 'dark' ? 'dark' : 'light');
+    icons(document);
+    if (!embedded) {
+      document.getElementById('studio').hidden = false;
+      let dark = false;
+      const frames = ['work','projects','more'].map(page => {
+        const frame = document.getElementById(`frame-${page}`);
+        const url = new URL(location.href); url.search = `?embed=1&screen=${page}`;
+        frame.src = url.href; return frame;
+      });
+      document.getElementById('theme-toggle').onclick = event => {
+        dark = !dark; setTheme(dark ? 'dark' : 'light');
+        frames.forEach(frame => frame.contentWindow.postMessage({type:'theme',theme:dark?'dark':'light'},'*'));
+        const button = event.currentTarget;
+        button.setAttribute('aria-pressed',String(dark));
+        button.innerHTML = `${icon(dark?'sun':'moon')}${dark?'浅色模式':'深色模式'}`;
+      };
+      document.getElementById('reset-demo').onclick = () => frames.forEach(frame => {
+        const url = new URL(frame.src); url.searchParams.set('theme',dark?'dark':'light'); frame.src = url.href;
+      });
+    } else {
+      document.body.classList.add('embedded');
+      document.getElementById('app').hidden = false;
+      window.addEventListener('message', event => {
+        if (event.source !== window.parent) return;
+        if (event.data?.type === 'theme') setTheme(event.data.theme === 'dark' ? 'dark' : 'light');
+      });
+      const content = document.getElementById('content');
+      const fab = document.getElementById('fab');
+      const modal = document.getElementById('modal');
+      let page = ['work','projects','more'].includes(params.get('screen')) ? params.get('screen') : 'work';
+      let selectedDay = 28, calendarMonth = 8, span = 'month', projectFilter = 'all', projectQuery = '', currentProject = null, detailTab = 'records';
+      let previousFocus, toastTimer, busy = false, formDirty = false, editType = 'work', editingRow = null, closing = false;
+      let renderedPage = null, routeAnimation = null, sheetAnimation = null;
+      const scrollPositions = {work:0,projects:0,more:0,detail:0};
+      const nav = document.querySelector('.nav');
+      const reducedMotion = matchMedia('(prefers-reduced-motion: reduce)');
+      const motion = {fast:140,normal:240,sheet:300,easing:'cubic-bezier(.2,.8,.2,1)'};
+      // Interaction principles checked against Telegram Web A's Transition,
+      // TabList and Modal. LifeLog timings/geometry are our own adaptation.
+      function animateNode(node,frames,duration=motion.normal) {
+        if(!node || reducedMotion.matches) return null;
+        return node.animate(frames,{duration,easing:motion.easing});
+      }
+      function restoreControl(selector) {
+        content.querySelector(selector)?.focus({preventScroll:true});
+      }
+      function updateNavigation() {
+        nav.querySelectorAll('button').forEach(el=>{ const active=el.dataset.page===(page==='detail'?'projects':page); el.classList.toggle('active',active); el.setAttribute('aria-current',active?'page':'false'); });
+        const target=nav.querySelector('.active .nav-icon'), indicator=nav.querySelector('.nav-indicator');
+        const parent=nav.getBoundingClientRect(), rect=target.getBoundingClientRect();
+        indicator.style.transform=`translate(${rect.left-parent.left}px,${rect.top-parent.top}px)`;
+      }
+      function navigate(next) {
+        if(next===page) return;
+        const old=page;
+        scrollPositions[old]=content.scrollTop;
+        page=next;
+        render(false);
+        content.scrollTop=scrollPositions[next]||0;
+        if(next==='projects'&&old==='detail'&&currentProject) restoreControl(`[data-project="${currentProject.id}"]`);
+      }
+      const records = [
+        {id:1,day:28,month:8,type:'work',title:'日常工作',subtitle:'北辰项目 · 现场调试',hours:8,note:'完成设备联调与现场检查'},
+        {id:2,day:28,month:8,type:'trip',title:'出差 · 杭州',subtitle:'北辰项目 · 交通垫付 ¥128',hours:null,note:'往返现场'},
+        {id:3,day:29,month:8,type:'work',title:'日常工作',subtitle:'北辰项目 · 数据整理',hours:8,note:''}
+      ];
+      // Explicit editable fixtures keep calendar labels, day details and totals
+      // consistent. Holiday/solar-term labels below are design fixtures only.
+      const workFixtureDays = [1,2,3,4,7,8,9,10,11,14,15,16,17,18,21,22,24];
+      workFixtureDays.forEach(day => records.push({id:100+day,day,month:8,type:'work',title:'日常工作',subtitle:'北辰项目 · 现场工作',hours:[7,18].includes(day)?10:8,note:''}));
+      [5,6,12,13,19,26].forEach(day => records.push({id:200+day,day,month:8,type:'rest',title:'休息',subtitle:'休息日',hours:null,note:''}));
+      records.push({id:323,day:23,month:8,type:'leave',title:'年假',subtitle:'已记录 · 全天请假',hours:null,note:'年假'});
+      records.push({id:324,day:24,month:8,type:'trip',title:'出差 · 杭州',subtitle:'北辰项目 · 现场联调',hours:null,note:''});
+      const referenceDate = {year:2026,month:9,day:1};
+      const lunarFormatter = new Intl.DateTimeFormat('zh-CN-u-ca-chinese',{month:'long',day:'numeric',timeZone:'Asia/Shanghai'});
+      const lunarDayNames = ['','初一','初二','初三','初四','初五','初六','初七','初八','初九','初十','十一','十二','十三','十四','十五','十六','十七','十八','十九','二十','廿一','廿二','廿三','廿四','廿五','廿六','廿七','廿八','廿九','三十'];
+      function dayMetadata(date) {
+        const parts = lunarFormatter.formatToParts(date);
+        const lunarMonth = parts.find(p=>p.type==='month')?.value || '';
+        const lunarDay = Number(parts.find(p=>p.type==='day')?.value);
+        const lunarText = lunarDayNames[lunarDay] || '';
+        const month = date.getUTCMonth(), day = date.getUTCDate();
+        const key = `${month+1}-${day}`;
+        const special = {'9-7':['白露','season'],'9-23':['秋分','season'],'9-25':['中秋节','festival'],'10-1':['国庆节','festival'],'10-8':['寒露','season'],'10-23':['霜降','season']}[key];
+        const holiday = {'9-20':'班','9-25':'休','9-26':'休','9-27':'休','10-1':'休','10-2':'休','10-3':'休','10-4':'休','10-5':'休','10-6':'休','10-7':'休','10-10':'班'}[key];
+        return {text:special?.[0] || (lunarDay===1?lunarMonth:lunarText),kind:special?.[1] || 'lunar',full:`农历${lunarMonth}${lunarText}`,special:special?.[0],holiday};
+      }
+      function cellStatus(items) {
+        const priority = {work:0,trip:1,leave:2,rest:3};
+        const primary = [...items].sort((a,b)=>priority[a.type]-priority[b.type])[0];
+        if(!primary) return {label:'—',kind:'unrecorded'};
+        if(primary.type==='work') return primary.hours>8?{label:`+${primary.hours-8}h`,kind:'overtime'}:{label:'工',kind:'work'};
+        return {label:primary.type==='leave'&&primary.title==='年假'?'年假':{trip:'差',leave:'假',rest:'休'}[primary.type],kind:primary.type};
+      }
+      const projects = [
+        {id:1,name:'北辰设备联调',initial:'北',phase:'现场调试',status:'active',photos:24,evidence:6,amount:'1,280.00',date:'9 月 28 日',note:'记录设备联调与现场资料'},
+        {id:2,name:'城市遥测改造',initial:'城',phase:'方案设计',status:'active',photos:12,evidence:3,amount:'460.00',date:'9 月 26 日',note:'遥测方案与设备资料'},
+        {id:3,name:'南区现场巡检',initial:'南',phase:'已归档',status:'archived',photos:38,evidence:8,amount:'2,340.00',date:'9 月 18 日',note:'巡检照片与项目记录'}
+      ];
+      const types = {work:['日常工作','briefcase'],trip:['出差','train'],leave:['请假','coffee'],rest:['休息','sun']};
+      const pageTitle = (small,title,secondary=false) => `<header class="page-heading"><div><p class="eyebrow">${small}</p><h2>${title}</h2></div><div class="page-action-slot">${secondary?`<button class="header-action secondary-action" data-action="appearance">${icon('sun')}外观</button>`:''}</div></header>`;
+      const recordRow = item => `<button class="record-row" data-edit="${item.id}"><span class="row-icon ${item.type==='trip'?'orange':''}">${icon(types[item.type][1])}</span><span class="row-main"><span class="row-title">${escapeHtml(item.title)}</span><span class="row-sub" style="display:block">${escapeHtml(item.subtitle)}</span></span><span class="row-tail">${item.hours===null?`<small>${types[item.type][0]}</small>`:`${item.hours.toFixed(1)} <small>h</small>`}</span></button>`;
+      function calendar() {
+        const total = new Date(2026,calendarMonth+1,0).getDate();
+        const first = (new Date(2026,calendarMonth,1).getDay()+6)%7;
+        const prevTotal = new Date(2026,calendarMonth,0).getDate();
+        const weekStart = Math.floor((first+selectedDay-1)/7)*7;
+        const start = span==='week'?weekStart:0;
+        const count = span==='week'?7:Math.ceil((first+total)/7)*7;
+        let days = '';
+        for (let i=start;i<start+count;i++) {
+          const day=i-first+1, outside=day<1||day>total;
+          const value=day<1?prevTotal+day:day>total?day-total:day;
+          const date = new Date(Date.UTC(2026,calendarMonth,day,4));
+          const month = date.getUTCMonth();
+          const metadata = dayMetadata(date);
+          const items = records.filter(r=>r.month===month&&r.day===value);
+          const status = cellStatus(items);
+          const today = month===referenceDate.month && value===referenceDate.day;
+          const selected = !outside&&day===selectedDay;
+          const description = `${month+1}月${value}日，${metadata.full}${metadata.special?'，'+metadata.special:''}${metadata.holiday?'，调休标记'+metadata.holiday:''}${today?'，今天':''}，${items.length?items.map(r=>types[r.type][0]+(r.hours!==null?' '+r.hours+'小时':'')).join('、'):'无记录'}，${items.length}条记录`;
+          days+=`<button class="day ${outside?'faint':''} ${selected?'selected':''} ${today?'today':''}" data-day="${day}" ${outside?'disabled':''} aria-label="${escapeHtml(description)}" title="${escapeHtml(description)}" aria-pressed="${selected}" ${today?'aria-current="date"':''}><span class="day-number">${value}</span><span class="day-lunar ${metadata.kind}">${metadata.text}</span><span class="day-status ${status.kind}">${status.label}${items.length>1?`<span class="day-extra">+${items.length-1}</span>`:''}</span>${metadata.holiday?`<span class="day-holiday ${metadata.holiday==='班'?'workday':''}" aria-hidden="true">${metadata.holiday}</span>`:''}</button>`;
+        }
+        return `<section class="calendar" aria-label="工时日历"><div class="calendar-head"><button class="month-button" data-action="month">2026 年 ${calendarMonth+1} 月${icon('down')}</button><div class="segment" role="group" aria-label="日历视图"><button data-span="month" class="${span==='month'?'active':''}" aria-pressed="${span==='month'}">月</button><button data-span="week" class="${span==='week'?'active':''}" aria-pressed="${span==='week'}">周</button></div></div><div class="weekdays" aria-hidden="true">${['一','二','三','四','五','六','日'].map(d=>`<span>${d}</span>`).join('')}</div><div class="days">${days}</div><div class="calendar-legend" aria-label="工时状态说明"><span><i></i>工 工作</span><span><i class="trip"></i>差 出差</span><span><i class="leave"></i>假 请假</span><span><i class="rest"></i>休 休息</span><span>+h 加班</span></div></section>`;
+      }
+      function dayDetails() {
+        const dayRecords=records.filter(r=>r.day===selectedDay&&r.month===calendarMonth);
+        const selectedMetadata=dayMetadata(new Date(Date.UTC(2026,calendarMonth,selectedDay,4)));
+        const weekday=new Intl.DateTimeFormat('zh-CN',{weekday:'long',timeZone:'Asia/Shanghai'}).format(new Date(Date.UTC(2026,calendarMonth,selectedDay,4)));
+        return `<section class="day-details"><div class="section-head"><h3>${calendarMonth+1} 月 ${selectedDay} 日</h3><span>${dayRecords.length} 条记录</span></div><p class="selected-day-meta">${weekday} · ${selectedMetadata.full}${selectedMetadata.special?' · '+selectedMetadata.special:''}${selectedMetadata.holiday?' · 调休标注「'+selectedMetadata.holiday+'」':''}</p><div class="row-group">${dayRecords.length?dayRecords.map(recordRow).join(''):'<div class="empty"><strong>这天还没有记录</strong>点击「记工时」，从一条记录开始。</div>'}</div></section>`;
+      }
+      function renderWork() {
+        const monthRecords = records.filter(r=>r.month===calendarMonth);
+        const workRecords = monthRecords.filter(r=>r.type==='work');
+        const totalHours = workRecords.reduce((sum,r)=>sum+(r.hours||0),0);
+        const workDays = new Set(workRecords.map(r=>r.day)).size;
+        const overtime = workRecords.reduce((sum,r)=>sum+Math.max(0,(r.hours||0)-8),0);
+        const trips = monthRecords.filter(r=>r.type==='trip').length;
+        content.innerHTML=`<div class="page work-page">${pageTitle('日常记录','工时')}<section class="summary overview work-summary" aria-label="月工时摘要"><div class="summary-head"><span>${calendarMonth+1}月累计工时</span><span class="small-status">${icon('clock')} 示例记录</span></div><div class="big-number">${totalHours.toFixed(1)}<span>小时</span></div><div class="summary-foot"><span>出勤<b>${workDays} 天</b></span><span class="divider"></span><span>加班<b>${overtime.toFixed(1)} h</b></span><span class="divider"></span><span>出差<b>${trips} 次</b></span></div></section>${calendar()}${dayDetails()}</div>`;
+        fab.hidden=false; fab.innerHTML=`${icon('edit')}记工时`; fab.onclick=()=>openEditor(records.filter(r=>r.day===selectedDay&&r.month===calendarMonth&&r.type==='work').slice(-1)[0]||null);
+        fab.classList.add('header-action'); content.querySelector('.page-action-slot').append(fab);
+      }
+      function projectCards(query='') {
+        const filtered=projects.filter(p=>(projectFilter==='all'||p.status===projectFilter)&&p.name.includes(query.trim()));
+        return filtered.length?filtered.map(p=>`<button class="project" data-project="${p.id}"><div class="project-top"><span class="project-monogram">${escapeHtml(p.initial)}</span><span class="row-main"><h3>${escapeHtml(p.name)}</h3><p>${escapeHtml(p.phase)}</p></span><span class="badge">${p.status==='active'?'进行中':'已归档'}</span></div><div class="project-info"><span>${icon('image')}${p.photos} 张照片</span><span>${icon('receipt')}${p.evidence} 份凭证</span></div><div class="project-bottom"><span>支出 <b>¥ ${p.amount}</b></span><span>${p.date} 更新 ${icon('arrow')}</span></div></button>`).join(''):'<div class="empty"><strong>没有匹配的项目</strong>换个关键词，或选择「全部」。</div>';
+      }
+      function renderProjects() {
+        content.innerHTML=`<div class="page">${pageTitle('现场资料与进展','项目')}<section class="summary overview"><div class="summary-head"><span>项目概览</span></div><div class="project-summary"><div><b>${projects.filter(p=>p.status==='active').length}</b><span>进行中</span></div><div><b>${projects.length}</b><span>全部项目</span></div></div></section><label class="search">${icon('search')}<input id="search" aria-label="搜索项目" placeholder="搜索项目名称" autocomplete="off" value="${escapeHtml(projectQuery)}"></label><div class="chips" role="group" aria-label="项目筛选">${[['all','全部'],['active','进行中'],['archived','已归档']].map(([id,label])=>`<button class="chip ${projectFilter===id?'active':''}" data-filter="${id}" aria-pressed="${projectFilter===id}">${label}</button>`).join('')}</div><section id="project-list" aria-label="项目列表">${projectCards(projectQuery)}</section></div>`;
+        const search=document.getElementById('search'); search.oninput=()=>{projectQuery=search.value;document.getElementById('project-list').innerHTML=projectCards(projectQuery);};
+        fab.hidden=false; fab.innerHTML=`${icon('plus')}创建项目`; fab.onclick=()=>openCreateProject();
+        fab.classList.add('header-action'); content.querySelector('.page-action-slot').append(fab);
+      }
+      function renderDetail() {
+        const p=currentProject;
+        const list=detailTab==='records'?`<div class="section-head"><h3>9 月 28 日</h3><span>项目记录</span></div><div class="row-group"><button class="record-row" data-action="view-record"><span class="row-icon">${icon('briefcase')}</span><span class="row-main"><span class="row-title">设备联调与现场检查</span><span class="row-sub" style="display:block">日常工作 · 8.0 h</span></span>${icon('arrow')}</button><button class="record-row" data-action="view-evidence"><span class="row-icon orange">${icon('receipt')}</span><span class="row-main"><span class="row-title">交通费用凭证</span><span class="row-sub" style="display:block">凭证材料 · 待关联支出</span></span>${icon('arrow')}</button></div>`:detailTab==='photos'?`<p class="form-info" style="margin:0 0 15px">${p.photos} 张照片 · 仅保存在本机</p><div class="photo-grid">${['设备现场','联调记录','控制柜','工作环境'].map(label=>`<button class="photo-placeholder" data-action="photo-preview">${icon('image')}${label}<small>示例占位</small></button>`).join('')}</div>`:`<div class="row-group"><button class="record-row" data-action="view-expense"><span class="row-icon orange">${icon('card')}</span><span class="row-main"><span class="row-title">交通与材料支出</span><span class="row-sub" style="display:block">金额事实 · 示例汇总</span></span><span class="row-tail"><small>¥</small> ${p.amount}</span></button></div>`;
+        content.innerHTML=`<div class="page"><div class="back-heading"><button class="icon-button" data-action="back" aria-label="返回项目">${icon('back')}</button><span class="eyebrow">项目详情</span><button class="icon-button" data-action="project-menu" aria-label="项目操作">${icon('dots')}</button></div><div class="detail-name">${escapeHtml(p.name)}</div><div class="detail-meta"><span class="badge">${escapeHtml(p.phase)}</span><span>${escapeHtml(p.note)}</span></div><section class="summary"><div class="summary-head"><span>项目累计支出</span><span class="small-status">人民币</span></div><div class="big-number" style="font-size:32px"><span style="margin:0 5px 0 0">¥</span>${p.amount}</div><div class="summary-foot"><span>照片<b>${p.photos} 张</b></span><span class="divider"></span><span>凭证<b>${p.evidence} 份</b></span></div></section><div class="detail-tabs" role="group" aria-label="项目内容">${[['records','记录'],['photos','照片'],['expenses','支出']].map(([id,label])=>`<button class="${detailTab===id?'active':''}" data-detail="${id}" aria-pressed="${detailTab===id}">${label}</button>`).join('')}</div>${list}</div>`;
+        fab.hidden=false; fab.innerHTML=`${icon('plus')}${detailTab==='photos'?'添加照片':detailTab==='expenses'?'添加支出':'添加记录'}`; fab.onclick=()=>detailTab==='records'?openEditor():openInfo(detailTab==='photos'?'添加项目照片':'添加项目支出',detailTab==='photos'?'正式应用将调用已有相机与相册入口。项目照片始终仅保存在本机。':'正式应用将打开支出编辑器，并预填当前项目。');
+      }
+      const settingRow=(title,name,action,tail='')=>`<button class="record-row" data-action="${action}"><span class="row-icon">${icon(name)}</span><span class="row-main"><span class="row-title">${title}</span></span>${tail?`<span class="badge">${tail}</span>`:''}${icon('arrow')}</button>`;
+      function renderMore() {
+        content.innerHTML=`<div class="page">${pageTitle('工具与设置','更多',true)}<button class="account" style="width:100%;text-align:left" data-action="account"><span class="avatar">林</span><span class="row-main"><h3>林同学</h3><span class="row-sub" style="display:block">管理账号与同步</span></span>${icon('arrow')}</button><section class="settings"><div class="section-head"><h3>记录与统计</h3></div><div class="row-group">${settingRow('全部记录','clock','timeline')}${settingRow('订阅管理','card','subscriptions','3 项')}${settingRow('支出与凭证','receipt','expenses')}${settingRow('统计面板','chart','statistics')}</div><div class="section-head"><h3>工具与管理</h3></div><div class="row-group">${settingRow('工程计算','grid','calculator')}${settingRow('外观设置','sun','appearance')}${settingRow('备份与恢复','box','backup')}${settingRow('关于 LifeLog','leaf','about')}</div></section><p class="quiet-note">记录留在身边，日常慢慢清晰。</p></div>`;
+        fab.hidden=true;
+      }
+      function render(scrollReset=true) {
+        const oldPage=renderedPage;
+        routeAnimation?.cancel();
+        document.getElementById('app').insertBefore(fab,document.querySelector('.nav'));
+        fab.classList.remove('header-action');
+        if(page==='work') renderWork(); else if(page==='detail') renderDetail(); else if(page==='projects') renderProjects(); else renderMore();
+        if(scrollReset) content.scrollTop=0;
+        updateNavigation();
+        if(oldPage!==page) {
+          const order={work:0,projects:1,more:2};
+          const direction=page==='detail'?1:oldPage==='detail'?-1:(order[page]>order[oldPage]?1:-1);
+          routeAnimation=animateNode(content.querySelector('.page'),[{opacity:0,transform:`translateX(${direction*24}px)`},{opacity:1,transform:'translateX(0)'}]);
+        }
+        renderedPage=page;
+      }
+      function showToast(message) { const el=document.getElementById('toast'); clearTimeout(toastTimer); el.textContent=message; el.hidden=false; toastTimer=setTimeout(()=>el.hidden=true,3000); }
+      function openSheet(title,body,footer='') {
+        if(!modal.hidden) return;
+        previousFocus=document.activeElement; formDirty=false; busy=false; closing=false;
+        content.inert=true; document.querySelector('.nav').inert=true; fab.inert=true;
+        modal.hidden=false; modal.innerHTML=`<div class="overlay"><section class="sheet" role="dialog" aria-modal="true" aria-labelledby="sheet-heading"><div class="handle" aria-hidden="true"></div><div class="sheet-title"><h3 id="sheet-heading">${title}</h3><button class="icon-button" data-action="close" aria-label="关闭弹窗">${icon('close')}</button></div><div class="sheet-body">${body}</div>${footer}</section></div>`;
+        sheetAnimation=animateNode(modal.querySelector('.sheet'),[{transform:'translateY(100%)'},{transform:'translateY(0)'}],motion.sheet);
+        animateNode(modal.querySelector('.overlay'),[{backgroundColor:'transparent'},{backgroundColor:'#131e1960'}]);
+        attachSheetDrag();
+        requestAnimationFrame(()=>modal.querySelector('input,button')?.focus({preventScroll:true}));
+      }
+      async function closeSheet(force=false) {
+        if(modal.hidden||closing||(busy&&!force)) return false;
+        if(formDirty&&!force&&!confirm('尚有未保存的修改，要放弃吗？')) return false;
+        closing=true;
+        const sheet=modal.querySelector('.sheet');
+        const start=getComputedStyle(sheet).transform;
+        sheetAnimation?.cancel();
+        modal.querySelectorAll('button,input,textarea').forEach(el=>el.disabled=true);
+        sheetAnimation=animateNode(sheet,[{transform:start==='none'?'translateY(0)':start},{transform:'translateY(100%)'}],motion.normal);
+        animateNode(modal.querySelector('.overlay'),[{backgroundColor:getComputedStyle(modal.querySelector('.overlay')).backgroundColor},{backgroundColor:'transparent'}]);
+        if(sheetAnimation) await sheetAnimation.finished.catch(()=>{});
+        modal.hidden=true; modal.innerHTML=''; formDirty=false; busy=false; content.inert=false; document.querySelector('.nav').inert=false; fab.inert=false;
+        closing=false;
+        if(previousFocus?.isConnected) previousFocus.focus({preventScroll:true}); else fab.hidden?document.querySelector('.nav button.active').focus({preventScroll:true}):fab.focus({preventScroll:true});
+        return true;
+      }
+      function attachSheetDrag() {
+        const handle=modal.querySelector('.handle'), sheet=modal.querySelector('.sheet');
+        let pointer=null,startY=0,delta=0;
+        handle.onpointerdown=event=>{
+          if(busy||closing||event.button!==0) return;
+          pointer=event.pointerId;startY=event.clientY;delta=0;
+          sheetAnimation?.cancel();handle.setPointerCapture(pointer);
+        };
+        handle.onpointermove=event=>{
+          if(event.pointerId!==pointer) return;
+          delta=Math.max(0,event.clientY-startY);
+          sheet.style.transform=`translateY(${delta}px)`;
+        };
+        const settle=async(event,cancelled=false)=>{
+          if(event.pointerId!==pointer) return;
+          pointer=null;
+          if(!cancelled&&delta>Math.min(100,sheet.clientHeight*.2)) {
+            if(await closeSheet()) return;
+          }
+          if(closing||modal.hidden) return;
+          const distance=delta;sheet.style.transform='';
+          sheetAnimation=animateNode(sheet,[{transform:`translateY(${distance}px)`},{transform:'translateY(0)'}],motion.normal);
+        };
+        handle.onpointerup=event=>settle(event);
+        handle.onpointercancel=event=>settle(event,true);
+      }
+      function openEditor(row=null) {
+        editingRow=row; editType=row?.type||'work';
+        openSheet(row?'编辑记录':'记一笔工时',`<div class="type-picker" role="group" aria-label="记录类型">${Object.entries(types).map(([id,[title,name]])=>`<button data-type="${id}" class="${editType===id?'active':''}" aria-pressed="${editType===id}">${icon(name)}${title}</button>`).join('')}</div><div class="form-pair"><div><label for="entry-date">日期</label><input id="entry-date" type="date" value="2026-${String((row?.month??calendarMonth)+1).padStart(2,'0')}-${String(row?.day??selectedDay).padStart(2,'0')}"></div><div><label for="entry-hours">时长 · 小时</label><input id="entry-hours" type="number" min="0" max="24" step="0.5" inputmode="decimal" value="${row?.hours??8}" ${editType!=='work'?'disabled':''}></div></div><label for="entry-note">备注</label><textarea id="entry-note" placeholder="写下今天的工作内容…">${escapeHtml(row?.note||'')}</textarea><p class="form-info">保存当前这一条记录，同日其他类型记录会保留。</p><div id="form-error" class="form-error" role="alert"></div>`,`<button class="primary" id="save-record">${icon('check')}保存记录</button>`);
+        modal.querySelectorAll('input,textarea').forEach(el=>el.addEventListener('input',()=>formDirty=true));
+        modal.querySelector('#save-record').onclick=async()=>{
+          if(busy) return;
+          const dateValue=modal.querySelector('#entry-date').value;
+          const [year,month,day]=dateValue.split('-').map(Number);
+          const hours=editType==='work'?Number(modal.querySelector('#entry-hours').value):null;
+          if(!dateValue||year!==2026||!month||!day||(editType==='work'&&(!Number.isFinite(hours)||hours<=0||hours>24))) {
+            modal.querySelector('#form-error').textContent='示例年份为 2026；工时时长需大于 0 且不超过 24。'; return;
+          }
+          const note=modal.querySelector('#entry-note').value.trim();
+          busy=true; modal.querySelectorAll('button,input,textarea').forEach(el=>el.disabled=true);
+          const save=modal.querySelector('#save-record'); save.innerHTML='<span class="spinner"></span>正在保存…';
+          await new Promise(resolve=>setTimeout(resolve,600));
+          const item={id:row?.id??Date.now(),day,month:month-1,type:editType,title:types[editType][0],subtitle:note||'已记录',hours,note};
+          const index=row?records.findIndex(r=>r.id===row.id):-1;
+          if(index>=0) records[index]=item; else records.push(item);
+          selectedDay=day; calendarMonth=month-1; page='work'; render(false); closeSheet(true); showToast('示例记录已保存 · 刷新可重置');
+        };
+      }
+      function openCreateProject() {
+        openSheet('创建项目','<label for="project-name">项目名称</label><input id="project-name" placeholder="例如：北辰设备联调" maxlength="80"><p class="form-info">项目可以整理工时、照片、支出和凭证。</p><div id="form-error" class="form-error" role="alert"></div>','<button class="primary" id="create-project">创建项目</button>');
+        const input=modal.querySelector('#project-name'); input.oninput=()=>formDirty=true;
+        modal.querySelector('#create-project').onclick=()=>{
+          const name=input.value.trim(); if(!name) {modal.querySelector('#form-error').textContent='请填写项目名称。'; input.focus(); return;}
+          projects.push({id:Date.now(),name,initial:Array.from(name)[0],phase:'准备中',status:'active',photos:0,evidence:0,amount:'0.00',date:'今天',note:'新建项目'});
+          page='projects'; projectFilter='all'; projectQuery=''; render(); closeSheet(true); showToast('示例项目已创建');
+        };
+      }
+      function openInfo(title,text) { openSheet(title,`<p style="font-size:14px;line-height:1.9;color:var(--secondary);margin:12px 0 24px">${text}</p>`,'<button class="primary" data-action="close">知道了</button>'); }
+      content.addEventListener('click',event=>{
+        const button=event.target.closest('button'); if(!button) return;
+        if(button.dataset.day) {
+          selectedDay=Number(button.dataset.day);
+          content.querySelectorAll('[data-day]').forEach(el=>{const selected=Number(el.dataset.day)===selectedDay;el.classList.toggle('selected',selected);el.setAttribute('aria-pressed',String(selected));});
+          const template=document.createElement('template');
+          template.innerHTML=dayDetails();
+          const nextDetails=template.content.firstElementChild;
+          content.querySelector('.day-details').replaceWith(nextDetails);
+          animateNode(nextDetails,[{opacity:.3},{opacity:1}],motion.fast);
+          return;
+        }
+        if(button.dataset.span) { span=button.dataset.span; render(false);restoreControl(`[data-span="${span}"]`);return; }
+        if(button.dataset.filter) { projectFilter=button.dataset.filter; render(false);restoreControl(`[data-filter="${projectFilter}"]`);animateNode(content.querySelector('#project-list'),[{opacity:.3},{opacity:1}],motion.fast);return; }
+        if(button.dataset.project) { currentProject=projects.find(p=>p.id===Number(button.dataset.project)); detailTab='records';scrollPositions.detail=0;navigate('detail');return; }
+        if(button.dataset.detail) { detailTab=button.dataset.detail; render(false);restoreControl(`[data-detail="${detailTab}"]`);return; }
+        if(button.dataset.edit) { openEditor(records.find(r=>r.id===Number(button.dataset.edit))); return; }
+        const action=button.dataset.action;
+        if(action==='back') {navigate('projects');return;}
+        if(action==='today') { calendarMonth=referenceDate.month;selectedDay=referenceDate.day;render(false);return; }
+        if(action==='month') {
+          openSheet('选择月份',`<p class="form-info" style="margin-bottom:12px">2026 年</p><div class="chips">${Array.from({length:12},(_,m)=>`<button class="chip ${m===calendarMonth?'active':''}" data-month="${m}">${m+1} 月</button>`).join('')}</div>`,'<button class="primary" data-action="today">回到今天</button>');return;
+        }
+        if(action==='appearance') {
+          openSheet('外观设置','<p class="form-info" style="margin:8px 0 20px">浅色以暖白与青绿建立层次，深色使用暖灰黑表面。</p>','<button class="primary" id="local-theme">切换浅色 / 深色</button>');
+          modal.querySelector('#local-theme').onclick=()=>{setTheme(document.documentElement.dataset.theme==='dark'?'light':'dark');closeSheet();}; return;
+        }
+        if(action==='backup') {openInfo('备份与恢复','备份仅包含数据库，不包含照片和凭证文件本体。正式应用的恢复流程将保留回滚副本、重建数据监听并重新核对云端记录。此样稿不执行导出或恢复。');return;}
+        if(action==='account') {openInfo('账号与同步','这里展示账号、待同步和失败状态。正式应用只有在真实同步完成后才显示成功。样稿使用示例账号，不发起登录或同步。');return;}
+        if(action==='project-menu') {openInfo('项目操作','正式应用保留编辑阶段、封面和确认删除入口。删除项目不会自动删除本地照片。');return;}
+        const titles={timeline:'全部记录',subscriptions:'订阅管理',expenses:'支出与凭证',statistics:'统计面板',calculator:'工程计算',about:'关于 LifeLog','more-menu':'更多操作','view-record':'工作记录','view-evidence':'凭证详情','view-expense':'支出详情','photo-preview':'照片预览'};
+        if(titles[action]) openInfo(titles[action],action==='subscriptions'?'订阅页将延续本月估算优先、原币种金额与明确的汇率状态；提醒列表按需展开。':'这是交互样稿。正式页面继续使用现有功能入口与数据，不改变记录内容。');
+      });
+      nav.addEventListener('click',event=>{const button=event.target.closest('[data-page]');if(!button)return;navigate(button.dataset.page);});
+      modal.addEventListener('click',event=>{
+        if(closing) return;
+        const button=event.target.closest('button');
+        if(event.target===modal.querySelector('.overlay')) {closeSheet();return;}
+        if(button?.dataset.action==='close') closeSheet();
+        if(button?.dataset.action==='today') {calendarMonth=referenceDate.month;selectedDay=referenceDate.day;render(false);closeSheet();}
+        if(button?.dataset.month) {calendarMonth=Number(button.dataset.month);selectedDay=Math.min(selectedDay,new Date(2026,calendarMonth+1,0).getDate());render(false);closeSheet();}
+        if(button?.dataset.type) {
+          editType=button.dataset.type;formDirty=true;
+          modal.querySelectorAll('[data-type]').forEach(el=>{const active=el.dataset.type===editType;el.classList.toggle('active',active);el.setAttribute('aria-pressed',String(active));});
+          modal.querySelector('#entry-hours').disabled=editType!=='work';
+        }
+      });
+      document.addEventListener('keydown',event=>{
+        if(modal.hidden) return;
+        if(event.key==='Escape') {event.preventDefault();closeSheet();return;}
+        if(event.key==='Tab') {
+          const targets=[...modal.querySelectorAll('button:not(:disabled),input:not(:disabled),textarea:not(:disabled)')].filter(el=>el.getClientRects().length);
+          if(!targets.length) {event.preventDefault();return;}
+          const first=targets[0],last=targets[targets.length-1];
+          if(event.shiftKey&&document.activeElement===first) {event.preventDefault();last.focus();}
+          else if(!event.shiftKey&&document.activeElement===last) {event.preventDefault();first.focus();}
+        }
+      });
+      window.addEventListener('resize',updateNavigation);
+      reducedMotion.addEventListener('change',()=>{
+        if(reducedMotion.matches) document.getAnimations().forEach(animation=>{try{animation.finish();}catch{animation.cancel();}});
+      });
+      render();
+    }
+  </script>
+</body>
+</html>

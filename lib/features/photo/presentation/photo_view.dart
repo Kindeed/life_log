@@ -9,6 +9,8 @@ import 'package:life_log/common/theme/app_radius.dart';
 import 'package:life_log/common/theme/app_semantic_colors.dart';
 import 'package:life_log/common/utils/formatters.dart';
 import 'package:life_log/common/widgets/app_card.dart';
+import 'package:life_log/common/widgets/app_tab_header.dart';
+import 'package:life_log/common/widgets/app_page_route.dart';
 import 'package:life_log/common/widgets/app_empty_state.dart';
 import 'package:life_log/common/widgets/app_filter_chip_bar.dart';
 import 'package:life_log/common/widgets/app_loading.dart';
@@ -67,165 +69,200 @@ class _PhotoViewState extends State<PhotoView> {
     final textSecondary = theme.colorScheme.onSurfaceVariant;
 
     return Scaffold(
-      appBar: AppBar(
-        title: const Text("项目"),
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.refresh_rounded),
-            tooltip: "刷新",
-            onPressed: _reloadProjectOverview,
-          ),
-        ],
-      ),
-      floatingActionButton: FloatingActionButton.extended(
-        heroTag: 'project_overview_create_fab',
-        onPressed: _openCreateProjectSheet,
-        icon: const Icon(Icons.create_new_folder_rounded),
-        label: const Text("创建项目"),
-      ),
-      body: BlocBuilder<ProjectCubit, ProjectState>(
-        bloc: projectCubit,
-        builder: (context, projectState) {
-          return BlocBuilder<PhotoCubit, PhotoState>(
-            bloc: photoCubit,
-            builder: (context, photoState) {
-              return BlocBuilder<EvidenceCubit, EvidenceState>(
-                bloc: evidenceCubit,
-                builder: (context, evidenceState) {
-                  return BlocBuilder<ExpenseRecordCubit, ExpenseRecordState>(
-                    bloc: expenseCubit,
-                    builder: (context, expenseState) {
-                      final isLoading =
-                          (photoState.status == PhotoStatus.loading &&
-                              photoState.entries.isEmpty) ||
-                          (projectState.status == ProjectReadStatus.loading &&
-                              projectState.entries.isEmpty) ||
-                          (evidenceState.status == EvidenceStatus.loading &&
-                              evidenceState.entries.isEmpty) ||
-                          (expenseState.status == ExpenseRecordStatus.loading &&
-                              expenseState.entries.isEmpty);
-                      final hasFailure =
-                          projectState.failure != null ||
-                          photoState.failure != null ||
-                          evidenceState.failure != null ||
-                          expenseState.failure != null;
-                      final expenseRecords = expenseState.entries;
-                      final projectCount = projectState.totalProjectCount;
+      body: SafeArea(
+        child: Column(
+          children: [
+            ConstrainedPage(
+              child: AppTabHeader(
+                title: '项目',
+                eyebrow: '现场资料与进展',
+                action: AppTabAction(
+                  label: '创建项目',
+                  icon: Icons.create_new_folder_rounded,
+                  onPressed: _openCreateProjectSheet,
+                ),
+              ),
+            ),
+            Expanded(
+              child: BlocBuilder<ProjectCubit, ProjectState>(
+                bloc: projectCubit,
+                builder: (context, projectState) {
+                  return BlocBuilder<PhotoCubit, PhotoState>(
+                    bloc: photoCubit,
+                    builder: (context, photoState) {
+                      return BlocBuilder<EvidenceCubit, EvidenceState>(
+                        bloc: evidenceCubit,
+                        builder: (context, evidenceState) {
+                          return BlocBuilder<
+                            ExpenseRecordCubit,
+                            ExpenseRecordState
+                          >(
+                            bloc: expenseCubit,
+                            builder: (context, expenseState) {
+                              final isLoading =
+                                  (photoState.status == PhotoStatus.loading &&
+                                      photoState.entries.isEmpty) ||
+                                  (projectState.status ==
+                                          ProjectReadStatus.loading &&
+                                      projectState.entries.isEmpty) ||
+                                  (evidenceState.status ==
+                                          EvidenceStatus.loading &&
+                                      evidenceState.entries.isEmpty) ||
+                                  (expenseState.status ==
+                                          ExpenseRecordStatus.loading &&
+                                      expenseState.entries.isEmpty);
+                              final hasFailure =
+                                  projectState.failure != null ||
+                                  photoState.failure != null ||
+                                  evidenceState.failure != null ||
+                                  expenseState.failure != null;
+                              final expenseRecords = expenseState.entries;
+                              final projectCount =
+                                  projectState.totalProjectCount;
 
-                      if (isLoading) {
-                        return const AppLoading(label: "正在加载项目");
-                      }
+                              if (isLoading) {
+                                return const AppLoading(label: "正在加载项目");
+                              }
 
-                      final projects = _projectSummaries(
-                        projects: projectState.entries,
-                        photos: photoState.entries,
-                        evidence: evidenceState.entries,
-                        expenses: expenseRecords,
-                        query: photoState.searchQuery,
-                        sortMode: photoState.sortMode,
-                      );
-
-                      if (projectCount == 0 && projects.isEmpty && hasFailure) {
-                        return AppLoadFailure(
-                          message: '暂时无法读取项目，请重试。',
-                          onRetry: _reloadProjectOverview,
-                        );
-                      }
-                      if (projectCount == 0 && projects.isEmpty) {
-                        return const AppEmptyState(
-                          icon: Icons.folder_open_rounded,
-                          title: "还没有项目",
-                          message: "使用右下角「创建项目」建立项目，再添加照片和凭证。",
-                        );
-                      }
-
-                      return CustomScrollView(
-                        slivers: [
-                          if (hasFailure)
-                            SliverToBoxAdapter(
-                              child: ConstrainedPage(
-                                child: AppLoadFailure(
-                                  compact: true,
-                                  message: '部分数据未能刷新，项目汇总可能不完整。',
-                                  onRetry: _reloadProjectOverview,
-                                ),
-                              ),
-                            ),
-                          SliverToBoxAdapter(
-                            child: ConstrainedPage(
-                              child: _ProjectOverview(
-                                photoCount: photoState.totalPhotoCount,
-                                projectCount: projectCount,
-                                expenseRecords: expenseRecords,
-                                semantic: semantic,
-                                textSecondary: textSecondary,
+                              final projects = _projectSummaries(
+                                projects: projectState.entries,
+                                photos: photoState.entries,
+                                evidence: evidenceState.entries,
+                                expenses: expenseRecords,
+                                query: photoState.searchQuery,
                                 sortMode: photoState.sortMode,
-                                onSearchChanged: photoCubit.updateSearch,
-                                onSortModeChanged: photoCubit.setSortMode,
-                              ),
-                            ),
-                          ),
-                          if (projects.isEmpty)
-                            SliverFillRemaining(
-                              hasScrollBody: false,
-                              child: Center(
-                                child: Text(
-                                  "没有匹配的项目",
-                                  style: TextStyle(
-                                    color: textSecondary,
-                                    fontSize: 14.sp,
-                                  ),
-                                ),
-                              ),
-                            )
-                          else
-                            SliverPadding(
-                              padding: EdgeInsets.fromLTRB(
-                                16.w,
-                                10.h,
-                                16.w,
-                                92.h,
-                              ),
-                              sliver: SliverList.separated(
-                                itemCount: projects.length,
-                                separatorBuilder: (_, _) =>
-                                    SizedBox(height: 12.h),
-                                itemBuilder: (context, index) {
-                                  final project = projects[index];
-                                  return ConstrainedPage(
-                                    child: _ProjectCard(
-                                      summary: project,
-                                      evidenceItems: evidenceState
-                                          .entriesForProject(project.name),
-                                      pendingAmount: evidenceState
-                                          .pendingAmountForProject(
-                                            project.name,
+                              );
+
+                              if (projectCount == 0 &&
+                                  projects.isEmpty &&
+                                  hasFailure) {
+                                return AppLoadFailure(
+                                  message: '暂时无法读取项目，请重试。',
+                                  onRetry: _reloadProjectOverview,
+                                );
+                              }
+                              if (projectCount == 0 && projects.isEmpty) {
+                                return const AppEmptyState(
+                                  icon: Icons.folder_open_rounded,
+                                  title: "还没有项目",
+                                  message: "使用上方「创建项目」建立项目，再添加照片和凭证。",
+                                );
+                              }
+
+                              return RefreshIndicator(
+                                onRefresh: _refreshProjectOverview,
+                                child: CustomScrollView(
+                                  key: const PageStorageKey('project-scroll'),
+                                  physics:
+                                      const AlwaysScrollableScrollPhysics(),
+                                  slivers: [
+                                    if (hasFailure)
+                                      SliverToBoxAdapter(
+                                        child: ConstrainedPage(
+                                          child: AppLoadFailure(
+                                            compact: true,
+                                            message: '部分数据未能刷新，项目汇总可能不完整。',
+                                            onRetry: _reloadProjectOverview,
                                           ),
-                                      expenseTotal: _expenseTotalForProject(
-                                        expenseRecords,
-                                        project.name,
+                                        ),
                                       ),
-                                      isDark: isDark,
-                                      semantic: semantic,
-                                      textSecondary: textSecondary,
-                                      onTap: () =>
-                                          _openProjectGallery(project.name),
+                                    SliverToBoxAdapter(
+                                      child: ConstrainedPage(
+                                        child: _ProjectOverview(
+                                          photoCount:
+                                              photoState.totalPhotoCount,
+                                          projectCount: projectCount,
+                                          expenseRecords: expenseRecords,
+                                          semantic: semantic,
+                                          textSecondary: textSecondary,
+                                          sortMode: photoState.sortMode,
+                                          onSearchChanged:
+                                              photoCubit.updateSearch,
+                                          onSortModeChanged:
+                                              photoCubit.setSortMode,
+                                        ),
+                                      ),
                                     ),
-                                  );
-                                },
-                              ),
-                            ),
-                        ],
+                                    if (projects.isEmpty)
+                                      SliverFillRemaining(
+                                        hasScrollBody: false,
+                                        child: Center(
+                                          child: Text(
+                                            "没有匹配的项目",
+                                            style: TextStyle(
+                                              color: textSecondary,
+                                              fontSize: 14.sp,
+                                            ),
+                                          ),
+                                        ),
+                                      )
+                                    else
+                                      SliverPadding(
+                                        padding: const EdgeInsets.fromLTRB(
+                                          22,
+                                          10,
+                                          22,
+                                          28,
+                                        ),
+                                        sliver: SliverList.separated(
+                                          itemCount: projects.length,
+                                          separatorBuilder: (_, _) =>
+                                              SizedBox(height: 12.h),
+                                          itemBuilder: (context, index) {
+                                            final project = projects[index];
+                                            return ConstrainedPage(
+                                              child: _ProjectCard(
+                                                summary: project,
+                                                evidenceItems: evidenceState
+                                                    .entriesForProject(
+                                                      project.name,
+                                                    ),
+                                                pendingAmount: evidenceState
+                                                    .pendingAmountForProject(
+                                                      project.name,
+                                                    ),
+                                                expenseTotal:
+                                                    _expenseTotalForProject(
+                                                      expenseRecords,
+                                                      project.name,
+                                                    ),
+                                                isDark: isDark,
+                                                semantic: semantic,
+                                                textSecondary: textSecondary,
+                                                onTap: () =>
+                                                    _openProjectGallery(
+                                                      project.name,
+                                                    ),
+                                              ),
+                                            );
+                                          },
+                                        ),
+                                      ),
+                                  ],
+                                ),
+                              );
+                            },
+                          );
+                        },
                       );
                     },
                   );
                 },
-              );
-            },
-          );
-        },
+              ),
+            ),
+          ],
+        ),
       ),
     );
+  }
+
+  Future<void> _refreshProjectOverview() async {
+    await Future.wait([
+      photoCubit.loadEntries(),
+      projectCubit.loadEntries(),
+      evidenceCubit.loadEntries(),
+      expenseCubit.loadEntries(),
+    ]);
   }
 
   void _reloadProjectOverview() {
@@ -260,9 +297,7 @@ class _PhotoViewState extends State<PhotoView> {
 
   Future<void> _openProjectGallery(String projectName) {
     return Navigator.of(context).push<void>(
-      MaterialPageRoute<void>(
-        builder: (_) => ProjectDetailView(projectName: projectName),
-      ),
+      appPageRoute<void>(context, ProjectDetailView(projectName: projectName)),
     );
   }
 
@@ -361,7 +396,7 @@ class _ProjectOverview extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Padding(
-      padding: EdgeInsets.fromLTRB(16.w, 8.h, 16.w, 8.h),
+      padding: const EdgeInsets.fromLTRB(22, 8, 22, 8),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [

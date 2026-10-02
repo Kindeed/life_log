@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:life_log/common/widgets/app_page_route.dart';
+import 'package:life_log/common/theme/app_motion.dart';
 import 'package:life_log/core/di/service_locator.dart';
 import 'package:life_log/features/work_log/application/load_work_log_edit_draft.dart';
 import 'package:life_log/features/work_log/domain/entities/work_log_entry.dart';
@@ -15,8 +17,9 @@ Future<void> openWorkLogEditorPage(
   final draft = await _loadEditDraft(context, existingEntry);
   if (!context.mounted) return;
   await Navigator.of(context).push<void>(
-    MaterialPageRoute<void>(
-      builder: (_) => LogEditView(
+    appPageRoute<void>(
+      context,
+      LogEditView(
         selectedDate: selectedDate,
         existingEntry: draft.entry,
         existingAlreadyDirty: draft.alreadyDirty,
@@ -38,6 +41,10 @@ Future<void> openWorkLogEditorSheet(
   await showModalBottomSheet<void>(
     context: context,
     isScrollControlled: true,
+    sheetAnimationStyle: AnimationStyle(
+      duration: AppMotion.duration(context, AppMotion.sheet),
+      reverseDuration: AppMotion.duration(context, AppMotion.normal),
+    ),
     isDismissible: false,
     enableDrag: false,
     backgroundColor: Colors.transparent,

@@ -1,8 +1,6 @@
-import 'dart:math' as math;
-
 import 'package:flutter/material.dart';
-import 'package:flutter_screenutil/flutter_screenutil.dart';
-import 'package:life_log/common/theme/app_colors.dart';
+import 'package:life_log/common/theme/app_motion.dart';
+import 'package:life_log/common/theme/app_radius.dart';
 import 'package:life_log/common/theme/theme_extensions.dart';
 import 'package:life_log/features/work_log/domain/entities/work_log_entry.dart';
 import 'package:life_log/features/work_log/presentation/work_log_day_metadata.dart';
@@ -14,6 +12,7 @@ class DayCell extends StatelessWidget {
   final DateTime selectedDay;
   final CalendarFormat calendarFormat;
   final WorkLogEntry? event;
+  final int entryCount;
   final WorkLogDayMetadata? metadata;
   final bool isDark;
   final Color textPrimary;
@@ -25,6 +24,7 @@ class DayCell extends StatelessWidget {
     required this.selectedDay,
     required this.calendarFormat,
     this.event,
+    this.entryCount = 0,
     this.metadata,
     required this.isDark,
     required this.textPrimary,
@@ -32,278 +32,221 @@ class DayCell extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final isSelected = isSameDay(day, selectedDay);
-    final isToday = isSameDay(day, DateTime.now());
-
-    final status = _dayStatus(context, metadata);
-    final holidayIsWork = metadata?.holidayIsWork;
-    var bottomText = status.text;
-    var bottomColor = status.color;
-    var bottomWeight = FontWeight.normal;
-    var isSpecial = false;
-    Color? statusColor;
-
-    if (event != null) {
-      final eventStatus = _eventStatus(context, event!);
-      bottomText = eventStatus.text;
-      bottomColor = eventStatus.color;
-      bottomWeight = FontWeight.w900;
-      isSpecial = true;
-      statusColor = eventStatus.color;
-    }
-
-    final colorScheme = Theme.of(context).colorScheme;
-    BoxDecoration? decoration;
-    var dayColor = textPrimary;
-    if (isSelected) {
-      decoration = BoxDecoration(
-        color: Theme.of(context).colorScheme.primary,
-        borderRadius: BorderRadius.circular(12),
-        boxShadow: [
-          BoxShadow(
-            color: Theme.of(
-              context,
-            ).colorScheme.primary.withValues(alpha: 0.28),
-            blurRadius: 16,
-            offset: const Offset(0, 4),
-          ),
-        ],
-      );
-      dayColor = colorScheme.onPrimary;
-      bottomColor = colorScheme.onPrimary.withValues(alpha: 0.95);
-    } else if (isToday) {
-      decoration = BoxDecoration(
-        color: Theme.of(context).colorScheme.primary.withValues(alpha: 0.08),
-        border: Border.all(
-          color: Theme.of(context).colorScheme.primary,
-          width: 1,
-        ),
-        borderRadius: BorderRadius.circular(12),
-      );
-      dayColor = Theme.of(context).colorScheme.primary;
-    }
-
-    if (calendarFormat == CalendarFormat.month &&
+    final theme = Theme.of(context);
+    final scheme = theme.colorScheme;
+    final selected = isSameDay(day, selectedDay);
+    final today = isSameDay(day, DateTime.now());
+    final outside =
+        calendarFormat == CalendarFormat.month &&
         day.month != focusedDay.month &&
-        !isSelected) {
-      dayColor = isDark ? AppColors.darkDivider : AppColors.lightDivider;
-      bottomColor = isDark ? AppColors.darkDivider : AppColors.lightDivider;
-      if (isSpecial) {
-        bottomColor = (statusColor ?? bottomColor).withValues(
-          alpha: isDark ? 0.72 : 0.58,
-        );
-      }
-    }
+        !selected;
+    final status = event == null ? null : _eventStatus(context, event!);
+    final foreground = selected ? scheme.onPrimary : textPrimary;
+    final muted = selected
+        ? scheme.onPrimary.withValues(alpha: 0.88)
+        : scheme.onSurfaceVariant;
+    final count = entryCount > 0
+        ? entryCount
+        : event == null
+        ? 0
+        : 1;
+    final holiday = metadata?.holidayIsWork;
+    final label = [
+      '${day.year}年${day.month}月${day.day}日',
+      if (metadata != null) metadata!.text,
+      if (holiday != null) holiday ? '调休上班' : '法定休息',
+      if (status != null) status.text,
+      if (count > 0) '共$count条记录',
+    ].join('，');
 
-    final statusFillColor = statusColor == null
-        ? Colors.transparent
-        : isSelected
-        ? colorScheme.onPrimary.withValues(alpha: 0.18)
-        : statusColor.withValues(alpha: isDark ? 0.24 : 0.12);
-    final statusBorderColor = statusColor == null
-        ? Colors.transparent
-        : isSelected
-        ? colorScheme.onPrimary.withValues(alpha: 0.34)
-        : statusColor.withValues(alpha: isDark ? 0.62 : 0.38);
-
-    return Center(
-      child: Container(
-        width: 44.w,
-        height:
-            50.h * math.max(1, MediaQuery.textScalerOf(context).scale(14) / 14),
-        margin: EdgeInsets.all(2.h),
-        decoration:
-            decoration ??
-            BoxDecoration(borderRadius: BorderRadius.circular(12)),
-        clipBehavior: Clip.antiAlias,
-        child: LayoutBuilder(
-          builder: (context, constraints) {
-            final compact = constraints.maxHeight < 42;
-            final topPadding = holidayIsWork != null
-                ? (compact ? 4.0 : 7.h)
-                : (compact ? 2.0 : 3.h);
-            final bottomPadding = compact ? 2.0 : 3.h;
-            final contentHeight = math.max(
-              20.0,
-              constraints.maxHeight - topPadding - bottomPadding,
-            );
-            final dayFontSize = math.min(
-              14.sp,
-              math.max(9.0, contentHeight * 0.38),
-            );
-            final statusFontSize = math.min(
-              11.sp,
-              math.max(8.0, contentHeight * 0.26),
-            );
-            final verticalGap = math.min(
-              2.h,
-              math.max(0.5, contentHeight * 0.04),
-            );
-            final statusVerticalPadding = isSpecial
-                ? math.min(1.h, compact ? 0.0 : 1.h)
-                : 0.0;
-
-            return Stack(
-              children: [
-                Positioned.fill(
-                  child: Padding(
-                    padding: EdgeInsets.fromLTRB(
-                      3.w,
-                      topPadding,
-                      3.w,
-                      bottomPadding,
-                    ),
-                    child: Column(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      crossAxisAlignment: CrossAxisAlignment.stretch,
+    return Semantics(
+      label: label,
+      selected: selected,
+      child: Tooltip(
+        message: label,
+        child: ExcludeSemantics(
+          child: Padding(
+            padding: const EdgeInsets.all(2),
+            child: AnimatedContainer(
+              duration: AppMotion.duration(context, AppMotion.fast),
+              curve: AppMotion.standardDecelerate,
+              decoration: BoxDecoration(
+                color: selected
+                    ? scheme.primary
+                    : today
+                    ? scheme.primary.withValues(alpha: 0.06)
+                    : Colors.transparent,
+                borderRadius: BorderRadius.circular(AppRadius.md),
+                border: today && !selected
+                    ? Border.all(color: scheme.primary)
+                    : null,
+              ),
+              child: Opacity(
+                opacity: outside ? 0.48 : 1,
+                child: LayoutBuilder(
+                  builder: (context, constraints) {
+                    final compact = constraints.maxHeight < 58;
+                    return Stack(
                       children: [
-                        Text(
-                          '${day.day}',
-                          textAlign: TextAlign.center,
-                          style: TextStyle(
-                            color: dayColor,
-                            fontWeight: FontWeight.bold,
-                            fontSize: dayFontSize,
-                            height: 1,
+                        Center(
+                          child: Padding(
+                            padding: EdgeInsets.fromLTRB(
+                              2,
+                              holiday != null
+                                  ? compact
+                                        ? 4
+                                        : 8
+                                  : compact
+                                  ? 1
+                                  : 3,
+                              2,
+                              compact ? 1 : 3,
+                            ),
+                            child: Column(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                Text(
+                                  '${day.day}',
+                                  style: TextStyle(
+                                    color: foreground,
+                                    fontSize: compact ? 12 : 15,
+                                    fontWeight: FontWeight.w700,
+                                    height: 1.05,
+                                  ),
+                                ),
+                                SizedBox(height: compact ? 1 : 3),
+                                Text(
+                                  metadata?.text ?? '',
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
+                                  style: TextStyle(
+                                    color: muted,
+                                    fontSize: compact ? 8 : 10,
+                                    height: 1.1,
+                                  ),
+                                ),
+                                if (status != null) ...[
+                                  SizedBox(height: compact ? 1 : 3),
+                                  Container(
+                                    padding: EdgeInsets.symmetric(
+                                      horizontal: 3,
+                                      vertical: compact ? 1 : 2,
+                                    ),
+                                    decoration: BoxDecoration(
+                                      borderRadius: BorderRadius.circular(
+                                        AppRadius.pill,
+                                      ),
+                                      color: selected
+                                          ? scheme.onPrimary.withValues(
+                                              alpha: 0.15,
+                                            )
+                                          : status.color.withValues(
+                                              alpha: isDark ? 0.20 : 0.10,
+                                            ),
+                                    ),
+                                    child: Row(
+                                      mainAxisSize: MainAxisSize.min,
+                                      children: [
+                                        Flexible(
+                                          child: Text(
+                                            status.text,
+                                            maxLines: 1,
+                                            overflow: TextOverflow.ellipsis,
+                                            style: TextStyle(
+                                              color: selected
+                                                  ? scheme.onPrimary
+                                                  : status.color,
+                                              fontSize: compact ? 8 : 10,
+                                              fontWeight: FontWeight.w700,
+                                              height: 1,
+                                            ),
+                                          ),
+                                        ),
+                                        if (count > 1) ...[
+                                          const SizedBox(width: 2),
+                                          Flexible(
+                                            child: Text(
+                                              '+${count - 1}',
+                                              maxLines: 1,
+                                              overflow: TextOverflow.ellipsis,
+                                              style: TextStyle(
+                                                color: selected
+                                                    ? scheme.onPrimary
+                                                    : muted,
+                                                fontSize: compact ? 7 : 8,
+                                                height: 1,
+                                              ),
+                                            ),
+                                          ),
+                                        ],
+                                      ],
+                                    ),
+                                  ),
+                                ],
+                              ],
+                            ),
                           ),
                         ),
-                        SizedBox(height: verticalGap),
-                        Align(
-                          alignment: Alignment.center,
-                          child: Container(
-                            width: double.infinity,
-                            padding: EdgeInsets.symmetric(
-                              horizontal: isSpecial ? 3.w : 0,
-                              vertical: statusVerticalPadding,
-                            ),
-                            decoration: isSpecial
-                                ? BoxDecoration(
-                                    color: statusFillColor,
-                                    borderRadius: BorderRadius.circular(6),
-                                    border: Border.all(
-                                      color: statusBorderColor,
-                                      width: 0.8,
-                                    ),
-                                  )
-                                : null,
+                        if (holiday != null)
+                          Positioned(
+                            top: 2,
+                            right: 3,
                             child: Text(
-                              bottomText,
-                              maxLines: 1,
-                              overflow: TextOverflow.ellipsis,
-                              textAlign: TextAlign.center,
+                              holiday ? '班' : '休',
                               style: TextStyle(
-                                color: bottomColor,
-                                fontSize: statusFontSize,
-                                height: 1.05,
-                                fontWeight: (isSelected || isSpecial)
-                                    ? FontWeight.bold
-                                    : bottomWeight,
+                                fontSize: compact ? 7 : 8,
+                                height: 1,
+                                color: selected
+                                    ? scheme.onPrimary
+                                    : holiday
+                                    ? muted
+                                    : scheme.error,
+                                fontWeight: FontWeight.w700,
                               ),
                             ),
                           ),
-                        ),
                       ],
-                    ),
-                  ),
+                    );
+                  },
                 ),
-                if (holidayIsWork != null)
-                  Positioned(
-                    top: 0,
-                    right: 0,
-                    child: Container(
-                      padding: EdgeInsets.symmetric(
-                        horizontal: 3.w,
-                        vertical: compact ? 0 : 1.h,
-                      ),
-                      decoration: BoxDecoration(
-                        color: holidayIsWork
-                            ? colorScheme.surfaceContainerHighest
-                            : colorScheme.errorContainer,
-                        borderRadius: const BorderRadius.only(
-                          bottomLeft: Radius.circular(6),
-                        ),
-                      ),
-                      child: Text(
-                        holidayIsWork ? "班" : "休",
-                        style: TextStyle(
-                          fontSize: math.min(9.sp, compact ? 8 : 9.sp),
-                          color: holidayIsWork
-                              ? colorScheme.onSurfaceVariant
-                              : colorScheme.onErrorContainer,
-                          fontWeight: FontWeight.bold,
-                          height: 1,
-                        ),
-                      ),
-                    ),
-                  ),
-              ],
-            );
-          },
+              ),
+            ),
+          ),
         ),
       ),
     );
   }
 
-  _DayCellStatus _dayStatus(
-    BuildContext context,
-    WorkLogDayMetadata? metadata,
-  ) {
-    if (metadata == null) {
-      return _DayCellStatus(
-        text: '',
-        color: Theme.of(context).colorScheme.onSurfaceVariant,
-      );
-    }
-    if (metadata.kind == WorkLogDayMetadataKind.solarTerm) {
-      return _DayCellStatus(
-        text: metadata.text,
-        color: Theme.of(context).colorScheme.primary.withValues(alpha: 0.7),
-      );
-    }
-    if (metadata.kind == WorkLogDayMetadataKind.festival) {
-      return _DayCellStatus(text: metadata.text, color: AppColors.green);
-    }
-    return _DayCellStatus(
-      text: metadata.text,
-      color: Theme.of(context).colorScheme.onSurfaceVariant,
-    );
-  }
-
-  _DayCellStatus _eventStatus(BuildContext context, WorkLogEntry event) {
-    final logColors = Theme.of(context).logColors;
-    return switch (event.type) {
+  _DayCellStatus _eventStatus(BuildContext context, WorkLogEntry entry) {
+    final colors = Theme.of(context).logColors;
+    return switch (entry.type) {
       WorkLogEntryType.work => _DayCellStatus(
-        text: (event.overtimeHours ?? 0) > 0
-            ? '+${_formatHours(event.overtimeHours ?? 0)}h'
+        text: (entry.overtimeHours ?? 0) > 0
+            ? '+${_formatHours(entry.overtimeHours!)}h'
             : '工',
-        color: (event.overtimeHours ?? 0) > 0
-            ? logColors.overtime
-            : logColors.work,
+        color: (entry.overtimeHours ?? 0) > 0 ? colors.overtime : colors.work,
       ),
       WorkLogEntryType.businessTrip => _DayCellStatus(
         text: '差',
-        color: logColors.businessTrip,
+        color: colors.businessTrip,
       ),
       WorkLogEntryType.leave => _DayCellStatus(
-        text: event.location?.trim().isNotEmpty == true
-            ? event.location!.trim()
+        text: entry.location?.trim().isNotEmpty == true
+            ? entry.location!.trim()
             : '假',
-        color: logColors.leave,
+        color: colors.leave,
       ),
-      WorkLogEntryType.rest => _DayCellStatus(text: '休', color: logColors.rest),
+      WorkLogEntryType.rest => _DayCellStatus(text: '休', color: colors.rest),
     };
   }
 
-  String _formatHours(double value) {
-    return value == value.roundToDouble()
-        ? value.toStringAsFixed(0)
-        : value.toStringAsFixed(1);
-  }
+  String _formatHours(double value) => value == value.roundToDouble()
+      ? value.toStringAsFixed(0)
+      : value.toStringAsFixed(1);
 }
 
 final class _DayCellStatus {
   final String text;
   final Color color;
-
   const _DayCellStatus({required this.text, required this.color});
 }

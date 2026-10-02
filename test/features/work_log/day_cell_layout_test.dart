@@ -5,6 +5,8 @@ import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:table_calendar/table_calendar.dart';
 import 'package:life_log/features/work_log/presentation/widgets/day_cell.dart';
+import 'package:life_log/features/work_log/domain/entities/work_log_entry.dart';
+import 'package:life_log/features/work_log/presentation/work_log_day_metadata.dart';
 
 void main() {
   testWidgets('DayCell avoids overflow in short default widget viewport', (
@@ -63,4 +65,49 @@ void main() {
     expect(source, contains('calendarFormat'));
     expect(legacyWidget.existsSync(), isFalse);
   });
+
+  testWidgets(
+    'a short recorded holiday cell preserves all information layers',
+    (tester) async {
+      await tester.pumpWidget(
+        MaterialApp(
+          home: Scaffold(
+            body: Center(
+              child: SizedBox(
+                width: 44,
+                height: 46,
+                child: DayCell(
+                  day: DateTime(2026, 9, 25),
+                  focusedDay: DateTime(2026, 9),
+                  selectedDay: DateTime(2026, 9, 25),
+                  calendarFormat: CalendarFormat.month,
+                  event: WorkLogEntry(
+                    id: 1,
+                    date: DateTime(2026, 9, 25),
+                    type: WorkLogEntryType.work,
+                    overtimeHours: 2,
+                  ),
+                  entryCount: 2,
+                  metadata: WorkLogDayMetadata(
+                    day: DateTime(2026, 9, 25),
+                    text: '中秋节',
+                    kind: WorkLogDayMetadataKind.festival,
+                    holidayIsWork: false,
+                  ),
+                  isDark: false,
+                  textPrimary: Colors.black,
+                ),
+              ),
+            ),
+          ),
+        ),
+      );
+      expect(find.text('25'), findsOneWidget);
+      expect(find.text('中秋节'), findsOneWidget);
+      expect(find.text('+2h'), findsOneWidget);
+      expect(find.text('+1'), findsOneWidget);
+      expect(find.text('休'), findsOneWidget);
+      expect(tester.takeException(), isNull);
+    },
+  );
 }

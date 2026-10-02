@@ -1,8 +1,6 @@
-import 'dart:ffi';
 import 'dart:io';
 
 import 'package:flutter_test/flutter_test.dart';
-import 'package:isar_community/isar.dart';
 import 'package:life_log/common/db/db_service.dart';
 import 'package:life_log/core/db/isar_database.dart';
 import 'package:life_log/core/sync/isar_sync_queue.dart';
@@ -11,16 +9,11 @@ import 'package:life_log/core/sync/sync_cursor_store.dart';
 import 'package:life_log/core/sync/sync_engine.dart';
 import 'package:life_log/core/sync/sync_queue.dart';
 
-void main() {
-  final isarLibraryPath = _isarLibraryPath();
-  final isarSkip = isarLibraryPath != null
-      ? false
-      : 'isar.dll is not available in this test environment. '
-            'Set ISAR_DLL_PATH or place it at D:\\Tool\\Isar\\isar.dll.';
+import '../../../tool/isar_test_runtime.dart' show initializeTestIsar;
 
+void main() {
   setUpAll(() async {
-    if (isarLibraryPath == null) return;
-    await Isar.initializeIsarCore(libraries: {Abi.current(): isarLibraryPath});
+    await initializeTestIsar();
   });
 
   group('SyncQueue backoff', () {
@@ -73,7 +66,7 @@ void main() {
       ).syncAll();
 
       expect(summary.cancelled, isTrue);
-      expect(events, ['pull']);
+      expect(events, isEmpty);
     });
 
     test('IsarSyncQueue keeps retry backoff after queue rebuild', () async {
@@ -115,7 +108,7 @@ void main() {
           await tempDir.delete(recursive: true);
         }
       }
-    }, skip: isarSkip);
+    });
   });
 }
 
@@ -164,12 +157,4 @@ final class _QueueAdapter
 
   @override
   String syncQueueKey(String entity) => 'entity-1';
-}
-
-String? _isarLibraryPath() {
-  final envPath = Platform.environment['ISAR_DLL_PATH'];
-  if (envPath != null && File(envPath).existsSync()) return envPath;
-  const fallback = 'D:\\Tool\\Isar\\isar.dll';
-  if (File(fallback).existsSync()) return fallback;
-  return null;
 }

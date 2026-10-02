@@ -5,7 +5,7 @@ import 'package:flutter_test/flutter_test.dart';
 void main() {
   group('ExpenseRecordDao boundary', () {
     test(
-      'DbService delegates ExpenseRecord storage primitives to a feature DAO',
+      'DbService uses feature DAO reads and owner-fenced ExpenseRecord mutations',
       () {
         final daoFile = File(
           'lib/features/expense/data/expense_record_dao.dart',
@@ -46,11 +46,15 @@ void main() {
         );
         expect(
           dbService,
-          contains('_expenseRecordDao.getPendingForSyncForOwner('),
+          contains('_expenseRecordDao.getPendingForSyncForOwner(owner)'),
         );
+        expect(dbService, contains('_preparePendingSyncRows('));
         expect(dbService, contains('_expenseRecordDao.getById('));
         expect(dbService, contains('_expenseRecordDao.watch()'));
-        expect(dbService, contains('_expenseRecordDao.delete('));
+        expect(dbService, contains('Future<void> purgeDeletedExpenseRecord('));
+        expect(dbService, contains('_syncWrite(context, (owner) async'));
+        expect(dbService, contains('live.ownerUserId != owner'));
+        expect(dbService, contains('await isar.expenseRecords.delete(id)'));
       },
     );
   });

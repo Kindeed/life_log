@@ -1,6 +1,7 @@
 enum SyncConflictType { updateConflict, deleteConflict, mergeConflict }
 
 class SyncConflictDraft {
+  final String? ownerUserId;
   final String entityName;
   final String? entitySyncId;
   final String? localId;
@@ -14,6 +15,7 @@ class SyncConflictDraft {
   final DateTime detectedAt;
 
   SyncConflictDraft({
+    this.ownerUserId,
     required this.entityName,
     required this.conflictType,
     required this.message,

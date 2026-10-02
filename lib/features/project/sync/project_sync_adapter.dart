@@ -4,6 +4,7 @@ import 'package:life_log/common/utils/sync_id_policy.dart';
 import 'package:life_log/core/sync/sync_adapter.dart';
 import 'package:life_log/core/sync/sync_conflict.dart';
 import 'package:life_log/core/sync/sync_pull_page.dart';
+import 'package:life_log/core/sync/sync_run_context.dart';
 import 'package:life_log/features/project/data/project_model.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
@@ -12,12 +13,15 @@ final class ProjectSyncAdapter implements SyncAdapter<Project> {
   final DbService dbService;
   final String userId;
   final int pageSize;
+  final SyncRunContext? context;
+  final _sentSnapshots = <int, Project>{};
 
   ProjectSyncAdapter({
     required this.client,
     required this.dbService,
     required this.userId,
     this.pageSize = 500,
+    this.context,
   });
 
   @override
@@ -27,8 +31,29 @@ final class ProjectSyncAdapter implements SyncAdapter<Project> {
   String get tableName => 'projects';
 
   @override
-  Future<List<Project>> pendingLocalChanges() {
-    return dbService.getPendingProjectsForSync();
+  Future<List<Project>> pendingLocalChanges() async {
+    _checkCurrent();
+    final entities = await dbService.getPendingProjectsForSync(
+      context: context,
+    );
+    _checkCurrent();
+    return entities.where((entity) => entity.ownerUserId == userId).toList();
+  }
+
+  @override
+  String syncQueueKey(Project entity) => ownerScopedSyncEntityKey(
+    ownerId: userId,
+    syncId: entity.syncId,
+    localId: entity.id,
+  );
+
+  void _checkCurrent() => context?.checkCurrent();
+
+  void _checkRemoteRow(Map<String, dynamic> row) {
+    _checkCurrent();
+    if (row['user_id'] != userId) {
+      throw StateError('Remote sync row belongs to a different owner');
+    }
   }
 
   @override
@@ -42,6 +67,7 @@ final class ProjectSyncAdapter implements SyncAdapter<Project> {
     );
 
     while (true) {
+      _checkCurrent();
       dynamic query = client.from(tableName).select().eq('user_id', userId);
       query = pullPage.applyTo(query);
 
@@ -49,6 +75,7 @@ final class ProjectSyncAdapter implements SyncAdapter<Project> {
           .order('updated_at', ascending: true)
           .order('id', ascending: true)
           .limit(pullPage.pageSize);
+      _checkCurrent();
       final pageRows = (page as List)
           .cast<Map>()
           .map((row) => Map<String, dynamic>.from(row))
@@ -67,11 +94,17 @@ final class ProjectSyncAdapter implements SyncAdapter<Project> {
 
   @override
   Future<void> mergeRemoteRow(Map<String, dynamic> row) {
-    return dbService.syncRemoteProjectToLocal(row);
+    _checkRemoteRow(row);
+    return dbService.syncRemoteProjectToLocal(row, context: context);
   }
 
   @override
   Future<PushResult> pushLocalChange(Project entity) async {
+    _checkCurrent();
+    if (entity.ownerUserId != userId) {
+      throw StateError('Local sync entity belongs to a different owner');
+    }
+    _sentSnapshots[entity.id] = DbService.snapshotProject(entity);
     if (entity.pendingDelete) {
       if (entity.remoteId == null) {
         return _deleteRemoteBySyncId(entity);
@@ -103,6 +136,7 @@ final class ProjectSyncAdapter implements SyncAdapter<Project> {
               .select('id, sync_id, version, updated_at')
               .single()
         : await _updateRemote(entity, data);
+    _checkCurrent();
     if (response == null) {
       final remote = await _refreshRemote(entity);
       return PushResult(
@@ -117,13 +151,23 @@ final class ProjectSyncAdapter implements SyncAdapter<Project> {
     }
 
     _applySyncResult(entity, response);
-    await dbService.updateProjectRemoteId(entity);
+    await dbService.updateProjectRemoteId(
+      entity,
+      context: context,
+      sentSnapshot: _sentSnapshots[entity.id],
+    );
+    _checkCurrent();
     return const PushResult(success: true);
   }
 
   @override
   Future<void> purgeLocalDeleted(Project entity) {
-    return dbService.purgeDeletedProject(entity.id);
+    _checkCurrent();
+    return dbService.purgeDeletedProject(
+      entity.id,
+      context: context,
+      sentSnapshot: _sentSnapshots[entity.id],
+    );
   }
 
   Future<Map<String, dynamic>?> _updateRemote(
@@ -135,9 +179,7 @@ final class ProjectSyncAdapter implements SyncAdapter<Project> {
         .update(data)
         .eq('id', entity.remoteId!)
         .eq('user_id', userId);
-    if (entity.remoteVersion > 0) {
-      query = query.eq('version', entity.remoteVersion);
-    }
+    query = query.eq('version', entity.remoteVersion);
     return await query.select('id, sync_id, version, updated_at').maybeSingle();
   }
 
@@ -150,12 +192,11 @@ final class ProjectSyncAdapter implements SyncAdapter<Project> {
         })
         .eq('id', entity.remoteId!)
         .eq('user_id', userId);
-    if (entity.remoteVersion > 0) {
-      query = query.eq('version', entity.remoteVersion);
-    }
+    query = query.eq('version', entity.remoteVersion);
     final response = await query
         .select('id, sync_id, version, updated_at')
         .maybeSingle();
+    _checkCurrent();
     if (response == null) {
       final remote = await _refreshRemote(entity);
       return PushResult(
@@ -187,6 +228,7 @@ final class ProjectSyncAdapter implements SyncAdapter<Project> {
         .eq('sync_id', syncId)
         .select('id, sync_id, version, updated_at')
         .maybeSingle();
+    _checkCurrent();
     if (response == null) {
       return const PushResult(success: true, purgeLocalDeleted: true);
     }
@@ -204,9 +246,13 @@ final class ProjectSyncAdapter implements SyncAdapter<Project> {
       if (syncId == null || syncId.isEmpty) return null;
       query = query.eq('sync_id', syncId);
     }
+    _checkCurrent();
     final remote = await query.maybeSingle();
+    _checkCurrent();
     if (remote != null) {
-      await dbService.syncRemoteProjectToLocal(remote);
+      _checkRemoteRow(remote);
+      await dbService.syncRemoteProjectToLocal(remote, context: context);
+      _checkCurrent();
     }
     return remote == null ? null : Map<String, dynamic>.from(remote);
   }
@@ -219,6 +265,7 @@ final class ProjectSyncAdapter implements SyncAdapter<Project> {
   ) {
     return SyncConflictDraft(
       entityName: entityName,
+      ownerUserId: userId,
       entitySyncId: entity.syncId,
       localId: entity.id.toString(),
       remoteId: entity.remoteId?.toString(),
@@ -232,6 +279,7 @@ final class ProjectSyncAdapter implements SyncAdapter<Project> {
   }
 
   void _applySyncResult(Project entity, Map<String, dynamic> response) {
+    _checkCurrent();
     entity.remoteId = _requireRemoteId(response);
     entity.syncId = _parseRemoteString(response['sync_id']) ?? entity.syncId;
     entity.remoteVersion = _parseRemoteInt(response['version']) ?? 0;

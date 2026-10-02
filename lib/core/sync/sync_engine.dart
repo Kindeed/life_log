@@ -2,6 +2,7 @@ import 'package:life_log/core/sync/sync_adapter.dart';
 import 'package:life_log/core/sync/sync_conflict.dart';
 import 'package:life_log/core/sync/sync_cursor_store.dart';
 import 'package:life_log/core/sync/sync_queue.dart';
+import 'package:life_log/core/sync/sync_run_context.dart';
 
 class AdapterSyncSummary {
   final int pulledRows;
@@ -20,7 +21,7 @@ class AdapterSyncSummary {
     required this.skippedByBackoff,
   });
 
-  bool get success => failedPushes == 0;
+  bool get success => failedPushes == 0 && skippedByBackoff == 0;
 }
 
 class SyncSummary {
@@ -39,6 +40,7 @@ class SyncEngine {
   final SyncConflictStore conflictStore;
   final SyncQueue queue;
   final SyncRunControl runControl;
+  final SyncRunContext? context;
 
   SyncEngine({
     required this.adapters,
@@ -46,96 +48,143 @@ class SyncEngine {
     this.conflictStore = const NoopSyncConflictStore(),
     this.queue = const NoopSyncQueue(),
     SyncRunControl? runControl,
+    this.context,
   }) : runControl = runControl ?? SyncRunControl();
 
   Future<SyncSummary> syncAll({SyncMode mode = SyncMode.incremental}) async {
     final builders = <String, _AdapterSummaryBuilder>{};
 
-    for (final adapter in adapters) {
-      final cursor = mode == SyncMode.fullRefresh
-          ? null
-          : await cursorStore.read(adapter.entityName);
-      final request = SyncPullRequest(mode: mode, cursor: cursor);
-      final rows = await adapter.pullRemoteRows(request);
-      SyncCursor? nextCursor;
+    try {
+      for (final adapter in adapters) {
+        _checkCurrent();
+        final cursor = mode == SyncMode.fullRefresh
+            ? null
+            : await cursorStore.read(adapter.entityName);
+        _checkCurrent();
+        final request = SyncPullRequest(mode: mode, cursor: cursor);
+        final rows = await adapter.pullRemoteRows(request);
+        _checkCurrent();
+        SyncCursor? nextCursor;
 
-      for (final row in rows) {
-        await adapter.mergeRemoteRow(row);
-        nextCursor = _cursorFromRow(row) ?? nextCursor;
+        for (final row in rows) {
+          _checkCurrent();
+          context?.checkRemoteRow(row);
+          await adapter.mergeRemoteRow(row);
+          _checkCurrent();
+          nextCursor = _cursorFromRow(row) ?? nextCursor;
+        }
+
+        if (nextCursor != null) {
+          _checkCurrent();
+          await cursorStore.write(adapter.entityName, nextCursor);
+          _checkCurrent();
+        }
+
+        builders[adapter.entityName] = _AdapterSummaryBuilder()
+          ..pulledRows = rows.length;
       }
 
-      if (nextCursor != null) {
-        await cursorStore.write(adapter.entityName, nextCursor);
-      }
+      var cancelled = false;
 
-      builders[adapter.entityName] = _AdapterSummaryBuilder()
-        ..pulledRows = rows.length;
-    }
-
-    var cancelled = false;
-
-    for (final adapter in adapters) {
-      final builder = builders.putIfAbsent(
-        adapter.entityName,
-        _AdapterSummaryBuilder.new,
-      );
-      if (runControl.isCancelled) {
-        cancelled = true;
-        break;
-      }
-      final pending = await adapter.pendingLocalChanges();
-
-      for (final entity in pending) {
+      for (final adapter in adapters) {
+        final builder = builders.putIfAbsent(
+          adapter.entityName,
+          _AdapterSummaryBuilder.new,
+        );
         if (runControl.isCancelled) {
           cancelled = true;
           break;
         }
-        await runControl.waitIfPaused();
+        final pending = await adapter.pendingLocalChanges();
+        _checkCurrent();
 
-        final entityKey = _syncQueueKey(adapter, entity);
-        if (!await queue.canAttempt(adapter.entityName, entityKey)) {
-          builder.skippedByBackoff++;
-          continue;
-        }
-
-        final result = await adapter.pushLocalChange(entity);
-        if (result.success) {
-          await queue.recordSuccess(adapter.entityName, entityKey);
-          builder.pushedChanges++;
-          if (result.purgeLocalDeleted) {
-            await adapter.purgeLocalDeleted(entity);
-            builder.purgedLocalDeleted++;
+        for (final entity in pending) {
+          if (runControl.isCancelled) {
+            cancelled = true;
+            break;
           }
-        } else {
-          await queue.recordFailure(
+          await runControl.waitIfPaused();
+          _checkCurrent();
+
+          final entityKey = _syncQueueKey(adapter, entity);
+          final canAttempt = await queue.canAttempt(
             adapter.entityName,
             entityKey,
-            error: result.conflict?.message,
           );
-          builder.failedPushes++;
-          final conflict = result.conflict;
-          if (conflict != null) {
-            await conflictStore.record(conflict);
-            builder.conflicts++;
+          _checkCurrent();
+          if (!canAttempt) {
+            builder.skippedByBackoff++;
+            continue;
+          }
+
+          final PushResult result;
+          try {
+            result = await adapter.pushLocalChange(entity);
+          } on SyncRunInvalidated {
+            rethrow;
+          } catch (error) {
+            _checkCurrent();
+            await queue.recordFailure(
+              adapter.entityName,
+              entityKey,
+              error: error,
+            );
+            _checkCurrent();
+            // Keep the existing service error handling (including expired auth),
+            // while persisting backoff for actual transport failures as well.
+            rethrow;
+          }
+          _checkCurrent();
+          if (result.success) {
+            await queue.recordSuccess(adapter.entityName, entityKey);
+            _checkCurrent();
+            builder.pushedChanges++;
+            if (result.purgeLocalDeleted) {
+              await adapter.purgeLocalDeleted(entity);
+              _checkCurrent();
+              builder.purgedLocalDeleted++;
+            }
+          } else {
+            await queue.recordFailure(
+              adapter.entityName,
+              entityKey,
+              error: result.conflict?.message,
+            );
+            _checkCurrent();
+            builder.failedPushes++;
+            final conflict = result.conflict;
+            if (conflict != null) {
+              await conflictStore.record(conflict);
+              _checkCurrent();
+              builder.conflicts++;
+            }
           }
         }
       }
-    }
 
-    return SyncSummary(
-      adapters: {
-        for (final entry in builders.entries) entry.key: entry.value.build(),
-      },
-      cancelled: cancelled,
-    );
+      return SyncSummary(
+        adapters: {
+          for (final entry in builders.entries) entry.key: entry.value.build(),
+        },
+        cancelled: cancelled,
+      );
+    } on SyncRunInvalidated {
+      return SyncSummary(
+        adapters: {
+          for (final entry in builders.entries) entry.key: entry.value.build(),
+        },
+        cancelled: true,
+      );
+    }
+  }
+
+  void _checkCurrent() {
+    context?.checkCurrent();
+    if (runControl.isCancelled) throw const SyncRunInvalidated();
   }
 
   String _syncQueueKey(SyncAdapter<dynamic> adapter, dynamic entity) {
-    final maybeResolver = adapter as dynamic;
-    if (maybeResolver is SyncEntityKeyResolver<dynamic>) {
-      return maybeResolver.syncQueueKey(entity);
-    }
-    return entity.hashCode.toString();
+    return adapter.syncQueueKey(entity);
   }
 
   SyncCursor? _cursorFromRow(Map<String, dynamic> row) {

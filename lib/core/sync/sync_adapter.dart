@@ -1,5 +1,6 @@
 import 'package:life_log/core/sync/sync_cursor_store.dart';
 import 'package:life_log/core/sync/sync_conflict.dart';
+import 'package:life_log/core/sync/sync_queue.dart';
 
 enum SyncMode { incremental, fullRefresh }
 
@@ -22,7 +23,7 @@ class PushResult {
   });
 }
 
-abstract interface class SyncAdapter<T> {
+abstract interface class SyncAdapter<T> implements SyncEntityKeyResolver<T> {
   String get entityName;
   String get tableName;
 

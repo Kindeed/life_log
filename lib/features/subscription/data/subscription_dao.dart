@@ -91,7 +91,7 @@ class SubscriptionDao {
   }
 
   Stream<void> watch() {
-    return _isar.subscriptions.watchLazy();
+    return database.watch((isar) => isar.subscriptions.watchLazy());
   }
 
   Future<void> delete(int id) async {

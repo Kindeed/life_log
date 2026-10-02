@@ -3,6 +3,8 @@ import 'package:life_log/common/theme/theme_extensions.dart';
 import 'package:flutter/services.dart';
 
 import '../theme/app_radius.dart';
+import '../theme/app_motion.dart';
+import 'app_press_feedback.dart';
 import '../theme/app_spacing.dart';
 
 enum AppButtonVariant { primary, secondary, text, destructive }
@@ -79,7 +81,7 @@ class AppButton extends StatelessWidget {
       isLoading: isLoading,
     );
     final shape = RoundedRectangleBorder(
-      borderRadius: BorderRadius.circular(AppRadius.md),
+      borderRadius: BorderRadius.circular(AppRadius.pill),
     );
     final minimumSize = Size.fromHeight(height);
     final textStyle = Theme.of(context).textTheme.labelLarge?.copyWith(
@@ -89,48 +91,60 @@ class AppButton extends StatelessWidget {
 
     switch (variant) {
       case AppButtonVariant.primary:
-        return FilledButton(
-          onPressed: callback,
-          style: FilledButton.styleFrom(
-            minimumSize: minimumSize,
-            disabledBackgroundColor: semantic.mutedSurface,
-            disabledForegroundColor: Theme.of(context).disabledColor,
-            shape: shape,
-            textStyle: textStyle,
+        return AppPressFeedback(
+          enabled: callback != null,
+          child: FilledButton(
+            onPressed: callback,
+            style: FilledButton.styleFrom(
+              minimumSize: minimumSize,
+              disabledBackgroundColor: semantic.mutedSurface,
+              disabledForegroundColor: Theme.of(context).disabledColor,
+              shape: shape,
+              textStyle: textStyle,
+            ),
+            child: child,
           ),
-          child: child,
         );
       case AppButtonVariant.secondary:
-        return FilledButton.tonal(
-          onPressed: callback,
-          style: FilledButton.styleFrom(
-            minimumSize: minimumSize,
-            shape: shape,
-            textStyle: textStyle,
+        return AppPressFeedback(
+          enabled: callback != null,
+          child: FilledButton.tonal(
+            onPressed: callback,
+            style: FilledButton.styleFrom(
+              minimumSize: minimumSize,
+              shape: shape,
+              textStyle: textStyle,
+            ),
+            child: child,
           ),
-          child: child,
         );
       case AppButtonVariant.text:
-        return TextButton(
-          onPressed: callback,
-          style: TextButton.styleFrom(
-            minimumSize: minimumSize,
-            shape: shape,
-            textStyle: textStyle,
+        return AppPressFeedback(
+          enabled: callback != null,
+          child: TextButton(
+            onPressed: callback,
+            style: TextButton.styleFrom(
+              minimumSize: minimumSize,
+              shape: shape,
+              textStyle: textStyle,
+            ),
+            child: child,
           ),
-          child: child,
         );
       case AppButtonVariant.destructive:
-        return FilledButton(
-          onPressed: callback,
-          style: FilledButton.styleFrom(
-            minimumSize: minimumSize,
-            backgroundColor: Theme.of(context).colorScheme.errorContainer,
-            foregroundColor: Theme.of(context).colorScheme.onErrorContainer,
-            shape: shape,
-            textStyle: textStyle,
+        return AppPressFeedback(
+          enabled: callback != null,
+          child: FilledButton(
+            onPressed: callback,
+            style: FilledButton.styleFrom(
+              minimumSize: minimumSize,
+              backgroundColor: Theme.of(context).colorScheme.errorContainer,
+              foregroundColor: Theme.of(context).colorScheme.onErrorContainer,
+              shape: shape,
+              textStyle: textStyle,
+            ),
+            child: child,
           ),
-          child: child,
         );
     }
   }
@@ -164,7 +178,7 @@ class _ButtonContent extends StatelessWidget {
       alignment: Alignment.center,
       children: [
         AnimatedOpacity(
-          duration: const Duration(milliseconds: 120),
+          duration: AppMotion.duration(context, AppMotion.fast),
           opacity: isLoading ? 0 : 1,
           child: labelContent,
         ),

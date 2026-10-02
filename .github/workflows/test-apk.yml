@@ -99,6 +99,9 @@ jobs:
       - name: Analyze code
         run: flutter analyze --fatal-infos --fatal-warnings
 
+      - name: Verify native Isar test runtime
+        run: dart run tool/isar_test_runtime.dart
+
       - name: Run tests
         run: flutter test
 

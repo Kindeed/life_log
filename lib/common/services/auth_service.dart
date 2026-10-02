@@ -6,10 +6,15 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 import '../../common/services/log_service.dart';
 
 class AuthService extends ChangeNotifier {
-  final _client = Supabase.instance.client;
+  final SupabaseClient _client;
+  final GetStorage _storage;
   final ValueNotifier<User?> currentUser = ValueNotifier<User?>(null);
   StreamSubscription<AuthState>? _authStateSub;
   VoidCallback? _sessionExpiredHandler;
+
+  AuthService({SupabaseClient? client, GetStorage? storage})
+    : _client = client ?? Supabase.instance.client,
+      _storage = storage ?? GetStorage();
 
   AuthService start() {
     // Initialize current user
@@ -119,7 +124,7 @@ class AuthService extends ChangeNotifier {
 
   int get sessionEpoch {
     try {
-      return GetStorage().read<int>(_sessionEpochKey) ?? _sessionEpoch;
+      return _storage.read<int>(_sessionEpochKey) ?? _sessionEpoch;
     } catch (_) {
       return _sessionEpoch;
     }
@@ -129,17 +134,19 @@ class AuthService extends ChangeNotifier {
   void debugSetSessionEpoch(int epoch) {
     _sessionEpoch = epoch;
     try {
-      GetStorage().write(_sessionEpochKey, epoch);
+      _storage.write(_sessionEpochKey, epoch);
     } catch (_) {}
   }
+
+  @visibleForTesting
+  void debugSetCurrentUser(User? user) => _setCurrentUser(user);
 
   void _setCurrentUser(User? user) {
     if (currentUser.value == user) return;
     final oldUser = currentUser.value;
-    currentUser.value = user;
 
     try {
-      final storage = GetStorage();
+      final storage = _storage;
       final lastUserId = storage.read<String>(_lastUserKey);
       final newUserId = user?.id;
       if (lastUserId != newUserId) {
@@ -160,6 +167,10 @@ class AuthService extends ChangeNotifier {
       }
     }
 
+    // ValueNotifier listeners can start cloud work synchronously. Publish the
+    // new account only after its epoch has changed, so their captured context
+    // remains current and an old account's context is already invalid.
+    currentUser.value = user;
     notifyListeners();
   }
 
