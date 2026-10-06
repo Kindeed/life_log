@@ -15,6 +15,7 @@ import 'package:life_log/features/expense/presentation/expense_record_cubit.dart
 import 'package:life_log/features/expense/presentation/expense_record_editor_launcher.dart';
 import 'package:life_log/features/subscription/domain/entities/subscription_entry.dart';
 import 'package:life_log/features/subscription/presentation/subscription_editor_launcher.dart';
+import 'package:life_log/features/subscription/presentation/subscription_date_refresh.dart';
 import 'package:life_log/features/subscription/presentation/subscription_today_cubit.dart';
 import 'package:life_log/features/work_log/domain/entities/work_log_entry.dart';
 import 'package:life_log/features/work_log/presentation/work_log_editor_launcher.dart';
@@ -43,7 +44,12 @@ class TodayView extends StatelessWidget {
           create: (_) => serviceLocator<EvidenceCubit>()..start(),
         ),
       ],
-      child: const _TodayContent(),
+      child: Builder(
+        builder: (context) => SubscriptionDateRefresh(
+          onRefresh: context.read<SubscriptionTodayCubit>().refreshReferenceDay,
+          child: const _TodayContent(),
+        ),
+      ),
     );
   }
 }
@@ -123,10 +129,7 @@ class _TodayContent extends StatelessWidget {
                           SubscriptionTodayState
                         >(
                           buildWhen: (previous, current) =>
-                              previous.snapshot.dueSoonEntries !=
-                                  current.snapshot.dueSoonEntries ||
-                              previous.snapshot.currentMonthCost !=
-                                  current.snapshot.currentMonthCost,
+                              previous.snapshot != current.snapshot,
                           builder: (context, subscriptionState) {
                             return BlocBuilder<EvidenceCubit, EvidenceState>(
                               buildWhen: (previous, current) =>

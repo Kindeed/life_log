@@ -91,6 +91,161 @@ void main() {
       expect(repository.getAllEntriesCallCount, 2);
       expect(cubit.state.snapshot.dueSoonEntries.single.name, 'After');
     });
+
+    test(
+      'refreshes a new local day without writing the billing schedule',
+      () async {
+        var now = DateTime(2026, 5, 31, 23, 59);
+        final monthly = _entry(
+          id: 1,
+          name: 'Monthly',
+          nextPaymentDate: DateTime(2026, 5, 1),
+        );
+        final repository = _WatchableSubscriptionRepository([
+          monthly,
+          _entry(
+            id: 2,
+            name: 'Annual',
+            price: 120,
+            cycle: SubscriptionBillingCycle.yearly,
+            nextPaymentDate: DateTime(2026, 5, 20),
+          ),
+        ]);
+        addTearDown(repository.dispose);
+        final cubit = SubscriptionTodayCubit(
+          loadToday: LoadSubscriptionToday(repository),
+          watchEntries: WatchSubscriptionEntries(repository),
+          todayProvider: () => now,
+        );
+        addTearDown(cubit.close);
+        await cubit.loadToday();
+        expect(cubit.state.snapshot.currentMonthCost, 130);
+        cubit.refreshReferenceDay();
+        expect(repository.getAllEntriesCallCount, 1);
+
+        now = DateTime(2026, 6, 1);
+        cubit.refreshReferenceDay();
+        await _settleCubitAsyncWork();
+
+        expect(cubit.state.snapshot.today, DateTime(2026, 6, 1));
+        expect(cubit.state.snapshot.currentMonthCost, 10);
+        expect(cubit.state.snapshot.dueSoonEntries, [monthly]);
+        expect(monthly.nextPaymentDate, DateTime(2026, 5, 1));
+        expect(repository.getAllEntriesCallCount, 2);
+        expect(repository.saveCount, 0);
+      },
+    );
+
+    test('a slow old-day request cannot replace the new-day result', () async {
+      var now = DateTime(2026, 5, 31);
+      final staleLoad = Completer<List<SubscriptionEntry>>();
+      final currentLoad = Completer<List<SubscriptionEntry>>();
+      final repository = _WatchableSubscriptionRepository(
+        const [],
+        queuedLoads: [staleLoad.future, currentLoad.future],
+      );
+      addTearDown(repository.dispose);
+      final cubit = SubscriptionTodayCubit(
+        loadToday: LoadSubscriptionToday(repository),
+        watchEntries: WatchSubscriptionEntries(repository),
+        todayProvider: () => now,
+      );
+      addTearDown(cubit.close);
+      final oldRequest = cubit.loadToday();
+
+      now = DateTime(2026, 6, 1);
+      cubit.refreshReferenceDay();
+      cubit.refreshReferenceDay();
+      expect(repository.getAllEntriesCallCount, 2);
+      currentLoad.complete([
+        _entry(id: 2, name: 'Current', nextPaymentDate: DateTime(2026, 6, 1)),
+      ]);
+      await _settleCubitAsyncWork();
+      expect(cubit.state.snapshot.today, DateTime(2026, 6, 1));
+      expect(cubit.state.snapshot.dueSoonEntries.single.name, 'Current');
+
+      staleLoad.complete([
+        _entry(id: 1, name: 'Stale', nextPaymentDate: DateTime(2026, 5, 31)),
+      ]);
+      await oldRequest;
+      expect(cubit.state.status, SubscriptionTodayStatus.ready);
+      expect(cubit.state.snapshot.today, DateTime(2026, 6, 1));
+      expect(cubit.state.snapshot.dueSoonEntries.single.name, 'Current');
+    });
+
+    test(
+      'invalidates an in-flight future day when the clock moves back',
+      () async {
+        var now = DateTime(2026, 10, 1);
+        final staleLoad = Completer<List<SubscriptionEntry>>();
+        final current = _entry(
+          id: 1,
+          name: 'Current',
+          nextPaymentDate: DateTime(2026, 10, 1),
+        );
+        final repository = _WatchableSubscriptionRepository([
+          current,
+        ], queuedLoads: []);
+        addTearDown(repository.dispose);
+        final cubit = SubscriptionTodayCubit(
+          loadToday: LoadSubscriptionToday(repository),
+          watchEntries: WatchSubscriptionEntries(repository),
+          todayProvider: () => now,
+        );
+        addTearDown(cubit.close);
+        await cubit.loadToday();
+        expect(cubit.state.snapshot.today, DateTime(2026, 10, 1));
+
+        repository.queuedLoads.add(staleLoad.future);
+        now = DateTime(2026, 10, 2);
+        final futureDayRequest = cubit.loadToday();
+        expect(cubit.state.status, SubscriptionTodayStatus.loading);
+
+        now = DateTime(2026, 10, 1);
+        cubit.refreshReferenceDay();
+        await _settleCubitAsyncWork();
+        expect(repository.getAllEntriesCallCount, 3);
+        expect(cubit.state.status, SubscriptionTodayStatus.ready);
+        expect(cubit.state.snapshot.today, DateTime(2026, 10, 1));
+
+        staleLoad.complete([
+          _entry(id: 2, name: 'Future', nextPaymentDate: DateTime(2026, 10, 2)),
+        ]);
+        await futureDayRequest;
+
+        expect(cubit.state.snapshot.today, DateTime(2026, 10, 1));
+        expect(cubit.state.snapshot.dueSoonEntries, [current]);
+      },
+    );
+
+    test('a stale failure cannot replace a newer successful refresh', () async {
+      final staleLoad = Completer<List<SubscriptionEntry>>();
+      final repository = _WatchableSubscriptionRepository(
+        [
+          _entry(
+            id: 2,
+            name: 'Current',
+            nextPaymentDate: DateTime(2026, 5, 10),
+          ),
+        ],
+        queuedLoads: [staleLoad.future],
+      );
+      addTearDown(repository.dispose);
+      final cubit = SubscriptionTodayCubit(
+        loadToday: LoadSubscriptionToday(repository),
+        watchEntries: WatchSubscriptionEntries(repository),
+        todayProvider: () => DateTime(2026, 5, 10),
+      );
+      addTearDown(cubit.close);
+      final oldRequest = cubit.loadToday();
+      await cubit.loadToday();
+      staleLoad.completeError(StateError('old request failed'));
+      await oldRequest;
+
+      expect(cubit.state.status, SubscriptionTodayStatus.ready);
+      expect(cubit.state.failure, isNull);
+      expect(cubit.state.snapshot.dueSoonEntries.single.name, 'Current');
+    });
   });
 
   group('TodayView architecture guard', () {
@@ -170,8 +325,13 @@ final class _WatchableSubscriptionRepository
   final StreamController<void> _changes = StreamController<void>.broadcast();
   List<SubscriptionEntry> _entries;
   int getAllEntriesCallCount = 0;
+  int saveCount = 0;
+  final List<Future<List<SubscriptionEntry>>> queuedLoads;
 
-  _WatchableSubscriptionRepository(this._entries);
+  _WatchableSubscriptionRepository(
+    this._entries, {
+    this.queuedLoads = const [],
+  });
 
   void replaceEntries(List<SubscriptionEntry> entries) {
     _entries = entries;
@@ -188,6 +348,7 @@ final class _WatchableSubscriptionRepository
   @override
   Future<List<SubscriptionEntry>> getAllEntries() async {
     getAllEntriesCallCount += 1;
+    if (queuedLoads.isNotEmpty) return queuedLoads.removeAt(0);
     return _entries;
   }
 
@@ -204,7 +365,9 @@ final class _WatchableSubscriptionRepository
   Future<void> saveEntry(
     SubscriptionEntry entry, {
     required bool markDirty,
-  }) async {}
+  }) async {
+    saveCount++;
+  }
 
   @override
   Stream<void> watchEntries() => _changes.stream;

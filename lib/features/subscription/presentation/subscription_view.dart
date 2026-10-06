@@ -20,10 +20,12 @@ import 'package:life_log/core/di/service_locator.dart';
 import 'package:life_log/features/subscription/application/delete_subscription_entry.dart';
 import 'package:life_log/features/subscription/application/reorder_subscription_entries.dart';
 import 'package:life_log/features/subscription/domain/entities/subscription_entry.dart';
+import 'package:life_log/features/subscription/domain/entities/subscription_entry_stats.dart';
 import 'package:life_log/features/subscription/domain/entities/subscription_currency.dart';
 import 'package:life_log/features/subscription/domain/entities/subscription_exchange_rates.dart';
 
 import 'subscription_cubit.dart';
+import 'subscription_date_refresh.dart';
 import 'subscription_dialogs.dart';
 import 'subscription_editor_launcher.dart';
 
@@ -35,7 +37,12 @@ class SubscriptionView extends StatelessWidget {
   Widget build(BuildContext context) {
     return BlocProvider<SubscriptionCubit>(
       create: (_) => serviceLocator<SubscriptionCubit>()..start(),
-      child: _SubscriptionContent(embedded: embedded),
+      child: Builder(
+        builder: (context) => SubscriptionDateRefresh(
+          onRefresh: context.read<SubscriptionCubit>().refreshReferenceDay,
+          child: _SubscriptionContent(embedded: embedded),
+        ),
+      ),
     );
   }
 }
@@ -410,7 +417,7 @@ class _SubscriptionOverview extends StatelessWidget {
                       contentPadding: EdgeInsets.zero,
                       title: Text(entry.name),
                       subtitle: Text(
-                        '${entry.nextPaymentDate.month}月${entry.nextPaymentDate.day}日 · '
+                        '${_paymentDateLabel(entry.nextBillingDateOnOrAfter(state.referenceDay)!)} · '
                         '${formatSubscriptionAmount(entry.price ?? 0, entry.currency)}',
                       ),
                       onTap: () =>
@@ -558,17 +565,32 @@ class _SubscriptionCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final days = dateOnlyLocal(
-      entry.nextPaymentDate,
-    ).difference(dateOnlyLocal(referenceDay)).inDays;
-    final due = days < 0
-        ? '已过期'
-        : days == 0
-        ? '今天扣费'
-        : days == 1
-        ? '明天扣费'
-        : '${entry.nextPaymentDate.month}月${entry.nextPaymentDate.day}日扣费';
-    final highlight = days >= 0 && days <= entry.reminderDays;
+    final paymentDate = entry.nextBillingDateOnOrAfter(referenceDay);
+    final today = dateOnlyLocal(referenceDay);
+    final days = paymentDate == null
+        ? null
+        : DateTime.utc(
+            paymentDate.year,
+            paymentDate.month,
+            paymentDate.day,
+          ).difference(DateTime.utc(today.year, today.month, today.day)).inDays;
+    final due = switch (entry.status) {
+      SubscriptionStatus.paused => '已暂停',
+      SubscriptionStatus.canceled => '已取消',
+      SubscriptionStatus.archived => '已归档',
+      SubscriptionStatus.active => switch (days) {
+        null =>
+          entry.endDate == null
+              ? '已到期'
+              : today.isAfter(dateOnlyLocal(entry.endDate!))
+              ? '已结束'
+              : '无后续扣费',
+        0 => '今天扣费',
+        1 => '明天扣费',
+        _ => '${_paymentDateLabel(paymentDate!)}扣费',
+      },
+    };
+    final highlight = days != null && days <= entry.reminderDays;
     final cycle = switch (entry.cycle) {
       SubscriptionBillingCycle.monthly => '每月',
       SubscriptionBillingCycle.yearly => '每年',
@@ -697,3 +719,5 @@ class _SubscriptionCard extends StatelessWidget {
     return converted == null ? '人民币待换算' : '≈ ¥${converted.toStringAsFixed(2)}';
   }
 }
+
+String _paymentDateLabel(DateTime date) => '${date.month}月${date.day}日';

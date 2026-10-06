@@ -70,7 +70,12 @@ final class SubscriptionState extends Equatable {
   }) {
     final localReference = dateOnlyLocal(referenceDay);
     final stableEntries = List<SubscriptionEntry>.unmodifiable(entries);
-    final visible = _visibleEntries(stableEntries, filter, sortMode);
+    final visible = _visibleEntries(
+      stableEntries,
+      filter,
+      sortMode,
+      localReference,
+    );
     final rates =
         exchangeRates ?? SubscriptionExchangeRates.cnyOnly(localReference);
 
@@ -141,6 +146,7 @@ final class SubscriptionState extends Equatable {
     List<SubscriptionEntry> entries,
     SubscriptionFilter filter,
     SubscriptionSortMode sortMode,
+    DateTime referenceDay,
   ) {
     final filtered = entries.where((entry) {
       return switch (filter) {
@@ -159,7 +165,18 @@ final class SubscriptionState extends Equatable {
         filtered.sort((a, b) => (a.sortIndex ?? 0).compareTo(b.sortIndex ?? 0));
         break;
       case SubscriptionSortMode.date:
-        filtered.sort((a, b) => a.nextPaymentDate.compareTo(b.nextPaymentDate));
+        filtered.sort((a, b) {
+          final aDate = a.nextBillingDateOnOrAfter(referenceDay);
+          final bDate = b.nextBillingDateOnOrAfter(referenceDay);
+          if (aDate == null && bDate != null) return 1;
+          if (aDate != null && bDate == null) return -1;
+          if (aDate != null && bDate != null) {
+            final order = aDate.compareTo(bDate);
+            if (order != 0) return order;
+          }
+          final order = a.nextPaymentDate.compareTo(b.nextPaymentDate);
+          return order != 0 ? order : a.id.compareTo(b.id);
+        });
         break;
       case SubscriptionSortMode.price:
         filtered.sort((a, b) => (b.price ?? 0).compareTo(a.price ?? 0));
@@ -252,6 +269,25 @@ final class SubscriptionCubit extends Cubit<SubscriptionState> {
         referenceDay: _now(),
         exchangeRates: state.exchangeRates,
         exchangeRatesLoading: state.exchangeRatesLoading,
+      ),
+    );
+  }
+
+  /// Rebuilds date-sensitive projections without changing the stored schedule.
+  void refreshReferenceDay() {
+    if (isClosed) return;
+    final referenceDay = dateOnlyLocal(_now());
+    if (referenceDay == state.referenceDay) return;
+    emit(
+      SubscriptionState.ready(
+        entries: state.entries,
+        filter: state.filter,
+        sortMode: state.sortMode,
+        referenceDay: referenceDay,
+        exchangeRates: state.exchangeRates,
+        exchangeRatesLoading: state.exchangeRatesLoading,
+        status: state.status,
+        failure: state.failure,
       ),
     );
   }

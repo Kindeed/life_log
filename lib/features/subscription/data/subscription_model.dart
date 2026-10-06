@@ -1,6 +1,7 @@
 import 'package:isar_community/isar.dart';
 
-import '../../../common/utils/date_utils.dart';
+import '../domain/entities/subscription_billing_schedule.dart';
+import '../domain/entities/subscription_entry.dart';
 
 part 'subscription_model.g.dart';
 
@@ -63,55 +64,26 @@ extension SubscriptionDomainLogic on Subscription {
   /// 判断该订阅在指定月份是否需要扣费，并返回费用
   double costForMonth(DateTime targetMonth) {
     if (!status.isBillable) return 0.0;
-    final p = price ?? 0.0;
-    final localTargetMonth = dateOnlyLocal(targetMonth);
-    final localPaymentDate = dateOnlyLocal(nextPaymentDate);
-    final localAnchorDate = dateOnlyLocal(anchorDate ?? nextPaymentDate);
-    final localEndDate = endDate == null ? null : dateOnlyLocal(endDate!);
-    if (!_subscriptionMonthInRange(
-      localTargetMonth,
-      localAnchorDate,
-      localEndDate,
-    )) {
-      return 0.0;
-    }
-    return switch (cycle) {
-      SubscriptionCycle.monthly => p,
-      SubscriptionCycle.yearly
-          when localAnchorDate.month == localTargetMonth.month =>
-        p,
-      SubscriptionCycle.oneTime
-          when localPaymentDate.year == localTargetMonth.year &&
-              localPaymentDate.month == localTargetMonth.month =>
-        p,
-      SubscriptionCycle.custom
-          when localPaymentDate.year == localTargetMonth.year &&
-              localPaymentDate.month == localTargetMonth.month =>
-        p,
-      _ => 0.0,
-    };
+    return _billingSchedule.paymentDateInMonth(targetMonth) == null
+        ? 0.0
+        : price ?? 0.0;
   }
 
-  DateTime nextOccurrenceAfter(DateTime referenceDay) {
-    final reference = dateOnlyLocal(referenceDay);
-    final anchor = dateOnlyLocal(anchorDate ?? nextPaymentDate);
-    var candidate = dateOnlyLocal(nextPaymentDate);
-    if (candidate.isAfter(reference) || candidate.isAtSameMomentAs(reference)) {
-      return candidate;
-    }
+  DateTime nextOccurrenceAfter(DateTime referenceDay) =>
+      _billingSchedule.nextOccurrenceAfter(referenceDay);
 
-    return switch (cycle) {
-      SubscriptionCycle.monthly => _subscriptionMonthlyOccurrenceAfter(
-        anchor,
-        reference,
-      ),
-      SubscriptionCycle.yearly => _subscriptionYearlyOccurrenceAfter(
-        anchor,
-        reference,
-      ),
-      SubscriptionCycle.oneTime || SubscriptionCycle.custom => candidate,
-    };
-  }
+  SubscriptionBillingSchedule get _billingSchedule =>
+      SubscriptionBillingSchedule(
+        cycle: switch (cycle) {
+          SubscriptionCycle.monthly => SubscriptionBillingCycle.monthly,
+          SubscriptionCycle.yearly => SubscriptionBillingCycle.yearly,
+          SubscriptionCycle.oneTime => SubscriptionBillingCycle.oneTime,
+          SubscriptionCycle.custom => SubscriptionBillingCycle.custom,
+        },
+        nextPaymentDate: nextPaymentDate,
+        anchorDate: anchorDate,
+        endDate: endDate,
+      );
 
   void markPaidAndAdvance({DateTime? paidAt}) {
     nextPaymentDate = nextOccurrenceAfter(
@@ -147,64 +119,4 @@ extension SubscriptionBusinessChanges on Subscription {
 
 extension SubscriptionRecordStatusLogic on SubscriptionRecordStatus {
   bool get isBillable => this == SubscriptionRecordStatus.active;
-}
-
-bool _subscriptionMonthInRange(
-  DateTime targetMonth,
-  DateTime anchorDate,
-  DateTime? endDate,
-) {
-  final targetStart = DateTime(targetMonth.year, targetMonth.month);
-  final anchorStart = DateTime(anchorDate.year, anchorDate.month);
-  if (targetStart.isBefore(anchorStart)) return false;
-  if (endDate == null) return true;
-  final endStart = DateTime(endDate.year, endDate.month);
-  return !targetStart.isAfter(endStart);
-}
-
-DateTime _subscriptionMonthlyOccurrenceAfter(
-  DateTime anchor,
-  DateTime reference,
-) {
-  final monthOffset =
-      (reference.year - anchor.year) * 12 + reference.month - anchor.month;
-  var candidate = _subscriptionDateInMonth(
-    anchor,
-    anchor.year,
-    anchor.month + monthOffset,
-  );
-  if (candidate.isBefore(reference)) {
-    candidate = _subscriptionDateInMonth(
-      anchor,
-      candidate.year,
-      candidate.month + 1,
-    );
-  }
-  return candidate;
-}
-
-DateTime _subscriptionYearlyOccurrenceAfter(
-  DateTime anchor,
-  DateTime reference,
-) {
-  var candidate = _subscriptionDateInMonth(
-    anchor,
-    reference.year,
-    anchor.month,
-  );
-  if (candidate.isBefore(reference)) {
-    candidate = _subscriptionDateInMonth(
-      anchor,
-      reference.year + 1,
-      anchor.month,
-    );
-  }
-  return candidate;
-}
-
-DateTime _subscriptionDateInMonth(DateTime anchor, int year, int month) {
-  final monthStart = DateTime(year, month);
-  final lastDay = DateTime(monthStart.year, monthStart.month + 1, 0).day;
-  final day = anchor.day > lastDay ? lastDay : anchor.day;
-  return DateTime(monthStart.year, monthStart.month, day);
 }

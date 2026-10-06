@@ -50,6 +50,8 @@ final class SubscriptionTodayCubit extends Cubit<SubscriptionTodayState> {
   final WatchSubscriptionEntries _watchEntries;
   final DateTime Function() _todayProvider;
   StreamSubscription<void>? _entriesSubscription;
+  int _loadRequestId = 0;
+  DateTime? _loadingReferenceDay;
 
   SubscriptionTodayCubit({
     required LoadSubscriptionToday loadToday,
@@ -71,6 +73,9 @@ final class SubscriptionTodayCubit extends Cubit<SubscriptionTodayState> {
 
   Future<void> loadToday() async {
     if (isClosed) return;
+    final requestId = ++_loadRequestId;
+    final referenceDay = dateOnlyLocal(_todayProvider());
+    _loadingReferenceDay = referenceDay;
     emit(
       state.copyWith(
         status: SubscriptionTodayStatus.loading,
@@ -78,8 +83,9 @@ final class SubscriptionTodayCubit extends Cubit<SubscriptionTodayState> {
       ),
     );
 
-    final result = await _loadToday(_todayProvider());
-    if (isClosed) return;
+    final result = await _loadToday(referenceDay);
+    if (isClosed || requestId != _loadRequestId) return;
+    _loadingReferenceDay = null;
     result.when(
       success: (snapshot) {
         emit(
@@ -99,6 +105,20 @@ final class SubscriptionTodayCubit extends Cubit<SubscriptionTodayState> {
         );
       },
     );
+  }
+
+  void refreshReferenceDay() {
+    if (isClosed) return;
+    final referenceDay = dateOnlyLocal(_todayProvider());
+    if (_loadingReferenceDay != null) {
+      if (referenceDay != _loadingReferenceDay) {
+        unawaited(loadToday());
+      }
+      return;
+    }
+    if (referenceDay != state.snapshot.today) {
+      unawaited(loadToday());
+    }
   }
 
   @override
