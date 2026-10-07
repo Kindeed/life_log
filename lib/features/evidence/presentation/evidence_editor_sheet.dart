@@ -1,3 +1,8 @@
+import 'package:life_log/common/widgets/app_amount_field.dart';
+import 'package:life_log/common/widgets/app_text_field.dart';
+import 'package:life_log/features/project/application/load_project_entries.dart';
+import 'package:life_log/features/project/domain/entities/project_entry.dart';
+import 'package:life_log/features/project/presentation/project_stage_field.dart';
 import 'dart:async';
 import 'dart:io';
 
@@ -24,6 +29,7 @@ import 'package:life_log/features/evidence/presentation/evidence_lost_data_recov
 class EvidenceEditorSheet extends StatefulWidget {
   final ExpenseEvidence? existing;
   final String? initialProject;
+  final String? initialProjectStageName;
   final String? sourcePath;
   final String? sourceExtension;
   final bool asPage;
@@ -32,6 +38,7 @@ class EvidenceEditorSheet extends StatefulWidget {
     super.key,
     this.existing,
     this.initialProject,
+    this.initialProjectStageName,
     this.sourcePath,
     this.sourceExtension,
     this.asPage = false,
@@ -49,11 +56,17 @@ class _EvidenceEditorSheetState extends State<EvidenceEditorSheet> {
   late final TextEditingController _noteController;
   late final EvidencePendingPickerStore _pendingPickerStore;
   bool _isParsingAttachment = false;
+  late final Future<List<ProjectEntry>> _projects;
 
   @override
   void initState() {
     super.initState();
     _pendingPickerStore = EvidencePendingPickerStore();
+    _projects = serviceLocator.isRegistered<LoadProjectEntries>()
+        ? serviceLocator<LoadProjectEntries>()().then(
+            (r) => r.valueOrNull ?? const <ProjectEntry>[],
+          )
+        : Future.value(const <ProjectEntry>[]);
     _editorCubit = EvidenceEditorCubit(
       saveEntry: serviceLocator<SaveEvidenceEntry>(),
       deleteEntry: serviceLocator<DeleteEvidenceEntry>(),
@@ -61,6 +74,7 @@ class _EvidenceEditorSheetState extends State<EvidenceEditorSheet> {
       existingEntry: _evidenceEntryFromLegacy(widget.existing),
       existingAlreadyDirty: widget.existing?.isDirty ?? false,
       initialProjectName: widget.initialProject,
+      initialProjectStageName: widget.initialProjectStageName,
       sourcePath: widget.sourcePath,
       sourceExtension: widget.sourceExtension,
     );
@@ -95,7 +109,16 @@ class _EvidenceEditorSheetState extends State<EvidenceEditorSheet> {
         },
         child: BlocBuilder<EvidenceEditorCubit, EvidenceEditorState>(
           builder: (context, editorState) {
-            return _buildEditor(context, editorState);
+            final busy =
+                editorState.status == EvidenceEditorStatus.submitting ||
+                editorState.status == EvidenceEditorStatus.deleting;
+            return PopScope(
+              canPop: !busy,
+              child: AbsorbPointer(
+                absorbing: busy,
+                child: _buildEditor(context, editorState),
+              ),
+            );
           },
         ),
       ),
@@ -218,41 +241,45 @@ class _EvidenceEditorSheetState extends State<EvidenceEditorSheet> {
           ),
         ],
         SizedBox(height: 16.h),
-        _buildTextField(
+        AppTextField(
           controller: _projectController,
-          label: '项目',
-          icon: Icons.folder_special_rounded,
+          labelText: '所属项目',
+          enabled: !isBusy,
+          onChanged: _editorCubit.changeProjectName,
+          prefixIcon: const Icon(Icons.folder_special_rounded),
+        ),
+        const SizedBox(height: 12),
+        ProjectStageField(
+          projectName: editorState.projectName,
+          selected: editorState.projectStageName,
+          projects: _projects,
+          enabled: !isBusy,
+          onChanged: _editorCubit.changeProjectStageName,
+        ),
+        const SizedBox(height: 16),
+        AppAmountField(
+          controller: _amountController,
+          currency: editorState.currency,
+          optional: true,
+          enabled: !isBusy,
+          errorText:
+              editorState.failure?.code == 'evidence/editor/invalid-amount'
+              ? editorState.failure?.message
+              : null,
+          onChanged: _editorCubit.changeAmountText,
+          onCurrencyChanged: _editorCubit.changeCurrency,
+        ),
+        const SizedBox(height: 12),
+        _buildPickerTile(
+          label: _formatDate(editorState.evidenceDate),
+          icon: Icons.event_rounded,
           fillColor: fillColor,
+          onTap: () => _pickDate(
+            initial: editorState.evidenceDate,
+            onPicked: _editorCubit.changeEvidenceDate,
+          ),
         ),
-        SizedBox(height: 12.h),
-        Row(
-          children: [
-            Expanded(
-              child: _buildTextField(
-                controller: _amountController,
-                label: '金额',
-                icon: Icons.payments_rounded,
-                fillColor: fillColor,
-                keyboardType: const TextInputType.numberWithOptions(
-                  decimal: true,
-                ),
-              ),
-            ),
-            SizedBox(width: 12.w),
-            Expanded(
-              child: _buildPickerTile(
-                label: _formatDate(editorState.evidenceDate),
-                icon: Icons.event_rounded,
-                fillColor: fillColor,
-                onTap: () => _pickDate(
-                  initial: editorState.evidenceDate,
-                  onPicked: _editorCubit.changeEvidenceDate,
-                ),
-              ),
-            ),
-          ],
-        ),
-        SizedBox(height: 12.h),
+        const SizedBox(height: 12),
         _buildTextField(
           controller: _merchantController,
           label: '商家/用途',
@@ -747,6 +774,7 @@ class _EvidenceEditorSheetState extends State<EvidenceEditorSheet> {
     await _pendingPickerStore.rememberLaunch(
       source: EvidencePendingPickerSource.camera,
       initialProject: _editorCubit.state.projectName,
+      initialProjectStageName: _editorCubit.state.projectStageName,
     );
     try {
       final file = await ImagePicker().pickImage(
@@ -764,6 +792,7 @@ class _EvidenceEditorSheetState extends State<EvidenceEditorSheet> {
     await _pendingPickerStore.rememberLaunch(
       source: EvidencePendingPickerSource.gallery,
       initialProject: _editorCubit.state.projectName,
+      initialProjectStageName: _editorCubit.state.projectStageName,
     );
     try {
       final file = await ImagePicker().pickImage(

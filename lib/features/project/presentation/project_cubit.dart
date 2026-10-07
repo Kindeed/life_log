@@ -149,15 +149,26 @@ final class ProjectCubit extends Cubit<ProjectState> {
     ProjectEntry entry,
     List<String> stageNames,
   ) async {
+    final current =
+        state.entries.where((p) => p.id == entry.id).firstOrNull ?? entry;
+    final proposed = _normalizeStageNames(stageNames);
+    final keys = proposed.map((name) => name.toLowerCase()).toSet();
+    final completeOrder = current.stageNames.every(
+      (name) => keys.contains(name.toLowerCase()),
+    );
     final result = await _saveEntry(
       ProjectEntry(
-        id: entry.id,
-        syncId: entry.syncId,
-        name: entry.name,
-        status: entry.status,
-        stageNames: _normalizeStageNames(stageNames),
-        localCoverPath: entry.localCoverPath,
-        coverImagePath: entry.coverImagePath,
+        id: current.id,
+        syncId: current.syncId,
+        name: current.name,
+        status: current.status,
+        stageNames: _normalizeStageNames([
+          if (!completeOrder) ...current.stageNames,
+          ...proposed,
+          if (completeOrder) ...current.stageNames,
+        ]),
+        localCoverPath: current.localCoverPath,
+        coverImagePath: current.coverImagePath,
       ),
     );
     final failure = result.failureOrNull;

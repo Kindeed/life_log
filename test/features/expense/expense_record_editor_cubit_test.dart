@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:io';
 
 import 'package:flutter_test/flutter_test.dart';
@@ -9,6 +10,112 @@ import 'package:life_log/features/expense/domain/repositories/expense_record_rep
 import 'package:life_log/features/expense/presentation/expense_record_editor_cubit.dart';
 
 void main() {
+  test('stage survives unchanged project synchronization and save', () async {
+    final repository = _EditorRepository();
+    final cubit = _editor(
+      repository: repository,
+      existingEntry: _entry(
+        id: 2,
+        projectName: '项目',
+        projectStageName: '勘查',
+        projectId: 4,
+      ),
+    );
+    addTearDown(cubit.close);
+    cubit.changeProjectName(' 项目 ');
+    cubit.changeAmountText('25.50');
+    await cubit.submit();
+    expect(repository.savedEntries.single.entry.projectStageName, '勘查');
+    expect(repository.savedEntries.single.entry.projectId, 4);
+  });
+  test(
+    'new stage preselection persists and changing project clears it',
+    () async {
+      final repository = _EditorRepository();
+      final cubit = ExpenseRecordEditorCubit(
+        saveEntry: SaveExpenseRecordEntry(repository),
+        deleteEntry: DeleteExpenseRecordEntry(repository),
+        selectedDate: DateTime(2026),
+        initialProjectName: '项目',
+        initialProjectStageName: '施工',
+      );
+      addTearDown(cubit.close);
+      cubit.changeAmountText('10');
+      await cubit.submit();
+      expect(repository.savedEntries.single.entry.projectStageName, '施工');
+      cubit.changeProjectName('另一个项目');
+      expect(cubit.state.projectStageName, isEmpty);
+    },
+  );
+  test(
+    'unchanged historical precision is preserved, new precision rejected',
+    () async {
+      final repository = _EditorRepository();
+      final cubit = _editor(
+        repository: repository,
+        existingEntry: _entry(id: 2, amount: 1.234),
+      );
+      addTearDown(cubit.close);
+      cubit.changeNote('补备注');
+      await cubit.submit();
+      expect(repository.savedEntries.single.entry.amount, 1.234);
+      cubit.changeAmountText('2.345');
+      await cubit.submit();
+      expect(repository.savedEntries, hasLength(1));
+      expect(cubit.state.status, ExpenseRecordEditorStatus.failure);
+    },
+  );
+  test(
+    'currency selection is persisted and invalid amount can be corrected',
+    () async {
+      final repository = _EditorRepository();
+      final cubit = _editor(repository: repository);
+      addTearDown(cubit.close);
+      cubit.changeCurrency('USD');
+      cubit.changeAmountText('NaN');
+      await cubit.submit();
+      expect(repository.savedEntries, isEmpty);
+      cubit.changeAmountText('12.34');
+      await cubit.submit();
+      expect(repository.savedEntries.single.entry.currency, 'USD');
+      expect(repository.savedEntries.single.entry.amount, 12.34);
+    },
+  );
+  test(
+    'slow save locks draft and blocks delete then ignores disposed completion',
+    () async {
+      final repository = _EditorRepository()..pendingSave = Completer<void>();
+      final cubit = _editor(
+        repository: repository,
+        existingEntry: _entry(id: 2, amount: 10),
+      );
+      final saving = cubit.submit();
+      cubit.changeAmountText('99');
+      cubit.changeCurrency('USD');
+      cubit.changeProjectName('不应该改');
+      await cubit.delete();
+      await cubit.submit();
+      expect(cubit.state.status, ExpenseRecordEditorStatus.submitting);
+      expect(cubit.state.amountText, '10');
+      expect(repository.savedEntries, hasLength(1));
+      expect(repository.deletedIds, isEmpty);
+      await cubit.close();
+      repository.pendingSave!.complete();
+      await saving;
+    },
+  );
+  test('slow delete blocks save and ignores disposed completion', () async {
+    final repository = _EditorRepository()..pendingDelete = Completer<void>();
+    final cubit = _editor(repository: repository, existingEntry: _entry(id: 2));
+    final deleting = cubit.delete();
+    cubit.changeNote('不能改');
+    await cubit.submit();
+    expect(repository.savedEntries, isEmpty);
+    expect(cubit.state.status, ExpenseRecordEditorStatus.deleting);
+    await cubit.close();
+    repository.pendingDelete!.complete();
+    await deleting;
+  });
   group('ExpenseRecordEditorCubit', () {
     test('initializes an edit draft from an existing entry', () {
       final cubit = _editor(
@@ -352,6 +459,8 @@ final class _SavedEditorEntry {
 final class _EditorRepository implements ExpenseRecordRepositoryPort {
   final savedEntries = <_SavedEditorEntry>[];
   final deletedIds = <int>[];
+  Completer<void>? pendingSave;
+  Completer<void>? pendingDelete;
 
   @override
   Future<List<ExpenseRecordEntry>> getAllEntries() async => const [];
@@ -365,11 +474,13 @@ final class _EditorRepository implements ExpenseRecordRepositoryPort {
     required bool markDirty,
   }) async {
     savedEntries.add(_SavedEditorEntry(entry: entry, markDirty: markDirty));
+    if (pendingSave != null) await pendingSave!.future;
   }
 
   @override
   Future<void> deleteEntry(int id) async {
     deletedIds.add(id);
+    if (pendingDelete != null) await pendingDelete!.future;
   }
 
   @override

@@ -82,6 +82,11 @@ const PhotoItemSchema = CollectionSchema(
       name: r'projectName',
       type: IsarType.string,
     ),
+    r'projectStageName': PropertySchema(
+      id: 13,
+      name: r'projectStageName',
+      type: IsarType.string,
+    ),
   },
 
   estimateSize: _photoItemEstimateSize,
@@ -151,6 +156,12 @@ int _photoItemEstimateSize(
       bytesCount += 3 + value.length * 3;
     }
   }
+  {
+    final value = object.projectStageName;
+    if (value != null) {
+      bytesCount += 3 + value.length * 3;
+    }
+  }
   return bytesCount;
 }
 
@@ -173,6 +184,7 @@ void _photoItemSerialize(
   writer.writeString(offsets[10], object.ownerUserId);
   writer.writeLong(offsets[11], object.projectId);
   writer.writeString(offsets[12], object.projectName);
+  writer.writeString(offsets[13], object.projectStageName);
 }
 
 PhotoItem _photoItemDeserialize(
@@ -196,6 +208,7 @@ PhotoItem _photoItemDeserialize(
   object.ownerUserId = reader.readStringOrNull(offsets[10]);
   object.projectId = reader.readLongOrNull(offsets[11]);
   object.projectName = reader.readStringOrNull(offsets[12]);
+  object.projectStageName = reader.readStringOrNull(offsets[13]);
   return object;
 }
 
@@ -231,6 +244,8 @@ P _photoItemDeserializeProp<P>(
     case 11:
       return (reader.readLongOrNull(offset)) as P;
     case 12:
+      return (reader.readStringOrNull(offset)) as P;
+    case 13:
       return (reader.readStringOrNull(offset)) as P;
     default:
       throw IsarError('Unknown property with id $propertyId');
@@ -2066,6 +2081,165 @@ extension PhotoItemQueryFilter
       );
     });
   }
+
+  QueryBuilder<PhotoItem, PhotoItem, QAfterFilterCondition>
+  projectStageNameIsNull() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(
+        const FilterCondition.isNull(property: r'projectStageName'),
+      );
+    });
+  }
+
+  QueryBuilder<PhotoItem, PhotoItem, QAfterFilterCondition>
+  projectStageNameIsNotNull() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(
+        const FilterCondition.isNotNull(property: r'projectStageName'),
+      );
+    });
+  }
+
+  QueryBuilder<PhotoItem, PhotoItem, QAfterFilterCondition>
+  projectStageNameEqualTo(String? value, {bool caseSensitive = true}) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(
+        FilterCondition.equalTo(
+          property: r'projectStageName',
+          value: value,
+          caseSensitive: caseSensitive,
+        ),
+      );
+    });
+  }
+
+  QueryBuilder<PhotoItem, PhotoItem, QAfterFilterCondition>
+  projectStageNameGreaterThan(
+    String? value, {
+    bool include = false,
+    bool caseSensitive = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(
+        FilterCondition.greaterThan(
+          include: include,
+          property: r'projectStageName',
+          value: value,
+          caseSensitive: caseSensitive,
+        ),
+      );
+    });
+  }
+
+  QueryBuilder<PhotoItem, PhotoItem, QAfterFilterCondition>
+  projectStageNameLessThan(
+    String? value, {
+    bool include = false,
+    bool caseSensitive = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(
+        FilterCondition.lessThan(
+          include: include,
+          property: r'projectStageName',
+          value: value,
+          caseSensitive: caseSensitive,
+        ),
+      );
+    });
+  }
+
+  QueryBuilder<PhotoItem, PhotoItem, QAfterFilterCondition>
+  projectStageNameBetween(
+    String? lower,
+    String? upper, {
+    bool includeLower = true,
+    bool includeUpper = true,
+    bool caseSensitive = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(
+        FilterCondition.between(
+          property: r'projectStageName',
+          lower: lower,
+          includeLower: includeLower,
+          upper: upper,
+          includeUpper: includeUpper,
+          caseSensitive: caseSensitive,
+        ),
+      );
+    });
+  }
+
+  QueryBuilder<PhotoItem, PhotoItem, QAfterFilterCondition>
+  projectStageNameStartsWith(String value, {bool caseSensitive = true}) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(
+        FilterCondition.startsWith(
+          property: r'projectStageName',
+          value: value,
+          caseSensitive: caseSensitive,
+        ),
+      );
+    });
+  }
+
+  QueryBuilder<PhotoItem, PhotoItem, QAfterFilterCondition>
+  projectStageNameEndsWith(String value, {bool caseSensitive = true}) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(
+        FilterCondition.endsWith(
+          property: r'projectStageName',
+          value: value,
+          caseSensitive: caseSensitive,
+        ),
+      );
+    });
+  }
+
+  QueryBuilder<PhotoItem, PhotoItem, QAfterFilterCondition>
+  projectStageNameContains(String value, {bool caseSensitive = true}) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(
+        FilterCondition.contains(
+          property: r'projectStageName',
+          value: value,
+          caseSensitive: caseSensitive,
+        ),
+      );
+    });
+  }
+
+  QueryBuilder<PhotoItem, PhotoItem, QAfterFilterCondition>
+  projectStageNameMatches(String pattern, {bool caseSensitive = true}) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(
+        FilterCondition.matches(
+          property: r'projectStageName',
+          wildcard: pattern,
+          caseSensitive: caseSensitive,
+        ),
+      );
+    });
+  }
+
+  QueryBuilder<PhotoItem, PhotoItem, QAfterFilterCondition>
+  projectStageNameIsEmpty() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(
+        FilterCondition.equalTo(property: r'projectStageName', value: ''),
+      );
+    });
+  }
+
+  QueryBuilder<PhotoItem, PhotoItem, QAfterFilterCondition>
+  projectStageNameIsNotEmpty() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(
+        FilterCondition.greaterThan(property: r'projectStageName', value: ''),
+      );
+    });
+  }
 }
 
 extension PhotoItemQueryObject
@@ -2229,6 +2403,19 @@ extension PhotoItemQuerySortBy on QueryBuilder<PhotoItem, PhotoItem, QSortBy> {
   QueryBuilder<PhotoItem, PhotoItem, QAfterSortBy> sortByProjectNameDesc() {
     return QueryBuilder.apply(this, (query) {
       return query.addSortBy(r'projectName', Sort.desc);
+    });
+  }
+
+  QueryBuilder<PhotoItem, PhotoItem, QAfterSortBy> sortByProjectStageName() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'projectStageName', Sort.asc);
+    });
+  }
+
+  QueryBuilder<PhotoItem, PhotoItem, QAfterSortBy>
+  sortByProjectStageNameDesc() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'projectStageName', Sort.desc);
     });
   }
 }
@@ -2403,6 +2590,19 @@ extension PhotoItemQuerySortThenBy
       return query.addSortBy(r'projectName', Sort.desc);
     });
   }
+
+  QueryBuilder<PhotoItem, PhotoItem, QAfterSortBy> thenByProjectStageName() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'projectStageName', Sort.asc);
+    });
+  }
+
+  QueryBuilder<PhotoItem, PhotoItem, QAfterSortBy>
+  thenByProjectStageNameDesc() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'projectStageName', Sort.desc);
+    });
+  }
 }
 
 extension PhotoItemQueryWhereDistinct
@@ -2501,6 +2701,17 @@ extension PhotoItemQueryWhereDistinct
       return query.addDistinctBy(r'projectName', caseSensitive: caseSensitive);
     });
   }
+
+  QueryBuilder<PhotoItem, PhotoItem, QDistinct> distinctByProjectStageName({
+    bool caseSensitive = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addDistinctBy(
+        r'projectStageName',
+        caseSensitive: caseSensitive,
+      );
+    });
+  }
 }
 
 extension PhotoItemQueryProperty
@@ -2587,6 +2798,13 @@ extension PhotoItemQueryProperty
   QueryBuilder<PhotoItem, String?, QQueryOperations> projectNameProperty() {
     return QueryBuilder.apply(this, (query) {
       return query.addPropertyName(r'projectName');
+    });
+  }
+
+  QueryBuilder<PhotoItem, String?, QQueryOperations>
+  projectStageNameProperty() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addPropertyName(r'projectStageName');
     });
   }
 }

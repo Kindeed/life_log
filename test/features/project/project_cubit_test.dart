@@ -16,6 +16,61 @@ import 'package:life_log/features/work_log/domain/entities/work_log_entry.dart';
 import 'package:life_log/features/work_log/domain/repositories/work_log_repository_port.dart';
 
 void main() {
+  test(
+    'replacing stage input retains previous stages and record keys',
+    () async {
+      final repository = _ProjectCubitRepository(
+        entries: [
+          const ProjectEntry(
+            id: 1,
+            name: '项目',
+            status: ProjectEntryStatus.active,
+            stageNames: ['勘查', '施工'],
+          ),
+        ],
+      );
+      final cubit = _cubit(repository);
+      addTearDown(cubit.close);
+      await cubit.loadEntries();
+      await cubit.saveStageNames(repository.entries.single, ['验收']);
+      expect(repository.entries.single.stageNames, ['勘查', '施工', '验收']);
+      await cubit.saveStageNames(repository.entries.single, ['勘查', '施工', '验收']);
+      expect(repository.entries.single.stageNames, ['勘查', '施工', '验收']);
+    },
+  );
+  test(
+    'stale stage editor retains newer stage definitions and status',
+    () async {
+      const old = ProjectEntry(
+        id: 1,
+        name: '项目',
+        status: ProjectEntryStatus.active,
+        stageNames: ['勘查'],
+      );
+      final repository = _ProjectCubitRepository(
+        entries: [
+          const ProjectEntry(
+            id: 1,
+            name: '项目',
+            status: ProjectEntryStatus.archived,
+            stageNames: ['勘查', '施工'],
+            localCoverPath: '/new.jpg',
+          ),
+        ],
+      );
+      final cubit = _cubit(repository);
+      addTearDown(cubit.close);
+      await cubit.loadEntries();
+      await cubit.saveStageNames(old, ['勘查', '验收']);
+      expect(
+        repository.entries.single.stageNames,
+        containsAll(['勘查', '施工', '验收']),
+      );
+      expect(repository.entries.single.status, ProjectEntryStatus.archived);
+      expect(repository.entries.single.localCoverPath, '/new.jpg');
+    },
+  );
+
   group('ProjectCubit', () {
     test('loads entries and exposes lookup by name', () async {
       final repository = _ProjectCubitRepository(

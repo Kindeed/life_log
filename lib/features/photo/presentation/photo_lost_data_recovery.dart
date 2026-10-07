@@ -17,6 +17,7 @@ Future<void> recoverLostPhotoData(
   final activePicker = picker ?? ImagePicker();
   final activeStore = pendingCaptureStore ?? PhotoPendingCaptureStore();
   final pendingProject = activeStore.readProject();
+  final pendingStage = activeStore.readStage();
   if (pendingProject == null) return;
 
   final LostDataResponse response;
@@ -58,15 +59,19 @@ Future<void> recoverLostPhotoData(
   showCaptureDialog(
     context,
     initialProject: pendingProject,
-    onConfirm: (projectName, description) => savePhotoFromCapturePath(
-      messenger: messenger,
-      tempPath: file.path,
-      projectName: projectName,
-      description: description,
-      capturedAt: DateTime.now(),
-      capturedAtSource: 'cameraRecovered',
-      onSaved: null,
-    ),
+    initialProjectStageName: pendingStage,
+    onConfirm: (_, _) {},
+    onConfirmWithStage: (projectName, description, stage) =>
+        savePhotoFromCapturePath(
+          messenger: messenger,
+          tempPath: file.path,
+          projectName: projectName,
+          projectStageName: stage,
+          description: description,
+          capturedAt: DateTime.now(),
+          capturedAtSource: 'cameraRecovered',
+          onSaved: null,
+        ),
   );
 }
 

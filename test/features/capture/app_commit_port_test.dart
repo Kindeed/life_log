@@ -43,12 +43,14 @@ class _FakePhotoRepository implements PhotoRepositoryPort {
   Future<int> unlinkEntriesFromProject({
     required int projectId,
     required String projectName,
+    String? projectStageName,
   }) async => 0;
 
   @override
   Future<PhotoEntry> saveEntryFromPath({
     required String tempPath,
     required String projectName,
+    String? projectStageName,
     required String description,
     required String deviceName,
     required bool deleteSource,
@@ -83,6 +85,7 @@ class _FakePhotoRepository implements PhotoRepositoryPort {
       description: description,
       deviceName: deviceName,
       projectName: projectName,
+      projectStageName: projectStageName,
       projectId: 1,
       dateIndexed: DateTime(2026, 6, 18),
     );

@@ -1,3 +1,4 @@
+import 'package:life_log/common/utils/money_input.dart';
 import 'package:equatable/equatable.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:life_log/common/utils/date_utils.dart';
@@ -53,6 +54,7 @@ final class ExpenseRecordEditorState extends Equatable {
     ExpenseRecordEntry? existingEntry,
     bool existingAlreadyDirty = false,
     String? initialProjectName,
+    String? initialProjectStageName,
   }) {
     final entry = existingEntry;
     return ExpenseRecordEditorState(
@@ -65,7 +67,10 @@ final class ExpenseRecordEditorState extends Equatable {
       category: entry?.category ?? ExpenseRecordEntryCategory.other,
       merchant: entry?.merchant ?? '',
       projectName: entry?.projectName ?? initialProjectName?.trim() ?? '',
-      projectStageName: entry?.projectStageName ?? '',
+      projectStageName:
+          entry?.projectStageName ??
+          (entry == null ? initialProjectStageName?.trim() : null) ??
+          '',
       tripWorkLogId: entry?.tripWorkLogId,
       tripWorkLogSyncId: entry?.tripWorkLogSyncId,
       note: entry?.note ?? '',
@@ -140,6 +145,7 @@ final class ExpenseRecordEditorCubit extends Cubit<ExpenseRecordEditorState> {
     ExpenseRecordEntry? existingEntry,
     bool existingAlreadyDirty = false,
     String? initialProjectName,
+    String? initialProjectStageName,
   }) : _saveEntry = saveEntry,
        _deleteEntry = deleteEntry,
        super(
@@ -148,41 +154,66 @@ final class ExpenseRecordEditorCubit extends Cubit<ExpenseRecordEditorState> {
            existingEntry: existingEntry,
            existingAlreadyDirty: existingAlreadyDirty,
            initialProjectName: initialProjectName,
+           initialProjectStageName: initialProjectStageName,
          ),
        );
 
   void changeDate(DateTime selectedDate) {
+    if (isClosed || _busy) return;
     emit(_editingState(selectedDate: dateOnlyLocal(selectedDate)));
   }
 
   void changeAmountText(String amountText) {
+    if (isClosed || _busy) return;
     emit(_editingState(amountText: amountText));
   }
 
+  void changeCurrency(String currency) {
+    if (isClosed || _busy) return;
+    emit(
+      state.copyWith(
+        status: ExpenseRecordEditorStatus.editing,
+        currency: currency,
+        clearFailure: true,
+      ),
+    );
+  }
+
+  bool get _busy =>
+      state.status == ExpenseRecordEditorStatus.submitting ||
+      state.status == ExpenseRecordEditorStatus.deleting;
+
   void changeCategory(ExpenseRecordEntryCategory category) {
+    if (isClosed || _busy) return;
     emit(_editingState(category: category));
   }
 
   void changeMerchant(String merchant) {
+    if (isClosed || _busy) return;
     emit(_editingState(merchant: merchant));
   }
 
   void changeProjectName(String projectName) {
+    if (isClosed || _busy) return;
     final nextProjectName = projectName.trim();
     emit(
       _editingState(
         projectName: projectName,
-        projectStageName: '',
+        projectStageName: nextProjectName == state.projectName.trim()
+            ? state.projectStageName
+            : '',
         clearTripWorkLog: nextProjectName != state.projectName.trim(),
       ),
     );
   }
 
   void changeProjectStageName(String projectStageName) {
+    if (isClosed || _busy) return;
     emit(_editingState(projectStageName: projectStageName.trim()));
   }
 
   void changeTripWorkLog({int? id, String? syncId}) {
+    if (isClosed || _busy) return;
     emit(
       _editingState(
         tripWorkLogId: id,
@@ -193,11 +224,12 @@ final class ExpenseRecordEditorCubit extends Cubit<ExpenseRecordEditorState> {
   }
 
   void changeNote(String note) {
+    if (isClosed || _busy) return;
     emit(_editingState(note: note));
   }
 
   Future<void> submit() async {
-    if (state.status == ExpenseRecordEditorStatus.submitting) return;
+    if (isClosed || _busy) return;
 
     final entry = _entryFromState();
     if (entry == null) return;
@@ -209,6 +241,7 @@ final class ExpenseRecordEditorCubit extends Cubit<ExpenseRecordEditorState> {
       ),
     );
     final result = await _saveEntry(entry, markDirty: _shouldMarkDirty(entry));
+    if (isClosed) return;
     result.when(
       success: (_) =>
           emit(state.copyWith(status: ExpenseRecordEditorStatus.saved)),
@@ -222,7 +255,7 @@ final class ExpenseRecordEditorCubit extends Cubit<ExpenseRecordEditorState> {
   }
 
   Future<void> delete() async {
-    if (state.status == ExpenseRecordEditorStatus.deleting) return;
+    if (isClosed || _busy) return;
 
     final existing = state.existingEntry;
     if (existing == null) {
@@ -245,6 +278,7 @@ final class ExpenseRecordEditorCubit extends Cubit<ExpenseRecordEditorState> {
       ),
     );
     final result = await _deleteEntry(existing.id);
+    if (isClosed) return;
     result.when(
       success: (_) =>
           emit(state.copyWith(status: ExpenseRecordEditorStatus.deleted)),
@@ -287,13 +321,23 @@ final class ExpenseRecordEditorCubit extends Cubit<ExpenseRecordEditorState> {
 
   ExpenseRecordEntry? _entryFromState() {
     final amount = double.tryParse(state.amountText.trim());
-    if (amount == null || amount < 0) {
+    final unchangedAmount =
+        state.existingEntry != null &&
+        amount != null &&
+        amount.isFinite &&
+        amount >= 0 &&
+        amount == state.existingEntry!.amount &&
+        state.currency == state.existingEntry!.currency;
+    final amountError = unchangedAmount
+        ? null
+        : moneyInputError(state.amountText, state.currency);
+    if (amountError != null || amount == null) {
       emit(
         state.copyWith(
           status: ExpenseRecordEditorStatus.failure,
-          failure: const AppFailure(
+          failure: AppFailure(
             code: 'expense-record/editor/invalid-amount',
-            message: '请输入有效金额',
+            message: amountError ?? '请输入有效金额',
           ),
         ),
       );

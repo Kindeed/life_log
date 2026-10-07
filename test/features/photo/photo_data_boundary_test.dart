@@ -181,6 +181,7 @@ void main() {
         await repository.processAndSavePhoto(
           tempPath: 'C:/tmp/source.jpg',
           projectName: 'Project',
+          projectStageName: ' 勘查 ',
           description: 'Desc',
           deviceName: 'Phone',
           capturedAt: capturedAt,
@@ -190,6 +191,7 @@ void main() {
         );
 
         final saved = local.addedPhotos.single;
+        expect(saved.projectStageName, '勘查');
         expect(saved.createdAt, isNot(capturedAt));
         expect(saved.capturedAt, capturedAt);
         expect(saved.capturedAtSource, 'gallery');

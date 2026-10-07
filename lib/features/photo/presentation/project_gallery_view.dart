@@ -1,3 +1,4 @@
+import 'package:life_log/features/project/presentation/project_stages_sheet.dart';
 import 'dart:async';
 
 import 'package:life_log/common/widgets/app_local_thumbnail.dart';
@@ -1081,53 +1082,8 @@ class _ProjectGalleryViewState extends State<ProjectGalleryView>
     );
   }
 
-  Future<void> _showProjectStagesDialog(ProjectEntry project) async {
-    final controller = TextEditingController(
-      text: project.stageNames.join('\n'),
-    );
-    final messenger = ScaffoldMessenger.of(context);
-    final result = await showDialog<List<String>>(
-      context: context,
-      builder: (dialogContext) {
-        return AlertDialog(
-          title: const Text('项目节点'),
-          content: TextField(
-            controller: controller,
-            minLines: 4,
-            maxLines: 8,
-            decoration: const InputDecoration(hintText: '每行一个节点，例如：合同签订'),
-          ),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.of(dialogContext).pop(),
-              child: const Text('取消'),
-            ),
-            FilledButton(
-              onPressed: () {
-                Navigator.of(dialogContext).pop(
-                  controller.text
-                      .split(RegExp(r'[\r\n]+'))
-                      .map((line) => line.trim())
-                      .where((line) => line.isNotEmpty)
-                      .toList(),
-                );
-              },
-              child: const Text('保存'),
-            ),
-          ],
-        );
-      },
-    );
-    controller.dispose();
-    if (result == null) return;
-    final failure = await projectCubit.saveStageNames(project, result);
-    if (!mounted) return;
-    if (failure != null) {
-      messenger.showSnackBar(SnackBar(content: Text(failure.message)));
-      return;
-    }
-    messenger.showSnackBar(const SnackBar(content: Text('项目节点已保存')));
-  }
+  Future<void> _showProjectStagesDialog(ProjectEntry project) =>
+      showProjectStagesSheet(context, project: project, cubit: projectCubit);
 
   void _showProjectRecordAddActions() {
     showPhotoActionSheet(

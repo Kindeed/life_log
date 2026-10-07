@@ -1,3 +1,4 @@
+import 'package:life_log/common/utils/money_input.dart';
 import 'package:equatable/equatable.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:life_log/common/utils/date_utils.dart';
@@ -57,6 +58,7 @@ final class EvidenceEditorState extends Equatable {
     EvidenceEntry? existingEntry,
     bool existingAlreadyDirty = false,
     String? initialProjectName,
+    String? initialProjectStageName,
     String? sourcePath,
     String? sourceExtension,
   }) {
@@ -75,7 +77,10 @@ final class EvidenceEditorState extends Equatable {
       evidenceStatus: entry?.status ?? EvidenceEntryStatus.pending,
       merchant: entry?.merchant ?? '',
       projectName: entry?.projectName ?? initialProjectName?.trim() ?? '',
-      projectStageName: entry?.projectStageName ?? '',
+      projectStageName:
+          entry?.projectStageName ??
+          (entry == null ? initialProjectStageName?.trim() : null) ??
+          '',
       note: entry?.note ?? '',
       pendingSourcePath: sourcePath,
       pendingSourceExtension: sourceExtension,
@@ -157,6 +162,7 @@ final class EvidenceEditorCubit extends Cubit<EvidenceEditorState> {
     EvidenceEntry? existingEntry,
     bool existingAlreadyDirty = false,
     String? initialProjectName,
+    String? initialProjectStageName,
     String? sourcePath,
     String? sourceExtension,
   }) : _saveEntry = saveEntry,
@@ -167,16 +173,19 @@ final class EvidenceEditorCubit extends Cubit<EvidenceEditorState> {
            existingEntry: existingEntry,
            existingAlreadyDirty: existingAlreadyDirty,
            initialProjectName: initialProjectName,
+           initialProjectStageName: initialProjectStageName,
            sourcePath: sourcePath,
            sourceExtension: sourceExtension,
          ),
        );
 
   void changeEvidenceDate(DateTime evidenceDate) {
+    if (isClosed || _busy) return;
     emit(_editingState(evidenceDate: dateOnlyLocal(evidenceDate)));
   }
 
   void changeTripDate(DateTime? tripDate) {
+    if (isClosed || _busy) return;
     emit(
       _editingState(
         tripDate: tripDate == null ? null : dateOnlyLocal(tripDate),
@@ -185,34 +194,64 @@ final class EvidenceEditorCubit extends Cubit<EvidenceEditorState> {
   }
 
   void changeAmountText(String amountText) {
+    if (isClosed || _busy) return;
     emit(_editingState(amountText: amountText));
   }
 
+  void changeCurrency(String currency) {
+    if (isClosed || _busy) return;
+    emit(
+      state.copyWith(
+        status: EvidenceEditorStatus.editing,
+        currency: currency,
+        clearFailure: true,
+      ),
+    );
+  }
+
+  bool get _busy =>
+      state.status == EvidenceEditorStatus.submitting ||
+      state.status == EvidenceEditorStatus.deleting;
+
   void changeCategory(EvidenceEntryCategory category) {
+    if (isClosed || _busy) return;
     emit(_editingState(category: category));
   }
 
   void changeEvidenceStatus(EvidenceEntryStatus evidenceStatus) {
+    if (isClosed || _busy) return;
     emit(_editingState(evidenceStatus: evidenceStatus));
   }
 
   void changeMerchant(String merchant) {
+    if (isClosed || _busy) return;
     emit(_editingState(merchant: merchant));
   }
 
   void changeProjectName(String projectName) {
-    emit(_editingState(projectName: projectName, projectStageName: ''));
+    if (isClosed || _busy) return;
+    emit(
+      _editingState(
+        projectName: projectName,
+        projectStageName: projectName.trim() == state.projectName.trim()
+            ? state.projectStageName
+            : '',
+      ),
+    );
   }
 
   void changeProjectStageName(String projectStageName) {
+    if (isClosed || _busy) return;
     emit(_editingState(projectStageName: projectStageName.trim()));
   }
 
   void changeNote(String note) {
+    if (isClosed || _busy) return;
     emit(_editingState(note: note));
   }
 
   void changeAttachment(String sourcePath, {String? sourceExtension}) {
+    if (isClosed || _busy) return;
     emit(
       _editingState(
         pendingSourcePath: sourcePath,
@@ -222,7 +261,7 @@ final class EvidenceEditorCubit extends Cubit<EvidenceEditorState> {
   }
 
   Future<void> submit() async {
-    if (state.status == EvidenceEditorStatus.submitting) return;
+    if (isClosed || _busy) return;
 
     final entry = _entryFromState();
     if (entry == null) return;
@@ -249,7 +288,7 @@ final class EvidenceEditorCubit extends Cubit<EvidenceEditorState> {
   }
 
   Future<void> delete() async {
-    if (state.status == EvidenceEditorStatus.deleting) return;
+    if (isClosed || _busy) return;
 
     final existing = state.existingEntry;
     if (existing == null) {
@@ -328,13 +367,23 @@ final class EvidenceEditorCubit extends Cubit<EvidenceEditorState> {
 
     final amountText = state.amountText.trim();
     final amount = amountText.isEmpty ? null : double.tryParse(amountText);
-    if (amountText.isNotEmpty && (amount == null || amount < 0)) {
+    final unchangedAmount =
+        state.existingEntry != null &&
+        amount != null &&
+        amount.isFinite &&
+        amount >= 0 &&
+        amount == state.existingEntry!.amount &&
+        state.currency == state.existingEntry!.currency;
+    final amountError = unchangedAmount
+        ? null
+        : moneyInputError(state.amountText, state.currency, optional: true);
+    if (amountError != null) {
       emit(
         state.copyWith(
           status: EvidenceEditorStatus.failure,
-          failure: const AppFailure(
+          failure: AppFailure(
             code: 'evidence/editor/invalid-amount',
-            message: '请输入有效金额',
+            message: amountError,
           ),
         ),
       );
@@ -344,8 +393,12 @@ final class EvidenceEditorCubit extends Cubit<EvidenceEditorState> {
     return EvidenceEntry(
       id: state.existingEntry?.id ?? 0,
       projectName: projectName,
-      projectId: state.existingEntry?.projectId,
-      projectSyncId: state.existingEntry?.projectSyncId,
+      projectId: projectName == state.existingEntry?.projectName.trim()
+          ? state.existingEntry?.projectId
+          : null,
+      projectSyncId: projectName == state.existingEntry?.projectName.trim()
+          ? state.existingEntry?.projectSyncId
+          : null,
       projectStageName: _emptyToNull(state.projectStageName),
       evidenceDate: state.evidenceDate,
       amount: amount,

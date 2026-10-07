@@ -77,6 +77,7 @@ class AppCommitPort implements CommitPort {
     final result = await _savePhotoFromPath(
       tempPath: tempPath,
       projectName: projectName,
+      projectStageName: draft.draftValues['projectStageName'] as String?,
       description: description,
       deviceName: deviceName,
       deleteSource: false,

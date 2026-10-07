@@ -9,6 +9,7 @@ Future<void> openExpenseRecordEditorPage(
   ExpenseRecordEntry? entry,
   DateTime? initialDate,
   String? initialProjectName,
+  String? initialProjectStageName,
   Future<void> Function()? onSavedOrDeleted,
 }) async {
   final input = await _resolveEditorInput(context, entry: entry);
@@ -21,6 +22,7 @@ Future<void> openExpenseRecordEditorPage(
         existingAlreadyDirty: input.alreadyDirty,
         initialDate: initialDate,
         initialProjectName: initialProjectName,
+        initialProjectStageName: initialProjectStageName,
         onSavedOrDeleted: onSavedOrDeleted,
       ),
     ),

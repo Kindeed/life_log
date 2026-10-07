@@ -1,12 +1,21 @@
+import 'package:life_log/features/photo/domain/repositories/photo_stage_repository_port.dart';
 import 'package:life_log/features/photo/data/photo_model.dart';
 import 'package:life_log/features/photo/data/photo_repository.dart';
 import 'package:life_log/features/photo/domain/entities/photo_entry.dart';
 import 'package:life_log/features/photo/domain/repositories/photo_repository_port.dart';
 
-final class LegacyPhotoRepositoryAdapter implements PhotoRepositoryPort {
+final class LegacyPhotoRepositoryAdapter
+    implements PhotoRepositoryPort, PhotoStageRepositoryPort {
   final PhotoRepository _repository;
 
   const LegacyPhotoRepositoryAdapter(this._repository);
+
+  @override
+  Future<int> assignStage(List<PhotoEntry> entries, String? stageName) =>
+      _repository.assignStage(
+        entries.map(_photoItemFromEntry).toList(),
+        stageName,
+      );
 
   @override
   Future<List<PhotoEntry>> getAllEntries() async {
@@ -21,6 +30,7 @@ final class LegacyPhotoRepositoryAdapter implements PhotoRepositoryPort {
   Future<PhotoEntry> saveEntryFromPath({
     required String tempPath,
     required String projectName,
+    String? projectStageName,
     required String description,
     required String deviceName,
     required bool deleteSource,
@@ -32,6 +42,7 @@ final class LegacyPhotoRepositoryAdapter implements PhotoRepositoryPort {
     final photo = await _repository.processAndSavePhoto(
       tempPath: tempPath,
       projectName: projectName,
+      projectStageName: projectStageName,
       description: description,
       deviceName: deviceName,
       deleteSource: deleteSource,
@@ -92,6 +103,7 @@ extension PhotoEntryMapper on PhotoItem {
       deviceName: deviceName,
       projectName: projectName,
       projectId: projectId,
+      projectStageName: projectStageName,
       dateIndexed: dateIndexed,
     );
   }
@@ -112,5 +124,6 @@ PhotoItem _photoItemFromEntry(PhotoEntry entry) {
     ..deviceName = entry.deviceName
     ..projectName = entry.projectName
     ..projectId = entry.projectId
+    ..projectStageName = entry.projectStageName
     ..dateIndexed = entry.dateIndexed;
 }

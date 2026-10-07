@@ -144,7 +144,7 @@ void main() {
       expect(appEntry, contains('recoverLostPhotoData'));
       expect(appEntry, contains('_rootNavigatorKey'));
       expect(launcher, contains('PhotoPendingCaptureStore'));
-      expect(launcher, contains('rememberProject(initialProject)'));
+      expect(launcher, contains('stageName: initialProjectStageName'));
       expect(recovery, contains('retrieveLostData()'));
       expect(recovery, contains('showCaptureDialog'));
       expect(recovery, contains("capturedAtSource: 'cameraRecovered'"));

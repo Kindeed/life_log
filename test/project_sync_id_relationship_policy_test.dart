@@ -89,7 +89,15 @@ void main() {
       ).readAsStringSync();
 
       expect(photoModel, isNot(contains('projectSyncId')));
-      expect(photoModel, isNot(contains('projectStageName')));
+      expect(photoModel, contains('String? projectStageName'));
+      for (final field in [
+        'isDirty',
+        'remoteVersion',
+        'deletedAt',
+        'pendingDelete',
+      ]) {
+        expect(photoModel, isNot(contains(field)));
+      }
       expect(photoModel, isNot(contains('syncId')));
       expect(photoModel, isNot(contains('remoteId')));
     });

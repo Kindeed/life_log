@@ -12,6 +12,7 @@ enum EvidencePendingPickerSource { camera, gallery }
 final class EvidencePendingPickerStore {
   static const _activeKey = 'evidence.pendingPicker.active';
   static const _projectKey = 'evidence.pendingPicker.projectName';
+  static const _stageKey = 'evidence.pendingPicker.stageName';
   static const _sourceKey = 'evidence.pendingPicker.source';
 
   final GetStorage _storage;
@@ -22,8 +23,10 @@ final class EvidencePendingPickerStore {
   Future<void> rememberLaunch({
     required EvidencePendingPickerSource source,
     String? initialProject,
+    String? initialProjectStageName,
   }) async {
     final normalizedProject = initialProject?.trim();
+    await _storage.write(_stageKey, initialProjectStageName?.trim());
     await _storage.write(_activeKey, true);
     await _storage.write(_sourceKey, source.name);
     if (normalizedProject == null || normalizedProject.isEmpty) {
@@ -34,6 +37,8 @@ final class EvidencePendingPickerStore {
   }
 
   bool get hasPendingLaunch => _storage.read<bool>(_activeKey) == true;
+
+  String? readStage() => _storage.read<String>(_stageKey);
 
   String? readProject() {
     final value = _storage.read<String>(_projectKey)?.trim();
@@ -50,6 +55,7 @@ final class EvidencePendingPickerStore {
   }
 
   Future<void> clear() async {
+    await _storage.remove(_stageKey);
     await _storage.remove(_activeKey);
     await _storage.remove(_projectKey);
     await _storage.remove(_sourceKey);
@@ -68,6 +74,7 @@ Future<void> recoverLostEvidenceData(
 
   final activePicker = picker ?? ImagePicker();
   final pendingProject = activeStore.readProject();
+  final pendingStage = activeStore.readStage();
   final pendingSource = activeStore.readSource();
 
   final LostDataResponse response;
@@ -108,6 +115,7 @@ Future<void> recoverLostEvidenceData(
   await showEvidenceEditorSheet(
     context,
     initialProject: pendingProject,
+    initialProjectStageName: pendingStage,
     sourcePath: file.path,
     sourceExtension: _sourceExtension(file.path, pendingSource),
   );

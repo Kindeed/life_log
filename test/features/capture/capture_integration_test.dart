@@ -155,6 +155,7 @@ class FakePhotoRepository implements PhotoRepositoryPort {
   Future<int> unlinkEntriesFromProject({
     required int projectId,
     required String projectName,
+    String? projectStageName,
   }) async => 0;
 
   @override
@@ -167,6 +168,7 @@ class FakePhotoRepository implements PhotoRepositoryPort {
   Future<PhotoEntry> saveEntryFromPath({
     required String tempPath,
     required String projectName,
+    String? projectStageName,
     required String description,
     required String deviceName,
     required bool deleteSource,
@@ -183,6 +185,7 @@ class FakePhotoRepository implements PhotoRepositoryPort {
       createdAt: capturedAt ?? DateTime.now(),
       deviceName: deviceName,
       projectName: projectName,
+      projectStageName: projectStageName,
       description: description,
       projectId: null,
       dateIndexed: DateTime.now(),

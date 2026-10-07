@@ -114,8 +114,13 @@ void main() {
 
         // 验证项目名称与阶段标签
         expect(find.text('项目A'), findsOneWidget);
-        expect(find.text('立项'), findsOneWidget);
-        expect(find.text('研发'), findsOneWidget);
+        expect(find.text('全部阶段 · 2'), findsOneWidget);
+        await tester.tap(find.text('全部阶段 · 2'));
+        await tester.pumpAndSettle();
+        expect(find.text('1. 立项'), findsOneWidget);
+        expect(find.text('2. 研发'), findsOneWidget);
+        await tester.tap(find.text('全部阶段'));
+        await tester.pumpAndSettle();
 
         // 验证 3 个 Tab
         expect(find.widgetWithText(Tab, '动态'), findsOneWidget);

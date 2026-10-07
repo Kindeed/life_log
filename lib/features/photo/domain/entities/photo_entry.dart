@@ -14,6 +14,7 @@ final class PhotoEntry extends Equatable {
   final String? deviceName;
   final String? projectName;
   final int? projectId;
+  final String? projectStageName;
   final DateTime dateIndexed;
 
   const PhotoEntry({
@@ -30,6 +31,7 @@ final class PhotoEntry extends Equatable {
     required this.deviceName,
     required this.projectName,
     required this.projectId,
+    this.projectStageName,
     required this.dateIndexed,
   });
 
@@ -48,6 +50,7 @@ final class PhotoEntry extends Equatable {
     deviceName,
     projectName,
     projectId,
+    projectStageName,
     dateIndexed,
   ];
 }

@@ -1,3 +1,8 @@
+import 'package:life_log/features/project/presentation/project_stage_field.dart';
+import 'package:life_log/features/photo/application/assign_photo_stage.dart';
+import 'package:life_log/common/widgets/app_sheet_scaffold.dart';
+import 'package:life_log/features/project/presentation/project_stage_summary.dart';
+import 'package:life_log/features/project/presentation/project_stages_sheet.dart';
 import 'dart:async';
 
 import 'package:life_log/common/widgets/app_local_thumbnail.dart';
@@ -62,6 +67,7 @@ class ProjectDetailView extends StatefulWidget {
   final DeleteProjectEntry? deleteProjectEntry;
   final DeletePhotoEntries? deletePhotoEntries;
   final ExportPhotoEntries? exportPhotoEntries;
+  final AssignPhotoStage? assignPhotoStage;
   final ImagePicker? imagePicker;
   final ProjectCoverFileStore? coverFileStore;
 
@@ -78,6 +84,7 @@ class ProjectDetailView extends StatefulWidget {
     this.deleteProjectEntry,
     this.deletePhotoEntries,
     this.exportPhotoEntries,
+    this.assignPhotoStage,
     this.imagePicker,
     this.coverFileStore,
   });
@@ -115,7 +122,11 @@ class _ProjectDetailViewState extends State<ProjectDetailView>
     id: _project?.id ?? widget.projectId,
     syncId: _project?.syncId,
   );
-  List<ExpenseRecordEntry> get _directProjectExpenses {
+  List<ExpenseRecordEntry> get _directProjectExpenses => _allProjectExpenses
+      .where((e) => _stageMatches(e.projectStageName))
+      .toList();
+
+  List<ExpenseRecordEntry> get _allProjectExpenses {
     final scope = _scope;
     return _expenseCubit.state.entries
         .where(
@@ -129,7 +140,9 @@ class _ProjectDetailViewState extends State<ProjectDetailView>
       ..sort((a, b) => b.expenseDate.compareTo(a.expenseDate));
   }
 
-  List<WorkLogEntry> get _projectTrips => _tripsCubit.state.entries;
+  List<WorkLogEntry> get _projectTrips => _tripsCubit.state.entries
+      .where((e) => _stageMatches(e.projectStageName))
+      .toList();
   bool get _hasReadFailure =>
       _projectCubit.state.failure != null ||
       _photoCubit.state.failure != null ||
@@ -143,6 +156,9 @@ class _ProjectDetailViewState extends State<ProjectDetailView>
       _expenseCubit.state.status == ExpenseRecordStatus.loading ||
       _tripsCubit.state.loading;
   String _selectedTimelineFilter = '全部';
+  String? _selectedStage;
+  bool _stageMatches(String? name) =>
+      _selectedStage == null || (name?.trim() ?? '') == _selectedStage;
   bool _isMultiSelectMode = false;
   bool _photoBatchBusy = false;
   final Set<int> _selectedPhotoIds = <int>{};
@@ -262,7 +278,7 @@ class _ProjectDetailViewState extends State<ProjectDetailView>
                       bloc: _tripsCubit,
                       builder: (context, _) {
                         final scope = _scope;
-                        final photos =
+                        final allPhotos =
                             photoState.entries
                                 .where(
                                   (e) => scope.contains(
@@ -275,7 +291,7 @@ class _ProjectDetailViewState extends State<ProjectDetailView>
                                 (a, b) => (b.capturedAt ?? b.createdAt)
                                     .compareTo(a.capturedAt ?? a.createdAt),
                               );
-                        final evidence =
+                        final allEvidence =
                             evidenceState.entries
                                 .where(
                                   (e) => scope.contains(
@@ -289,6 +305,19 @@ class _ProjectDetailViewState extends State<ProjectDetailView>
                                 (a, b) =>
                                     b.evidenceDate.compareTo(a.evidenceDate),
                               );
+                        final photos = allPhotos
+                            .where((e) => _stageMatches(e.projectStageName))
+                            .toList();
+                        final evidence = allEvidence
+                            .where((e) => _stageMatches(e.projectStageName))
+                            .toList();
+                        final stageSummaries = projectStageSummaries(
+                          definitions: _project?.stageNames ?? const [],
+                          photos: allPhotos,
+                          expenses: _allProjectExpenses,
+                          evidence: allEvidence,
+                          trips: _tripsCubit.state.entries,
+                        );
                         _selectedPhotoIds.retainAll(
                           photos.map((photo) => photo.id),
                         );
@@ -310,17 +339,10 @@ class _ProjectDetailViewState extends State<ProjectDetailView>
                             ),
                             body: Column(
                               children: [
-                                if (_project != null &&
-                                    (_project!.stageNames.isNotEmpty ||
-                                        _project!.status ==
-                                            ProjectEntryStatus.archived))
-                                  SingleChildScrollView(
-                                    scrollDirection: Axis.horizontal,
-                                    padding: const EdgeInsets.fromLTRB(
-                                      16,
-                                      8,
-                                      16,
-                                      8,
+                                if (_project != null)
+                                  Padding(
+                                    padding: const EdgeInsets.symmetric(
+                                      horizontal: 16,
                                     ),
                                     child: Row(
                                       children: [
@@ -329,23 +351,31 @@ class _ProjectDetailViewState extends State<ProjectDetailView>
                                           style: theme.textTheme.bodySmall
                                               ?.copyWith(color: secondary),
                                         ),
-                                        for (final stage
-                                            in _project!.stageNames) ...[
-                                          Padding(
-                                            padding: const EdgeInsets.symmetric(
-                                              horizontal: 8,
+                                        const SizedBox(width: 8),
+                                        Expanded(
+                                          child: TextButton.icon(
+                                            key: const ValueKey(
+                                              'project-stage-selector',
                                             ),
-                                            child: Text(
-                                              '·',
-                                              style: theme.textTheme.bodySmall,
+                                            onPressed: _photoBatchBusy
+                                                ? null
+                                                : () => _chooseStage(
+                                                    stageSummaries,
+                                                  ),
+                                            icon: const Icon(
+                                              Icons.account_tree_outlined,
+                                              size: 18,
+                                            ),
+                                            label: Text(
+                                              _selectedStage == null
+                                                  ? '全部阶段 · ${stageSummaries.where((s) => s.name.isNotEmpty).length}'
+                                                  : _selectedStage!.isEmpty
+                                                  ? '未分阶段'
+                                                  : _selectedStage!,
+                                              maxLines: 2,
                                             ),
                                           ),
-                                          Text(
-                                            stage,
-                                            style: theme.textTheme.bodySmall
-                                                ?.copyWith(color: secondary),
-                                          ),
-                                        ],
+                                        ),
                                       ],
                                     ),
                                   ),
@@ -677,7 +707,11 @@ class _ProjectDetailViewState extends State<ProjectDetailView>
           title: photo.description?.trim().isNotEmpty == true
               ? photo.description!.trim()
               : photo.fileName,
-          subtitle: photo.deviceName ?? '项目照片',
+          subtitle: [
+            photo.deviceName ?? '项目照片',
+            if (photo.projectStageName?.isNotEmpty == true)
+              photo.projectStageName!,
+          ].join(' · '),
           icon: Icons.photo_library_rounded,
           iconColor: theme.colorScheme.primary,
           rawItem: photo,
@@ -1142,6 +1176,15 @@ class _ProjectDetailViewState extends State<ProjectDetailView>
                 : "选择了 ${_selectedPhotoIds.length} 张照片",
             style: TextStyle(color: textPrimary, fontWeight: FontWeight.w600),
           ),
+          TextButton.icon(
+            onPressed: _photoBatchBusy || _selectedPhotoIds.isEmpty
+                ? null
+                : () => _runPhotoBatch(
+                    () => _assignSelectedPhotoStage(projectPhotos),
+                  ),
+            icon: const Icon(Icons.account_tree_outlined),
+            label: const Text('设置阶段'),
+          ),
           SizedBox(height: 8.h),
           Row(
             children: [
@@ -1315,6 +1358,7 @@ class _ProjectDetailViewState extends State<ProjectDetailView>
         context,
         entry: record,
         initialProjectName: _projectName,
+        initialProjectStageName: _selectedStage,
         onSavedOrDeleted: _expenseCubit.loadEntries,
       ),
     );
@@ -1333,6 +1377,7 @@ class _ProjectDetailViewState extends State<ProjectDetailView>
               capturePhotoWithSystemCamera(
                 context,
                 initialProject: _projectName,
+                initialProjectStageName: _selectedStage,
                 onSaved: _photoCubit.loadEntries,
               ),
             );
@@ -1347,6 +1392,7 @@ class _ProjectDetailViewState extends State<ProjectDetailView>
               importPhotoFromGallery(
                 context,
                 initialProject: _projectName,
+                initialProjectStageName: _selectedStage,
                 onSaved: _photoCubit.loadEntries,
               ),
             );
@@ -1362,6 +1408,7 @@ class _ProjectDetailViewState extends State<ProjectDetailView>
     showEvidenceAddActions(
       context,
       initialProject: _projectName,
+      initialProjectStageName: _selectedStage,
       title: "添加凭证",
       manualSubtitle: "没有图片时再补充文字",
     );
@@ -1461,6 +1508,68 @@ class _ProjectDetailViewState extends State<ProjectDetailView>
     if (mounted) _exitMultiSelectMode();
   }
 
+  Future<void> _assignSelectedPhotoStage(List<PhotoEntry> photos) async {
+    final selected = photos
+        .where((p) => _selectedPhotoIds.contains(p.id))
+        .toList();
+    if (selected.isEmpty) return;
+    var stage = _selectedStage ?? '';
+    final projects = Future.value(
+      _project == null ? <ProjectEntry>[] : [_project!],
+    );
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (dialogContext) => AlertDialog(
+        title: const Text('设置照片阶段'),
+        content: StatefulBuilder(
+          builder: (context, update) => ProjectStageField(
+            projectName: _projectName,
+            selected: stage,
+            projects: projects,
+            onChanged: (value) => update(() => stage = value),
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(dialogContext).pop(false),
+            child: const Text('取消'),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.of(dialogContext).pop(true),
+            child: const Text('保存'),
+          ),
+        ],
+      ),
+    );
+    if (confirmed != true || !mounted) return;
+    final useCase =
+        widget.assignPhotoStage ??
+        (serviceLocator.isRegistered<AssignPhotoStage>()
+            ? serviceLocator<AssignPhotoStage>()
+            : null);
+    if (useCase == null) {
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text('照片阶段设置暂不可用')));
+      return;
+    }
+    final result = await useCase(selected, stage);
+    if (!mounted) return;
+    ScaffoldMessenger.of(context)
+      ..hideCurrentSnackBar()
+      ..showSnackBar(
+        SnackBar(
+          content: Text(
+            result.failureOrNull?.message ?? '已设置 ${result.valueOrNull} 张照片的阶段',
+          ),
+        ),
+      );
+    if (result.isSuccess) {
+      _exitMultiSelectMode();
+      unawaited(_photoCubit.loadEntries(background: true));
+    }
+  }
+
   Future<void> _toggleArchiveProject(ProjectEntry project) async {
     final status = project.status == ProjectEntryStatus.active
         ? ProjectEntryStatus.archived
@@ -1491,11 +1600,11 @@ class _ProjectDetailViewState extends State<ProjectDetailView>
           ),
         )
         .toList();
-    final expenseItems = _directProjectExpenses;
+    final expenseItems = _allProjectExpenses;
     final mediaCount = projectPhotos.length;
     final evidenceCount = evidenceItems.length;
     final expenseCount = expenseItems.length;
-    final tripCount = _projectTrips.length;
+    final tripCount = _tripsCubit.state.entries.length;
     final hasChildren = evidenceCount + expenseCount + tripCount > 0;
     final message = hasChildren
         ? "删除项目「$_projectName」后会删除 $evidenceCount 份凭证和 $expenseCount 条项目费用，解除 $tripCount 条已关联的出差记录；$mediaCount 张项目照片将保留并移除项目关联。同步项目会先标记为待删除，待同步完成后再清理。"
@@ -1535,52 +1644,103 @@ class _ProjectDetailViewState extends State<ProjectDetailView>
     Navigator.of(context).pop();
   }
 
-  Future<void> _showProjectStagesDialog(ProjectEntry project) async {
-    final controller = TextEditingController(
-      text: project.stageNames.join('\n'),
-    );
-    final messenger = ScaffoldMessenger.of(context);
-    final result = await showDialog<List<String>>(
+  Future<void> _showProjectStagesDialog(ProjectEntry project) =>
+      showProjectStagesSheet(
+        context,
+        project: project,
+        cubit: _projectCubit,
+        historicalNames: [
+          ..._photoCubit.state.entries
+              .where(
+                (e) => _scope.contains(name: e.projectName, id: e.projectId),
+              )
+              .map((e) => e.projectStageName ?? ''),
+          ..._allProjectExpenses.map((e) => e.projectStageName ?? ''),
+          ..._evidenceCubit.state.entries
+              .where(
+                (e) => _scope.contains(
+                  name: e.projectName,
+                  id: e.projectId,
+                  syncId: e.projectSyncId,
+                ),
+              )
+              .map((e) => e.projectStageName ?? ''),
+          ..._tripsCubit.state.entries.map((e) => e.projectStageName ?? ''),
+        ],
+      );
+
+  Future<void> _chooseStage(List<ProjectStageSummary> summaries) async {
+    final ordered = [
+      ...summaries.where((s) => s.name.isNotEmpty),
+      ...summaries.where((s) => s.name.isEmpty),
+    ];
+    await showModalBottomSheet<void>(
       context: context,
-      builder: (dialogContext) {
-        return AlertDialog(
-          title: const Text('项目节点'),
-          content: TextField(
-            controller: controller,
-            minLines: 4,
-            maxLines: 8,
-            decoration: const InputDecoration(hintText: '每行一个节点，例如：合同签订'),
-          ),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.of(dialogContext).pop(),
-              child: const Text('取消'),
-            ),
-            FilledButton(
-              onPressed: () {
-                Navigator.of(dialogContext).pop(
-                  controller.text
-                      .split(RegExp(r'[\r\n]+'))
-                      .map((line) => line.trim())
-                      .where((line) => line.isNotEmpty)
-                      .toList(),
-                );
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (sheetContext) => AppSheetScaffold(
+        title: '选择项目阶段',
+        scrollable: true,
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const Text('阶段按顺序保留，切换后可查看或补记对应记录。'),
+            ListTile(
+              title: const Text('全部阶段'),
+              trailing: _selectedStage == null
+                  ? const Icon(Icons.check_rounded)
+                  : null,
+              onTap: () {
+                setState(() {
+                  _selectedStage = null;
+                  _selectedPhotoIds.clear();
+                  _isMultiSelectMode = false;
+                });
+                Navigator.of(sheetContext).pop();
               },
-              child: const Text('保存'),
+            ),
+            for (var index = 0; index < ordered.length; index++)
+              ListTile(
+                title: Text(
+                  ordered[index].name.isEmpty
+                      ? '未分阶段'
+                      : '${index + 1}. ${ordered[index].name}',
+                ),
+                subtitle: Text(
+                  [
+                    '${ordered[index].photos} 张照片 · ${ordered[index].expenses} 笔支出 · ${ordered[index].evidence} 份凭证 · ${ordered[index].trips} 条出差',
+                    for (final code
+                        in (ordered[index].totals.keys.toList()..sort()))
+                      projectAmount(ordered[index].totals[code]!, code),
+                  ].join('\n'),
+                ),
+                trailing: _selectedStage == ordered[index].name
+                    ? const Icon(Icons.check_rounded)
+                    : null,
+                onTap: () {
+                  setState(() {
+                    _selectedStage = ordered[index].name;
+                    _selectedPhotoIds.clear();
+                    _isMultiSelectMode = false;
+                  });
+                  Navigator.of(sheetContext).pop();
+                },
+              ),
+            const SizedBox(height: 12),
+            TextButton.icon(
+              icon: const Icon(Icons.add_rounded),
+              label: const Text('管理阶段顺序'),
+              onPressed: () {
+                Navigator.of(sheetContext).pop();
+                if (_project != null) {
+                  unawaited(_showProjectStagesDialog(_project!));
+                }
+              },
             ),
           ],
-        );
-      },
+        ),
+      ),
     );
-    controller.dispose();
-    if (result == null) return;
-    final failure = await _projectCubit.saveStageNames(project, result);
-    if (!mounted) return;
-    if (failure != null) {
-      messenger.showSnackBar(SnackBar(content: Text(failure.message)));
-      return;
-    }
-    messenger.showSnackBar(const SnackBar(content: Text('项目节点已保存')));
   }
 }
 

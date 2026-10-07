@@ -2,6 +2,10 @@ import 'package:life_log/common/db/db_service.dart';
 import 'package:life_log/core/di/service_locator.dart';
 import 'package:life_log/features/photo/data/photo_model.dart';
 
+abstract interface class PhotoStageLocalDataSource {
+  Future<int> assignPhotoStage(List<PhotoItem> photos, String? stageName);
+}
+
 abstract interface class PhotoLocalDataSource {
   Future<List<PhotoItem>> getAllPhotos();
   Stream<void> watchPhotos();
@@ -14,8 +18,13 @@ abstract interface class PhotoLocalDataSource {
   });
 }
 
-final class DbPhotoLocalDataSource implements PhotoLocalDataSource {
+final class DbPhotoLocalDataSource
+    implements PhotoLocalDataSource, PhotoStageLocalDataSource {
   const DbPhotoLocalDataSource();
+
+  @override
+  Future<int> assignPhotoStage(List<PhotoItem> photos, String? stageName) =>
+      serviceLocator<DbService>().assignPhotoStage(photos, stageName);
 
   @override
   Future<void> addPhoto(PhotoItem photo) {

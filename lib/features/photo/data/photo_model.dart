@@ -30,6 +30,8 @@ class PhotoItem {
 
   int? projectId; // 本地项目 ID，不参与云同步
 
+  String? projectStageName; // 本地项目阶段，不参与云同步
+
   // 索引字段，方便按项目或时间查询
   @Index()
   late DateTime dateIndexed;

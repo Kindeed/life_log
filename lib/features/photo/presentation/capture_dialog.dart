@@ -1,3 +1,6 @@
+import 'package:life_log/features/project/application/load_project_entries.dart';
+import 'package:life_log/features/project/domain/entities/project_entry.dart';
+import 'package:life_log/features/project/presentation/project_stage_field.dart';
 import 'dart:async';
 
 import 'package:flutter/material.dart';
@@ -17,6 +20,13 @@ import 'package:life_log/features/photo/presentation/project_picker.dart';
 void showCaptureDialog(
   BuildContext context, {
   String? initialProject,
+  String? initialProjectStageName,
+  FutureOr<void> Function(
+    String projectName,
+    String description,
+    String? stage,
+  )?
+  onConfirmWithStage,
   required FutureOr<void> Function(String projectName, String description)
   onConfirm,
 }) {
@@ -26,6 +36,8 @@ void showCaptureDialog(
     backgroundColor: Colors.transparent,
     builder: (_) => _CaptureDialogSheet(
       initialProject: initialProject ?? '',
+      initialProjectStageName: initialProjectStageName,
+      onConfirmWithStage: onConfirmWithStage,
       onConfirm: onConfirm,
     ),
   );
@@ -33,11 +45,15 @@ void showCaptureDialog(
 
 class _CaptureDialogSheet extends StatefulWidget {
   final String initialProject;
+  final String? initialProjectStageName;
+  final FutureOr<void> Function(String, String, String?)? onConfirmWithStage;
   final FutureOr<void> Function(String projectName, String description)
   onConfirm;
 
   const _CaptureDialogSheet({
     required this.initialProject,
+    this.initialProjectStageName,
+    this.onConfirmWithStage,
     required this.onConfirm,
   });
 
@@ -49,6 +65,9 @@ class _CaptureDialogSheetState extends State<_CaptureDialogSheet> {
   late final TextEditingController _projectCtrl;
   late final TextEditingController _descCtrl;
   late final PhotoCubit photoCubit;
+  late Future<List<ProjectEntry>> _projects;
+  late String _stage;
+  String _lastProject = '';
 
   @override
   void initState() {
@@ -56,6 +75,22 @@ class _CaptureDialogSheetState extends State<_CaptureDialogSheet> {
     _projectCtrl = TextEditingController(text: widget.initialProject);
     _descCtrl = TextEditingController();
     photoCubit = serviceLocator<PhotoCubit>()..start();
+    _stage = widget.initialProjectStageName ?? '';
+    _lastProject = _projectCtrl.text.trim();
+    _projects = serviceLocator.isRegistered<LoadProjectEntries>()
+        ? serviceLocator<LoadProjectEntries>()().then(
+            (r) => r.valueOrNull ?? const <ProjectEntry>[],
+          )
+        : Future.value(const <ProjectEntry>[]);
+    _projectCtrl.addListener(() {
+      if (!mounted) return;
+      final name = _projectCtrl.text.trim();
+      if (name == _lastProject) return;
+      setState(() {
+        _lastProject = name;
+        _stage = '';
+      });
+    });
   }
 
   @override
@@ -132,6 +167,15 @@ class _CaptureDialogSheetState extends State<_CaptureDialogSheet> {
                 ),
               ),
               SizedBox(height: 16.h),
+              if (widget.onConfirmWithStage != null) ...[
+                ProjectStageField(
+                  projectName: _projectCtrl.text,
+                  selected: _stage,
+                  projects: _projects,
+                  onChanged: (value) => setState(() => _stage = value),
+                ),
+                const SizedBox(height: 16),
+              ],
               AppTextField(
                 controller: _descCtrl,
                 labelText: "添加备注 (可选)",
@@ -154,8 +198,16 @@ class _CaptureDialogSheetState extends State<_CaptureDialogSheet> {
                   navigator.pop();
                   unawaited(
                     Future<void>.sync(
-                      () =>
-                          widget.onConfirm(projectName, _descCtrl.text.trim()),
+                      () => widget.onConfirmWithStage != null
+                          ? widget.onConfirmWithStage!(
+                              projectName,
+                              _descCtrl.text.trim(),
+                              _stage.isEmpty ? null : _stage,
+                            )
+                          : widget.onConfirm(
+                              projectName,
+                              _descCtrl.text.trim(),
+                            ),
                     ),
                   );
                 },

@@ -1317,6 +1317,35 @@ class DbService {
     });
   }
 
+  Future<int> assignPhotoStage(
+    List<PhotoItem> expected,
+    String? stageName,
+  ) => _writeTxn(() async {
+    final snapshots = {for (final photo in expected) photo.id: photo};
+    final photos = await isar.photoItems.getAll(snapshots.keys.toList());
+    final normalized = stageName?.trim();
+    final stage = normalized == null || normalized.isEmpty ? null : normalized;
+    final writable = photos
+        .whereType<PhotoItem>()
+        .where((p) => _isVisibleToCurrentUser(p.ownerUserId))
+        .toList();
+    // Refuse stale/deleted selection instead of claiming the entire batch saved.
+    if (writable.length != snapshots.length ||
+        writable.any((photo) {
+          final original = snapshots[photo.id]!;
+          return photo.projectId != original.projectId ||
+              (original.projectId == null &&
+                  photo.projectName != original.projectName);
+        })) {
+      throw StateError('照片已发生变化，请刷新后重试');
+    }
+    for (final photo in writable) {
+      photo.projectStageName = stage;
+    }
+    await isar.photoItems.putAll(writable);
+    return writable.length;
+  });
+
   Future<int> unlinkPhotosFromProject({
     required int projectId,
     required String projectName,
@@ -1333,6 +1362,7 @@ class DbService {
         if (!matchesId && !matchesName) continue;
         photo.projectId = null;
         photo.projectName = null;
+        photo.projectStageName = null;
         await isar.photoItems.put(photo);
         changed++;
       }

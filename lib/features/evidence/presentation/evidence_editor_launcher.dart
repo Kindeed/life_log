@@ -6,6 +6,7 @@ Future<void> showEvidenceEditorSheet(
   BuildContext context, {
   ExpenseEvidence? existing,
   String? initialProject,
+  String? initialProjectStageName,
   String? sourcePath,
   String? sourceExtension,
 }) {
@@ -14,6 +15,7 @@ Future<void> showEvidenceEditorSheet(
       builder: (_) => EvidenceEditorSheet(
         existing: existing,
         initialProject: initialProject,
+        initialProjectStageName: initialProjectStageName,
         sourcePath: sourcePath,
         sourceExtension: sourceExtension,
         asPage: true,
@@ -26,6 +28,7 @@ Future<void> showEvidenceEditorBottomSheet(
   BuildContext context, {
   ExpenseEvidence? existing,
   String? initialProject,
+  String? initialProjectStageName,
   String? sourcePath,
   String? sourceExtension,
 }) {
@@ -36,6 +39,7 @@ Future<void> showEvidenceEditorBottomSheet(
     builder: (_) => EvidenceEditorSheet(
       existing: existing,
       initialProject: initialProject,
+      initialProjectStageName: initialProjectStageName,
       sourcePath: sourcePath,
       sourceExtension: sourceExtension,
     ),

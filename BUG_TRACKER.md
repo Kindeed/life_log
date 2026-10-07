@@ -5,6 +5,23 @@
 
 This is the active defect ledger. `REVIEW_REPORT.md` is historical context only. Photo sync findings from older reports are superseded by `AGENTS.md`: photos remain local-only and must not enter Supabase sync.
 
+## Ordered project stages and amount editor (2026-10-07)
+
+Baseline: v1.4.37. User expects ordered stages with retained photos and amounts.
+
+Version: 1.4.38+44. Eight findings fixed, including U355 caught before release. Final regression: 924 tests pass (39 new), strict analysis has no issues, 465 Dart files format cleanly; locked dependencies, native Isar runtime and diff checks pass. Real v1.4.37 database upgrade, atomic photo stage assignment and 27 actual-page tests pass. Source references and boundaries: `docs/reviews/2026-10-07-project-stages-and-money.md`.
+
+| ID | Severity | Status | Area | Finding | Acceptance |
+| --- | --- | --- | --- | --- | --- |
+| D79 | High | fixed | Stage history | Free-text stage saving replaces the whole definition list and hides previous stages. No stage-level record view exists. | Add/reorder named stages while retaining history; filter all three detail destinations and show per-stage counts and original-currency expenses. |
+| D80 | High | fixed | Record stage save | Both expense and evidence controller sync calls changeProjectName even for unchanged names, which clears the selected stage before saving. Evidence project edits also retain foreign project ids. | Unchanged project preserves stage; changing project clears old association; stage preselection survives save. |
+| D81 | Medium | fixed | Photo stage relationship | Photos have no local stage metadata, so stage-specific capture/import and history cannot be represented. | Add nullable local-only stage metadata, preserve original images and unassigned legacy rows; no photo cloud fields. Update obsolete test prohibition on all stage metadata while retaining cloud-field guards. |
+| D82 | Medium | fixed | Money input | Amount parsing accepts NaN/Infinity and arbitrary precision. Expense UI always shows yen and provides no currency control despite retaining foreign currencies. | Explicit currency with bounded decimal validation and recoverable errors; keep existing original-currency records. |
+| D83 | Medium | fixed | Expense editor command lifecycle | Save/delete guards only block their own operation; text changes can reset busy state, and completion emits after disposal. Save feedback awaits refresh callbacks. | Single-flight commands, immutable busy draft, disposal checks and local save feedback independent of callback refresh. |
+| U353 | Medium | fixed | Stage editor | Multiline replacement dialog gives no order, history or per-stage record context. | Ordered additive stage sheet and shared selectors in photo/expense/evidence editors. |
+| U354 | Medium | fixed | Expense form | Fixed category grid and hardcoded 12px control geometry truncate large text; unlabeled project/trip controls obscure context. | Shared amount card, adaptive categories and labeled project/stage/date fields in light/dark and large text. |
+| U355 | Low | fixed | Amount form alignment | Initial adaptive category refactor lets its AppCard shrink to content width, leaving a ragged right edge; CJK screenshot caught it before release. | Stretch all form surfaces to a common edge; large text uses a category picker and normal text uses rounded chips. |
+
 ## Project detail holistic review (2026-10-07)
 
 Baseline: v1.4.36. User screenshot identifies repeated navigation and inconsistent project-detail presentation. Implementation and verification: `docs/reviews/2026-10-07-project-detail-review.md`.

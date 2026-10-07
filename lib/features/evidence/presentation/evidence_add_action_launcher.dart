@@ -14,6 +14,7 @@ import 'package:life_log/features/evidence/presentation/evidence_lost_data_recov
 void showEvidenceAddActions(
   BuildContext context, {
   String? initialProject,
+  String? initialProjectStageName,
   String? title,
   String galleryTitle = '从相册导入',
   String fileSubtitle = '发票、PDF 或截图文件',
@@ -87,6 +88,7 @@ void showEvidenceAddActions(
                     _importEvidenceImage(
                       context,
                       initialProject: initialProject,
+                      initialProjectStageName: initialProjectStageName,
                     ),
                   );
                 },
@@ -101,6 +103,7 @@ void showEvidenceAddActions(
                     _importEvidenceFile(
                       context,
                       initialProject: initialProject,
+                      initialProjectStageName: initialProjectStageName,
                     ),
                   );
                 },
@@ -115,6 +118,7 @@ void showEvidenceAddActions(
                     showEvidenceEditorSheet(
                       context,
                       initialProject: initialProject,
+                      initialProjectStageName: initialProjectStageName,
                     ),
                   );
                 },
@@ -130,11 +134,13 @@ void showEvidenceAddActions(
 Future<void> _captureEvidence(
   BuildContext context, {
   String? initialProject,
+  String? initialProjectStageName,
 }) async {
   final pendingPickerStore = EvidencePendingPickerStore();
   try {
     await pendingPickerStore.rememberLaunch(
       initialProject: initialProject,
+      initialProjectStageName: initialProjectStageName,
       source: EvidencePendingPickerSource.camera,
     );
     final image = await ImagePicker().pickImage(
@@ -146,6 +152,7 @@ Future<void> _captureEvidence(
     await showEvidenceEditorSheet(
       context,
       initialProject: initialProject,
+      initialProjectStageName: initialProjectStageName,
       sourcePath: image.path,
     );
   } catch (error, stackTrace) {
@@ -159,11 +166,13 @@ Future<void> _captureEvidence(
 Future<void> _importEvidenceImage(
   BuildContext context, {
   String? initialProject,
+  String? initialProjectStageName,
 }) async {
   final pendingPickerStore = EvidencePendingPickerStore();
   try {
     await pendingPickerStore.rememberLaunch(
       initialProject: initialProject,
+      initialProjectStageName: initialProjectStageName,
       source: EvidencePendingPickerSource.gallery,
     );
     final image = await ImagePicker().pickImage(
@@ -175,6 +184,7 @@ Future<void> _importEvidenceImage(
     await showEvidenceEditorSheet(
       context,
       initialProject: initialProject,
+      initialProjectStageName: initialProjectStageName,
       sourcePath: image.path,
     );
   } catch (error, stackTrace) {
@@ -188,6 +198,7 @@ Future<void> _importEvidenceImage(
 Future<void> _importEvidenceFile(
   BuildContext context, {
   String? initialProject,
+  String? initialProjectStageName,
 }) async {
   try {
     final result = await FilePicker.platform.pickFiles(
@@ -201,6 +212,7 @@ Future<void> _importEvidenceFile(
     await showEvidenceEditorSheet(
       context,
       initialProject: initialProject,
+      initialProjectStageName: initialProjectStageName,
       sourcePath: path,
       sourceExtension: file?.extension,
     );

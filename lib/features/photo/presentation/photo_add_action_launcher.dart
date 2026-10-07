@@ -13,19 +13,21 @@ import 'package:photo_manager/photo_manager.dart';
 
 final class PhotoPendingCaptureStore {
   static const _projectKey = 'photo.pendingCapture.projectName';
+  static const _stageKey = 'photo.pendingCapture.stageName';
 
   final GetStorage _storage;
 
   PhotoPendingCaptureStore({GetStorage? storage})
     : _storage = storage ?? GetStorage();
 
-  Future<void> rememberProject(String? projectName) async {
+  Future<void> rememberProject(String? projectName, {String? stageName}) async {
     final normalized = projectName?.trim();
     if (normalized == null || normalized.isEmpty) {
       await clear();
       return;
     }
     await _storage.write(_projectKey, normalized);
+    await _storage.write(_stageKey, stageName?.trim());
   }
 
   String? readProject() {
@@ -33,19 +35,26 @@ final class PhotoPendingCaptureStore {
     return value == null || value.isEmpty ? null : value;
   }
 
-  Future<void> clear() {
-    return _storage.remove(_projectKey);
+  String? readStage() => _storage.read<String>(_stageKey);
+
+  Future<void> clear() async {
+    await _storage.remove(_stageKey);
+    await _storage.remove(_projectKey);
   }
 }
 
 Future<void> capturePhotoWithSystemCamera(
   BuildContext context, {
   String? initialProject,
+  String? initialProjectStageName,
   Future<void> Function()? onSaved,
 }) async {
   final messenger = ScaffoldMessenger.maybeOf(context);
   final pendingCaptureStore = PhotoPendingCaptureStore();
-  await pendingCaptureStore.rememberProject(initialProject);
+  await pendingCaptureStore.rememberProject(
+    initialProject,
+    stageName: initialProjectStageName,
+  );
   try {
     final image = await ImagePicker().pickImage(
       source: ImageSource.camera,
@@ -63,16 +72,20 @@ Future<void> capturePhotoWithSystemCamera(
     showCaptureDialog(
       context,
       initialProject: initialProject,
-      onConfirm: (projectName, description) => _savePhotoFromPath(
-        messenger: activeMessenger,
-        tempPath: image.path,
-        projectName: projectName,
-        description: description,
-        sourceAssetId: null,
-        capturedAt: DateTime.now(),
-        capturedAtSource: 'cameraNow',
-        onSaved: onSaved,
-      ),
+      initialProjectStageName: initialProjectStageName,
+      onConfirm: (_, _) {},
+      onConfirmWithStage: (projectName, description, projectStageName) =>
+          _savePhotoFromPath(
+            messenger: activeMessenger,
+            tempPath: image.path,
+            projectName: projectName,
+            projectStageName: projectStageName,
+            description: description,
+            sourceAssetId: null,
+            capturedAt: DateTime.now(),
+            capturedAtSource: 'cameraNow',
+            onSaved: onSaved,
+          ),
     );
   } catch (error, stackTrace) {
     await pendingCaptureStore.clear();
@@ -84,6 +97,7 @@ Future<void> capturePhotoWithSystemCamera(
 Future<void> importPhotoFromGallery(
   BuildContext context, {
   String? initialProject,
+  String? initialProjectStageName,
   Future<void> Function()? onSaved,
 }) async {
   final messenger = ScaffoldMessenger.maybeOf(context);
@@ -100,18 +114,22 @@ Future<void> importPhotoFromGallery(
     showCaptureDialog(
       context,
       initialProject: initialProject,
-      onConfirm: (projectName, description) => _savePhotoFromPath(
-        messenger: messenger,
-        tempPath: result.file.path,
-        projectName: projectName,
-        description: description,
-        sourceAssetId: result.asset.id,
-        capturedAt: result.asset.createDateTime,
-        capturedAtSource: 'gallery',
-        gpsLatitude: latLng?.latitude,
-        gpsLongitude: latLng?.longitude,
-        onSaved: onSaved,
-      ),
+      initialProjectStageName: initialProjectStageName,
+      onConfirm: (_, _) {},
+      onConfirmWithStage: (projectName, description, projectStageName) =>
+          _savePhotoFromPath(
+            messenger: messenger,
+            tempPath: result.file.path,
+            projectName: projectName,
+            projectStageName: projectStageName,
+            description: description,
+            sourceAssetId: result.asset.id,
+            capturedAt: result.asset.createDateTime,
+            capturedAtSource: 'gallery',
+            gpsLatitude: latLng?.latitude,
+            gpsLongitude: latLng?.longitude,
+            onSaved: onSaved,
+          ),
     );
   } catch (error, stackTrace) {
     _logError('无法导入相册照片', error, stackTrace);
@@ -123,6 +141,7 @@ Future<void> savePhotoFromCapturePath({
   required ScaffoldMessengerState? messenger,
   required String tempPath,
   required String projectName,
+  String? projectStageName,
   required String description,
   DateTime? capturedAt,
   String? capturedAtSource,
@@ -132,6 +151,7 @@ Future<void> savePhotoFromCapturePath({
     messenger: messenger,
     tempPath: tempPath,
     projectName: projectName,
+    projectStageName: projectStageName,
     description: description,
     sourceAssetId: null,
     capturedAt: capturedAt,
@@ -144,6 +164,7 @@ Future<void> _savePhotoFromPath({
   required ScaffoldMessengerState? messenger,
   required String tempPath,
   required String projectName,
+  String? projectStageName,
   required String description,
   required String? sourceAssetId,
   DateTime? capturedAt,
@@ -156,6 +177,7 @@ Future<void> _savePhotoFromPath({
     final result = await serviceLocator<SavePhotoFromPath>().call(
       tempPath: tempPath,
       projectName: projectName,
+      projectStageName: projectStageName,
       description: description,
       deviceName: await _deviceName(),
       deleteSource: sourceAssetId == null,

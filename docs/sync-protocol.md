@@ -24,6 +24,8 @@ The local schema identifier includes the nullable owner scope on persisted sync 
 
 Photos are local-only. `PhotoItem`, photo files, and photo metadata are excluded
 from Supabase pull, push, merge, attachment, and conflict pipelines.
+The nullable photo `projectStageName` is local grouping metadata only; adding it
+does not make photos or their stage assignments eligible for cloud sync.
 
 ## Cursor Policy
 

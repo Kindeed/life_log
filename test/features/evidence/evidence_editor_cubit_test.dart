@@ -10,6 +10,84 @@ import 'package:life_log/features/evidence/domain/repositories/evidence_reposito
 import 'package:life_log/features/evidence/presentation/evidence_editor_cubit.dart';
 
 void main() {
+  test('evidence stage survives unchanged project name and save', () async {
+    final repository = _EditorRepository();
+    final cubit = _editor(repository: repository);
+    addTearDown(cubit.close);
+    cubit.changeProjectName('项目');
+    cubit.changeProjectStageName('验收');
+    cubit.changeProjectName(' 项目 ');
+    await cubit.submit();
+    expect(repository.savedEntries.single.entry.projectStageName, '验收');
+  });
+  test('new evidence stage preselection persists', () async {
+    final repository = _EditorRepository();
+    final cubit = EvidenceEditorCubit(
+      saveEntry: SaveEvidenceEntry(repository),
+      deleteEntry: DeleteEvidenceEntry(repository),
+      selectedDate: DateTime(2026),
+      initialProjectName: '项目',
+      initialProjectStageName: '施工',
+    );
+    addTearDown(cubit.close);
+    await cubit.submit();
+    expect(repository.savedEntries.single.entry.projectStageName, '施工');
+    expect(repository.savedEntries.single.entry.amount, isNull);
+  });
+  test(
+    'changing evidence project removes old durable relation and stage',
+    () async {
+      final repository = _EditorRepository();
+      final cubit = _editor(
+        repository: repository,
+        existingEntry: EvidenceEntry(
+          id: 2,
+          projectName: '旧项目',
+          projectId: 9,
+          projectSyncId: 'old',
+          projectStageName: '旧阶段',
+          evidenceDate: DateTime(2026),
+        ),
+      );
+      addTearDown(cubit.close);
+      cubit.changeProjectName('新项目');
+      await cubit.submit();
+      final entry = repository.savedEntries.single.entry;
+      expect(entry.projectId, isNull);
+      expect(entry.projectSyncId, isNull);
+      expect(entry.projectStageName, isNull);
+    },
+  );
+  test('evidence currency and amount validation can recover', () async {
+    final repository = _EditorRepository();
+    final cubit = _editor(repository: repository, initialProjectName: '项目');
+    addTearDown(cubit.close);
+    cubit.changeCurrency('JPY');
+    cubit.changeAmountText('5.5');
+    await cubit.submit();
+    expect(repository.savedEntries, isEmpty);
+    cubit.changeAmountText('55');
+    await cubit.submit();
+    expect(repository.savedEntries.single.entry.currency, 'JPY');
+  });
+  test('evidence slow save locks draft and blocks delete', () async {
+    final pending = Completer<void>();
+    final repository = _EditorRepository(saveCompleter: pending);
+    final cubit = _editor(repository: repository, existingEntry: _entry(id: 3));
+    addTearDown(cubit.close);
+    final saving = cubit.submit();
+    cubit.changeProjectName('不能改');
+    cubit.changeProjectStageName('不能改');
+    await cubit.delete();
+    await cubit.submit();
+    expect(repository.savedEntries, isEmpty);
+    expect(repository.deletedIds, isEmpty);
+    expect(cubit.state.status, EvidenceEditorStatus.submitting);
+    pending.complete();
+    await saving;
+    expect(repository.savedEntries, hasLength(1));
+  });
+
   group('EvidenceEditorCubit', () {
     test('initializes an edit draft from an existing entry', () {
       final cubit = _editor(

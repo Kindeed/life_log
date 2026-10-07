@@ -77,3 +77,17 @@ overflow menu. Missing exchange rates must remain visible beside estimated total
 Optional `UI_REVIEW_DIR`, `UI_REVIEW_FONT`, and `UI_REVIEW_ICONS` dart defines
 produce local render previews. Fonts are local test inputs only, not redistributed
 application assets. These previews do not replace Android device verification.
+
+## Project stages and amount input (2026-10-07)
+
+- `AppAmountField`: shared explicit amount/currency input for expenses and receipts;
+  optional receipt values stay absent, errors remain inline and busy input locks.
+- `ProjectStageField`: preserves selected historical stage names and labels the
+  relationship consistently in photo, expense and evidence editors.
+- `showProjectStagesSheet`: ordered, additive stage management with retryable save.
+  Names are existing relationship keys; do not silently rename/remove old stages.
+- Project detail uses one stage selector across its three destinations. Keep
+  unassigned history reachable and scope each original-currency expense total.
+- Normal expense categories use rounded choices; large text uses a picker.
+  All form cards share a full-width edge. Actual CJK layout and interaction coverage
+  lives in `test/features/project/project_detail_ui_test.dart`.

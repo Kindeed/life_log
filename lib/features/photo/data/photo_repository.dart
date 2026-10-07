@@ -31,6 +31,7 @@ class PhotoRepository {
   Future<PhotoItem> processAndSavePhoto({
     required String tempPath,
     required String projectName,
+    String? projectStageName,
     required String description,
     required String deviceName,
     bool deleteSource = true,
@@ -87,6 +88,9 @@ class PhotoRepository {
       ..deviceName = deviceName
       ..projectId = project.id
       ..projectName = project.name
+      ..projectStageName = projectStageName?.trim().isEmpty == false
+          ? projectStageName!.trim()
+          : null
       ..description = description
       ..dateIndexed = DateTime(eventTime.year, eventTime.month, eventTime.day);
 
@@ -101,6 +105,15 @@ class PhotoRepository {
     return _localDataSource.unlinkPhotosFromProject(
       projectId: projectId,
       projectName: projectName,
+    );
+  }
+
+  Future<int> assignStage(List<PhotoItem> photos, String? stageName) {
+    final source = _localDataSource;
+    if (source is! PhotoStageLocalDataSource) throw StateError('照片阶段设置不可用');
+    return (source as PhotoStageLocalDataSource).assignPhotoStage(
+      photos,
+      stageName,
     );
   }
 
@@ -187,6 +200,7 @@ class PhotoRepository {
     target.deviceName = source.deviceName;
     target.projectName = source.projectName;
     target.projectId = source.projectId;
+    target.projectStageName = source.projectStageName;
     target.dateIndexed = source.dateIndexed;
   }
 

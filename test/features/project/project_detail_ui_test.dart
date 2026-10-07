@@ -1,3 +1,13 @@
+import 'package:life_log/features/photo/application/assign_photo_stage.dart';
+import 'package:life_log/features/photo/domain/repositories/photo_stage_repository_port.dart';
+import 'package:life_log/common/widgets/app_amount_field.dart';
+import 'package:life_log/features/project/presentation/project_stages_sheet.dart';
+import 'package:life_log/features/expense/application/save_expense_record_entry.dart';
+import 'package:life_log/features/expense/application/delete_expense_record_entry.dart';
+import 'package:life_log/features/expense/presentation/expense_record_edit_view.dart';
+import 'package:life_log/features/evidence/application/save_evidence_entry.dart';
+import 'package:life_log/features/evidence/application/delete_evidence_entry.dart';
+import 'package:life_log/features/evidence/presentation/evidence_editor_sheet.dart';
 import 'dart:async';
 import 'dart:io';
 import 'dart:ui' as ui;
@@ -64,6 +74,392 @@ void main() {
   });
   tearDown(() async => serviceLocator.reset());
 
+  testWidgets(
+    'stage selection filters activities, photos and ledger and retains history',
+    (tester) async {
+      _phone(tester);
+      final f = await _Fixture.ready();
+      f.photos.entries = [
+        _stagePhoto(11, '立项'),
+        _stagePhoto(14, '现场交付'),
+        _stagePhoto(15, null),
+      ];
+      f.expenses.entries = [
+        _expense(12, merchant: '前期支出', amount: 100, stage: '立项'),
+        _expense(16, merchant: '交付支出', amount: 50, stage: '现场交付'),
+      ];
+      f.evidence.entries = [
+        _receipt(13, amount: 99, stage: '立项'),
+        _receipt(17, amount: 30, stage: '现场交付'),
+      ];
+      await Future.wait([
+        f.photoCubit.loadEntries(),
+        f.expenseCubit.loadEntries(),
+        f.evidenceCubit.loadEntries(),
+      ]);
+      await tester.pumpWidget(_harness(f.view()));
+      await tester.pumpAndSettle();
+      await tester.tap(find.byKey(const ValueKey('project-stage-selector')));
+      await tester.pumpAndSettle();
+      expect(find.textContaining('¥100.00'), findsWidgets);
+      expect(find.textContaining('¥50.00'), findsWidgets);
+      await tester.tap(find.text('1. 立项'));
+      await tester.pumpAndSettle();
+      expect(find.text('前期支出'), findsOneWidget);
+      expect(find.text('交付支出'), findsNothing);
+      await tester.tap(find.widgetWithText(Tab, '照片'));
+      await tester.pumpAndSettle();
+      expect(find.text('照片11'), findsOneWidget);
+      expect(find.text('照片14'), findsNothing);
+      await tester.tap(find.widgetWithText(Tab, '账目'));
+      await tester.pumpAndSettle();
+      expect(find.text('¥100.00'), findsWidgets);
+      expect(find.text('¥99.00'), findsOneWidget);
+      expect(find.text('¥50.00'), findsNothing);
+      await tester.tap(find.byKey(const ValueKey('project-stage-selector')));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('2. 现场交付'));
+      await tester.pumpAndSettle();
+      expect(find.text('交付支出'), findsOneWidget);
+      expect(find.text('前期支出'), findsNothing);
+      await tester.tap(find.byKey(const ValueKey('project-stage-selector')));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('全部阶段'));
+      await tester.pumpAndSettle();
+      expect(find.text('¥150.00'), findsOneWidget);
+      expect(f.expenses.entries, hasLength(2));
+      expect(f.photos.entries, hasLength(3));
+    },
+  );
+  testWidgets(
+    'legacy photo can be assigned to a stage with single-flight retry feedback',
+    (tester) async {
+      _phone(tester);
+      final f = await _Fixture.ready();
+      final assignments = _StageAssignments(f.photos)
+        ..pending = Completer<void>();
+      await tester.pumpWidget(
+        _harness(f.view(assign: AssignPhotoStage(assignments))),
+      );
+      await tester.pumpAndSettle();
+      await tester.tap(find.widgetWithText(Tab, '照片'));
+      await tester.pumpAndSettle();
+      await tester.tap(find.byTooltip('批量选择'));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('全选'));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('设置阶段'));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('未分阶段'));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('立项').last);
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('保存'));
+      await tester.pumpAndSettle();
+      expect(find.text('正在处理照片…'), findsOneWidget);
+      expect(assignments.calls, 1);
+      assignments.pending!.completeError(StateError('test failure'));
+      await tester.pumpAndSettle();
+      expect(find.text('设置照片阶段失败，请重试'), findsOneWidget);
+      expect(find.text('选择了 1 张照片'), findsOneWidget);
+      assignments.pending = null;
+      await tester.tap(find.text('设置阶段'));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('未分阶段'));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('立项').last);
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('保存'));
+      await tester.pumpAndSettle();
+      expect(assignments.calls, 2);
+      expect(f.photos.entries.single.projectStageName, '立项');
+      expect(find.text('已设置 1 张照片的阶段'), findsOneWidget);
+      expect(find.text('已进入选择模式'), findsNothing);
+    },
+  );
+  testWidgets(
+    'historical removed stage and unassigned photos remain reachable',
+    (tester) async {
+      _phone(tester);
+      final f = await _Fixture.ready();
+      f.photos.entries = [_stagePhoto(11, null), _stagePhoto(14, '旧阶段')];
+      await f.photoCubit.loadEntries();
+      await tester.pumpWidget(_harness(f.view()));
+      await tester.pumpAndSettle();
+      await tester.tap(find.byKey(const ValueKey('project-stage-selector')));
+      await tester.pumpAndSettle();
+      expect(find.text('3. 旧阶段'), findsOneWidget);
+      await tester.tap(find.text('未分阶段'));
+      await tester.pumpAndSettle();
+      await tester.tap(find.widgetWithText(Tab, '照片'));
+      await tester.pumpAndSettle();
+      expect(find.text('照片11'), findsOneWidget);
+      expect(find.text('照片14'), findsNothing);
+    },
+  );
+  testWidgets(
+    'ordered stage sheet appends and reorders without replacing previous names',
+    (tester) async {
+      _phone(tester);
+      final f = await _Fixture.ready();
+      await tester.pumpWidget(
+        _harness(
+          Builder(
+            builder: (context) => Scaffold(
+              body: TextButton(
+                onPressed: () => showProjectStagesSheet(
+                  context,
+                  project: f.projects.entries.single,
+                  cubit: f.projectCubit,
+                ),
+                child: const Text('管理'),
+              ),
+            ),
+          ),
+        ),
+      );
+      await tester.tap(find.text('管理'));
+      await tester.pumpAndSettle();
+      await tester.enterText(find.byType(TextFormField), '验收');
+      await tester.tap(find.text('追加阶段'));
+      await tester.pumpAndSettle();
+      expect(find.text('立项'), findsOneWidget);
+      expect(find.text('现场交付'), findsOneWidget);
+      expect(find.text('验收'), findsOneWidget);
+      await tester.tap(find.byTooltip('前移 验收'));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('保存阶段'));
+      await tester.pumpAndSettle();
+      expect(f.projects.entries.single.stageNames, ['立项', '验收', '现场交付']);
+      expect(find.text('项目阶段已保存，历史记录保留'), findsOneWidget);
+      expect(tester.takeException(), isNull);
+    },
+  );
+  testWidgets(
+    'stage save failure keeps draft for retry and locks one pending save',
+    (tester) async {
+      _phone(tester);
+      final f = await _Fixture.ready();
+      f.projects.savePending = Completer<void>();
+      await tester.pumpWidget(
+        _harness(
+          Builder(
+            builder: (context) => Scaffold(
+              body: TextButton(
+                onPressed: () => showProjectStagesSheet(
+                  context,
+                  project: f.projects.entries.single,
+                  cubit: f.projectCubit,
+                ),
+                child: const Text('管理'),
+              ),
+            ),
+          ),
+        ),
+      );
+      await tester.tap(find.text('管理'));
+      await tester.pumpAndSettle();
+      await tester.enterText(find.byType(TextFormField), '验收');
+      await tester.tap(find.text('保存阶段'));
+      await tester.pump();
+      expect(
+        tester
+            .widget<FilledButton>(find.widgetWithText(FilledButton, '保存阶段'))
+            .onPressed,
+        isNull,
+      );
+      expect(f.projects.saveCalls, 1);
+      f.projects.savePending!.completeError(StateError('保存失败'));
+      await tester.pumpAndSettle();
+      expect(find.text('验收'), findsOneWidget);
+      expect(f.projects.entries.single.stageNames, ['立项', '现场交付']);
+      f.projects.savePending = null;
+      await tester.tap(find.text('保存阶段'));
+      await tester.pumpAndSettle();
+      expect(f.projects.entries.single.stageNames, ['立项', '现场交付', '验收']);
+    },
+  );
+  for (final dark in [false, true]) {
+    testWidgets(
+      'amount and stage form reflows with 2x text in ${dark ? 'dark' : 'light'}',
+      (tester) async {
+        _phone(tester, width: 320);
+        final f = await _Fixture.ready();
+        _registerExpenseEditor(f);
+        final boundary = GlobalKey();
+        await tester.pumpWidget(
+          _harness(
+            const ExpenseRecordEditView(
+              initialProjectName: '项目A',
+              initialProjectStageName: '现场交付',
+            ),
+            dark: dark,
+            scale: 2,
+            boundary: boundary,
+          ),
+        );
+        await tester.pumpAndSettle();
+        expect(find.text('支出金额'), findsOneWidget);
+        final cards = tester.widgetList<AppCard>(find.byType(AppCard)).length;
+        expect(cards, 3);
+        final widths = find
+            .byType(AppCard)
+            .evaluate()
+            .map((element) => (element.renderObject! as RenderBox).size.width)
+            .toSet();
+        expect(widths, hasLength(1));
+        expect(tester.takeException(), isNull);
+        await _capture(
+          tester,
+          boundary,
+          'stages-${dark ? 'dark' : 'light'}-amount-320-2x',
+        );
+        await tester.scrollUntilVisible(
+          find.text('项目阶段'),
+          200,
+          scrollable: find.byType(Scrollable).first,
+        );
+        expect(tester.takeException(), isNull);
+        await tester.pumpWidget(const SizedBox.shrink());
+        await tester.pumpWidget(
+          _harness(
+            Builder(
+              builder: (context) => Scaffold(
+                body: TextButton(
+                  onPressed: () => showProjectStagesSheet(
+                    context,
+                    project: f.projects.entries.single,
+                    cubit: f.projectCubit,
+                  ),
+                  child: const Text('管理'),
+                ),
+              ),
+            ),
+            dark: dark,
+            scale: 2,
+            boundary: boundary,
+          ),
+        );
+        await tester.tap(find.text('管理'));
+        await tester.pumpAndSettle();
+        expect(tester.takeException(), isNull);
+        await _capture(
+          tester,
+          boundary,
+          'stages-${dark ? 'dark' : 'light'}-manager-320-2x',
+        );
+      },
+    );
+  }
+  for (final dark in [false, true]) {
+    testWidgets('normal amount editor geometry ${dark ? 'dark' : 'light'}', (
+      tester,
+    ) async {
+      _phone(tester);
+      final f = await _Fixture.ready();
+      _registerExpenseEditor(f);
+      final boundary = GlobalKey();
+      await tester.pumpWidget(
+        _harness(
+          const ExpenseRecordEditView(
+            initialProjectName: '项目A',
+            initialProjectStageName: '现场交付',
+          ),
+          dark: dark,
+          boundary: boundary,
+        ),
+      );
+      await tester.pumpAndSettle();
+      expect(find.byType(ChoiceChip), findsNWidgets(6));
+      expect(tester.takeException(), isNull);
+      expect(
+        find
+            .byType(AppCard)
+            .evaluate()
+            .map((element) => (element.renderObject! as RenderBox).size.width)
+            .toSet(),
+        hasLength(1),
+      );
+      await _capture(
+        tester,
+        boundary,
+        'stages-${dark ? 'dark' : 'light'}-amount-390',
+      );
+    });
+  }
+  testWidgets(
+    'amount editor preserves preselected stage and reports save before delayed refresh',
+    (tester) async {
+      _phone(tester);
+      final f = await _Fixture.ready();
+      _registerExpenseEditor(f);
+      final refresh = Completer<void>();
+      await tester.pumpWidget(
+        _harness(
+          ExpenseRecordEditView(
+            initialProjectName: '项目A',
+            initialProjectStageName: '立项',
+            onSavedOrDeleted: () => refresh.future,
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+      await tester.enterText(
+        find.descendant(
+          of: find.byType(AppAmountField),
+          matching: find.byType(TextField),
+        ),
+        'NaN',
+      );
+      await tester.tap(find.text('保存'));
+      await tester.pumpAndSettle();
+      expect(f.expenses.saved, isEmpty);
+      expect(find.textContaining('最多两位小数'), findsWidgets);
+      await tester.enterText(
+        find.descendant(
+          of: find.byType(AppAmountField),
+          matching: find.byType(TextField),
+        ),
+        '12.34',
+      );
+      await tester.tap(find.text('保存'));
+      await tester.pumpAndSettle();
+      expect(f.expenses.saved.single.projectStageName, '立项');
+      expect(find.text('支出已保存'), findsOneWidget);
+      refresh.complete();
+    },
+  );
+  testWidgets(
+    'new receipt page exposes stage and explicit optional amount currency',
+    (tester) async {
+      _phone(tester);
+      final f = await _Fixture.ready();
+      serviceLocator.registerSingleton<SaveEvidenceEntry>(
+        SaveEvidenceEntry(f.evidence),
+      );
+      serviceLocator.registerSingleton<DeleteEvidenceEntry>(
+        DeleteEvidenceEntry(f.evidence),
+      );
+      serviceLocator.registerSingleton<LoadProjectEntries>(
+        LoadProjectEntries(f.projects),
+      );
+      await tester.pumpWidget(
+        _harness(
+          const EvidenceEditorSheet(
+            asPage: true,
+            initialProject: '项目A',
+            initialProjectStageName: '立项',
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+      expect(find.text('项目阶段'), findsOneWidget);
+      expect(find.text('立项'), findsOneWidget);
+      expect(find.text('凭证金额（可选）'), findsOneWidget);
+      expect(find.text('CNY'), findsOneWidget);
+      expect(tester.takeException(), isNull);
+    },
+  );
   testWidgets(
     'expense and receipt amounts remain separate, with original currencies',
     (tester) async {
@@ -496,6 +892,14 @@ void main() {
           expect(tester.takeException(), isNull);
           expect(find.text('记录支出'), findsOneWidget);
           await _capture(tester, boundary, '$prefix-add');
+          Navigator.of(tester.element(find.text('记录支出'))).pop();
+          await tester.pumpAndSettle();
+          await tester.tap(
+            find.byKey(const ValueKey('project-stage-selector')),
+          );
+          await tester.pumpAndSettle();
+          expect(tester.takeException(), isNull);
+          await _capture(tester, boundary, '$prefix-stages');
         },
       );
     }
@@ -562,6 +966,7 @@ ExpenseRecordEntry _expense(
   double amount = 260,
   String currency = 'CNY',
   int? projectId = 1,
+  String? stage,
 }) => ExpenseRecordEntry(
   id: id,
   expenseDate: _day,
@@ -571,6 +976,7 @@ ExpenseRecordEntry _expense(
   currency: currency,
   merchant: merchant,
   category: ExpenseRecordEntryCategory.office,
+  projectStageName: stage,
 );
 EvidenceEntry _receipt(
   int id, {
@@ -578,6 +984,7 @@ EvidenceEntry _receipt(
   EvidenceEntryStatus status = EvidenceEntryStatus.pending,
   int? projectId = 1,
   String merchant = '交付发票',
+  String? stage,
 }) => EvidenceEntry(
   id: id,
   projectName: '项目A',
@@ -586,6 +993,7 @@ EvidenceEntry _receipt(
   amount: amount,
   merchant: merchant,
   status: status,
+  projectStageName: stage,
 );
 WorkLogEntry _trip(int id, String location) => WorkLogEntry(
   id: id,
@@ -660,7 +1068,8 @@ class _Fixture {
     return f;
   }
 
-  ProjectDetailView view() => ProjectDetailView(
+  ProjectDetailView view({AssignPhotoStage? assign}) => ProjectDetailView(
+    assignPhotoStage: assign,
     projectName: '项目A',
     projectId: 1,
     projectCubit: projectCubit,
@@ -692,6 +1101,15 @@ class _Data<T> {
 
 class _Projects extends _Data<ProjectEntry> implements ProjectRepositoryPort {
   _Projects(super.entries);
+  Completer<void>? savePending;
+  int saveCalls = 0;
+  @override
+  Future<ProjectEntry> saveEntry(ProjectEntry entry) async {
+    saveCalls++;
+    if (savePending != null) await savePending!.future;
+    entries = [entry];
+    return entry;
+  }
 }
 
 class _Photos extends _Data<PhotoEntry> implements PhotoRepositoryPort {
@@ -710,6 +1128,14 @@ class _Photos extends _Data<PhotoEntry> implements PhotoRepositoryPort {
 class _Expenses extends _Data<ExpenseRecordEntry>
     implements ExpenseRecordRepositoryPort {
   _Expenses(super.entries);
+  final saved = <ExpenseRecordEntry>[];
+  @override
+  Future<void> saveEntry(
+    ExpenseRecordEntry entry, {
+    required bool markDirty,
+  }) async {
+    saved.add(entry);
+  }
 }
 
 class _Evidence extends _Data<EvidenceEntry> implements EvidenceRepositoryPort {
@@ -720,4 +1146,53 @@ class _WorkLogs extends _Data<WorkLogEntry> implements WorkLogRepositoryPort {
   _WorkLogs(super.entries);
   @override
   Future<WorkLogEditDraft?> getEditDraft(int id) async => null;
+}
+
+void _registerExpenseEditor(_Fixture f) {
+  serviceLocator.registerSingleton<SaveExpenseRecordEntry>(
+    SaveExpenseRecordEntry(f.expenses),
+  );
+  serviceLocator.registerSingleton<DeleteExpenseRecordEntry>(
+    DeleteExpenseRecordEntry(f.expenses),
+  );
+  serviceLocator.registerSingleton<LoadProjectEntries>(
+    LoadProjectEntries(f.projects),
+  );
+  serviceLocator.registerSingleton<LoadProjectWorkLogTrips>(
+    LoadProjectWorkLogTrips(f.trips),
+  );
+}
+
+PhotoEntry _stagePhoto(int id, String? stage) => PhotoEntry(
+  id: id,
+  ownerUserId: null,
+  createdAt: _day,
+  fileName: '$id.jpg',
+  filePath: '/tmp/missing-$id.jpg',
+  description: '照片$id',
+  deviceName: 'Pixel',
+  projectName: '项目A',
+  projectId: 1,
+  projectStageName: stage,
+  dateIndexed: _day,
+);
+
+class _StageAssignments implements PhotoStageRepositoryPort {
+  final _Photos photos;
+  Completer<void>? pending;
+  int calls = 0;
+  _StageAssignments(this.photos);
+  @override
+  Future<int> assignStage(List<PhotoEntry> entries, String? stageName) async {
+    calls++;
+    if (pending != null) await pending!.future;
+    photos.entries = photos.entries
+        .map(
+          (photo) => entries.any((p) => p.id == photo.id)
+              ? _stagePhoto(photo.id, stageName)
+              : photo,
+        )
+        .toList();
+    return entries.length;
+  }
 }

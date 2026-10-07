@@ -1,9 +1,11 @@
+import 'package:life_log/common/widgets/app_amount_field.dart';
+import 'package:life_log/common/theme/app_radius.dart';
+import 'package:life_log/features/project/presentation/project_stage_field.dart';
 import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
-import 'package:life_log/common/theme/app_semantic_colors.dart';
 import 'package:life_log/common/theme/theme_extensions.dart';
 import 'package:life_log/common/utils/formatters.dart';
 import 'package:life_log/common/widgets/app_button.dart';
@@ -27,6 +29,7 @@ class ExpenseRecordEditView extends StatefulWidget {
   final bool existingAlreadyDirty;
   final DateTime? initialDate;
   final String? initialProjectName;
+  final String? initialProjectStageName;
   final Future<void> Function()? onSavedOrDeleted;
 
   const ExpenseRecordEditView({
@@ -35,6 +38,7 @@ class ExpenseRecordEditView extends StatefulWidget {
     this.existingAlreadyDirty = false,
     this.initialDate,
     this.initialProjectName,
+    this.initialProjectStageName,
     this.onSavedOrDeleted,
   });
 
@@ -61,6 +65,7 @@ class _ExpenseRecordEditViewState extends State<ExpenseRecordEditView> {
       existingEntry: widget.existingEntry,
       existingAlreadyDirty: widget.existingAlreadyDirty,
       initialProjectName: widget.initialProjectName,
+      initialProjectStageName: widget.initialProjectStageName,
     );
 
     final editorState = _editorCubit.state;
@@ -168,7 +173,10 @@ class _ExpenseRecordEditViewState extends State<ExpenseRecordEditView> {
       case ExpenseRecordEditorStatus.saved:
       case ExpenseRecordEditorStatus.deleted:
         final messenger = ScaffoldMessenger.maybeOf(context);
-        await widget.onSavedOrDeleted?.call();
+        final refresh = widget.onSavedOrDeleted;
+        if (refresh != null) {
+          unawaited(Future<void>.sync(refresh).catchError((Object _) {}));
+        }
         if (!context.mounted) return;
         await Navigator.of(context).maybePop();
         messenger
@@ -177,8 +185,8 @@ class _ExpenseRecordEditViewState extends State<ExpenseRecordEditView> {
             SnackBar(
               content: Text(
                 editorState.status == ExpenseRecordEditorStatus.saved
-                    ? '消费记录已保存'
-                    : '消费记录已删除',
+                    ? '支出已保存'
+                    : '支出已删除',
               ),
               behavior: SnackBarBehavior.floating,
             ),
@@ -271,127 +279,169 @@ class _ExpenseRecordEditorScaffold extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final semantic = theme.semanticColors;
     final textSecondary = theme.colorScheme.onSurfaceVariant;
+    final isBusy =
+        editorState.status == ExpenseRecordEditorStatus.submitting ||
+        editorState.status == ExpenseRecordEditorStatus.deleting;
 
-    return Scaffold(
-      appBar: AppBar(
-        title: Text(editorState.existingEntry == null ? '添加项目支出' : '编辑项目支出'),
-      ),
-      body: SafeArea(
-        child: SingleChildScrollView(
-          keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
-          padding: EdgeInsets.fromLTRB(16.w, 10.h, 16.w, 96.h),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              AppCard(
-                padding: EdgeInsets.all(16.w),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text('金额', style: TextStyle(color: textSecondary)),
-                    SizedBox(height: 10.h),
-                    AppTextField(
-                      controller: amountController,
-                      keyboardType: const TextInputType.numberWithOptions(
-                        decimal: true,
-                      ),
-                      hintText: '0.00',
-                      prefixIcon: Icon(
-                        Icons.currency_yen_rounded,
-                        color: semantic.expense,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-              SizedBox(height: 14.h),
-              AppCard(
-                padding: EdgeInsets.all(16.w),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text('分类', style: TextStyle(color: textSecondary)),
-                    SizedBox(height: 12.h),
-                    GridView.builder(
-                      shrinkWrap: true,
-                      physics: const NeverScrollableScrollPhysics(),
-                      itemCount: ExpenseRecordEntryCategory.values.length,
-                      gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-                        crossAxisCount: 3,
-                        crossAxisSpacing: 8.w,
-                        mainAxisSpacing: 8.h,
-                        childAspectRatio: 2.55,
-                      ),
-                      itemBuilder: (context, index) {
-                        final category =
-                            ExpenseRecordEntryCategory.values[index];
-                        final selected = editorState.category == category;
-                        return _CategoryTile(
-                          icon: _categoryIcon(category),
-                          label: category.label,
-                          color: _categoryColor(category, semantic),
-                          selected: selected,
-                          onTap: () => context
+    return PopScope(
+      canPop: !isBusy,
+      child: Scaffold(
+        appBar: AppBar(
+          title: Text(editorState.existingEntry == null ? '添加项目支出' : '编辑项目支出'),
+        ),
+        body: AbsorbPointer(
+          absorbing: isBusy,
+          child: SafeArea(
+            child: SingleChildScrollView(
+              keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
+              padding: EdgeInsets.fromLTRB(16.w, 10.h, 16.w, 96.h),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  AppCard(
+                    padding: EdgeInsets.all(16.w),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        AppAmountField(
+                          controller: amountController,
+                          currency: editorState.currency,
+                          enabled: !isBusy,
+                          errorText:
+                              editorState.failure?.code ==
+                                  'expense-record/editor/invalid-amount'
+                              ? editorState.failure?.message
+                              : null,
+                          onChanged: context
                               .read<ExpenseRecordEditorCubit>()
-                              .changeCategory(category),
-                        );
-                      },
+                              .changeAmountText,
+                          onCurrencyChanged: context
+                              .read<ExpenseRecordEditorCubit>()
+                              .changeCurrency,
+                        ),
+                      ],
                     ),
-                  ],
-                ),
+                  ),
+                  SizedBox(height: 14.h),
+                  AppCard(
+                    padding: EdgeInsets.all(16.w),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text('分类', style: TextStyle(color: textSecondary)),
+                        SizedBox(height: 12.h),
+                        if (MediaQuery.textScalerOf(context).scale(1) > 1.4)
+                          DropdownButtonFormField<ExpenseRecordEntryCategory>(
+                            initialValue: editorState.category,
+                            isExpanded: true,
+                            decoration: const InputDecoration(),
+                            items: ExpenseRecordEntryCategory.values
+                                .map(
+                                  (category) => DropdownMenuItem(
+                                    value: category,
+                                    child: Text(category.label),
+                                  ),
+                                )
+                                .toList(),
+                            onChanged: isBusy
+                                ? null
+                                : (category) {
+                                    if (category != null) {
+                                      context
+                                          .read<ExpenseRecordEditorCubit>()
+                                          .changeCategory(category);
+                                    }
+                                  },
+                          )
+                        else
+                          Wrap(
+                            spacing: 8,
+                            runSpacing: 8,
+                            children: [
+                              for (final category
+                                  in ExpenseRecordEntryCategory.values)
+                                ChoiceChip(
+                                  label: Text(category.label),
+                                  shape: RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(
+                                      AppRadius.md,
+                                    ),
+                                  ),
+                                  avatar: Icon(
+                                    _categoryIcon(category),
+                                    size: 18,
+                                  ),
+                                  selected: editorState.category == category,
+                                  onSelected: isBusy
+                                      ? null
+                                      : (_) => context
+                                            .read<ExpenseRecordEditorCubit>()
+                                            .changeCategory(category),
+                                ),
+                            ],
+                          ),
+                      ],
+                    ),
+                  ),
+                  SizedBox(height: 14.h),
+                  AppCard(
+                    padding: EdgeInsets.all(16.w),
+                    child: Column(
+                      children: [
+                        AppTextField(
+                          controller: merchantController,
+                          labelText: '商家／用途',
+                          hintText: '可选',
+                          prefixIcon: const Icon(Icons.storefront_rounded),
+                        ),
+                        SizedBox(height: 12.h),
+                        AppTextField(
+                          controller: projectController,
+                          labelText: '所属项目',
+                          hintText: '可选',
+                          prefixIcon: const Icon(Icons.folder_special_rounded),
+                          onChanged: onProjectChanged,
+                        ),
+                        SizedBox(height: 12.h),
+                        ProjectStageField(
+                          projectName: editorState.projectName,
+                          selected: editorState.projectStageName,
+                          projects: projectEntriesFuture,
+                          onChanged: context
+                              .read<ExpenseRecordEditorCubit>()
+                              .changeProjectStageName,
+                        ),
+                        if (editorState.projectName.trim().isNotEmpty)
+                          SizedBox(height: 12.h),
+                        _TripWorkLogTile(
+                          editorState: editorState,
+                          tripEntriesFuture: tripEntriesFuture,
+                        ),
+                        SizedBox(height: 12.h),
+                        _DateTile(
+                          date: editorState.selectedDate,
+                          onTap: onPickDate,
+                        ),
+                        SizedBox(height: 12.h),
+                        AppTextField(
+                          controller: noteController,
+                          hintText: '备注',
+                          maxLines: 3,
+                          prefixIcon: const Icon(Icons.edit_note_rounded),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
               ),
-              SizedBox(height: 14.h),
-              AppCard(
-                padding: EdgeInsets.all(16.w),
-                child: Column(
-                  children: [
-                    AppTextField(
-                      controller: merchantController,
-                      hintText: '商家/用途',
-                      prefixIcon: const Icon(Icons.storefront_rounded),
-                    ),
-                    SizedBox(height: 12.h),
-                    AppTextField(
-                      controller: projectController,
-                      hintText: '项目名称（建议先填）',
-                      prefixIcon: const Icon(Icons.folder_special_rounded),
-                      onChanged: onProjectChanged,
-                    ),
-                    SizedBox(height: 12.h),
-                    _ProjectStageTile(
-                      editorState: editorState,
-                      projectEntriesFuture: projectEntriesFuture,
-                    ),
-                    if (editorState.projectName.trim().isNotEmpty)
-                      SizedBox(height: 12.h),
-                    _TripWorkLogTile(
-                      editorState: editorState,
-                      tripEntriesFuture: tripEntriesFuture,
-                    ),
-                    SizedBox(height: 12.h),
-                    _DateTile(
-                      date: editorState.selectedDate,
-                      onTap: onPickDate,
-                    ),
-                    SizedBox(height: 12.h),
-                    AppTextField(
-                      controller: noteController,
-                      hintText: '备注',
-                      maxLines: 3,
-                      prefixIcon: const Icon(Icons.edit_note_rounded),
-                    ),
-                  ],
-                ),
-              ),
-            ],
+            ),
           ),
         ),
-      ),
-      bottomNavigationBar: AppSafeBottomBar(
-        padding: EdgeInsets.fromLTRB(20.w, 10.h, 20.w, 16.h),
-        child: _buildBottomActions(editorState),
+        bottomNavigationBar: AppSafeBottomBar(
+          padding: EdgeInsets.fromLTRB(20.w, 10.h, 20.w, 16.h),
+          child: _buildBottomActions(editorState),
+        ),
       ),
     );
   }
@@ -443,20 +493,6 @@ class _ExpenseRecordEditorScaffold extends StatelessWidget {
       ExpenseRecordEntryCategory.other => Icons.more_horiz_rounded,
     };
   }
-
-  Color _categoryColor(
-    ExpenseRecordEntryCategory category,
-    AppSemanticColors semantic,
-  ) {
-    return switch (category) {
-      ExpenseRecordEntryCategory.meal => semantic.warning,
-      ExpenseRecordEntryCategory.transport => semantic.stats,
-      ExpenseRecordEntryCategory.shopping => semantic.expense,
-      ExpenseRecordEntryCategory.travel => semantic.project,
-      ExpenseRecordEntryCategory.office => semantic.work,
-      ExpenseRecordEntryCategory.other => semantic.success,
-    };
-  }
 }
 
 class _DateTile extends StatelessWidget {
@@ -470,14 +506,14 @@ class _DateTile extends StatelessWidget {
     final theme = Theme.of(context);
     final semantic = theme.semanticColors;
     return InkWell(
-      borderRadius: BorderRadius.circular(12),
+      borderRadius: BorderRadius.circular(AppRadius.md),
       onTap: onTap,
       child: Container(
-        height: 56.h,
+        constraints: const BoxConstraints(minHeight: 56),
         padding: EdgeInsets.symmetric(horizontal: 14.w),
         decoration: BoxDecoration(
           color: semantic.mutedSurface,
-          borderRadius: BorderRadius.circular(12),
+          borderRadius: BorderRadius.circular(AppRadius.md),
           border: Border.all(color: semantic.border),
         ),
         child: Row(
@@ -491,70 +527,6 @@ class _DateTile extends StatelessWidget {
             Icon(
               Icons.chevron_right_rounded,
               color: theme.colorScheme.onSurfaceVariant,
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-}
-
-class _CategoryTile extends StatelessWidget {
-  final IconData icon;
-  final String label;
-  final Color color;
-  final bool selected;
-  final VoidCallback onTap;
-
-  const _CategoryTile({
-    required this.icon,
-    required this.label,
-    required this.color,
-    required this.selected,
-    required this.onTap,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    final semantic = theme.semanticColors;
-    final background = selected
-        ? color.withValues(
-            alpha: theme.brightness == Brightness.dark ? 0.20 : 0.12,
-          )
-        : semantic.mutedSurface;
-    final borderColor = selected ? color : semantic.border;
-
-    return InkWell(
-      borderRadius: BorderRadius.circular(12),
-      onTap: onTap,
-      child: AnimatedContainer(
-        duration: const Duration(milliseconds: 140),
-        curve: Curves.easeOutCubic,
-        alignment: Alignment.center,
-        padding: EdgeInsets.symmetric(horizontal: 8.w),
-        decoration: BoxDecoration(
-          color: background,
-          borderRadius: BorderRadius.circular(12),
-          border: Border.all(color: borderColor.withValues(alpha: 0.75)),
-        ),
-        child: Row(
-          mainAxisAlignment: MainAxisAlignment.center,
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Icon(icon, size: 16.sp, color: color),
-            SizedBox(width: 5.w),
-            Flexible(
-              child: Text(
-                label,
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
-                style: theme.textTheme.labelMedium?.copyWith(
-                  color: selected ? color : theme.colorScheme.onSurface,
-                  fontWeight: FontWeight.w700,
-                  letterSpacing: 0,
-                ),
-              ),
             ),
           ],
         ),
@@ -588,11 +560,11 @@ class _TripWorkLogTile extends StatelessWidget {
         }.toList();
 
         return Container(
-          height: 56.h,
+          constraints: const BoxConstraints(minHeight: 56),
           padding: EdgeInsets.symmetric(horizontal: 14.w),
           decoration: BoxDecoration(
             color: semantic.mutedSurface,
-            borderRadius: BorderRadius.circular(12),
+            borderRadius: BorderRadius.circular(AppRadius.md),
             border: Border.all(color: semantic.border),
           ),
           child: DropdownButtonHideUnderline(
@@ -609,7 +581,7 @@ class _TripWorkLogTile extends StatelessWidget {
                   value: value,
                   child: Text(
                     value == 0
-                        ? (trips.isEmpty ? '暂无可关联出差' : '不关联出差')
+                        ? (trips.isEmpty ? '关联出差：暂无记录' : '关联出差：不关联')
                         : _tripLabel(trip, value),
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
@@ -623,75 +595,6 @@ class _TripWorkLogTile extends StatelessWidget {
                   syncId: trip?.syncId,
                 );
               },
-            ),
-          ),
-        );
-      },
-    );
-  }
-}
-
-class _ProjectStageTile extends StatelessWidget {
-  final ExpenseRecordEditorState editorState;
-  final Future<List<ProjectEntry>> projectEntriesFuture;
-
-  const _ProjectStageTile({
-    required this.editorState,
-    required this.projectEntriesFuture,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    final projectName = editorState.projectName.trim();
-    if (projectName.isEmpty) return const SizedBox.shrink();
-    final theme = Theme.of(context);
-    final semantic = theme.semanticColors;
-    return FutureBuilder<List<ProjectEntry>>(
-      future: projectEntriesFuture,
-      builder: (context, snapshot) {
-        final projects = snapshot.data ?? const <ProjectEntry>[];
-        ProjectEntry? matched;
-        for (final project in projects) {
-          if (project.name.trim().toLowerCase() == projectName.toLowerCase()) {
-            matched = project;
-            break;
-          }
-        }
-        final stageNames = matched?.stageNames ?? const <String>[];
-        final selected = editorState.projectStageName.trim();
-        if (stageNames.isEmpty && selected.isEmpty) {
-          return const SizedBox.shrink();
-        }
-        final values = <String>{'', selected, ...stageNames}.toList();
-        return Container(
-          height: 56.h,
-          padding: EdgeInsets.symmetric(horizontal: 14.w),
-          decoration: BoxDecoration(
-            color: semantic.mutedSurface,
-            borderRadius: BorderRadius.circular(12),
-            border: Border.all(color: semantic.border),
-          ),
-          child: DropdownButtonHideUnderline(
-            child: DropdownButton<String>(
-              value: values.contains(selected) ? selected : '',
-              isExpanded: true,
-              icon: Icon(
-                Icons.expand_more_rounded,
-                color: theme.colorScheme.onSurfaceVariant,
-              ),
-              items: values.map((value) {
-                return DropdownMenuItem<String>(
-                  value: value,
-                  child: Text(
-                    value.isEmpty ? '不关联项目节点' : value,
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                  ),
-                );
-              }).toList(),
-              onChanged: (value) => context
-                  .read<ExpenseRecordEditorCubit>()
-                  .changeProjectStageName(value ?? ''),
             ),
           ),
         );

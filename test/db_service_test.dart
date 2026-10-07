@@ -100,6 +100,69 @@ void main() {
       }
     });
 
+    test(
+      'photo stage assignment is atomic, local and preserves existing metadata',
+      () async {
+        final first = PhotoItem()
+          ..createdAt = DateTime(2026)
+          ..dateIndexed = DateTime(2026)
+          ..fileName = 'one.jpg'
+          ..filePath = '/one.jpg'
+          ..projectId = 1
+          ..projectName = '项目'
+          ..description = '原备注';
+        final second = PhotoItem()
+          ..createdAt = DateTime(2026)
+          ..dateIndexed = DateTime(2026)
+          ..fileName = 'two.jpg'
+          ..filePath = '/two.jpg'
+          ..projectId = 1
+          ..projectName = '项目';
+        await db.addPhoto(first);
+        await db.addPhoto(second);
+        expect(await db.assignPhotoStage([first, second], ' 施工 '), 2);
+        final updated = await db.getPhoto(first.id);
+        expect(updated!.projectStageName, '施工');
+        expect(updated.description, '原备注');
+        expect(updated.filePath, '/one.jpg');
+        final missing = PhotoItem()
+          ..id = 999
+          ..projectId = 1
+          ..projectName = '项目';
+        await expectLater(
+          db.assignPhotoStage([first, missing], '验收'),
+          throwsStateError,
+        );
+        expect((await db.getPhoto(first.id))!.projectStageName, '施工');
+        await db.assignPhotoStage([first], '');
+        expect((await db.getPhoto(first.id))!.projectStageName, isNull);
+      },
+    );
+    test(
+      'photo stage assignment refuses stale project and unlink clears stage',
+      () async {
+        final photo = PhotoItem()
+          ..createdAt = DateTime(2026)
+          ..dateIndexed = DateTime(2026)
+          ..fileName = 'one.jpg'
+          ..filePath = '/one.jpg'
+          ..projectId = 1
+          ..projectName = '项目'
+          ..projectStageName = '勘查';
+        await db.addPhoto(photo);
+        final current = (await db.getPhoto(photo.id))!
+          ..projectId = 2
+          ..projectName = '其他项目';
+        await db.addPhoto(current);
+        await expectLater(db.assignPhotoStage([photo], '验收'), throwsStateError);
+        expect((await db.getPhoto(photo.id))!.projectStageName, '勘查');
+        await db.unlinkPhotosFromProject(projectId: 2, projectName: '其他项目');
+        final unlinked = await db.getPhoto(photo.id);
+        expect(unlinked!.projectName, isNull);
+        expect(unlinked.projectStageName, isNull);
+        expect(unlinked.filePath, '/one.jpg');
+      },
+    );
     test('a delayed work ACK preserves a newer edit and dirty state', () async {
       final id = await db.addLog(
         WorkLog()

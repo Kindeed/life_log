@@ -1,3 +1,5 @@
+import 'package:life_log/features/photo/domain/repositories/photo_stage_repository_port.dart';
+import 'package:life_log/features/photo/application/assign_photo_stage.dart';
 import 'package:get_it/get_it.dart';
 import 'package:life_log/core/di/service_locator.dart';
 import 'package:life_log/features/photo/application/delete_photo_entries.dart';
@@ -28,6 +30,14 @@ GetIt configurePhotoFeatureDependencies({
           repository ??
           LegacyPhotoRepositoryAdapter(activeLocator<PhotoRepository>()),
     );
+  }
+
+  if (!activeLocator.isRegistered<AssignPhotoStage>()) {
+    activeLocator.registerLazySingleton<AssignPhotoStage>(() {
+      final port = activeLocator<PhotoRepositoryPort>();
+      if (port is! PhotoStageRepositoryPort) throw StateError('照片阶段设置不可用');
+      return AssignPhotoStage(port as PhotoStageRepositoryPort);
+    });
   }
 
   if (!activeLocator.isRegistered<WatchPhotoEntries>()) {
