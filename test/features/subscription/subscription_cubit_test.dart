@@ -13,6 +13,61 @@ import 'package:life_log/features/subscription/presentation/subscription_cubit.d
 void main() {
   group('SubscriptionCubit', () {
     test(
+      'keeps valid same-day rates through refresh and clearly marks a failed update',
+      () async {
+        var now = DateTime(2026, 5, 1);
+        var rateCalls = 0;
+        final pending = Completer<SubscriptionExchangeRates>();
+        final repository = _SubscriptionCubitRepository(
+          entries: [_entry(id: 1, currency: SubscriptionCurrency.usd)],
+        );
+        final cubit = SubscriptionCubit(
+          loadEntries: LoadSubscriptionEntries(repository),
+          watchEntries: WatchSubscriptionEntries(repository),
+          initialNow: () => now,
+          loadExchangeRates: (_) {
+            rateCalls++;
+            return rateCalls == 1
+                ? Future.value(
+                    SubscriptionExchangeRates(
+                      rateDate: now,
+                      fetchedAt: now,
+                      cnyPerUnit: const {'CNY': 1, 'USD': 7},
+                    ),
+                  )
+                : pending.future;
+          },
+        );
+        addTearDown(cubit.close);
+        await cubit.loadEntries();
+        await Future<void>.delayed(Duration.zero);
+        expect(cubit.state.currentMonthCost, 70);
+        await cubit.loadEntries(background: true);
+        expect(rateCalls, 1);
+        expect(cubit.state.currentMonthCost, 70);
+        cubit.setSortMode(SubscriptionSortMode.date);
+        await cubit.loadEntries();
+        expect(cubit.state.exchangeRatesLoading, isTrue);
+        expect(cubit.state.currentMonthCost, 70);
+        expect(cubit.state.sortMode, SubscriptionSortMode.date);
+        pending.completeError(StateError('rates offline'));
+        await Future<void>.delayed(Duration.zero);
+        expect(cubit.state.currentMonthCost, 70);
+        expect(cubit.state.exchangeRates.fromCache, isTrue);
+        expect(cubit.state.exchangeRates.warning, contains('今日缓存汇率'));
+        now = DateTime(2026, 5, 2);
+        await cubit.loadEntries();
+        await Future<void>.delayed(Duration.zero);
+        expect(cubit.state.currentMonthCost, 0);
+        expect(
+          cubit.state.currenciesWithoutRates,
+          contains(SubscriptionCurrency.usd),
+        );
+        expect(cubit.state.exchangeRates.rateDate, DateTime(2026, 5, 2));
+      },
+    );
+
+    test(
       'loads entries and derives visible list, totals, and due-soon state',
       () async {
         final repository = _SubscriptionCubitRepository(

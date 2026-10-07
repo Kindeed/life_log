@@ -34,7 +34,7 @@ final class SyncScheduler {
     if (queuedEntityRequest != null) {
       // Keep requests in the hand-off window on the already queued follow-up
       // instead of starting a third sync between the two scheduled runs.
-      if (entityName != null || entityKey != null) {
+      if (entityName != null || entityKey != null || forceFullRefresh) {
         _queuedEntityReason ??= syncReason;
         _queuedEntityForceFullRefresh =
             _queuedEntityForceFullRefresh || forceFullRefresh;
@@ -47,7 +47,7 @@ final class SyncScheduler {
       // Generic refreshes may share the active request. An entity mutation
       // needs a follow-up request because the active sync may have already
       // taken its pending-change snapshot before this mutation was persisted.
-      if (entityName == null && entityKey == null) {
+      if (entityName == null && entityKey == null && !forceFullRefresh) {
         return activeRequest;
       }
       return _queueEntityRequest(
@@ -67,10 +67,12 @@ final class SyncScheduler {
     required String reason,
     required bool forceFullRefresh,
   }) {
-    final request = _runSync(
-      reason: reason,
-      forceFullRefresh: forceFullRefresh,
-      forceNew: false,
+    final request = Future<bool>.sync(
+      () => _runSync(
+        reason: reason,
+        forceFullRefresh: forceFullRefresh,
+        forceNew: false,
+      ),
     );
     late final Future<bool> activeRequest;
     activeRequest = request.whenComplete(() {
@@ -95,7 +97,7 @@ final class SyncScheduler {
     if (queuedRequest != null) return queuedRequest;
 
     late final Future<bool> result;
-    final nextRequest = activeRequest.then((_) {
+    Future<bool> runNext() {
       final nextReason = _queuedEntityReason ?? reason;
       final nextForceFullRefresh =
           _queuedEntityForceFullRefresh || forceFullRefresh;
@@ -106,7 +108,13 @@ final class SyncScheduler {
         reason: nextReason,
         forceFullRefresh: nextForceFullRefresh,
       );
-    });
+    }
+
+    // A transport failure in the active run must not discard newer mutations.
+    final nextRequest = activeRequest.then(
+      (_) => runNext(),
+      onError: (Object _, StackTrace _) => runNext(),
+    );
     result = nextRequest.whenComplete(() {
       if (identical(_queuedEntityRequest, result)) {
         _queuedEntityRequest = null;

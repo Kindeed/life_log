@@ -4,6 +4,7 @@ import 'package:equatable/equatable.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:life_log/common/utils/date_utils.dart';
 import 'package:life_log/core/errors/app_failure.dart';
+import 'package:life_log/core/state/coalesced_refresh.dart';
 import 'package:life_log/features/subscription/application/load_subscription_entries.dart';
 import 'package:life_log/features/subscription/application/watch_subscription_entries.dart';
 import 'package:life_log/features/subscription/domain/entities/subscription_currency.dart';
@@ -194,6 +195,9 @@ final class SubscriptionCubit extends Cubit<SubscriptionState> {
   final Future<SubscriptionExchangeRates> Function(DateTime)?
   _loadExchangeRates;
   StreamSubscription<void>? _entriesSubscription;
+  late final _watchRefresh = CoalescedRefresh(
+    refresh: () => loadEntries(background: true),
+  );
   int _loadRequestId = 0;
 
   SubscriptionCubit({
@@ -212,19 +216,21 @@ final class SubscriptionCubit extends Cubit<SubscriptionState> {
 
     unawaited(loadEntries());
     _entriesSubscription = _watchEntries().listen((_) {
-      unawaited(loadEntries());
+      _watchRefresh.schedule();
     });
   }
 
-  Future<void> loadEntries() async {
+  Future<void> loadEntries({bool background = false}) async {
     if (isClosed) return;
     final requestId = ++_loadRequestId;
-    emit(
-      state.copyWith(
-        status: SubscriptionReadStatus.loading,
-        clearFailure: true,
-      ),
-    );
+    if (!background || state.status != SubscriptionReadStatus.ready) {
+      emit(
+        state.copyWith(
+          status: SubscriptionReadStatus.loading,
+          clearFailure: true,
+        ),
+      );
+    }
 
     final result = await _loadEntries();
     if (isClosed || requestId != _loadRequestId) return;
@@ -236,6 +242,9 @@ final class SubscriptionCubit extends Cubit<SubscriptionState> {
             filter: state.filter,
             sortMode: state.sortMode,
             referenceDay: _now(),
+            exchangeRates: state.exchangeRates.rateDate == dateOnlyLocal(_now())
+                ? state.exchangeRates
+                : null,
           ),
         );
         final loadRates = _loadExchangeRates;
@@ -244,7 +253,14 @@ final class SubscriptionCubit extends Cubit<SubscriptionState> {
               (entry) =>
                   entry.currency != SubscriptionCurrency.cny &&
                   (entry.price ?? 0) > 0,
-            )) {
+            ) &&
+            (!background ||
+                entries.any(
+                  (entry) =>
+                      entry.currency != SubscriptionCurrency.cny &&
+                      (entry.price ?? 0) > 0 &&
+                      !state.exchangeRates.hasRateFor(entry.currency),
+                ))) {
           emit(state.copyWith(exchangeRatesLoading: true));
           unawaited(_refreshExchangeRates(requestId, loadRates));
         }
@@ -329,10 +345,17 @@ final class SubscriptionCubit extends Cubit<SubscriptionState> {
           filter: state.filter,
           sortMode: state.sortMode,
           referenceDay: _now(),
-          exchangeRates: SubscriptionExchangeRates.cnyOnly(
-            _now(),
-            warning: '汇率暂不可用，外币订阅暂不计入人民币统计',
-          ),
+          exchangeRates:
+              state.exchangeRates.rateDate == dateOnlyLocal(_now()) &&
+                  state.exchangeRates.cnyPerUnit.length > 1
+              ? state.exchangeRates.copyWith(
+                  fromCache: true,
+                  warning: '汇率更新失败，暂用今日缓存汇率',
+                )
+              : SubscriptionExchangeRates.cnyOnly(
+                  _now(),
+                  warning: '汇率暂不可用，外币订阅暂不计入人民币统计',
+                ),
         ),
       );
     }
@@ -340,6 +363,7 @@ final class SubscriptionCubit extends Cubit<SubscriptionState> {
 
   @override
   Future<void> close() async {
+    _watchRefresh.dispose();
     await _entriesSubscription?.cancel();
     return super.close();
   }

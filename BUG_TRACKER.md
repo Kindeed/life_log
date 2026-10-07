@@ -5,6 +5,23 @@
 
 This is the active defect ledger. `REVIEW_REPORT.md` is historical context only. Photo sync findings from older reports are superseded by `AGENTS.md`: photos remain local-only and must not enter Supabase sync.
 
+## Sync and frontend efficiency follow-up (2026-10-07)
+
+- Version: 1.4.35+41. Final checks: 818 tests pass (37 new cases), strict analysis has no issues, 447 Dart files format cleanly, locked dependencies and native Isar checks pass.
+- Six-feature burst checks verify 100 notifications cause two refresh reads, with one watcher read in flight and the latest snapshot preserved. Source references and limits: `docs/reviews/2026-10-07-sync-frontend-efficiency.md`.
+
+| ID | Severity | Status | Area | Finding | Fix / Acceptance |
+| --- | --- | --- | --- | --- | --- |
+| D66 | Medium | fixed | Scheduler follow-up semantics | A generic forceFullRefresh request shares an active incremental request or fails to upgrade a queued request. An active Future throwing also prevents the queued entity mutation from running. | Fixed 2026-10-07: generic full refresh is retained/upgrades one queued run; active errors do not discard newer mutations. Four added scheduler tests pass. |
+| D67 | Medium | fixed | Retry lookup cost | IsarSyncQueue.peek materializes every retry record for each canAttempt/failure/success lookup despite the existing entityKey index. Large queues multiply database reads, allocations and linear scans. | Fixed 2026-10-07: existing entityKey index and exact entity-name filter replace whole-table materialization. Native 800-row isolation/backoff/rebuild/clear coverage passes; no schema change. |
+| U340 | Medium | fixed | Sync-triggered read storms | Six feature Cubits reload complete local lists/months on every watcher event. Batch pulls/ACKs start overlapping reads and repeated loading-state transitions. Subscription refresh hides its entire populated page. | Fixed 2026-10-07: immediate leading read plus serialized 120ms burst/trailing reads in six features. Cached subscription content and today's valid rates remain visible; manual failures are explicit. Burst and actual-page tests pass. |
+| D68 | Medium | fixed | Frontend read ordering | Project, photo, evidence and expense Cubits accept older async reads after newer reads; stale successes or errors can replace current data during sync. | Fixed 2026-10-07: request IDs reject older successful/failed reads in all four Cubits; six-feature delayed-read/disposal coverage passes and filters/relationships remain intact. |
+| U341 | Medium | fixed | Project overview and thumbnail work | PhotoView re-scans the full photo list for every project despite pre-grouped PhotoState summaries; small project-cover images decode originals with no resize bound. | Fixed 2026-10-07: view and search/sort reuse loaded photo groups; small single/grid covers decode at physical display width. Cached metadata identity, photo-only projects, unassigned relationships and ResizeImage sizing tests pass. |
+| U342 | Medium | fixed | Programmatic tab transition | Moving from the first tab to the third reports the intermediate tab as selected via onPageChanged, changing controller intent during the animation. | Fixed 2026-10-07: intermediate programmatic frames do not overwrite the target; transition IDs preserve rapid-tap intent. Frame-by-frame, interrupted taps, swipe and reduced-motion tests pass. |
+| U343 | Low | fixed | Primary visual hierarchy | Three-tab headings put decorative supporting text before the page title; project overview uses three separately weighted panels, making the first viewport visually busy. | Fixed 2026-10-07: title precedes support text; one soft overview emphasizes expense with secondary project/photo counts. Actual three-tab CJK/light/dark/small-screen/large-text screenshots and layout tests pass. |
+| U344 | Low | fixed | Consolidated summary alignment | During the new screenshot review, the consolidated project summary card shrinks to its intrinsic width and leaves a large empty area beside it; the existing work summary also shrinks and centers instead of aligning with the calendar. Overflow-only tests miss these inconsistencies. | Fixed 2026-10-07: overview stretches to project search / work calendar width. Eight real three-tab cases verify geometry; corrected screenshots reviewed. |
+
+
 ## Calendar and save responsiveness follow-up (2026-10-07)
 
 - Version: 1.4.34+40. Compact calendar geometry and visible editor feedback; durable local saves acknowledge without waiting for cloud sync or post-commit refresh.

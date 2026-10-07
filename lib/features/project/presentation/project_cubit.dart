@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:equatable/equatable.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:life_log/core/errors/app_failure.dart';
+import 'package:life_log/core/state/coalesced_refresh.dart';
 import 'package:life_log/features/project/application/load_project_entries.dart';
 import 'package:life_log/features/project/application/save_project_entry.dart';
 import 'package:life_log/features/project/application/watch_project_entries.dart';
@@ -72,7 +73,11 @@ final class ProjectCubit extends Cubit<ProjectState> {
   final LoadProjectEntries _loadEntries;
   final WatchProjectEntries _watchEntries;
   final SaveProjectEntry _saveEntry;
+  int _loadRequestId = 0;
   StreamSubscription<void>? _entriesSubscription;
+  late final _watchRefresh = CoalescedRefresh(
+    refresh: () => loadEntries(background: true),
+  );
 
   ProjectCubit({
     required LoadProjectEntries loadEntries,
@@ -88,16 +93,21 @@ final class ProjectCubit extends Cubit<ProjectState> {
 
     unawaited(loadEntries());
     _entriesSubscription = _watchEntries().listen((_) {
-      unawaited(loadEntries());
+      _watchRefresh.schedule();
     });
   }
 
-  Future<void> loadEntries() async {
+  Future<void> loadEntries({bool background = false}) async {
     if (isClosed) return;
-    emit(state.copyWith(status: ProjectReadStatus.loading, clearFailure: true));
+    final requestId = ++_loadRequestId;
+    if (!background || state.status != ProjectReadStatus.ready) {
+      emit(
+        state.copyWith(status: ProjectReadStatus.loading, clearFailure: true),
+      );
+    }
 
     final result = await _loadEntries();
-    if (isClosed) return;
+    if (isClosed || requestId != _loadRequestId) return;
     result.when(
       success: (entries) {
         emit(ProjectState.ready(entries: entries));
@@ -156,6 +166,7 @@ final class ProjectCubit extends Cubit<ProjectState> {
 
   @override
   Future<void> close() async {
+    _watchRefresh.dispose();
     await _entriesSubscription?.cancel();
     return super.close();
   }

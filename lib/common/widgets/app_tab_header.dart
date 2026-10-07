@@ -24,22 +24,22 @@ class AppTabHeader extends StatelessWidget {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(
-          eyebrow,
-          style: theme.textTheme.bodySmall?.copyWith(
-            color: theme.colorScheme.onSurfaceVariant,
-          ),
-        ),
-        const SizedBox(height: AppSpacing.xs),
-        Text(
           title,
           style: theme.textTheme.headlineSmall?.copyWith(
             fontWeight: FontWeight.w700,
           ),
         ),
+        const SizedBox(height: AppSpacing.xs),
+        Text(
+          eyebrow,
+          style: theme.textTheme.bodySmall?.copyWith(
+            color: theme.colorScheme.onSurfaceVariant,
+          ),
+        ),
       ],
     );
     return Padding(
-      padding: const EdgeInsets.fromLTRB(22, 12, 22, 24),
+      padding: const EdgeInsets.fromLTRB(22, 12, 22, 16),
       child: LayoutBuilder(
         builder: (context, constraints) {
           final stackAction =

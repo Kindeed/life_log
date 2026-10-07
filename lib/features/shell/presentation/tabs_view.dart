@@ -20,6 +20,8 @@ class TabsView extends StatefulWidget {
 class _TabsViewState extends State<TabsView> {
   late final TabsController controller;
   late final PageController pageController;
+  int? _requestedPage;
+  int _transitionId = 0;
 
   static const _destinations = [
     _TabDestination(
@@ -84,7 +86,11 @@ class _TabsViewState extends State<TabsView> {
                     Expanded(
                       child: PageView(
                         controller: pageController,
-                        onPageChanged: controller.changePage,
+                        onPageChanged: (index) {
+                          if (_requestedPage == null) {
+                            controller.changePage(index);
+                          }
+                        },
                         children: const [
                           _KeepAliveTabPage(child: WorkLogView()),
                           _KeepAliveTabPage(child: PhotoView()),
@@ -118,16 +124,26 @@ class _TabsViewState extends State<TabsView> {
     final index = controller.currentIndex;
     if (!pageController.hasClients) return;
     final page = pageController.page?.round() ?? pageController.initialPage;
-    if (page == index) return;
+    if (page == index && _requestedPage == null) return;
+    final transitionId = ++_transitionId;
     if (MediaQuery.disableAnimationsOf(context)) {
+      _requestedPage = null;
       pageController.jumpToPage(index);
       return;
     }
-    pageController.animateToPage(
-      index,
-      duration: AppMotion.normal,
-      curve: AppMotion.emphasizedDecelerate,
-    );
+    _requestedPage = index;
+    pageController
+        .animateToPage(
+          index,
+          duration: AppMotion.normal,
+          curve: AppMotion.emphasizedDecelerate,
+        )
+        .whenComplete(() {
+          if (!mounted || transitionId != _transitionId) return;
+          _requestedPage = null;
+          final settledPage = pageController.page?.round();
+          if (settledPage != null) controller.changePage(settledPage);
+        });
   }
 }
 

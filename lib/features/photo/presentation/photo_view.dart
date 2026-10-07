@@ -15,7 +15,6 @@ import 'package:life_log/common/widgets/app_empty_state.dart';
 import 'package:life_log/common/widgets/app_filter_chip_bar.dart';
 import 'package:life_log/common/widgets/app_loading.dart';
 import 'package:life_log/common/widgets/app_load_failure.dart';
-import 'package:life_log/common/widgets/app_metric_tile.dart';
 import 'package:life_log/common/widgets/app_pill.dart';
 import 'package:life_log/common/widgets/app_text_field.dart';
 import 'package:life_log/core/di/service_locator.dart';
@@ -25,7 +24,6 @@ import 'package:life_log/features/expense/domain/entities/expense_record_entry.d
 import 'package:life_log/features/expense/presentation/expense_record_cubit.dart';
 import 'package:life_log/features/project/domain/entities/project_entry.dart';
 import 'package:life_log/features/project/presentation/project_cubit.dart';
-import 'package:life_log/features/photo/domain/entities/photo_entry.dart';
 import 'package:life_log/features/photo/presentation/photo_cubit.dart';
 import 'package:life_log/features/photo/presentation/create_project_sheet.dart';
 import 'package:life_log/features/project/presentation/project_detail_view.dart';
@@ -126,7 +124,7 @@ class _PhotoViewState extends State<PhotoView> {
 
                               final projects = _projectSummaries(
                                 projects: projectState.entries,
-                                photos: photoState.entries,
+                                photoSummaries: photoState.projectSummaries,
                                 evidence: evidenceState.entries,
                                 expenses: expenseRecords,
                                 query: photoState.searchQuery,
@@ -303,7 +301,7 @@ class _PhotoViewState extends State<PhotoView> {
 
   List<PhotoProjectSummary> _projectSummaries({
     required List<ProjectEntry> projects,
-    required List<PhotoEntry> photos,
+    required List<PhotoProjectSummary> photoSummaries,
     required List<EvidenceEntry> evidence,
     required List<ExpenseRecordEntry> expenses,
     required String query,
@@ -311,7 +309,35 @@ class _PhotoViewState extends State<PhotoView> {
   }) {
     final names = <String>{};
     names.addAll(projects.map((project) => project.name));
-    names.addAll(photos.map((photo) => photo.projectName).whereType<String>());
+    final summariesByName = <String, PhotoProjectSummary>{};
+    for (final summary in photoSummaries) {
+      // PhotoState's fallback Default group can contain legacy unassigned
+      // photos. Keep this overview's explicit project relationship unchanged.
+      if (summary.name != 'Default' ||
+          !summary.photos.any((photo) => photo.projectName == null)) {
+        summariesByName[summary.name] = summary;
+        continue;
+      }
+      final assigned = summary.photos
+          .where((photo) => photo.projectName == summary.name)
+          .toList();
+      if (assigned.isEmpty) continue;
+      summariesByName[summary.name] = PhotoProjectSummary(
+        name: summary.name,
+        photos: assigned,
+        latestPhoto: assigned.first,
+        deviceCount: assigned
+            .map((photo) => photo.deviceName)
+            .whereType<String>()
+            .where((name) => name.trim().isNotEmpty)
+            .toSet()
+            .length,
+        untitledCount: assigned
+            .where((photo) => photo.description?.trim().isNotEmpty != true)
+            .length,
+      );
+    }
+    names.addAll(summariesByName.keys);
     names.addAll(evidence.map((item) => item.projectName));
     names.addAll(
       expenses
@@ -327,25 +353,14 @@ class _PhotoViewState extends State<PhotoView> {
               lowerQuery.isEmpty || name.toLowerCase().contains(lowerQuery),
         )
         .map((name) {
-          final projectPhotos =
-              photos.where((photo) => photo.projectName == name).toList()
-                ..sort((a, b) => b.createdAt.compareTo(a.createdAt));
-          final deviceNames = projectPhotos
-              .map((photo) => photo.deviceName)
-              .whereType<String>()
-              .where((name) => name.trim().isNotEmpty)
-              .toSet();
-          final untitledCount = projectPhotos
-              .where((photo) => photo.description?.trim().isNotEmpty != true)
-              .length;
-
-          return PhotoProjectSummary(
-            name: name,
-            photos: projectPhotos,
-            latestPhoto: projectPhotos.isEmpty ? null : projectPhotos.first,
-            deviceCount: deviceNames.length,
-            untitledCount: untitledCount,
-          );
+          return summariesByName[name] ??
+              PhotoProjectSummary(
+                name: name,
+                photos: const [],
+                latestPhoto: null,
+                deviceCount: 0,
+                untitledCount: 0,
+              );
         })
         .toList();
 
@@ -398,37 +413,46 @@ class _ProjectOverview extends StatelessWidget {
     return Padding(
       padding: const EdgeInsets.fromLTRB(22, 8, 22, 8),
       child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
+        crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          Row(
-            children: [
-              Expanded(
-                child: AppMetricTile(
-                  label: "项目",
-                  value: projectCount.toString(),
-                  icon: Icons.folder_special_rounded,
-                  color: semantic.project,
+          AppCard(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  '项目支出',
+                  style: Theme.of(
+                    context,
+                  ).textTheme.bodyMedium?.copyWith(color: textSecondary),
                 ),
-              ),
-              SizedBox(width: 10.w),
-              Expanded(
-                child: AppMetricTile(
-                  label: "照片",
-                  value: photoCount.toString(),
-                  icon: Icons.photo_library_rounded,
-                  color: semantic.success,
+                const SizedBox(height: 8),
+                Text(
+                  formatMoney(
+                    expenseRecords.fold(0.0, (sum, item) => sum + item.amount),
+                  ),
+                  style: Theme.of(context).textTheme.headlineSmall?.copyWith(
+                    fontWeight: FontWeight.w700,
+                  ),
                 ),
-              ),
-            ],
-          ),
-          SizedBox(height: 10.h),
-          AppMetricTile(
-            label: "项目支出",
-            value: formatMoney(
-              expenseRecords.fold(0.0, (sum, item) => sum + item.amount),
+                const SizedBox(height: 16),
+                Wrap(
+                  spacing: 20,
+                  runSpacing: 8,
+                  children: [
+                    Text(
+                      '$projectCount 个项目',
+                      style: Theme.of(context).textTheme.bodyMedium,
+                    ),
+                    Text(
+                      '$photoCount 张照片',
+                      style: Theme.of(
+                        context,
+                      ).textTheme.bodyMedium?.copyWith(color: textSecondary),
+                    ),
+                  ],
+                ),
+              ],
             ),
-            icon: Icons.payments_rounded,
-            color: semantic.expense,
           ),
           SizedBox(height: 12.h),
           AppTextField(
@@ -593,6 +617,8 @@ class _ProjectCover extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final photos = summary.photos.take(4).toList();
+    final physicalWidth = (98.w * MediaQuery.devicePixelRatioOf(context))
+        .ceil();
 
     return SizedBox(
       width: 98.w,
@@ -611,6 +637,7 @@ class _ProjectCover extends StatelessWidget {
             : photos.length == 1
             ? Image.file(
                 File(photos.first.filePath),
+                cacheWidth: physicalWidth,
                 fit: BoxFit.cover,
                 errorBuilder: (_, _, _) => Container(
                   color: isDark ? Colors.grey[850] : Colors.grey[100],
@@ -632,6 +659,7 @@ class _ProjectCover extends StatelessWidget {
                 itemBuilder: (context, index) {
                   return Image.file(
                     File(photos[index].filePath),
+                    cacheWidth: (physicalWidth / 2).ceil(),
                     fit: BoxFit.cover,
                     errorBuilder: (_, _, _) => Container(
                       color: isDark ? Colors.grey[850] : Colors.grey[100],

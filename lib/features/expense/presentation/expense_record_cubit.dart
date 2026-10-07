@@ -4,6 +4,7 @@ import 'package:equatable/equatable.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:life_log/common/utils/date_utils.dart';
 import 'package:life_log/core/errors/app_failure.dart';
+import 'package:life_log/core/state/coalesced_refresh.dart';
 import 'package:life_log/features/expense/application/load_expense_record_entries.dart';
 import 'package:life_log/features/expense/application/watch_expense_record_entries.dart';
 import 'package:life_log/features/expense/domain/entities/expense_record_entry.dart';
@@ -92,7 +93,11 @@ final class ExpenseRecordCubit extends Cubit<ExpenseRecordState> {
   final LoadExpenseRecordEntries _loadEntries;
   final WatchExpenseRecordEntries _watchEntries;
   final DateTime Function() _now;
+  int _loadRequestId = 0;
   StreamSubscription<void>? _entriesSubscription;
+  late final _watchRefresh = CoalescedRefresh(
+    refresh: () => loadEntries(background: true),
+  );
 
   ExpenseRecordCubit({
     required LoadExpenseRecordEntries loadEntries,
@@ -108,18 +113,21 @@ final class ExpenseRecordCubit extends Cubit<ExpenseRecordState> {
 
     unawaited(loadEntries());
     _entriesSubscription = _watchEntries().listen((_) {
-      unawaited(loadEntries());
+      _watchRefresh.schedule();
     });
   }
 
-  Future<void> loadEntries() async {
+  Future<void> loadEntries({bool background = false}) async {
     if (isClosed) return;
-    emit(
-      state.copyWith(status: ExpenseRecordStatus.loading, clearFailure: true),
-    );
+    final requestId = ++_loadRequestId;
+    if (!background || state.status != ExpenseRecordStatus.ready) {
+      emit(
+        state.copyWith(status: ExpenseRecordStatus.loading, clearFailure: true),
+      );
+    }
 
     final result = await _loadEntries();
-    if (isClosed) return;
+    if (isClosed || requestId != _loadRequestId) return;
     result.when(
       success: (entries) {
         emit(ExpenseRecordState.ready(entries: entries, referenceDay: _now()));
@@ -134,6 +142,7 @@ final class ExpenseRecordCubit extends Cubit<ExpenseRecordState> {
 
   @override
   Future<void> close() async {
+    _watchRefresh.dispose();
     await _entriesSubscription?.cancel();
     return super.close();
   }

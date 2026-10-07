@@ -14,6 +14,7 @@ import 'package:life_log/common/widgets/app_card.dart';
 import 'package:life_log/common/widgets/app_button.dart';
 import 'package:life_log/common/widgets/app_empty_state.dart';
 import 'package:life_log/common/widgets/app_loading.dart';
+import 'package:life_log/common/widgets/app_load_failure.dart';
 import 'package:life_log/common/widgets/app_list_page.dart';
 import 'package:life_log/common/widgets/app_swipe_action.dart';
 import 'package:life_log/core/di/service_locator.dart';
@@ -65,11 +66,11 @@ class _SubscriptionContent extends StatelessWidget {
             state.status == SubscriptionReadStatus.initial ||
             state.status == SubscriptionReadStatus.loading;
         final isFailure = state.status == SubscriptionReadStatus.failure;
-        final showPageState = isFailure || state.entries.isEmpty;
+        final showPageState = state.entries.isEmpty;
         return AppListPage(
           title: "订阅",
           embedded: embedded,
-          isLoading: isLoading,
+          isLoading: isLoading && state.entries.isEmpty,
           loading: const AppLoading(label: '正在加载订阅'),
           isEmpty: !isLoading && showPageState,
           empty: isFailure
@@ -81,11 +82,21 @@ class _SubscriptionContent extends StatelessWidget {
                 ),
           overview: showPageState
               ? null
-              : _SubscriptionOverview(
-                  state: state,
-                  cubit: cubit,
-                  semantic: semantic,
-                  textSecondary: textSecondary,
+              : Column(
+                  children: [
+                    if (isFailure)
+                      AppLoadFailure(
+                        compact: true,
+                        message: '订阅暂未刷新，正在显示上次读取的记录。',
+                        onRetry: cubit.loadEntries,
+                      ),
+                    _SubscriptionOverview(
+                      state: state,
+                      cubit: cubit,
+                      semantic: semantic,
+                      textSecondary: textSecondary,
+                    ),
+                  ],
                 ),
           onRefresh: cubit.loadEntries,
           sliverBuilder: (_) {

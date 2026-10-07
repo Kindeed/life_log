@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:equatable/equatable.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:life_log/core/errors/app_failure.dart';
+import 'package:life_log/core/state/coalesced_refresh.dart';
 import 'package:life_log/features/photo/application/load_photo_entries.dart';
 import 'package:life_log/features/photo/application/watch_photo_entries.dart';
 import 'package:life_log/features/photo/domain/entities/photo_entry.dart';
@@ -114,6 +115,31 @@ final class PhotoState extends Equatable {
       ..sort((a, b) => b.createdAt.compareTo(a.createdAt));
   }
 
+  PhotoState withPresentation({
+    String? searchQuery,
+    PhotoProjectSortMode? sortMode,
+  }) {
+    final nextQuery = searchQuery ?? this.searchQuery;
+    final nextSort = sortMode ?? this.sortMode;
+    final summaries = nextSort == this.sortMode
+        ? projectSummaries
+        : List<PhotoProjectSummary>.unmodifiable(
+            _sortProjectSummaries(projectSummaries.toList(), nextSort),
+          );
+    return PhotoState._(
+      status: status,
+      entries: entries,
+      projectSummaries: summaries,
+      filteredProjectSummaries: List<PhotoProjectSummary>.unmodifiable(
+        _filteredProjectSummaries(summaries, nextQuery),
+      ),
+      searchQuery: nextQuery,
+      sortMode: nextSort,
+      totalPhotoCount: totalPhotoCount,
+      failure: failure,
+    );
+  }
+
   PhotoProjectSummary? projectSummaryNamed(String projectName) {
     for (final summary in projectSummaries) {
       if (summary.name == projectName) return summary;
@@ -152,6 +178,13 @@ final class PhotoState extends Equatable {
       );
     }).toList();
 
+    return _sortProjectSummaries(summaries, sortMode);
+  }
+
+  static List<PhotoProjectSummary> _sortProjectSummaries(
+    List<PhotoProjectSummary> summaries,
+    PhotoProjectSortMode sortMode,
+  ) {
     switch (sortMode) {
       case PhotoProjectSortMode.recent:
         summaries.sort(
@@ -201,7 +234,11 @@ final class PhotoState extends Equatable {
 final class PhotoCubit extends Cubit<PhotoState> {
   final LoadPhotoEntries _loadEntries;
   final WatchPhotoEntries _watchEntries;
+  int _loadRequestId = 0;
   StreamSubscription<void>? _entriesSubscription;
+  late final _watchRefresh = CoalescedRefresh(
+    refresh: () => loadEntries(background: true),
+  );
 
   PhotoCubit({
     required LoadPhotoEntries loadEntries,
@@ -215,16 +252,19 @@ final class PhotoCubit extends Cubit<PhotoState> {
 
     unawaited(loadEntries());
     _entriesSubscription = _watchEntries().listen((_) {
-      unawaited(loadEntries());
+      _watchRefresh.schedule();
     });
   }
 
-  Future<void> loadEntries() async {
+  Future<void> loadEntries({bool background = false}) async {
     if (isClosed) return;
-    emit(state.copyWith(status: PhotoStatus.loading, clearFailure: true));
+    final requestId = ++_loadRequestId;
+    if (!background || state.status != PhotoStatus.ready) {
+      emit(state.copyWith(status: PhotoStatus.loading, clearFailure: true));
+    }
 
     final result = await _loadEntries();
-    if (isClosed) return;
+    if (isClosed || requestId != _loadRequestId) return;
     result.when(
       success: (entries) {
         emit(
@@ -242,27 +282,16 @@ final class PhotoCubit extends Cubit<PhotoState> {
   }
 
   void updateSearch(String value) {
-    emit(
-      PhotoState.ready(
-        entries: state.entries,
-        searchQuery: value,
-        sortMode: state.sortMode,
-      ),
-    );
+    emit(state.withPresentation(searchQuery: value));
   }
 
   void setSortMode(PhotoProjectSortMode sortMode) {
-    emit(
-      PhotoState.ready(
-        entries: state.entries,
-        searchQuery: state.searchQuery,
-        sortMode: sortMode,
-      ),
-    );
+    emit(state.withPresentation(sortMode: sortMode));
   }
 
   @override
   Future<void> close() async {
+    _watchRefresh.dispose();
     await _entriesSubscription?.cancel();
     return super.close();
   }

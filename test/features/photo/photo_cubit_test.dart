@@ -10,6 +10,60 @@ import 'package:life_log/features/photo/presentation/photo_cubit.dart';
 
 void main() {
   group('PhotoCubit', () {
+    test(
+      'search and sort retain cached photo groups and their metadata',
+      () async {
+        final repository = _FakePhotoRepository([
+          _photo(
+            id: 1,
+            projectName: 'Y9',
+            createdAt: DateTime(2026, 6, 17),
+            description: '',
+          ),
+          _photo(
+            id: 2,
+            projectName: 'Life',
+            createdAt: DateTime(2026, 6, 18),
+            description: 'desk',
+          ),
+          _photo(
+            id: 3,
+            projectName: 'Y9',
+            createdAt: DateTime(2026, 6, 19),
+            description: 'board',
+          ),
+        ]);
+        final cubit = PhotoCubit(
+          loadEntries: LoadPhotoEntries(repository),
+          watchEntries: WatchPhotoEntries(repository),
+        );
+        addTearDown(() async {
+          await cubit.close();
+          await repository.close();
+        });
+        await cubit.loadEntries();
+        final cached = {
+          for (final summary in cubit.state.projectSummaries)
+            summary.name: summary,
+        };
+        final entries = cubit.state.entries;
+        cubit.updateSearch('y9');
+        expect(cubit.state.filteredProjectSummaries.single, same(cached['Y9']));
+        expect(cubit.state.filteredProjectSummaries.single.untitledCount, 1);
+        cubit.setSortMode(PhotoProjectSortMode.name);
+        expect(cubit.state.projectSummaries.map((summary) => summary.name), [
+          'Life',
+          'Y9',
+        ]);
+        for (final summary in cubit.state.projectSummaries) {
+          expect(summary, same(cached[summary.name]));
+        }
+        cubit.updateSearch('');
+        expect(cubit.state.filteredProjectSummaries, hasLength(2));
+        expect(cubit.state.entries, same(entries));
+      },
+    );
+
     test('loads entries and derives project summaries', () async {
       final repository = _FakePhotoRepository([
         _photo(

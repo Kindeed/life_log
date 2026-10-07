@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:equatable/equatable.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:life_log/core/errors/app_failure.dart';
+import 'package:life_log/core/state/coalesced_refresh.dart';
 import 'package:life_log/features/evidence/application/load_evidence_entries.dart';
 import 'package:life_log/features/evidence/application/watch_evidence_entries.dart';
 import 'package:life_log/features/evidence/domain/entities/evidence_entry.dart';
@@ -175,7 +176,11 @@ final class EvidenceState extends Equatable {
 final class EvidenceCubit extends Cubit<EvidenceState> {
   final LoadEvidenceEntries _loadEntries;
   final WatchEvidenceEntries _watchEntries;
+  int _loadRequestId = 0;
   StreamSubscription<void>? _entriesSubscription;
+  late final _watchRefresh = CoalescedRefresh(
+    refresh: () => loadEntries(background: true),
+  );
 
   EvidenceCubit({
     required LoadEvidenceEntries loadEntries,
@@ -189,16 +194,19 @@ final class EvidenceCubit extends Cubit<EvidenceState> {
 
     unawaited(loadEntries());
     _entriesSubscription = _watchEntries().listen((_) {
-      unawaited(loadEntries());
+      _watchRefresh.schedule();
     });
   }
 
-  Future<void> loadEntries() async {
+  Future<void> loadEntries({bool background = false}) async {
     if (isClosed) return;
-    emit(state.copyWith(status: EvidenceStatus.loading, clearFailure: true));
+    final requestId = ++_loadRequestId;
+    if (!background || state.status != EvidenceStatus.ready) {
+      emit(state.copyWith(status: EvidenceStatus.loading, clearFailure: true));
+    }
 
     final result = await _loadEntries();
-    if (isClosed) return;
+    if (isClosed || requestId != _loadRequestId) return;
     result.when(
       success: (entries) {
         emit(
@@ -237,6 +245,7 @@ final class EvidenceCubit extends Cubit<EvidenceState> {
 
   @override
   Future<void> close() async {
+    _watchRefresh.dispose();
     await _entriesSubscription?.cancel();
     return super.close();
   }

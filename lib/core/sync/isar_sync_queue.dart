@@ -21,17 +21,14 @@ final class IsarSyncQueue implements SyncQueue {
 
   Future<SyncQueueRecord?> peek(String entityName, String entityKey) async {
     context?.checkCurrent();
-    final candidates = await database.isar.syncQueueRecords
+    final record = await database.isar.syncQueueRecords
         .where()
-        .anyId()
-        .findAll();
+        .entityKeyEqualTo(entityKey)
+        .filter()
+        .entityNameEqualTo(entityName)
+        .findFirst();
     context?.checkCurrent();
-    for (final record in candidates) {
-      if (record.entityName == entityName && record.entityKey == entityKey) {
-        return record;
-      }
-    }
-    return null;
+    return record;
   }
 
   Future<List<SyncQueueRecord>> pendingEntries() async {

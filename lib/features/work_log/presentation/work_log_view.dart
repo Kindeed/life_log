@@ -419,38 +419,41 @@ class _MonthSummary extends StatelessWidget {
     final value = hours == hours.roundToDouble()
         ? hours.toStringAsFixed(0)
         : hours.toStringAsFixed(1);
-    return AppCard(
-      padding: const EdgeInsets.all(20),
-      child: Wrap(
-        spacing: 24,
-        runSpacing: 12,
-        crossAxisAlignment: WrapCrossAlignment.center,
-        children: [
-          Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                '${state.focusedDay.month}月加班',
-                style: theme.textTheme.bodySmall,
-              ),
-              const SizedBox(height: 4),
-              Text(
-                '$value 小时',
-                style: theme.textTheme.headlineSmall?.copyWith(
-                  fontWeight: FontWeight.w700,
-                  color: theme.colorScheme.primary,
+    return SizedBox(
+      width: double.infinity,
+      child: AppCard(
+        padding: const EdgeInsets.all(20),
+        child: Wrap(
+          spacing: 24,
+          runSpacing: 12,
+          crossAxisAlignment: WrapCrossAlignment.center,
+          children: [
+            Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  '${state.focusedDay.month}月加班',
+                  style: theme.textTheme.bodySmall,
                 ),
-              ),
-            ],
-          ),
-          Text(
-            '${summary.workDays} 天出勤 · ${summary.tripDays} 天出差\n${summary.restDays} 天休息',
-            style: theme.textTheme.bodySmall?.copyWith(
-              color: theme.colorScheme.onSurfaceVariant,
-              height: 1.7,
+                const SizedBox(height: 4),
+                Text(
+                  '$value 小时',
+                  style: theme.textTheme.headlineSmall?.copyWith(
+                    fontWeight: FontWeight.w700,
+                    color: theme.colorScheme.primary,
+                  ),
+                ),
+              ],
             ),
-          ),
-        ],
+            Text(
+              '${summary.workDays} 天出勤 · ${summary.tripDays} 天出差\n${summary.restDays} 天休息',
+              style: theme.textTheme.bodySmall?.copyWith(
+                color: theme.colorScheme.onSurfaceVariant,
+                height: 1.7,
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }

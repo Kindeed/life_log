@@ -7,6 +7,8 @@ import 'package:flutter/rendering.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:life_log/common/widgets/app_card.dart';
+import 'package:life_log/common/widgets/app_text_field.dart';
 import 'package:intl/date_symbol_data_local.dart';
 import 'package:life_log/common/theme/app_theme.dart';
 import 'package:life_log/common/widgets/app_press_feedback.dart';
@@ -162,6 +164,106 @@ void main() {
     expect(tester.takeException(), isNull);
   });
 
+  testWidgets(
+    'a requested tab stays selected through intermediate animation frames',
+    (tester) async {
+      _phone(tester, 390);
+      _register();
+      await tester.pumpWidget(_harness());
+      await tester.pumpAndSettle();
+      final tabs = serviceLocator<TabsController>();
+      final selected = <int>[];
+      tabs.addListener(() => selected.add(tabs.currentIndex));
+      tabs.goToMore();
+      await tester.pump();
+      for (var frame = 0; frame < 15; frame++) {
+        await tester.pump(const Duration(milliseconds: 16));
+        expect(tabs.currentIndex, 2);
+      }
+      await tester.pumpAndSettle();
+      expect(selected, [2]);
+      expect(
+        tester.widget<PageView>(find.byType(PageView).first).controller!.page,
+        2,
+      );
+    },
+  );
+
+  testWidgets(
+    'project thumbnails use bounded decoding and retain photo-only projects',
+    (tester) async {
+      _phone(tester, 390);
+      _register(
+        photoEntries: [
+          for (var id = 1; id <= 6; id++)
+            PhotoEntry(
+              id: id,
+              ownerUserId: null,
+              createdAt: DateTime(2026, 10, 7, id),
+              fileName: '$id.jpg',
+              filePath: '/fixture-missing/$id.jpg',
+              description: '照片 $id',
+              deviceName: '手机',
+              projectName: id <= 4
+                  ? '仅照片项目'
+                  : id == 5
+                  ? '单张封面'
+                  : null,
+              projectId: null,
+              dateIndexed: DateTime(2026, 10, 7),
+            ),
+        ],
+      );
+      await tester.pumpWidget(_harness());
+      await tester.pumpAndSettle();
+      serviceLocator<TabsController>().goToProject();
+      await tester.pumpAndSettle();
+      expect(find.text('仅照片项目'), findsOneWidget);
+      expect(find.text('单张封面'), findsOneWidget);
+      expect(find.text('Default'), findsNothing);
+      final images = tester.widgetList<Image>(find.byType(Image)).toList();
+      expect(images.length, greaterThanOrEqualTo(5));
+      for (final image in images) {
+        expect(image.image, isA<ResizeImage>());
+        final decodedWidth = (image.image as ResizeImage).width!;
+        expect(decodedWidth, inInclusiveRange(1, 110));
+      }
+      await tester.enterText(find.byType(TextField).first, '仅照片');
+      await tester.pumpAndSettle();
+      expect(find.text('仅照片项目'), findsOneWidget);
+      expect(find.text('单张封面'), findsNothing);
+      expect(tester.takeException(), isNull);
+    },
+  );
+
+  testWidgets(
+    'rapid navigation taps retain the last destination and allow later swipes',
+    (tester) async {
+      _phone(tester, 390);
+      _register();
+      await tester.pumpWidget(_harness());
+      await tester.pumpAndSettle();
+      final tabs = serviceLocator<TabsController>();
+      tabs.goToMore();
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 48));
+      tabs.goToWork();
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 32));
+      tabs.goToProject();
+      await tester.pumpAndSettle();
+      expect(tabs.currentIndex, 1);
+      expect(
+        tester.widget<PageView>(find.byType(PageView).first).controller!.page,
+        1,
+      );
+      await tester.drag(find.byType(PageView), const Offset(-390, 0));
+      await tester.pumpAndSettle();
+      expect(tabs.currentIndex, 2);
+      expect(tester.takeException(), isNull);
+    },
+  );
+
   testWidgets('a press interrupted by disabling recovers without activating', (
     tester,
   ) async {
@@ -252,6 +354,18 @@ void main() {
               expect(tester.takeException(), isNull, reason: entry.key);
               if (entry.key == 'work') {
                 final cell = find.byType(DayCell).first;
+                final summary = find.ancestor(
+                  of: find.text('9月加班'),
+                  matching: find.byType(AppCard),
+                );
+                final calendar = find.ancestor(
+                  of: cell,
+                  matching: find.byType(AppCard),
+                );
+                expect(
+                  tester.getSize(summary).width,
+                  closeTo(tester.getSize(calendar).width, 0.1),
+                );
                 final size = tester.getSize(cell);
                 final tile = tester.widget<AnimatedContainer>(
                   find.descendant(
@@ -268,6 +382,17 @@ void main() {
                 } else {
                   expect(size.height, lessThanOrEqualTo(114));
                 }
+              }
+              if (entry.key == 'project') {
+                final summary = find.ancestor(
+                  of: find.text('项目支出'),
+                  matching: find.byType(AppCard),
+                );
+                final search = find.byType(AppTextField).first;
+                expect(
+                  tester.getSize(summary).width,
+                  closeTo(tester.getSize(search).width, 0.1),
+                );
               }
               final title = switch (entry.key) {
                 'work' => '工时',
@@ -490,6 +615,7 @@ Future<void> _capture(
 _ProjectPort _register({
   bool delayedCreate = false,
   bool longProjectList = false,
+  List<PhotoEntry> photoEntries = const [],
 }) {
   configureWorkLogFeatureDependencies(
     repository: _WorkPort(),
@@ -508,7 +634,7 @@ _ProjectPort _register({
       saveEntry: SaveProjectEntry(project),
     ),
   );
-  final photo = _PhotoPort();
+  final photo = _PhotoPort(photoEntries);
   // This instance is obtained by PhotoView and retained across tab switches.
   serviceLocator.registerLazySingleton<PhotoCubit>(
     () => PhotoCubit(
@@ -582,8 +708,10 @@ class _ProjectPort implements ProjectRepositoryPort {
 }
 
 class _PhotoPort implements PhotoRepositoryPort {
+  final List<PhotoEntry> entries;
+  _PhotoPort(this.entries);
   @override
-  Future<List<PhotoEntry>> getAllEntries() async => [];
+  Future<List<PhotoEntry>> getAllEntries() async => entries;
   @override
   Stream<void> watchEntries() => const Stream.empty();
   @override

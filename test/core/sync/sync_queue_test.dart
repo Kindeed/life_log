@@ -8,6 +8,7 @@ import 'package:life_log/core/sync/sync_adapter.dart';
 import 'package:life_log/core/sync/sync_cursor_store.dart';
 import 'package:life_log/core/sync/sync_engine.dart';
 import 'package:life_log/core/sync/sync_queue.dart';
+import 'package:life_log/core/sync/sync_queue_record.dart';
 
 import '../../../tool/isar_test_runtime.dart' show initializeTestIsar;
 
@@ -17,6 +18,74 @@ void main() {
   });
 
   group('SyncQueue backoff', () {
+    test(
+      'indexed lookups isolate owners and entity types in a large persisted queue',
+      () async {
+        final tempDir = await Directory.systemTemp.createTemp(
+          'lifelog_indexed_queue_',
+        );
+        final database = await IsarDatabase.open(
+          schemas: DbService.schemas,
+          directory: tempDir.path,
+          name: 'indexed_queue',
+        );
+        final clock = _MutableClock(DateTime.utc(2026, 10, 7));
+        try {
+          final unrelated = List.generate(
+            800,
+            (index) => SyncQueueRecord()
+              ..entityName = 'work_log'
+              ..entityKey = 'other-owner:unrelated-$index'
+              ..attemptCount = 1
+              ..nextAttemptAt = clock.now.add(const Duration(minutes: 10)),
+          );
+          await database.writeTxn(
+            () => database.isar.syncQueueRecords.putAll(unrelated),
+          );
+          final queue = IsarSyncQueue(database, clock: clock);
+          await queue.recordFailure('work_log', 'owner-a:target');
+          await queue.recordFailure('subscription', 'owner-a:target');
+          await queue.recordFailure('work_log', 'owner-b:target');
+          await queue.recordFailure('Work_Log', 'owner-a:target');
+          await queue.recordFailure('work_log', 'owner-a:target');
+          expect(
+            (await queue.peek('work_log', 'owner-a:target'))?.attemptCount,
+            2,
+          );
+          expect(
+            (await queue.peek('subscription', 'owner-a:target'))?.attemptCount,
+            1,
+          );
+          expect(
+            (await queue.peek('work_log', 'owner-b:target'))?.attemptCount,
+            1,
+          );
+          expect(
+            (await queue.peek('Work_Log', 'owner-a:target'))?.attemptCount,
+            1,
+          );
+          expect(await queue.peek('work_log', 'missing-owner:target'), isNull);
+          expect(await queue.pendingCount(), 804);
+          final rebuilt = IsarSyncQueue(database, clock: clock);
+          expect(
+            await rebuilt.canAttempt('work_log', 'owner-a:target'),
+            isFalse,
+          );
+          await rebuilt.recordSuccess('work_log', 'owner-a:target');
+          expect(await rebuilt.peek('work_log', 'owner-a:target'), isNull);
+          expect(
+            await rebuilt.peek('subscription', 'owner-a:target'),
+            isNotNull,
+          );
+          expect(await rebuilt.peek('work_log', 'owner-b:target'), isNotNull);
+          expect(await rebuilt.pendingCount(), 803);
+        } finally {
+          await database.isar.close(deleteFromDisk: true);
+          await tempDir.delete(recursive: true);
+        }
+      },
+    );
+
     test('failed pushes are delayed until their retry time', () async {
       final events = <String>[];
       final queue = InMemorySyncQueue(

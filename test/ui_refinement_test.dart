@@ -78,6 +78,40 @@ void main() {
     }
   });
 
+  testWidgets(
+    'subscription refresh and refresh failure keep the populated page visible',
+    (tester) async {
+      _phone(tester, 320);
+      final repository = _RefreshingSubscriptionRepository();
+      late SubscriptionCubit cubit;
+      serviceLocator.registerFactory<SubscriptionCubit>(
+        () => cubit = SubscriptionCubit(
+          loadEntries: LoadSubscriptionEntries(repository),
+          watchEntries: WatchSubscriptionEntries(repository),
+          initialNow: () => DateTime(2026, 9, 16),
+        ),
+      );
+      await tester.pumpWidget(
+        _harness(const SubscriptionView(), dark: true, scale: 2),
+      );
+      await tester.pumpAndSettle();
+      final cachedEntries = cubit.state.entries;
+      repository.nextRead = Completer<List<SubscriptionEntry>>();
+      final refresh = cubit.loadEntries();
+      await tester.pump();
+      expect(find.byType(CustomScrollView), findsOneWidget);
+      expect(find.text('正在加载订阅'), findsNothing);
+      expect(cubit.state.entries, cachedEntries);
+      repository.nextRead!.completeError(StateError('read failed'));
+      await refresh;
+      await tester.pumpAndSettle();
+      expect(find.byType(CustomScrollView), findsOneWidget);
+      expect(find.text('订阅暂未刷新，正在显示上次读取的记录。'), findsOneWidget);
+      expect(cubit.state.entries, cachedEntries);
+      expect(tester.takeException(), isNull);
+    },
+  );
+
   testWidgets('changed forms require an explicit discard decision', (
     tester,
   ) async {
@@ -376,6 +410,13 @@ class _SubscriptionPreviewRepository extends _DelayedSubscriptionRepository {
       nextPaymentDate: DateTime(2026, 10, 3),
     ),
   ];
+}
+
+class _RefreshingSubscriptionRepository extends _SubscriptionPreviewRepository {
+  Completer<List<SubscriptionEntry>>? nextRead;
+  @override
+  Future<List<SubscriptionEntry>> getAllEntries() =>
+      nextRead?.future ?? super.getAllEntries();
 }
 
 class _WorkRepository implements WorkLogRepositoryPort {

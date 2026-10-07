@@ -4,6 +4,7 @@ import 'package:equatable/equatable.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:life_log/common/utils/date_utils.dart';
 import 'package:life_log/core/errors/app_failure.dart';
+import 'package:life_log/core/state/coalesced_refresh.dart';
 import 'package:life_log/features/work_log/application/load_work_log_month.dart';
 import 'package:life_log/features/work_log/application/watch_work_log_entries.dart';
 import 'package:life_log/features/work_log/domain/entities/work_log_entry.dart';
@@ -96,6 +97,9 @@ final class WorkLogCubit extends Cubit<WorkLogState> {
   final LoadWorkLogMonth _loadMonth;
   final WatchWorkLogEntries _watchEntries;
   StreamSubscription<void>? _entriesSubscription;
+  late final _watchRefresh = CoalescedRefresh(
+    refresh: () => loadFocusedMonth(background: true),
+  );
   DateTime? _loadedMonth;
   int _monthLoadRequestId = 0;
 
@@ -112,15 +116,17 @@ final class WorkLogCubit extends Cubit<WorkLogState> {
 
     unawaited(loadFocusedMonth());
     _entriesSubscription = _watchEntries().listen((_) {
-      unawaited(loadFocusedMonth());
+      _watchRefresh.schedule();
     });
   }
 
-  Future<void> loadFocusedMonth() async {
+  Future<void> loadFocusedMonth({bool background = false}) async {
     if (isClosed) return;
     final requestId = ++_monthLoadRequestId;
     final focusedDay = state.focusedDay;
-    emit(state.copyWith(status: WorkLogStatus.loading, clearFailure: true));
+    if (!background || state.status != WorkLogStatus.ready) {
+      emit(state.copyWith(status: WorkLogStatus.loading, clearFailure: true));
+    }
 
     final result = await _loadMonth(focusedDay);
     if (isClosed || requestId != _monthLoadRequestId) return;
@@ -170,6 +176,7 @@ final class WorkLogCubit extends Cubit<WorkLogState> {
 
   @override
   Future<void> close() async {
+    _watchRefresh.dispose();
     await _entriesSubscription?.cancel();
     return super.close();
   }
