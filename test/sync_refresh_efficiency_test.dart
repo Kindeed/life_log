@@ -31,6 +31,10 @@ import 'package:life_log/features/subscription/domain/entities/subscription_entr
 import 'package:life_log/features/subscription/domain/repositories/subscription_repository_port.dart';
 import 'package:life_log/features/subscription/presentation/subscription_cubit.dart';
 import 'package:life_log/features/work_log/application/load_work_log_month.dart';
+import 'package:life_log/features/work_log/application/load_work_log_today.dart';
+import 'package:life_log/features/work_log/presentation/work_log_today_cubit.dart';
+import 'package:life_log/features/subscription/application/load_subscription_today.dart';
+import 'package:life_log/features/subscription/presentation/subscription_today_cubit.dart';
 import 'package:life_log/features/work_log/application/watch_work_log_entries.dart';
 import 'package:life_log/features/work_log/domain/entities/work_log_entry.dart';
 import 'package:life_log/features/work_log/domain/repositories/work_log_repository_port.dart';
@@ -184,6 +188,51 @@ final _factories = <String, _Harness Function()>{
         date: _day,
         type: WorkLogEntryType.work,
         note: 'snapshot $id',
+      ),
+    );
+  },
+  'work today': () {
+    final repository = _WorkReads();
+    final cubit = WorkLogTodayCubit(
+      loadToday: LoadWorkLogToday(repository),
+      watchEntries: WatchWorkLogEntries(repository),
+      todayProvider: () => _day,
+    );
+    return _Harness(
+      cubit,
+      repository,
+      cubit.start,
+      cubit.loadToday,
+      () => cubit.state.snapshot.recentEntries,
+      () => cubit.state.status.name,
+      (id) => WorkLogEntry(
+        id: id,
+        date: _day,
+        type: WorkLogEntryType.work,
+        note: 'snapshot $id',
+      ),
+    );
+  },
+  'subscription today': () {
+    final repository = _SubscriptionReads();
+    final cubit = SubscriptionTodayCubit(
+      loadToday: LoadSubscriptionToday(repository),
+      watchEntries: WatchSubscriptionEntries(repository),
+      todayProvider: () => _day,
+    );
+    return _Harness(
+      cubit,
+      repository,
+      cubit.start,
+      cubit.loadToday,
+      () => cubit.state.snapshot.dueSoonEntries,
+      () => cubit.state.status.name,
+      (id) => SubscriptionEntry(
+        id: id,
+        name: 'snapshot $id',
+        price: id.toDouble(),
+        cycle: SubscriptionBillingCycle.monthly,
+        nextPaymentDate: _day,
       ),
     );
   },

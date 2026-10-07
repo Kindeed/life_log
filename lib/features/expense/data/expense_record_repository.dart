@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:life_log/common/services/log_service.dart';
 import 'package:life_log/common/utils/record_validators.dart';
 import 'package:life_log/common/utils/sync_id_policy.dart';
@@ -65,6 +67,11 @@ class ExpenseRecordRepository {
       return record;
     }
 
+    unawaited(_syncSavedRecord(record));
+    return record;
+  }
+
+  Future<void> _syncSavedRecord(ExpenseRecord record) async {
     try {
       final success = await _syncGateway.requestSync(
         record,
@@ -76,7 +83,6 @@ class ExpenseRecordRepository {
     } catch (e, stackTrace) {
       LogService.to.error('ExpenseRecordRepository', '云端同步失败: $e', stackTrace);
     }
-    return record;
   }
 
   Future<void> deleteExpenseRecord(int id) async {

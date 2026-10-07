@@ -54,12 +54,12 @@ class SubscriptionRepository {
     unawaited(_syncSavedSubscription(sub));
   }
 
-  Future<void> _syncSavedSubscription(Subscription sub) async {
+  Future<void> _syncSavedSubscription(
+    Subscription sub, {
+    String reason = 'subscription-save',
+  }) async {
     try {
-      final success = await _syncGateway.requestSync(
-        sub,
-        reason: 'subscription-save',
-      );
+      final success = await _syncGateway.requestSync(sub, reason: reason);
       if (!success) {
         LogService.to.error('SubscriptionRepository', '云端同步未完成，保留待同步状态');
       }
@@ -107,25 +107,10 @@ class SubscriptionRepository {
       return;
     }
 
-    for (final sub in changed) {
-      try {
-        final success = await _syncGateway.requestSync(
-          sub,
-          reason: 'subscription-reorder',
-        );
-        if (!success) {
-          LogService.to.error(
-            'SubscriptionRepository',
-            '排序云端同步未完成，保留待同步状态: ${sub.name}',
-          );
-        }
-      } catch (e, stackTrace) {
-        LogService.to.error(
-          'SubscriptionRepository',
-          '排序云端同步失败: $e',
-          stackTrace,
-        );
-      }
-    }
+    // All rows are already committed. One entity-triggered run enumerates the
+    // entire dirty batch; queuing per row would repeat whole sync cycles.
+    unawaited(
+      _syncSavedSubscription(changed.first, reason: 'subscription-reorder'),
+    );
   }
 }

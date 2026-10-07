@@ -1,5 +1,6 @@
 import 'dart:async';
-import 'dart:io';
+
+import 'package:life_log/common/widgets/app_local_thumbnail.dart';
 
 import 'package:file_picker/file_picker.dart';
 import 'package:image_picker/image_picker.dart';
@@ -917,9 +918,8 @@ class _ProjectDetailViewState extends State<ProjectDetailView>
                   children: [
                     ClipRRect(
                       borderRadius: BorderRadius.circular(8.r),
-                      child: Image.file(
-                        File(photo.filePath),
-                        fit: BoxFit.cover,
+                      child: AppLocalThumbnail(
+                        filePath: photo.filePath,
                         errorBuilder: (ctx, err, stack) => Center(
                           child: Icon(
                             Icons.broken_image_rounded,

@@ -5,6 +5,27 @@
 
 This is the active defect ledger. `REVIEW_REPORT.md` is historical context only. Photo sync findings from older reports are superseded by `AGENTS.md`: photos remain local-only and must not enter Supabase sync.
 
+## Telegram source follow-up (2026-10-07)
+
+Baseline: v1.4.35 (`6626fda`). Public Telegram repositories are design/architecture references; LifeLog keeps its Flutter/Isar/Supabase stack and local-only photo boundary.
+
+- Version: 1.4.36+42. Nine findings fixed; 851 tests pass (33 new), strict analysis has no issues, 450 Dart files format cleanly; locked dependencies, native Isar and final diff checks pass.
+- Reference inventory, pinned sources and behavior evidence: `docs/reviews/2026-10-07-telegram-source-optimization.md`.
+- Real CJK sync-center screenshots cover light/dark, 390px normal text and 320px / 2x text. No device install, production cloud migration or real-device frame-time claim.
+
+| ID | Severity | Status | Area | Finding | Acceptance |
+| --- | --- | --- | --- | --- | --- |
+| D69 | Medium | fixed | Local save completion | Project save / ensureSyncableProject, expense save and evidence save await whole cloud sync after a durable local write. Related-project creation can block expense/evidence before their own local write. | Fixed 2026-10-07: three saves and project linking finish after local commit independently of delayed cloud work. Pending/error/incomplete/local-failure/linker/file-copy tests pass; delete ACK paths retain their original awaited cleanup. |
+| D70 | Medium | fixed | Dashboard watchers | WorkLogToday and SubscriptionToday reload on every watcher event; WorkLogToday has no read ordering guard. Bursts cause overlap/loading transitions, and an older result can overwrite newer data. | Fixed 2026-10-07: both dashboard watchers use immediate leading / coalesced trailing refresh; WorkLogToday rejects old successes/errors. Eight new burst, ordering and disposal cases pass; existing subscription rollover coverage retained. |
+| D71 | Medium | fixed | Subscription reorder sync | One committed reorder awaits a complete sync per changed row, causing repeated all-entity pull/push cycles and making drag completion depend on cloud latency. | Fixed 2026-10-07: one background entity-triggered request per durable reorder batch. 100-row/one-request, pending cloud failure and empty-batch cases pass; every changed row retains its dirty state. |
+| U345 | Medium | fixed | Gallery decode cost | Both project photo grids decode full-resolution originals for small cells; only overview covers received display-width bounds in v1.4.35. | Fixed 2026-10-07: both project grids use constraint/DPR-aware ResizeImage fit bounds; full-screen preview provider unchanged. Actual photo tab, two cell sizes at 3x DPR and original-byte integrity checks pass. |
+| U346 | Medium | fixed | Sync center rendering and refresh | Sync center eagerly creates every queue/conflict row; refresh replaces its list with a whole-page spinner, loses useful cached state and removes failed-refresh context. | Fixed 2026-10-07: lazy stable-key rows retain populated content/scroll on refresh and failure; explicit retry, initial failure and late-exit completion covered. Resolving conflicts keep their state while offscreen; 1000-row visible-build and single-flight scroll tests pass. |
+| U347 | Low | fixed | Press gesture lifecycle | Shared press feedback stays scaled while a pointer drags to scroll, and another pointer release resets the active pointer's pressed state. | Fixed 2026-10-07: touch-slop movement releases scaling without consuming scroll gestures; active pointer identity, cancellation, tap, disabled and reduced-motion behavior pass. |
+| U348 | Low | fixed | Sync task readability | Main sync-center rows show protocol entity names, owner/record keys and technical conflict codes as their primary titles. These obscure the task type and bury the user's decision. | Fixed 2026-10-07: Chinese entity labels replace protocol titles; selectable task/conflict details preserve raw keys, codes and versions on demand. Actual-page interaction test passes. |
+| D72 | Medium | fixed | Sync-center refresh callback | Existing refresh uses an expression setState callback whose assignment returns a Future. Flutter debug mode asserts and interrupts the refresh before the new Future is observed. New real-page refresh tests reproduced it. | Fixed 2026-10-07: synchronous void setState block replaces the Future-returning expression; initial retry, populated refresh and conflict-success refresh all pass without framework assertions. |
+| U349 | Low | fixed | Sync center large-text information | Real CJK screenshots at 320px / 2x text show the three-column summary truncating its state and the retry row hiding its next-attempt time. The first reflow implementation also loses equal column widths at normal text size; screenshot review caught and corrected the loose-flex regression before release. | Fixed 2026-10-07: narrow large-text metrics reflow vertically, normal metrics retain equal widths and retry dates wrap. Four CJK light/dark/390px/320px-2x screenshots reviewed; paragraph clipping and equal-spacing tests pass. |
+
+
 ## Sync and frontend efficiency follow-up (2026-10-07)
 
 - Version: 1.4.35+41. Final checks: 818 tests pass (37 new cases), strict analysis has no issues, 447 Dart files format cleanly, locked dependencies and native Isar checks pass.

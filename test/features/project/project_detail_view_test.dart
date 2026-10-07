@@ -379,6 +379,13 @@ void main() {
         await tester.pumpAndSettle();
 
         expect(find.text('网格照片测试'), findsOneWidget);
+        final thumbnail = tester.widget<Image>(find.byType(Image).first);
+        final resized = thumbnail.image as ResizeImage;
+        expect(resized.policy, ResizeImagePolicy.fit);
+        expect(resized.width, inInclusiveRange(1, 375));
+        expect(resized.height, inInclusiveRange(1, 812));
+        expect((resized.imageProvider as FileImage).file.path, '/tmp/test.jpg');
+
         expect(find.byIcon(Icons.checklist_rtl_rounded), findsOneWidget);
 
         // 点击切换到「费用」Tab

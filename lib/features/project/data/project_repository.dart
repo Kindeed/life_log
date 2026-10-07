@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:isar_community/isar.dart';
 import 'package:life_log/common/services/log_service.dart';
 import 'package:life_log/common/utils/sync_id_policy.dart';
@@ -45,7 +47,7 @@ class ProjectRepository {
 
   Future<Project> ensureSyncableProject(String name) async {
     final project = await ensureProject(name, syncable: true);
-    await _pushIfNeeded(project);
+    unawaited(_pushIfNeeded(project));
     return project;
   }
 
@@ -64,7 +66,7 @@ class ProjectRepository {
     project.stageNames = _normalizeStageNames(project.stageNames);
     project.isDirty = true;
     await _localDataSource.addProject(project);
-    await _pushIfNeeded(project);
+    unawaited(_pushIfNeeded(project));
     return project;
   }
 

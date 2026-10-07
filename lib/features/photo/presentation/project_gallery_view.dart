@@ -1,5 +1,6 @@
 import 'dart:async';
-import 'dart:io';
+
+import 'package:life_log/common/widgets/app_local_thumbnail.dart';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -315,9 +316,8 @@ class _ProjectGalleryViewState extends State<ProjectGalleryView>
                                             ClipRRect(
                                               borderRadius:
                                                   BorderRadius.circular(8),
-                                              child: Image.file(
-                                                File(photo.filePath),
-                                                fit: BoxFit.cover,
+                                              child: AppLocalThumbnail(
+                                                filePath: photo.filePath,
                                                 errorBuilder:
                                                     (ctx, err, stack) => Center(
                                                       child: Icon(

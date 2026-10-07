@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:equatable/equatable.dart';
+import 'package:life_log/core/state/coalesced_refresh.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:life_log/common/utils/date_utils.dart';
 import 'package:life_log/core/errors/app_failure.dart';
@@ -50,6 +51,9 @@ final class SubscriptionTodayCubit extends Cubit<SubscriptionTodayState> {
   final WatchSubscriptionEntries _watchEntries;
   final DateTime Function() _todayProvider;
   StreamSubscription<void>? _entriesSubscription;
+  late final _watchRefresh = CoalescedRefresh(
+    refresh: () => loadToday(background: true),
+  );
   int _loadRequestId = 0;
   DateTime? _loadingReferenceDay;
 
@@ -67,21 +71,23 @@ final class SubscriptionTodayCubit extends Cubit<SubscriptionTodayState> {
 
     unawaited(loadToday());
     _entriesSubscription = _watchEntries().listen((_) {
-      unawaited(loadToday());
+      _watchRefresh.schedule();
     });
   }
 
-  Future<void> loadToday() async {
+  Future<void> loadToday({bool background = false}) async {
     if (isClosed) return;
     final requestId = ++_loadRequestId;
     final referenceDay = dateOnlyLocal(_todayProvider());
     _loadingReferenceDay = referenceDay;
-    emit(
-      state.copyWith(
-        status: SubscriptionTodayStatus.loading,
-        clearFailure: true,
-      ),
-    );
+    if (!background || state.status != SubscriptionTodayStatus.ready) {
+      emit(
+        state.copyWith(
+          status: SubscriptionTodayStatus.loading,
+          clearFailure: true,
+        ),
+      );
+    }
 
     final result = await _loadToday(referenceDay);
     if (isClosed || requestId != _loadRequestId) return;
@@ -123,6 +129,7 @@ final class SubscriptionTodayCubit extends Cubit<SubscriptionTodayState> {
 
   @override
   Future<void> close() async {
+    _watchRefresh.dispose();
     await _entriesSubscription?.cancel();
     return super.close();
   }

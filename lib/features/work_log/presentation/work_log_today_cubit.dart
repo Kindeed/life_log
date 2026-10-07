@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:equatable/equatable.dart';
+import 'package:life_log/core/state/coalesced_refresh.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:life_log/common/utils/date_utils.dart';
 import 'package:life_log/core/errors/app_failure.dart';
@@ -50,6 +51,11 @@ final class WorkLogTodayCubit extends Cubit<WorkLogTodayState> {
   final WatchWorkLogEntries _watchEntries;
   final DateTime Function() _todayProvider;
   StreamSubscription<void>? _entriesSubscription;
+  late final _watchRefresh = CoalescedRefresh(
+    refresh: () => loadToday(background: true),
+  );
+
+  int _loadRequestId = 0;
 
   WorkLogTodayCubit({
     required LoadWorkLogToday loadToday,
@@ -65,18 +71,21 @@ final class WorkLogTodayCubit extends Cubit<WorkLogTodayState> {
 
     unawaited(loadToday());
     _entriesSubscription = _watchEntries().listen((_) {
-      unawaited(loadToday());
+      _watchRefresh.schedule();
     });
   }
 
-  Future<void> loadToday() async {
+  Future<void> loadToday({bool background = false}) async {
     if (isClosed) return;
-    emit(
-      state.copyWith(status: WorkLogTodayStatus.loading, clearFailure: true),
-    );
+    final requestId = ++_loadRequestId;
+    if (!background || state.status != WorkLogTodayStatus.ready) {
+      emit(
+        state.copyWith(status: WorkLogTodayStatus.loading, clearFailure: true),
+      );
+    }
 
     final result = await _loadToday(_todayProvider());
-    if (isClosed) return;
+    if (isClosed || requestId != _loadRequestId) return;
     result.when(
       success: (snapshot) {
         emit(
@@ -97,6 +106,7 @@ final class WorkLogTodayCubit extends Cubit<WorkLogTodayState> {
 
   @override
   Future<void> close() async {
+    _watchRefresh.dispose();
     await _entriesSubscription?.cancel();
     return super.close();
   }
