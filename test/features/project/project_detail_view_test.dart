@@ -14,7 +14,7 @@ import 'package:life_log/features/evidence/presentation/evidence_cubit.dart';
 import 'package:life_log/features/expense/application/load_expense_record_entries.dart';
 import 'package:life_log/features/expense/application/watch_expense_record_entries.dart';
 import 'package:life_log/features/expense/data/expense_record_model.dart';
-import 'package:life_log/features/expense/data/expense_record_repository.dart';
+import 'package:life_log/features/expense/data/legacy_expense_record_repository_adapter.dart';
 import 'package:life_log/features/expense/domain/entities/expense_record_edit_draft.dart';
 import 'package:life_log/features/expense/domain/entities/expense_record_entry.dart';
 import 'package:life_log/features/expense/domain/repositories/expense_record_repository_port.dart';
@@ -55,7 +55,7 @@ void main() {
 
   group('ProjectDetailView', () {
     testWidgets(
-      'renders project title, stages, 3 tabs, and quick action capsule',
+      'renders project title, stages, compact tabs and a single add action',
       (tester) async {
         tester.view.devicePixelRatio = 1;
         tester.view.physicalSize = const Size(375, 812);
@@ -89,7 +89,6 @@ void main() {
           watchEntries: WatchEvidenceEntries(evidenceRepo),
         );
 
-        final expenseRepo = _FakeExpenseRecordRepository([]);
         final expenseCubit = ExpenseRecordCubit(
           loadEntries: LoadExpenseRecordEntries(_FakeExpensePort([])),
           watchEntries: WatchExpenseRecordEntries(_FakeExpensePort([])),
@@ -107,7 +106,6 @@ void main() {
               photoCubit: photoCubit,
               evidenceCubit: evidenceCubit,
               expenseCubit: expenseCubit,
-              expenseRecordRepository: expenseRepo,
               loadProjectWorkLogTrips: loadTrips,
             ),
           ),
@@ -122,9 +120,13 @@ void main() {
         // 验证 3 个 Tab
         expect(find.widgetWithText(Tab, '动态'), findsOneWidget);
         expect(find.widgetWithText(Tab, '照片'), findsOneWidget);
-        expect(find.widgetWithText(Tab, '费用'), findsOneWidget);
+        expect(find.widgetWithText(Tab, '账目'), findsOneWidget);
 
-        // 验证快速操作胶囊
+        // Single add entry delegates to the existing three workflows.
+        expect(find.text('添加记录'), findsOneWidget);
+        expect(find.text('添加照片'), findsNothing);
+        await tester.tap(find.text('添加记录'));
+        await tester.pumpAndSettle();
         expect(find.text('添加照片'), findsOneWidget);
         expect(find.text('记录支出'), findsOneWidget);
         expect(find.text('添加凭证'), findsOneWidget);
@@ -132,7 +134,7 @@ void main() {
     );
 
     testWidgets(
-      'timeline aggregates all activity cards for the current project and supports filter chips',
+      'timeline aggregates all activity cards for the current project and supports a type filter menu',
       (tester) async {
         tester.view.devicePixelRatio = 1;
         tester.view.physicalSize = const Size(375, 812);
@@ -211,13 +213,13 @@ void main() {
           ..category = ExpenseCategory.office
           ..merchant = '无关聚餐';
 
-        final expenseRepo = _FakeExpenseRecordRepository([
-          expenseRecord1,
-          expenseRecord2,
+        final expensePort = _FakeExpensePort([
+          expenseRecord1.toExpenseRecordEntry(),
+          expenseRecord2.toExpenseRecordEntry(),
         ]);
         final expenseCubit = ExpenseRecordCubit(
-          loadEntries: LoadExpenseRecordEntries(_FakeExpensePort([])),
-          watchEntries: WatchExpenseRecordEntries(_FakeExpensePort([])),
+          loadEntries: LoadExpenseRecordEntries(expensePort),
+          watchEntries: WatchExpenseRecordEntries(expensePort),
         );
         await expenseCubit.loadEntries();
 
@@ -253,7 +255,6 @@ void main() {
               photoCubit: photoCubit,
               evidenceCubit: evidenceCubit,
               expenseCubit: expenseCubit,
-              expenseRecordRepository: expenseRepo,
               loadProjectWorkLogTrips: loadTrips,
             ),
           ),
@@ -270,31 +271,43 @@ void main() {
         expect(find.text('无关聚餐'), findsNothing);
         expect(find.text('广州出差'), findsNothing);
 
-        // 筛选芯片测试：切换至「照片」
-        await tester.tap(find.widgetWithText(FilterChip, '照片'));
+        // 动态菜单筛选测试：切换至「照片」
+        await tester.tap(find.text('全部动态'));
+        await tester.pumpAndSettle();
+        await tester.tap(
+          find.widgetWithText(CheckedPopupMenuItem<String>, '照片'),
+        );
         await tester.pumpAndSettle();
         expect(find.text('现场测试照片'), findsOneWidget);
         expect(find.text('顺丰速运'), findsNothing);
         expect(find.text('项目聚餐'), findsNothing);
         expect(find.text('深圳出差'), findsNothing);
 
-        // 筛选芯片测试：切换至「出差」
-        await tester.tap(find.widgetWithText(FilterChip, '出差'));
+        // 动态菜单筛选测试：切换至「出差」
+        await tester.tap(find.byTooltip('筛选动态'));
+        await tester.pumpAndSettle();
+        await tester.tap(
+          find.widgetWithText(CheckedPopupMenuItem<String>, '出差'),
+        );
         await tester.pumpAndSettle();
         expect(find.text('深圳出差'), findsOneWidget);
         expect(find.text('现场测试照片'), findsNothing);
 
-        // 筛选芯片测试：切换至「费用」
-        await tester.tap(find.widgetWithText(FilterChip, '费用'));
+        // 动态菜单筛选测试：切换至「费用」
+        await tester.tap(find.byTooltip('筛选动态'));
+        await tester.pumpAndSettle();
+        await tester.tap(
+          find.widgetWithText(CheckedPopupMenuItem<String>, '费用'),
+        );
         await tester.pumpAndSettle();
         expect(find.text('项目聚餐'), findsOneWidget);
-        expect(find.text('顺丰速运'), findsOneWidget);
+        expect(find.text('顺丰速运'), findsNothing);
         expect(find.text('深圳出差'), findsNothing);
       },
     );
 
     testWidgets(
-      'tab switching switches between Timeline, Photos, and Expenses tabs',
+      'tab switching switches between Timeline, Photos, and Ledger tabs',
       (tester) async {
         tester.view.devicePixelRatio = 1;
         tester.view.physicalSize = const Size(375, 812);
@@ -338,10 +351,13 @@ void main() {
           ..category = ExpenseCategory.office
           ..merchant = '办公用品耗材';
 
-        final expenseRepo = _FakeExpenseRecordRepository([expenseRecord]);
         final expenseCubit = ExpenseRecordCubit(
-          loadEntries: LoadExpenseRecordEntries(_FakeExpensePort([])),
-          watchEntries: WatchExpenseRecordEntries(_FakeExpensePort([])),
+          loadEntries: LoadExpenseRecordEntries(
+            _FakeExpensePort([expenseRecord.toExpenseRecordEntry()]),
+          ),
+          watchEntries: WatchExpenseRecordEntries(
+            _FakeExpensePort([expenseRecord.toExpenseRecordEntry()]),
+          ),
         );
         await expenseCubit.loadEntries();
 
@@ -364,15 +380,15 @@ void main() {
               photoCubit: photoCubit,
               evidenceCubit: evidenceCubit,
               expenseCubit: expenseCubit,
-              expenseRecordRepository: expenseRepo,
               loadProjectWorkLogTrips: loadTrips,
             ),
           ),
         );
         await tester.pumpAndSettle();
 
-        // 默认在动态页，展示 4 个过滤芯片
-        expect(find.byType(FilterChip), findsNWidgets(4));
+        // Activity filtering has one menu, with no duplicate chip navigation.
+        expect(find.byType(FilterChip), findsNothing);
+        expect(find.text('全部动态'), findsOneWidget);
 
         // 点击切换到「照片」Tab
         await tester.tap(find.widgetWithText(Tab, '照片'));
@@ -389,17 +405,20 @@ void main() {
         expect(find.byIcon(Icons.checklist_rtl_rounded), findsOneWidget);
 
         // 点击切换到「费用」Tab
-        await tester.tap(find.widgetWithText(Tab, '费用'));
+        await tester.tap(find.widgetWithText(Tab, '账目'));
         await tester.pumpAndSettle();
 
         // 验证统计栏与费用项
-        expect(find.text('项目支出'), findsOneWidget);
-        expect(find.text('待报销'), findsNWidgets(2)); // 统计栏与卡片 badge
-        expect(find.text('已报销'), findsOneWidget);
+        expect(find.text('已记录支出'), findsOneWidget);
+        expect(find.text('待报销'), findsNothing);
+        expect(find.text('已报销'), findsNothing);
         expect(find.text('办公用品耗材'), findsOneWidget);
-        expect(find.text('¥188.00'), findsNWidgets(3)); // 统计栏 (支出 + 待报销) + 列表卡片
+        expect(
+          find.text('¥188.00'),
+          findsNWidgets(2),
+        ); // summary and actual row
         // 验证附件凭证图标
-        expect(find.byIcon(Icons.receipt_long_rounded), findsWidgets);
+        expect(find.text('添加记录'), findsOneWidget);
       },
     );
 
@@ -445,9 +464,6 @@ void main() {
       );
       serviceLocator.registerSingleton<ExpenseRecordCubit>(expenseCubit);
 
-      final expenseRepo = _FakeExpenseRecordRepository([]);
-      serviceLocator.registerSingleton<ExpenseRecordRepository>(expenseRepo);
-
       final workLogRepo = _FakeWorkLogRepository([]);
       final loadTrips = LoadProjectWorkLogTrips(workLogRepo);
       serviceLocator.registerSingleton<LoadProjectWorkLogTrips>(loadTrips);
@@ -462,7 +478,7 @@ void main() {
       expect(find.byType(ProjectDetailView), findsOneWidget);
       expect(find.text('兼容项目'), findsOneWidget);
       expect(find.text('动态'), findsOneWidget);
-      expect(find.text('添加照片'), findsOneWidget);
+      expect(find.text('添加记录'), findsOneWidget);
     });
   });
 }
@@ -583,29 +599,6 @@ final class _FakeExpensePort implements ExpenseRecordRepositoryPort {
 
   @override
   Future<ExpenseRecordEditDraft?> getEditDraft(int id) async => null;
-
-  @override
-  dynamic noSuchMethod(Invocation invocation) => super.noSuchMethod(invocation);
-}
-
-class _FakeExpenseRecordRepository implements ExpenseRecordRepository {
-  final List<ExpenseRecord> records;
-
-  _FakeExpenseRecordRepository([this.records = const []]);
-
-  @override
-  Future<List<ExpenseRecord>> getExpenseRecordsByProject(
-    String projectName,
-  ) async {
-    return records.where((r) => r.projectName == projectName).toList();
-  }
-
-  @override
-  Future<List<ExpenseRecord>> getExpenseRecordsByProjectId(
-    int projectId,
-  ) async {
-    return records.where((r) => r.projectId == projectId).toList();
-  }
 
   @override
   dynamic noSuchMethod(Invocation invocation) => super.noSuchMethod(invocation);

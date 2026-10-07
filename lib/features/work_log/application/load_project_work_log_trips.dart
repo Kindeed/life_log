@@ -1,6 +1,7 @@
 import 'package:life_log/common/utils/date_utils.dart';
 import 'package:life_log/core/errors/app_failure.dart';
 import 'package:life_log/core/result/app_result.dart';
+import 'package:life_log/features/project/domain/entities/project_record_scope.dart';
 import 'package:life_log/features/work_log/domain/entities/work_log_entry.dart';
 import 'package:life_log/features/work_log/domain/repositories/work_log_repository_port.dart';
 
@@ -12,6 +13,8 @@ final class LoadProjectWorkLogTrips {
   Future<AppResult<List<WorkLogEntry>>> call(
     String projectName, {
     bool includeUnlinked = false,
+    int? projectId,
+    String? projectSyncId,
   }) async {
     try {
       final normalizedProjectName = projectName.trim();
@@ -19,14 +22,30 @@ final class LoadProjectWorkLogTrips {
         return const AppResult.success(<WorkLogEntry>[]);
       }
       final entries = await _repository.getAllEntries();
+      final scope = ProjectRecordScope(
+        name: normalizedProjectName,
+        id: projectId,
+        syncId: projectSyncId,
+      );
       final trips =
           entries.where((entry) {
             if (entry.type != WorkLogEntryType.businessTrip) {
               return false;
             }
             final linkedName = entry.projectName?.trim();
-            return linkedName == normalizedProjectName ||
-                (includeUnlinked && (linkedName == null || linkedName.isEmpty));
+            // Existing name-only callers retain their legacy selection.
+            final matches = projectId == null && projectSyncId == null
+                ? linkedName == normalizedProjectName
+                : scope.contains(
+                    name: entry.projectName,
+                    id: entry.projectId,
+                    syncId: entry.projectSyncId,
+                  );
+            return matches ||
+                (includeUnlinked &&
+                    entry.projectId == null &&
+                    entry.projectSyncId?.trim().isNotEmpty != true &&
+                    (linkedName == null || linkedName.isEmpty));
           }).toList()..sort((a, b) {
             final dateCompare = dateOnlyLocal(
               b.date,

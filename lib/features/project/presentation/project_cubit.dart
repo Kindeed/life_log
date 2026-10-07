@@ -156,11 +156,34 @@ final class ProjectCubit extends Cubit<ProjectState> {
         name: entry.name,
         status: entry.status,
         stageNames: _normalizeStageNames(stageNames),
+        localCoverPath: entry.localCoverPath,
+        coverImagePath: entry.coverImagePath,
       ),
     );
     final failure = result.failureOrNull;
     if (failure != null) return failure;
     await loadEntries();
+    return null;
+  }
+
+  Future<AppFailure?> saveStatus(
+    ProjectEntry entry,
+    ProjectEntryStatus status,
+  ) async {
+    final result = await _saveEntry(
+      ProjectEntry(
+        id: entry.id,
+        syncId: entry.syncId,
+        name: entry.name,
+        status: status,
+        stageNames: entry.stageNames,
+        localCoverPath: entry.localCoverPath,
+        coverImagePath: entry.coverImagePath,
+      ),
+    );
+    final failure = result.failureOrNull;
+    if (failure != null) return failure;
+    await loadEntries(background: true);
     return null;
   }
 

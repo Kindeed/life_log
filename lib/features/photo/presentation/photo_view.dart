@@ -295,7 +295,17 @@ class _PhotoViewState extends State<PhotoView> {
 
   Future<void> _openProjectGallery(String projectName) {
     return Navigator.of(context).push<void>(
-      appPageRoute<void>(context, ProjectDetailView(projectName: projectName)),
+      appPageRoute<void>(
+        context,
+        ProjectDetailView(
+          projectName: projectName,
+          projectId: projectCubit.state.entryNamed(projectName)?.id,
+          projectCubit: projectCubit,
+          photoCubit: photoCubit,
+          evidenceCubit: evidenceCubit,
+          expenseCubit: expenseCubit,
+        ),
+      ),
     );
   }
 

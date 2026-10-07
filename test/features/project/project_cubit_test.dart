@@ -74,7 +74,15 @@ void main() {
 
     test('saves normalized project stage names', () async {
       final repository = _ProjectCubitRepository(
-        entries: [_entry(id: 1, name: 'Alpha')],
+        entries: [
+          const ProjectEntry(
+            id: 1,
+            name: 'Alpha',
+            status: ProjectEntryStatus.active,
+            localCoverPath: '/local/cover.jpg',
+            coverImagePath: '/legacy/cover.jpg',
+          ),
+        ],
       );
       final cubit = _cubit(repository);
       addTearDown(cubit.close);
@@ -88,7 +96,70 @@ void main() {
 
       expect(failure, isNull);
       expect(repository.entries.single.stageNames, ['合同', '执行']);
+      expect(repository.entries.single.localCoverPath, '/local/cover.jpg');
+      expect(repository.entries.single.coverImagePath, '/legacy/cover.jpg');
     });
+  });
+
+  test(
+    'archive and unarchive preserve project cover, identity and stages',
+    () async {
+      const project = ProjectEntry(
+        id: 1,
+        syncId: 'p1',
+        name: 'Alpha',
+        status: ProjectEntryStatus.active,
+        stageNames: ['交付'],
+        localCoverPath: '/local/cover.jpg',
+        coverImagePath: '/legacy/cover.jpg',
+      );
+      final repository = _ProjectCubitRepository(entries: [project]);
+      final cubit = _cubit(repository);
+      addTearDown(cubit.close);
+      for (final status in [
+        ProjectEntryStatus.archived,
+        ProjectEntryStatus.active,
+      ]) {
+        expect(
+          await cubit.saveStatus(repository.entries.single, status),
+          isNull,
+        );
+        final updated = repository.entries.single;
+        expect(updated.status, status);
+        expect(updated.id, project.id);
+        expect(updated.syncId, project.syncId);
+        expect(updated.stageNames, project.stageNames);
+        expect(updated.localCoverPath, project.localCoverPath);
+        expect(updated.coverImagePath, project.coverImagePath);
+      }
+    },
+  );
+
+  test('failed archive leaves cached project and cover intact', () async {
+    const project = ProjectEntry(
+      id: 1,
+      name: 'Alpha',
+      status: ProjectEntryStatus.active,
+      localCoverPath: '/cover.jpg',
+    );
+    final repository = _ProjectCubitRepository(entries: [project]);
+    final cubit = _cubit(repository);
+    addTearDown(cubit.close);
+    await cubit.loadEntries();
+    repository.saveError = StateError('archive failed');
+    final failure = await cubit.saveStatus(
+      project,
+      ProjectEntryStatus.archived,
+    );
+    expect(failure, isNotNull);
+    expect(cubit.state.entries.single, project);
+    repository.saveError = null;
+    expect(
+      await cubit.saveStatus(project, ProjectEntryStatus.archived),
+      isNull,
+    );
+    expect(cubit.state.entries.single.status, ProjectEntryStatus.archived);
+    expect(cubit.state.entries.single.localCoverPath, project.localCoverPath);
   });
 
   group('CreateProjectEntry', () {
@@ -285,6 +356,7 @@ final class _ProjectCubitRepository implements ProjectRepositoryPort {
   final _controller = StreamController<void>.broadcast();
   Object? loadError;
   Object? createError;
+  Object? saveError;
   List<ProjectEntry> entries;
   final createdNames = <String>[];
   final deletedEntries = <ProjectEntry>[];
@@ -325,6 +397,7 @@ final class _ProjectCubitRepository implements ProjectRepositoryPort {
 
   @override
   Future<ProjectEntry> saveEntry(ProjectEntry entry) async {
+    if (saveError != null) throw saveError!;
     entries = [
       for (final item in entries)
         if (item.id == entry.id) entry else item,

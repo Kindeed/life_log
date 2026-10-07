@@ -5,6 +5,25 @@
 
 This is the active defect ledger. `REVIEW_REPORT.md` is historical context only. Photo sync findings from older reports are superseded by `AGENTS.md`: photos remain local-only and must not enter Supabase sync.
 
+## Project detail holistic review (2026-10-07)
+
+Baseline: v1.4.36. User screenshot identifies repeated navigation and inconsistent project-detail presentation. Implementation and verification: `docs/reviews/2026-10-07-project-detail-review.md`.
+
+- Version: 1.4.37+43. All nine findings below are fixed, including D78 caught before release. Final regression: 885 tests pass (34 new), strict analysis has no issues, 455 Dart files format cleanly; locked dependencies, native Isar and final diff checks pass.
+- Actual Flutter page checks cover light/dark, 390px normal text and 320px / 2x text across all three destinations and the add sheet. No device frame-time benchmark or production cloud migration.
+
+| ID | Severity | Status | Area | Finding | Acceptance |
+| --- | --- | --- | --- | --- | --- |
+| D73 | High | fixed | Project accounting | Reimbursed evidence is subtracted from expense totals despite no expense/evidence link; unrelated receipt amounts can erase pending expenses. Currency codes are ignored. | Separate expense and evidence summaries; group amounts by currency; do not infer expense reimbursement from receipts. |
+| D74 | Medium | fixed | Project detail reads | Direct expense repository snapshot is loaded once and ignores ExpenseCubit changes. Trips lack a watcher, stale-read protection and visible failures. | Use expense state directly; coalesced trip watcher with latest-read guard, retry and cached failure state. |
+| D75 | Medium | fixed | Project identity | Header prefers a matching name over an explicit id; child filtering uses names even when durable links exist. | Read-only scope prefers matching sync/id links and uses names only for unlinked legacy children; renamed and same-name projects stay isolated. |
+| D76 | Medium | fixed | Project route duplicate reads | Opening detail from the project tab creates four additional Cubits/watchers and reloads lists already owned by that tab. | Borrow the parent Cubits, perform no repeated initial reads and leave them alive when returning. |
+| D77 | Medium | fixed | Project cover preservation | Stage edits and archive construct an entry without cover paths; the active repository adapter then overwrites both existing cover fields with null. | Preserve cover metadata while saving stages/status and verify failure recovery. |
+| D78 | Low | fixed | Scoped expense selection cost | The initial detail refactor resolves the project and allocates a scope inside the expense predicate, multiplying project scans by the number of expenses. | Before release: capture one scope before each expense selection pass; visible-row construction remains lazy. |
+| U350 | Medium | fixed | Project detail hierarchy | Large icon tabs, repeated filter chips and three tiny fixed add actions compete; hardcoded colors/radii conflict with shared theme. | Compact text tabs, one filter entry, one add sheet, shared semantic cards and accessible actions in both themes. |
+| U351 | Medium | fixed | Project activity | Photo rows hide the image; dates repeat in each row; trip rows look tappable but do nothing; empty and failed reads look identical. | Thumbnail/date groups, working trip editor and distinct loading/empty/partial-failure states. |
+| U352 | Medium | fixed | Photo batch actions | Missing delete/export dependencies silently complete selection without operating; export success says album despite choosing a folder. | Fixed: single-flight batch actions show progress, preserve selection on failures and immediately report success; export identifies the selected folder. |
+
 ## Telegram source follow-up (2026-10-07)
 
 Baseline: v1.4.35 (`6626fda`). Public Telegram repositories are design/architecture references; LifeLog keeps its Flutter/Isar/Supabase stack and local-only photo boundary.
