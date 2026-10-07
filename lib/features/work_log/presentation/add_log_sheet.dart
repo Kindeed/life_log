@@ -7,6 +7,7 @@ import 'package:life_log/common/theme/app_colors.dart';
 import 'package:life_log/common/theme/theme_extensions.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:life_log/common/widgets/app_button.dart';
+import 'package:life_log/common/widgets/app_form_feedback.dart';
 import 'package:life_log/common/widgets/app_pill.dart';
 import 'package:life_log/common/widgets/app_safe_bottom_bar.dart';
 import 'package:life_log/common/widgets/app_sheet_scaffold.dart';
@@ -150,78 +151,81 @@ class _AddLogSheetState extends State<AddLogSheet> {
                         ) !=
                         _initialDraft,
                 busy: isBusy,
-                child: AppSheetScaffold(
-                  presentation: widget.asPage
-                      ? AppSheetPresentation.page
-                      : AppSheetPresentation.sheet,
-                  height: widget.asPage ? null : sheetHeight,
-                  title: widget.existingEntry != null ? "修改记录" : "记录一下",
-                  padding: EdgeInsets.zero,
-                  hideBottomBarWhenKeyboardVisible: false,
-                  bottomBar: AppSafeBottomBar(
-                    padding: EdgeInsets.fromLTRB(24.w, 8.h, 24.w, 16.h),
-                    child: _buildBottomActions(editorState),
-                  ),
-                  child: Column(
-                    children: [
-                      _buildTypeSelector(
-                        editorState,
-                        isDark,
-                        bgColor,
-                        textPrimary,
-                        textSecondary,
-                      ),
+                child: AbsorbPointer(
+                  absorbing: isBusy,
+                  child: AppSheetScaffold(
+                    presentation: widget.asPage
+                        ? AppSheetPresentation.page
+                        : AppSheetPresentation.sheet,
+                    height: widget.asPage ? null : sheetHeight,
+                    title: widget.existingEntry != null ? "修改记录" : "记录一下",
+                    padding: EdgeInsets.zero,
+                    hideBottomBarWhenKeyboardVisible: false,
+                    bottomBar: AppSafeBottomBar(
+                      padding: EdgeInsets.fromLTRB(24.w, 8.h, 24.w, 16.h),
+                      child: _buildSaveActions(editorState),
+                    ),
+                    child: Column(
+                      children: [
+                        _buildTypeSelector(
+                          editorState,
+                          isDark,
+                          bgColor,
+                          textPrimary,
+                          textSecondary,
+                        ),
 
-                      Expanded(
-                        child: SingleChildScrollView(
-                          keyboardDismissBehavior:
-                              ScrollViewKeyboardDismissBehavior.onDrag,
-                          padding: EdgeInsets.symmetric(
-                            horizontal: 24.w,
-                            vertical: 20.h,
-                          ),
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              if (editorState.type == WorkLogEntryType.work)
-                                _buildWorkForm(
-                                  editorState,
-                                  isDark,
-                                  bgColor,
-                                  textPrimary,
-                                ),
-                              if (editorState.type ==
-                                  WorkLogEntryType.businessTrip)
-                                _buildTripForm(
-                                  editorState,
-                                  isDark,
-                                  bgColor,
-                                  textPrimary,
-                                ),
-                              if (editorState.type == WorkLogEntryType.leave)
-                                _buildLeaveForm(
-                                  editorState,
-                                  isDark,
-                                  bgColor,
-                                  textPrimary,
-                                  textSecondary,
-                                ),
-                              if (editorState.type == WorkLogEntryType.rest)
-                                _buildRestForm(isDark, textSecondary),
+                        Expanded(
+                          child: SingleChildScrollView(
+                            keyboardDismissBehavior:
+                                ScrollViewKeyboardDismissBehavior.onDrag,
+                            padding: EdgeInsets.symmetric(
+                              horizontal: 24.w,
+                              vertical: 20.h,
+                            ),
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                if (editorState.type == WorkLogEntryType.work)
+                                  _buildWorkForm(
+                                    editorState,
+                                    isDark,
+                                    bgColor,
+                                    textPrimary,
+                                  ),
+                                if (editorState.type ==
+                                    WorkLogEntryType.businessTrip)
+                                  _buildTripForm(
+                                    editorState,
+                                    isDark,
+                                    bgColor,
+                                    textPrimary,
+                                  ),
+                                if (editorState.type == WorkLogEntryType.leave)
+                                  _buildLeaveForm(
+                                    editorState,
+                                    isDark,
+                                    bgColor,
+                                    textPrimary,
+                                    textSecondary,
+                                  ),
+                                if (editorState.type == WorkLogEntryType.rest)
+                                  _buildRestForm(isDark, textSecondary),
 
-                              SizedBox(height: 20.h),
-                              AppTextField(
-                                controller: _noteController,
-                                focusNode: _noteFocusNode,
-                                hintText: "备注 (可选)...",
-                                maxLines: 3,
-                                onChanged: _editorCubit.changeNote,
-                              ),
-                            ],
+                                SizedBox(height: 20.h),
+                                AppTextField(
+                                  controller: _noteController,
+                                  focusNode: _noteFocusNode,
+                                  hintText: "备注 (可选)...",
+                                  maxLines: 3,
+                                  onChanged: _editorCubit.changeNote,
+                                ),
+                              ],
+                            ),
                           ),
                         ),
-                      ),
-                    ],
+                      ],
+                    ),
                   ),
                 ),
               );
@@ -325,10 +329,33 @@ class _AddLogSheetState extends State<AddLogSheet> {
     );
   }
 
+  Widget _buildSaveActions(WorkLogEditorState editorState) {
+    final message = switch (editorState.status) {
+      WorkLogEditorStatus.submitting => '正在保存…',
+      WorkLogEditorStatus.deleting => '正在删除…',
+      WorkLogEditorStatus.failure =>
+        '${_failureTitle(editorState.failure)}：${editorState.failure?.message ?? '请稍后重试'}',
+      _ => null,
+    };
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        if (message != null)
+          AppFormFeedback(
+            message: message,
+            isError: editorState.status == WorkLogEditorStatus.failure,
+          ),
+        _buildBottomActions(editorState),
+      ],
+    );
+  }
+
   Widget _buildBottomActions(WorkLogEditorState editorState) {
     final isSubmitting =
         editorState.status == WorkLogEditorStatus.submitting ||
-        editorState.status == WorkLogEditorStatus.deleting;
+        editorState.status == WorkLogEditorStatus.deleting ||
+        editorState.status == WorkLogEditorStatus.saved ||
+        editorState.status == WorkLogEditorStatus.deleted;
     if (widget.existingEntry == null) {
       return SizedBox(
         width: double.infinity,
@@ -374,6 +401,7 @@ class _AddLogSheetState extends State<AddLogSheet> {
   }
 
   Future<void> _saveLog() async {
+    FocusScope.of(context).unfocus();
     _syncTextControllersToEditor();
     await _editorCubit.submit();
   }
@@ -385,16 +413,29 @@ class _AddLogSheetState extends State<AddLogSheet> {
     switch (editorState.status) {
       case WorkLogEditorStatus.saved:
       case WorkLogEditorStatus.deleted:
-        await widget.onSavedOrDeleted?.call();
         if (!context.mounted) return;
-        await Navigator.of(context).maybePop();
+        final messenger = ScaffoldMessenger.maybeOf(context);
+        final navigator = Navigator.of(context);
+        final refresh = widget.onSavedOrDeleted;
+        final message = editorState.status == WorkLogEditorStatus.saved
+            ? '工时已保存'
+            : '工时已删除';
+        if (navigator.canPop()) navigator.pop();
+        messenger
+          ?..hideCurrentSnackBar()
+          ..showSnackBar(
+            SnackBar(
+              content: Text(message),
+              behavior: SnackBarBehavior.floating,
+              duration: const Duration(seconds: 3),
+            ),
+          );
+        if (refresh != null) {
+          unawaited(_refreshAfterCommit(refresh, messenger, message));
+        }
         break;
       case WorkLogEditorStatus.failure:
-        _showEditorFailure(
-          context,
-          editorState.failure,
-          fallbackTitle: _failureTitle(editorState.failure),
-        );
+        // The error remains visible inside the page or modal editor.
         break;
       case WorkLogEditorStatus.editing:
       case WorkLogEditorStatus.submitting:
@@ -411,24 +452,24 @@ class _AddLogSheetState extends State<AddLogSheet> {
       ..changeCustomLeave(_customLeaveController.text);
   }
 
-  void _showEditorFailure(
-    BuildContext context,
-    AppFailure? failure, {
-    required String fallbackTitle,
-  }) {
-    final message = failure?.message ?? fallbackTitle;
-    final messenger = ScaffoldMessenger.maybeOf(context);
-    if (messenger == null) return;
-    messenger
-      ..hideCurrentSnackBar()
-      ..showSnackBar(
-        SnackBar(
-          content: Text(message, style: const TextStyle(color: Colors.white)),
-          behavior: SnackBarBehavior.floating,
-          backgroundColor: Colors.redAccent,
-          margin: EdgeInsets.all(20.w),
-        ),
-      );
+  Future<void> _refreshAfterCommit(
+    Future<void> Function() refresh,
+    ScaffoldMessengerState? messenger,
+    String committedMessage,
+  ) async {
+    try {
+      await refresh();
+    } catch (_) {
+      if (messenger?.mounted != true) return;
+      messenger!
+        ..hideCurrentSnackBar()
+        ..showSnackBar(
+          SnackBar(
+            content: Text('$committedMessage，页面刷新失败，请重试'),
+            behavior: SnackBarBehavior.floating,
+          ),
+        );
+    }
   }
 
   String _failureTitle(AppFailure? failure) {

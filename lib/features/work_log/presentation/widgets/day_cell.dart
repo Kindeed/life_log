@@ -76,7 +76,7 @@ class DayCell extends StatelessWidget {
                     : today
                     ? scheme.primary.withValues(alpha: 0.06)
                     : Colors.transparent,
-                borderRadius: BorderRadius.circular(AppRadius.md),
+                borderRadius: BorderRadius.circular(AppRadius.xs),
                 border: today && !selected
                     ? Border.all(color: scheme.primary)
                     : null,
@@ -85,7 +85,8 @@ class DayCell extends StatelessWidget {
                 opacity: outside ? 0.48 : 1,
                 child: LayoutBuilder(
                   builder: (context, constraints) {
-                    final compact = constraints.maxHeight < 58;
+                    final compact = constraints.maxHeight < 64;
+                    final dense = constraints.maxHeight < 48;
                     return Stack(
                       children: [
                         Center(
@@ -105,13 +106,22 @@ class DayCell extends StatelessWidget {
                             child: Column(
                               mainAxisSize: MainAxisSize.min,
                               children: [
-                                Text(
-                                  '${day.day}',
-                                  style: TextStyle(
-                                    color: foreground,
-                                    fontSize: compact ? 12 : 15,
-                                    fontWeight: FontWeight.w700,
-                                    height: 1.05,
+                                FittedBox(
+                                  fit: BoxFit.scaleDown,
+                                  child: Text(
+                                    '${day.day}',
+                                    maxLines: 1,
+                                    softWrap: false,
+                                    style: TextStyle(
+                                      color: foreground,
+                                      fontSize: dense
+                                          ? 12
+                                          : compact
+                                          ? 14
+                                          : 15,
+                                      fontWeight: FontWeight.w700,
+                                      height: 1.05,
+                                    ),
                                   ),
                                 ),
                                 SizedBox(height: compact ? 1 : 3),
@@ -121,7 +131,11 @@ class DayCell extends StatelessWidget {
                                   overflow: TextOverflow.ellipsis,
                                   style: TextStyle(
                                     color: muted,
-                                    fontSize: compact ? 8 : 10,
+                                    fontSize: dense
+                                        ? 8
+                                        : compact
+                                        ? 9
+                                        : 10,
                                     height: 1.1,
                                   ),
                                 ),
@@ -156,7 +170,11 @@ class DayCell extends StatelessWidget {
                                               color: selected
                                                   ? scheme.onPrimary
                                                   : status.color,
-                                              fontSize: compact ? 8 : 10,
+                                              fontSize: dense
+                                                  ? 8
+                                                  : compact
+                                                  ? 9
+                                                  : 10,
                                               fontWeight: FontWeight.w700,
                                               height: 1,
                                             ),

@@ -250,6 +250,25 @@ void main() {
               tabs.changePage(entry.value);
               await tester.pumpAndSettle();
               expect(tester.takeException(), isNull, reason: entry.key);
+              if (entry.key == 'work') {
+                final cell = find.byType(DayCell).first;
+                final size = tester.getSize(cell);
+                final tile = tester.widget<AnimatedContainer>(
+                  find.descendant(
+                    of: cell,
+                    matching: find.byType(AnimatedContainer),
+                  ),
+                );
+                final corners =
+                    (tile.decoration! as BoxDecoration).borderRadius!
+                        as BorderRadius;
+                expect(corners.topLeft.x, lessThan(size.width / 3));
+                if (scale == 1) {
+                  expect(size.height, lessThan(size.width * 1.8));
+                } else {
+                  expect(size.height, lessThanOrEqualTo(114));
+                }
+              }
               final title = switch (entry.key) {
                 'work' => '工时',
                 'project' => '项目',

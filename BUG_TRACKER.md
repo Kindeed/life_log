@@ -1,9 +1,22 @@
 # LifeLog BUG Tracker
 
-**Last updated**: 2026-10-06
+**Last updated**: 2026-10-07
 **Status values**: `open`, `in_progress`, `fixed`, `deferred`, `invalidated`
 
 This is the active defect ledger. `REVIEW_REPORT.md` is historical context only. Photo sync findings from older reports are superseded by `AGENTS.md`: photos remain local-only and must not enter Supabase sync.
+
+## Calendar and save responsiveness follow-up (2026-10-07)
+
+- Version: 1.4.34+40. Compact calendar geometry and visible editor feedback; durable local saves acknowledge without waiting for cloud sync or post-commit refresh.
+- Final local checks: 781 tests pass, strict analysis has no issues, 445 Dart files format cleanly, locked dependencies unchanged, native Isar runtime and diff checks pass. Review: `docs/reviews/2026-10-06-calendar-save-responsiveness.md`.
+
+| ID | Severity | Status | Area | Finding | Fix / Acceptance |
+| --- | --- | --- | --- | --- | --- |
+| U337 | Medium | fixed | Calendar date geometry | DayCell uses the global 22dp surface radius while calendar rows are a fixed 76dp (152dp at 2x text). Narrow seven-column cells become tall capsules rather than compact date tiles. | Fixed 2026-10-07: 8dp corners and width/text-responsive rows preserve metadata and multi-entry markers. Actual three-tab tests at 320/390dp, light/dark and 1x/2x text pass; real CJK screenshots reviewed. |
+| U338 | Medium | fixed | Editor save feedback | Work-log save has no success notice; failures use a parent Scaffold snackbar that can be hidden behind the modal editor. Subscription failures share that hidden-sheet behavior and its success notice lasts only one second. | Fixed 2026-10-07: visible inline progress/errors in both editors, three-second success after local commit and route exit. Actual modal failure/retry and pending-save UI tests pass. |
+| U339 | Medium | fixed | Work-log post-save wait | The work-log editor awaits onSavedOrDeleted refresh before closing. A slow/rejected refresh delays exit or throws despite a committed record; committed controls become enabled during that wait. | Fixed 2026-10-07: close and acknowledge before refresh completes; main page uses database watcher without duplicate manual reads. Slow/failing refresh tests retain the committed success message and reject duplicate actions. |
+| D64 | Medium | fixed | Subscription save latency | SubscriptionRepository.saveSubscription waits for the complete sync scheduler request after committing local data; network latency blocks the save button and acknowledgement. | Fixed 2026-10-07: saves await durable local writes only, background sync catches failures and retains dirty/version metadata. Pending cloud, thrown sync, failed local write and actual edit-page tests pass; deletion safety unchanged. |
+| D65 | Medium | fixed | Work-log editor async lifecycle | WorkLogEditorCubit emits after async save/delete without checking close; field edits reset busy status, allowing concurrent operations while a request is in flight. | Fixed 2026-10-07: pending/terminal guards, busy form absorption and closed-Cubit checks. Duplicate save, save/delete overlap, pending draft changes and removed-editor completion tests pass. |
 
 ## Subscription rollover follow-up (2026-10-06)
 

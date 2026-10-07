@@ -129,82 +129,96 @@ class _WorkLogContent extends StatelessWidget {
                                 final calendarFormat = _calendarFormatFor(
                                   cubitState.calendarSpan,
                                 );
-                                return TableCalendar<WorkLogEntry>(
-                                  locale: 'zh_CN',
-                                  firstDay: DateTime(2020, 1, 1),
-                                  lastDay: DateTime(2030, 12, 31),
-                                  focusedDay: cubitState.focusedDay,
-                                  startingDayOfWeek: StartingDayOfWeek.monday,
-                                  calendarFormat: calendarFormat,
-                                  headerVisible: false,
-                                  daysOfWeekStyle: DaysOfWeekStyle(
-                                    weekendStyle: TextStyle(
-                                      color: textSecondary,
-                                      fontSize: 12.sp,
-                                    ),
-                                    weekdayStyle: TextStyle(
-                                      color: textSecondary,
-                                      fontSize: 12.sp,
-                                    ),
-                                  ),
-                                  rowHeight:
-                                      76.0 *
-                                      (MediaQuery.textScalerOf(
-                                                context,
-                                              ).scale(14) /
-                                              14)
-                                          .clamp(1, double.infinity),
-                                  daysOfWeekHeight:
-                                      24 *
-                                      (MediaQuery.textScalerOf(
-                                                context,
-                                              ).scale(12) /
-                                              12)
-                                          .clamp(1, double.infinity),
-                                  calendarStyle: const CalendarStyle(
-                                    markersMaxCount: 0,
-                                  ),
-                                  selectedDayPredicate: (day) =>
-                                      isSameDay(cubitState.selectedDay, day),
-                                  onDaySelected: (selected, focused) =>
-                                      _selectCalendarDay(
-                                        context,
-                                        selected,
-                                        focused,
+                                return LayoutBuilder(
+                                  builder: (context, constraints) {
+                                    final scale =
+                                        MediaQuery.textScalerOf(
+                                          context,
+                                        ).scale(14) /
+                                        14;
+                                    final cellWidth = constraints.maxWidth / 7;
+                                    final rowHeight =
+                                        (cellWidth * 1.15).clamp(54.0, 64.0) +
+                                        50 *
+                                            (scale - 1).clamp(
+                                              0.0,
+                                              double.infinity,
+                                            );
+                                    return TableCalendar<WorkLogEntry>(
+                                      locale: 'zh_CN',
+                                      firstDay: DateTime(2020, 1, 1),
+                                      lastDay: DateTime(2030, 12, 31),
+                                      focusedDay: cubitState.focusedDay,
+                                      startingDayOfWeek:
+                                          StartingDayOfWeek.monday,
+                                      calendarFormat: calendarFormat,
+                                      headerVisible: false,
+                                      daysOfWeekStyle: DaysOfWeekStyle(
+                                        weekendStyle: TextStyle(
+                                          color: textSecondary,
+                                          fontSize: 12.sp,
+                                        ),
+                                        weekdayStyle: TextStyle(
+                                          color: textSecondary,
+                                          fontSize: 12.sp,
+                                        ),
                                       ),
-                                  onPageChanged: (focused) {
-                                    context
-                                        .read<WorkLogCubit>()
-                                        .changeFocusedDay(focused);
+                                      rowHeight: rowHeight,
+                                      daysOfWeekHeight:
+                                          24 *
+                                          (MediaQuery.textScalerOf(
+                                                    context,
+                                                  ).scale(12) /
+                                                  12)
+                                              .clamp(1, double.infinity),
+                                      calendarStyle: const CalendarStyle(
+                                        markersMaxCount: 0,
+                                      ),
+                                      selectedDayPredicate: (day) => isSameDay(
+                                        cubitState.selectedDay,
+                                        day,
+                                      ),
+                                      onDaySelected: (selected, focused) =>
+                                          _selectCalendarDay(
+                                            context,
+                                            selected,
+                                            focused,
+                                          ),
+                                      onPageChanged: (focused) {
+                                        context
+                                            .read<WorkLogCubit>()
+                                            .changeFocusedDay(focused);
+                                      },
+                                      eventLoader: (day) =>
+                                          _entriesForDay(cubitState, day),
+                                      calendarBuilders: CalendarBuilders(
+                                        markerBuilder: (context, day, events) =>
+                                            null,
+                                        prioritizedBuilder:
+                                            (context, day, focusedDay) {
+                                              return DayCell(
+                                                day: day,
+                                                focusedDay: focusedDay,
+                                                selectedDay:
+                                                    cubitState.selectedDay,
+                                                calendarFormat: calendarFormat,
+                                                event: _firstEntryForDay(
+                                                  cubitState,
+                                                  day,
+                                                ),
+                                                entryCount: _entriesForDay(
+                                                  cubitState,
+                                                  day,
+                                                ).length,
+                                                metadata: cubitState
+                                                    .metadataForDay(day),
+                                                isDark: isDark,
+                                                textPrimary: textPrimary,
+                                              );
+                                            },
+                                      ),
+                                    );
                                   },
-                                  eventLoader: (day) =>
-                                      _entriesForDay(cubitState, day),
-                                  calendarBuilders: CalendarBuilders(
-                                    markerBuilder: (context, day, events) =>
-                                        null,
-                                    prioritizedBuilder:
-                                        (context, day, focusedDay) {
-                                          return DayCell(
-                                            day: day,
-                                            focusedDay: focusedDay,
-                                            selectedDay: cubitState.selectedDay,
-                                            calendarFormat: calendarFormat,
-                                            event: _firstEntryForDay(
-                                              cubitState,
-                                              day,
-                                            ),
-                                            entryCount: _entriesForDay(
-                                              cubitState,
-                                              day,
-                                            ).length,
-                                            metadata: cubitState.metadataForDay(
-                                              day,
-                                            ),
-                                            isDark: isDark,
-                                            textPrimary: textPrimary,
-                                          );
-                                        },
-                                  ),
                                 );
                               },
                             ),
@@ -338,7 +352,6 @@ class _WorkLogContent extends StatelessWidget {
       selectedDate: selectedDate,
       existingEntry: existingEntry,
       initialType: WorkLogEntryType.work,
-      onSavedOrDeleted: () => _refreshWorkLogState(context),
     );
   }
 
@@ -351,7 +364,6 @@ class _WorkLogContent extends StatelessWidget {
       context,
       selectedDate: selectedDate,
       existingEntry: existingEntry,
-      onSavedOrDeleted: () => _refreshWorkLogState(context),
     );
   }
 
@@ -371,6 +383,7 @@ class _WorkLogContent extends StatelessWidget {
   }
 
   Future<void> _refreshWorkLogState(BuildContext context) async {
+    if (!context.mounted) return;
     await context.read<WorkLogCubit>().loadFocusedMonth();
   }
 

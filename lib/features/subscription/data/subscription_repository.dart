@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import '../../../common/services/log_service.dart';
 import '../../../common/utils/record_validators.dart';
 import '../../../common/utils/sync_id_policy.dart';
@@ -47,7 +49,12 @@ class SubscriptionRepository {
       return;
     }
 
-    // 2. 云端同步
+    // Saving is complete after the durable local write. The scheduler retains
+    // dirty rows and retry state when background sync cannot finish.
+    unawaited(_syncSavedSubscription(sub));
+  }
+
+  Future<void> _syncSavedSubscription(Subscription sub) async {
     try {
       final success = await _syncGateway.requestSync(
         sub,

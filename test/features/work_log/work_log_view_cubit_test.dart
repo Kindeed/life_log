@@ -489,12 +489,14 @@ final class _ReadyWorkLogRepository implements WorkLogRepositoryPort {
 }
 
 final class _SavingWorkLogRepository implements WorkLogRepositoryPort {
+  final _changes = StreamController<void>.broadcast();
   final savedEntries = <WorkLogEntry>[];
   var getAllEntriesCallCount = 0;
   var getEntriesByMonthCallCount = 0;
 
   _SavingWorkLogRepository([List<WorkLogEntry> entries = const []]) {
     savedEntries.addAll(entries);
+    addTearDown(_changes.close);
   }
 
   @override
@@ -526,13 +528,14 @@ final class _SavingWorkLogRepository implements WorkLogRepositoryPort {
       savedEntries.removeWhere((existing) => existing.id == entry.id);
     }
     savedEntries.add(entry);
+    _changes.add(null);
   }
 
   @override
   Future<void> deleteEntry(int id) async {}
 
   @override
-  Stream<void> watchEntries() => const Stream.empty();
+  Stream<void> watchEntries() => _changes.stream;
 }
 
 final class _DeletingWorkLogRepository implements WorkLogRepositoryPort {

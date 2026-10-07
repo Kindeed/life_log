@@ -5,6 +5,7 @@ import 'package:intl/intl.dart';
 import 'package:life_log/common/theme/theme_extensions.dart';
 import 'package:life_log/common/utils/date_utils.dart';
 import 'package:life_log/common/widgets/app_button.dart';
+import 'package:life_log/common/widgets/app_form_feedback.dart';
 import 'package:life_log/common/widgets/app_date_picker.dart';
 import 'package:life_log/common/widgets/app_safe_bottom_bar.dart';
 import 'package:life_log/common/widgets/app_sheet_scaffold.dart';
@@ -41,6 +42,8 @@ class _AddSubscriptionSheetState extends State<AddSubscriptionSheet> {
   int _reminderDays = 1;
   DateTime _nextPaymentDate = DateTime.now();
   bool _busy = false;
+  String? _feedback;
+  bool _feedbackIsError = true;
   late final List<Object?> _initialDraft;
   List<Object?> get _draft => [
     _nameController.text,
@@ -106,37 +109,7 @@ class _AddSubscriptionSheetState extends State<AddSubscriptionSheet> {
           padding: EdgeInsets.symmetric(horizontal: 24.w),
           bottomBar: AppSafeBottomBar(
             padding: EdgeInsets.symmetric(horizontal: 24.w, vertical: 10.h),
-            child: widget.existingEntry == null
-                ? SizedBox(
-                    width: double.infinity,
-                    child: AppButton.primary(
-                      label: "保存订阅",
-                      onPressed: _busy ? null : _onSave,
-                      isLoading: _busy,
-                      height: 50.h,
-                    ),
-                  )
-                : Row(
-                    children: [
-                      Expanded(
-                        child: AppButton.destructive(
-                          label: "删除",
-                          icon: Icons.delete_outline_rounded,
-                          onPressed: _busy ? null : _onDelete,
-                          height: 50.h,
-                        ),
-                      ),
-                      SizedBox(width: 12.w),
-                      Expanded(
-                        child: AppButton.primary(
-                          label: "保存修改",
-                          onPressed: _busy ? null : _onSave,
-                          isLoading: _busy,
-                          height: 50.h,
-                        ),
-                      ),
-                    ],
-                  ),
+            child: _buildBottomActions(),
           ),
           child: SingleChildScrollView(
             keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
@@ -371,20 +344,55 @@ class _AddSubscriptionSheetState extends State<AddSubscriptionSheet> {
     );
   }
 
+  Widget _buildBottomActions() {
+    final actions = widget.existingEntry == null
+        ? SizedBox(
+            width: double.infinity,
+            child: AppButton.primary(
+              label: "保存订阅",
+              onPressed: _busy ? null : _onSave,
+              isLoading: _busy,
+              height: 50.h,
+            ),
+          )
+        : Row(
+            children: [
+              Expanded(
+                child: AppButton.destructive(
+                  label: "删除",
+                  icon: Icons.delete_outline_rounded,
+                  onPressed: _busy ? null : _onDelete,
+                  height: 50.h,
+                ),
+              ),
+              SizedBox(width: 12.w),
+              Expanded(
+                child: AppButton.primary(
+                  label: "保存修改",
+                  onPressed: _busy ? null : _onSave,
+                  isLoading: _busy,
+                  height: 50.h,
+                ),
+              ),
+            ],
+          );
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        if (_busy)
+          const AppFormFeedback(message: '正在处理…', isError: false)
+        else if (_feedback != null)
+          AppFormFeedback(message: _feedback!, isError: _feedbackIsError),
+        actions,
+      ],
+    );
+  }
+
   void _showMessage(String message, {required bool isError}) {
-    final theme = Theme.of(context);
-    final semantic = theme.semanticColors;
-    final messenger = ScaffoldMessenger.of(context);
-    messenger
-      ..hideCurrentSnackBar()
-      ..showSnackBar(
-        SnackBar(
-          content: Text(message),
-          behavior: SnackBarBehavior.floating,
-          backgroundColor: isError ? theme.colorScheme.error : semantic.success,
-          duration: Duration(seconds: isError ? 3 : 1),
-        ),
-      );
+    setState(() {
+      _feedback = message;
+      _feedbackIsError = isError;
+    });
   }
 
   String _getCycleText(SubscriptionBillingCycle cycle) {
@@ -453,7 +461,10 @@ class _AddSubscriptionSheetState extends State<AddSubscriptionSheet> {
     final navigator = Navigator.of(context);
     final messenger = ScaffoldMessenger.of(context);
     final successColor = Theme.of(context).semanticColors.success;
-    setState(() => _busy = true);
+    setState(() {
+      _busy = true;
+      _feedback = null;
+    });
     final result = await serviceLocator<SaveSubscriptionEntry>().call(
       entry,
       markDirty: markDirty,
@@ -471,7 +482,7 @@ class _AddSubscriptionSheetState extends State<AddSubscriptionSheet> {
               content: const Text("订阅已保存"),
               behavior: SnackBarBehavior.floating,
               backgroundColor: successColor,
-              duration: const Duration(seconds: 1),
+              duration: const Duration(seconds: 3),
             ),
           );
       },

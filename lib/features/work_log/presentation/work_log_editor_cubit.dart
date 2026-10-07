@@ -189,6 +189,13 @@ final class WorkLogEditorCubit extends Cubit<WorkLogEditorState> {
   final SaveWorkLogEntry _saveEntry;
   final DeleteWorkLogEntry _deleteEntry;
 
+  bool get _locked =>
+      isClosed ||
+      state.status == WorkLogEditorStatus.submitting ||
+      state.status == WorkLogEditorStatus.deleting ||
+      state.status == WorkLogEditorStatus.saved ||
+      state.status == WorkLogEditorStatus.deleted;
+
   WorkLogEditorCubit({
     required SaveWorkLogEntry saveEntry,
     required DeleteWorkLogEntry deleteEntry,
@@ -266,7 +273,7 @@ final class WorkLogEditorCubit extends Cubit<WorkLogEditorState> {
   }
 
   Future<void> submit() async {
-    if (state.status == WorkLogEditorStatus.submitting) return;
+    if (_locked) return;
 
     final entry = _entryFromState();
     if (entry == null) return;
@@ -278,6 +285,7 @@ final class WorkLogEditorCubit extends Cubit<WorkLogEditorState> {
       ),
     );
     final result = await _saveEntry(entry, markDirty: _shouldMarkDirty(entry));
+    if (isClosed) return;
     result.when(
       success: (_) => emit(state.copyWith(status: WorkLogEditorStatus.saved)),
       failure: (failure) => emit(
@@ -287,7 +295,7 @@ final class WorkLogEditorCubit extends Cubit<WorkLogEditorState> {
   }
 
   Future<void> delete() async {
-    if (state.status == WorkLogEditorStatus.deleting) return;
+    if (_locked) return;
 
     final existing = state.existingEntry;
     if (existing == null) {
@@ -307,6 +315,7 @@ final class WorkLogEditorCubit extends Cubit<WorkLogEditorState> {
       state.copyWith(status: WorkLogEditorStatus.deleting, clearFailure: true),
     );
     final result = await _deleteEntry(existing.id);
+    if (isClosed) return;
     result.when(
       success: (_) => emit(state.copyWith(status: WorkLogEditorStatus.deleted)),
       failure: (failure) => emit(
@@ -331,6 +340,7 @@ final class WorkLogEditorCubit extends Cubit<WorkLogEditorState> {
     String? leaveType,
     String? customLeave,
   }) {
+    if (_locked) return state;
     return state.copyWith(
       status: WorkLogEditorStatus.editing,
       type: type,
