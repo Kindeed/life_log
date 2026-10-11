@@ -95,11 +95,38 @@ void main() {
       final projectDbSource = File(
         'lib/common/db/db_service.dart',
       ).readAsStringSync();
+      final cascadeSource = projectDbSource.substring(
+        projectDbSource.indexOf(
+          'Future<ProjectCascadeDeleteResult?> deleteProjectCascade(',
+        ),
+        projectDbSource.indexOf('Future<void> purgeDeletedProject('),
+      );
+      final projectDeleteBranch = RegExp(
+        r'if\s*\(\s*project\.isLocalArchive\s*\|\|\s*'
+        r'\(\s*project\.remoteId\s*==\s*null\s*&&\s*'
+        r'project\.syncId\s*==\s*null\s*\)\s*\)\s*\{\s*'
+        r'await\s+isar\.projects\.delete\(project\.id\);\s*'
+        r'\}\s*else\s*\{([\s\S]*?)\n\s*\}',
+      ).firstMatch(cascadeSource);
       expect(
-        projectDbSource,
-        contains('if (project.remoteId == null && project.syncId == null)'),
+        projectDeleteBranch,
+        isNotNull,
         reason:
-            'Project cascade deletion must purge only projects without remote or sync identity.',
+            'Project cascade may purge a retained local archive, or a project '
+            'without either cloud identity. An ordinary syncId-only project '
+            'must take the remote tombstone branch.',
+      );
+      final tombstoneBranch = projectDeleteBranch!.group(1)!;
+      expect(tombstoneBranch, contains('..deletedAt = now'));
+      expect(tombstoneBranch, contains('..updatedAt = now'));
+      expect(tombstoneBranch, contains('..pendingDelete = true'));
+      expect(tombstoneBranch, contains('..isDirty = true'));
+      expect(
+        tombstoneBranch,
+        contains('await isar.projects.put(project)'),
+        reason:
+            'Cloud-eligible projects must remain locally persisted and dirty '
+            'until their remote tombstone is acknowledged.',
       );
     });
 

@@ -20,6 +20,7 @@ and keeps photos and text records local-only.
 | ID | Severity | Status | Area | Finding | Acceptance |
 | --- | --- | --- | --- | --- | --- |
 | U396 | Low | fixed | Release dependency validation | Running an implicit pub get after the version bump with the default package host re-resolves the mirror-hosted lockfile and unintentionally updates dependencies. | Restored the unchanged reviewed lockfile, matched CI's package host, passed enforce-lockfile and repeated only the 7 release checks with --no-pub. No dependency updates are included in this release. |
+| U397 | Medium | fixed | Release cascade policy assertion | GitHub main/release CI on af4dcf5 pass 1182 tests but fail the old source assertion requiring the project cascade condition verbatim; it does not account for the new local-archive exception. No v1.4.40 APK was built. | Scoped the whitespace-tolerant source check to deleteProjectCascade, verified both the archive physical-delete exception and complete ordinary-project dirty tombstone branch, and passed all 4 focused policy tests, strict analysis, format and diff checks. The corrected candidate is v1.4.41+47; the old tag is retained. |
 
 ## Project date directory (2026-10-11)
 

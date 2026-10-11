@@ -1,7 +1,7 @@
 # Project stages and channel workflow
 
 Date: 2026-10-11. Baseline: `abdeab4007d0b519feba90731b2914bc31387756`
-(`v1.4.39+45`). This iteration is prepared for `v1.4.40+46` following the
+(`v1.4.39+45`). This iteration is prepared for `v1.4.41+47` following the
 user's request to upgrade and push to GitHub. The development verification
 batches below retain their original scopes and counts.
 
@@ -10,6 +10,19 @@ validation with the CI package host, a read-only format check of 514 Dart files
 with no changes, and clean diff checks. The reviewed lockfile is unchanged.
 No project or application test batch was repeated for the version/notes bump.
 The GitHub tag workflow remains the signed Android build and publication gate.
+
+The first pushed candidate `v1.4.40+46` did not produce an APK: CI passed 1182
+tests and failed one outdated source-policy assertion requiring the original
+project cascade condition verbatim. The additive local-archive branch preserves
+the remote-tombstone path for ordinary syncable projects, but the source test
+did not account for that exception. Its contract is updated in `v1.4.41+47`
+without removing archive protection. The original tag is retained; the new
+candidate repeats the existing CI publication gates.
+
+All 4 sync-idempotency policy tests pass after the assertion update, with strict
+test-file analysis, formatting and diff checks. The correction changes no
+production deletion code or dependency versions; the project tests are not
+repeated locally for this test-only fix.
 
 ## Product direction
 
