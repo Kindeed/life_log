@@ -28,9 +28,11 @@ class ProjectRepository {
   }
 
   Future<Project?> findProject(int id, String name) async {
+    final hasLocalId = id != 0 && id != Isar.autoIncrement;
     for (final project in await getAllProjects()) {
-      if (project.id == id ||
-          project.name.toLowerCase() == name.trim().toLowerCase()) {
+      if (hasLocalId
+          ? project.id == id
+          : project.name.toLowerCase() == name.trim().toLowerCase()) {
         return project;
       }
     }
@@ -71,6 +73,7 @@ class ProjectRepository {
   }
 
   Future<void> _pushIfNeeded(Project project) async {
+    if (project.isLocalArchive) return;
     if (!_syncGateway.isAvailable) return;
     if (project.remoteId != null &&
         !project.isDirty &&

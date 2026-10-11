@@ -55,7 +55,7 @@ void main() {
 
   group('ProjectDetailView', () {
     testWidgets(
-      'renders project title, stages, compact tabs and a single add action',
+      'renders a single project channel with stages, tools and a compact composer',
       (tester) async {
         tester.view.devicePixelRatio = 1;
         tester.view.physicalSize = const Size(375, 812);
@@ -114,23 +114,27 @@ void main() {
 
         // 验证项目名称与阶段标签
         expect(find.text('项目A'), findsOneWidget);
-        expect(find.text('全部阶段 · 2'), findsOneWidget);
-        await tester.tap(find.text('全部阶段 · 2'));
+        expect(find.text('全部阶段'), findsOneWidget);
+        await tester.tap(find.text('全部阶段'));
         await tester.pumpAndSettle();
         expect(find.text('1. 立项'), findsOneWidget);
         expect(find.text('2. 研发'), findsOneWidget);
-        await tester.tap(find.text('全部阶段'));
+        await tester.tap(find.widgetWithText(ListTile, '全部阶段'));
         await tester.pumpAndSettle();
 
-        // 验证 3 个 Tab
-        expect(find.widgetWithText(Tab, '动态'), findsOneWidget);
-        expect(find.widgetWithText(Tab, '照片'), findsOneWidget);
-        expect(find.widgetWithText(Tab, '账目'), findsOneWidget);
+        // 项目默认只有一个记录频道，照片和账目按需打开。
+        expect(find.byType(Tab), findsNothing);
+        expect(find.text('开始记录这个项目'), findsOneWidget);
+        expect(find.byTooltip('返回项目记录'), findsNothing);
+        expect(find.byTooltip('查看照片'), findsOneWidget);
+        expect(find.byTooltip('查看账目'), findsOneWidget);
+        expect(find.text('写记录…'), findsOneWidget);
+        expect(find.byTooltip('写文字记录'), findsOneWidget);
 
         // Single add entry delegates to the existing three workflows.
-        expect(find.text('添加记录'), findsOneWidget);
+        expect(find.byTooltip('添加记录'), findsOneWidget);
         expect(find.text('添加照片'), findsNothing);
-        await tester.tap(find.text('添加记录'));
+        await tester.tap(find.byTooltip('添加记录'));
         await tester.pumpAndSettle();
         expect(find.text('添加照片'), findsOneWidget);
         expect(find.text('记录支出'), findsOneWidget);
@@ -266,18 +270,31 @@ void main() {
         );
         await tester.pumpAndSettle();
 
-        // 验证时间线中展示了该项目的 4 类活动卡片，且没有无关项目
-        expect(find.text('现场测试照片'), findsOneWidget);
-        expect(find.text('顺丰速运'), findsOneWidget);
-        expect(find.text('项目聚餐'), findsOneWidget);
-        expect(find.text('深圳出差'), findsOneWidget);
+        // Channel media is larger; history remains lazy and readable by scrolling.
+        await tester.tap(find.byTooltip('日期目录'));
+        await tester.pumpAndSettle();
+        await tester.tap(find.text('全部展开'));
+        await tester.pumpAndSettle();
+        for (final title in ['深圳出差', '项目聚餐', '顺丰速运', '现场测试照片']) {
+          await tester.scrollUntilVisible(
+            find.text(title),
+            160,
+            scrollable: find
+                .descendant(
+                  of: find.byKey(const PageStorageKey('project-activity')),
+                  matching: find.byType(Scrollable),
+                )
+                .first,
+          );
+          expect(find.text(title), findsOneWidget);
+        }
         expect(find.text('无关照片.jpg'), findsNothing);
         expect(find.text('无关速运'), findsNothing);
         expect(find.text('无关聚餐'), findsNothing);
         expect(find.text('广州出差'), findsNothing);
 
         // 动态菜单筛选测试：切换至「照片」
-        await tester.tap(find.text('全部动态'));
+        await tester.tap(find.byTooltip('筛选记录'));
         await tester.pumpAndSettle();
         await tester.tap(
           find.widgetWithText(CheckedPopupMenuItem<String>, '照片'),
@@ -289,7 +306,7 @@ void main() {
         expect(find.text('深圳出差'), findsNothing);
 
         // 动态菜单筛选测试：切换至「出差」
-        await tester.tap(find.byTooltip('筛选动态'));
+        await tester.tap(find.byTooltip('筛选记录'));
         await tester.pumpAndSettle();
         await tester.tap(
           find.widgetWithText(CheckedPopupMenuItem<String>, '出差'),
@@ -299,7 +316,7 @@ void main() {
         expect(find.text('现场测试照片'), findsNothing);
 
         // 动态菜单筛选测试：切换至「费用」
-        await tester.tap(find.byTooltip('筛选动态'));
+        await tester.tap(find.byTooltip('筛选记录'));
         await tester.pumpAndSettle();
         await tester.tap(
           find.widgetWithText(CheckedPopupMenuItem<String>, '费用'),
@@ -312,7 +329,7 @@ void main() {
     );
 
     testWidgets(
-      'tab switching switches between Timeline, Photos, and Ledger tabs',
+      'photo and ledger tools open on demand and return to the project channel',
       (tester) async {
         tester.view.devicePixelRatio = 1;
         tester.view.physicalSize = const Size(375, 812);
@@ -393,10 +410,11 @@ void main() {
 
         // Activity filtering has one menu, with no duplicate chip navigation.
         expect(find.byType(FilterChip), findsNothing);
-        expect(find.text('全部动态'), findsOneWidget);
+        expect(find.byTooltip('筛选记录'), findsOneWidget);
+        expect(find.byType(Tab), findsNothing);
 
-        // 点击切换到「照片」Tab
-        await tester.tap(find.widgetWithText(Tab, '照片'));
+        // 从频道打开照片工具。
+        await tester.tap(find.byTooltip('查看照片'));
         await tester.pumpAndSettle();
 
         expect(find.text('网格照片测试'), findsOneWidget);
@@ -408,9 +426,17 @@ void main() {
         expect((resized.imageProvider as FileImage).file.path, '/tmp/test.jpg');
 
         expect(find.byIcon(Icons.checklist_rtl_rounded), findsOneWidget);
+        expect(find.byTooltip('返回项目记录'), findsOneWidget);
+        expect(find.byTooltip('写文字记录'), findsNothing);
+        await tester.tap(find.byTooltip('返回项目记录'));
+        await tester.pumpAndSettle();
+        expect(
+          find.byKey(const PageStorageKey('project-activity')),
+          findsOneWidget,
+        );
 
-        // 点击切换到「费用」Tab
-        await tester.tap(find.widgetWithText(Tab, '账目'));
+        // 从频道打开账目工具。
+        await tester.tap(find.byTooltip('查看账目'));
         await tester.pumpAndSettle();
 
         // 验证统计栏与费用项
@@ -422,8 +448,10 @@ void main() {
           find.text('¥188.00'),
           findsNWidgets(2),
         ); // summary and actual row
-        // 验证附件凭证图标
-        expect(find.text('添加记录'), findsOneWidget);
+        await tester.tap(find.byTooltip('返回项目记录'));
+        await tester.pumpAndSettle();
+        expect(find.byTooltip('添加记录'), findsOneWidget);
+        expect(find.byTooltip('写文字记录'), findsOneWidget);
       },
     );
 
@@ -482,8 +510,9 @@ void main() {
       // 验证通过 ProjectGalleryView 进入时成功呈现 ProjectDetailView
       expect(find.byType(ProjectDetailView), findsOneWidget);
       expect(find.text('兼容项目'), findsOneWidget);
-      expect(find.text('动态'), findsOneWidget);
-      expect(find.text('添加记录'), findsOneWidget);
+      expect(find.text('开始记录这个项目'), findsOneWidget);
+      expect(find.byType(Tab), findsNothing);
+      expect(find.byTooltip('添加记录'), findsOneWidget);
     });
   });
 }

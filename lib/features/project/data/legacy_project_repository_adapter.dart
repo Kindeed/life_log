@@ -87,6 +87,7 @@ extension ProjectEntryMapper on Project {
       syncId: syncId,
       name: name,
       status: status.toProjectEntryStatus(),
+      isLocalArchive: isLocalArchive,
       stageNames: List<String>.unmodifiable(stageNames),
       localCoverPath: localCoverPath,
       coverImagePath: coverImagePath,

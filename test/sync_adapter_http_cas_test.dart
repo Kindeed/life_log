@@ -355,6 +355,15 @@ final class _RecordingDbService extends DbService {
   int attachmentDeleteCalls = 0;
 
   @override
+  Future<Project?> getProject(int id) async => Project()
+    ..id = id
+    ..ownerUserId = _owner
+    ..syncId = _syncId
+    ..createdAt = _date
+    ..updatedAt = _date
+    ..name = 'project transport fixture';
+
+  @override
   Future<void> updateWorkLogRemoteId(
     WorkLog ack, {
     SyncRunContext? context,

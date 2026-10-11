@@ -5,6 +5,109 @@
 
 This is the active defect ledger. `REVIEW_REPORT.md` is historical context only. Photo sync findings from older reports are superseded by `AGENTS.md`: photos remain local-only and must not enter Supabase sync.
 
+## Project channel release preparation (2026-10-11)
+
+User authorised a version upgrade and GitHub push. The project workflow,
+single-channel UI and date-directory iterations below are prepared as
+`v1.4.40+46`, with a matching changelog and release notes. Existing focused
+verification is retained; all 7 release/package checks pass locally, with
+enforced dependency-lock validation and 514 Dart files formatted unchanged.
+The tag triggers the repository's existing signed Android release workflow;
+its outcome must be verified before claiming downloadable APKs are ready.
+This version has an additive local Isar schema; it has no Supabase migration
+and keeps photos and text records local-only.
+
+| ID | Severity | Status | Area | Finding | Acceptance |
+| --- | --- | --- | --- | --- | --- |
+| U396 | Low | fixed | Release dependency validation | Running an implicit pub get after the version bump with the default package host re-resolves the mirror-hosted lockfile and unintentionally updates dependencies. | Restored the unchanged reviewed lockfile, matched CI's package host, passed enforce-lockfile and repeated only the 7 release checks with --no-pub. No dependency updates are included in this release. |
+
+## Project date directory (2026-10-11)
+
+Keep stage/type filtering and add nested month/day headings so the user can
+collapse a time period and open a specific day. Fold state is presentation-only;
+it does not change records, dates or local/cloud eligibility.
+
+Final verification: 71 focused tests pass (61 project-detail tests and 10 date
+heading tests, with targeted reruns counted once). Strict whole-project analysis
+passes; the final account-generation key change also passes strict source
+analysis. All five directory-related Dart files format unchanged and diff checks
+pass. Twelve folder-state images in `project-channel-folders` cover light/dark,
+390dp and 320dp/2x; all were visually checked. The four existing project media
+geometry cases pass with capture enabled. Earlier UI/storage batches were not
+repeated. Details: `docs/reviews/2026-10-11-project-channel-workflow.md`.
+
+| ID | Severity | Status | Area | Finding | Acceptance |
+| --- | --- | --- | --- | --- | --- |
+| U392 | Medium | fixed | Project date navigation | The channel has decorative date markers but no collapsible date directory, forcing users to scroll through every record to reach a day. | Stage and type filters compose with nested month/day collapse, latest month/day initially open, explicit expand/collapse-all, lazy visible records and readable counts. |
+| U393 | Medium | fixed | Fold state and account navigation | A new directory must not reopen explicitly collapsed dates on refresh/filtering, initialize from failed partial sources, or inherit another account's expansion/scroll state. | Preserve date flags across filtering/tool return, keep newly arriving dates collapsed after initialization, initialize only after complete successful nonempty sources, reset flags and per-scope PageStorage on account boundary, and verify live-count/empty-state behavior. |
+| U394 | Low | fixed | Project directory media capture helper | Media mounts later when the initial directory waits for all sources; existing geometry helpers can resolve the first image stream on the fake clock and time out. A first repair also calls a protected State API and fails strict analysis. | Evict the fixture's exact image provider and reassemble its widget tree in the real async zone through the public BuildOwner API, retain fold state, assert actual image completion/error, and pass all four project media geometry cases with strict analysis. Photo-preview capture U391 remains separate. |
+| U395 | Medium | fixed | Account scrollable identity | Clearing PageStorage buckets alone leaves a mounted Scrollable's old offset when an account reload completes before the next frame; a same-scope 80-record regression retains 480dp of the prior account's position. | Key the section PageStorage by account reload generation so mounted channel/tool lists are recreated even for same-frame completion; verify the new account starts at zero with a still-scrollable record set. |
+
+## Single project channel redesign (2026-10-11)
+
+User feedback supersedes the three-section navigation in the previous local UI
+review. The default detail is one continuous record channel; photos and ledger
+remain available as optional tools. This revision changes presentation and
+navigation only, with focused project UI verification rather than another
+whole-application or storage test run.
+
+Final verification: 118 focused tests across project detail/channel widgets,
+note editor and photo presentation pass. Whole-project strict analysis has no
+issues, all 11 changed presentation/test Dart files format unchanged and diff
+checks pass. CJK review covers light/dark 390dp and 320dp/2x project screens,
+with a separately captured 320dp/2x photo preview. No new release is published.
+
+| ID | Severity | Status | Area | Finding | Acceptance |
+| --- | --- | --- | --- | --- | --- |
+| U378 | Medium | fixed | Project information architecture | Persistent activity/photo/ledger tabs split one project's stage records and make the detail read like separate modules. | One default channel for text, photos with remarks, trips and accounting; optional photo/ledger tools preserve stage, return, selection and account boundaries. |
+| U379 | Medium | fixed | Channel visual hierarchy | A large stage card, repeated record headings, large icons and card borders compete with the actual content and consume the first viewport. | Compact stage selector and title status; restrained date markers, full-width text and wide photos, quiet composer; review actual light/dark and 320dp/2x renders. |
+| U380 | Medium | fixed | Record filter touch target | The initial compact filter inherits a 40dp IconButton target. | Explicit minimum 48dp target in the integrated page, with large-text geometry verification. |
+| U381 | Low | fixed | Scoped record count | The first integration displays all stage record types even after choosing a channel type or opening a photo/ledger tool. | Count only the currently displayed record collection, independently of hidden channel filters when tools are open. |
+| U382 | Medium | fixed | Large-text stage geometry | Actual 320dp/2x renders show the fixed stage/count columns splitting short labels into fragments even without a framework overflow. | Measure available text width and reflow the selector/count vertically when necessary; preserve system text scaling and review the corrected renders. |
+| U383 | Low | fixed | Photo selection back behavior | Toolbar back immediately returns to the channel during photo selection while system back only cancels selection. | Both controls first cancel selection and remain in the photo browser; a subsequent back returns to the channel. Batch operations continue to block navigation. |
+| U384 | Low | fixed | UI review render readiness | Some initial 390dp channel and photo-tool screenshots capture the image before the missing-file error builder paints, leaving an unexplained blank region in the review evidence. | Wait for real image completion/error and assert the genuine missing-file placeholders before capturing the final review. |
+| U385 | Low | fixed | Ledger tool visual consistency | The optional ledger keeps large icons, bordered 30dp cards and a different visual weight from the new channel. | Use the same restrained 12dp surface geometry and small icons while preserving original-currency totals and separate evidence amounts. |
+| U386 | Medium | fixed | Full photo descriptions | Channel captions truncate after twelve lines, but tapping a photo opens a preview with no read-only description, despite promising complete content. | Photo preview provides a readable, scrollable full description without entering an edit form. |
+| D114 | Medium | fixed | Photo remark editor lifecycle | The existing editor allows overlapping saves, and a late successful save pops the root navigator even after its sheet has been dismissed, potentially closing the preview. | Save commands are single flight; late completion never closes another route; failures retain the draft and successful edits update the read-only caption. |
+| U387 | Low | fixed | Large-text composer density | The long channel entry hint wraps to two lines at 320dp/2x, consuming unnecessary reading space and implying records must concern field work. | Concise general-purpose wording fits on one line while retaining system text scaling and the 48dp edit/add actions. |
+| D115 | Medium | fixed | Preview after photo remark rename | Saving a description may rename the local photo file, while the command returns only the old cache path and the preview retains an immutable old PhotoEntry/path. | Refresh the matching photo through the existing owner-scoped load use case after a reported rename; show the new original file without losing the committed description or closing another route. |
+| U388 | Low | fixed | Stage selection large-text reading | Actual 320dp/2x stage-sheet screenshots clip the long title inside the shared 48dp header and split category counts mid-label. | Use a concise project-stage sheet title and independently wrapping count labels; retain original-currency totals, stage order and full system text scaling. |
+| U389 | Low | deferred | Shared sheet header height | AppSheetScaffold's centred title stack has a fixed 48dp height and 56dp side reservations; longer titles elsewhere may clip when wrapping at 2x text. | Follow-up should measure/reflow the shared title with focused coverage for its other consumers. This revision uses concise project-stage wording and does not claim the shared header has been redesigned. |
+| U390 | Medium | fixed | Photo remark save feedback | The remark sheet sends failed-save feedback to the parent Scaffold snackbar beneath the modal sheet. | Show the failure inline in the open sheet, preserve its editable draft and support retry after the single-flight guard resets. |
+| U391 | Low | deferred | Preview capture batch isolation | Running the entire photo-preview widget suite with screenshot capture enabled can hit a cross-fake-async pending image decode timeout; the ordinary suite and isolated capture pass. | Generate preview evidence with an isolated screenshot case for now; future capture helper work should isolate pending image cache streams between every rendered case. Do not claim the combined capture batch passed. |
+
+## Project channels and stage workflow (2026-10-11)
+
+User expects a project to hold ordered stages/nodes and a readable stream of photos with descriptions, business trips and standalone text records. This iteration uses focused project and directly affected feature/storage tests; no repeated whole-suite run.
+
+Previous local workflow verification: 266 focused tests passed, strict whole-project analysis had no issues, 506 Dart files formatted unchanged, and diff checks passed. Native Isar verified old v1.4.39 schema upgrade, text backup/restore and archive/account boundaries. The four first-revision Flutter renders are superseded by the single-channel redesign above; data-layer evidence remains applicable. Review and remaining limitations: `docs/reviews/2026-10-11-project-channel-workflow.md`.
+
+| ID | Severity | Status | Area | Finding | Acceptance |
+| --- | --- | --- | --- | --- | --- |
+| D97 | Medium | fixed | Project trip creation | Project activity can show linked business trips but the add menu cannot create a trip in the selected project/stage. The work-log launcher cannot prefill that relationship for a new trip. | Add an explicit trip action and prefill identity/stage only for new business trips; preserve existing records and clear stages on project changes. |
+| D98 | Medium | fixed | Camera evidence stage | Camera evidence creation omits the selected stage argument while gallery/file/manual paths carry it. | Camera, gallery, file and manual entry preserve the same project/stage context. |
+| D99 | Medium | fixed | Stage currency totals | Stage summaries add doubles directly, exposing binary tails for decimal expense totals. | Use decimal-aware money accumulation per original currency without changing stored amounts. |
+| D100 | High | fixed | Project text records | There is no standalone project text record; remarks require attaching them to a photo, trip or monetary record. | Local durable text records with project/stage identity, editable dates, owner-safe reads/writes, backup/restore and atomic project deletion. No photo cloud pipeline changes. |
+| D101 | High | fixed | Trip project replacement | Changing a trip from a synced project to a local project uses null-coalescing copy fields and can retain the old projectSyncId alongside the new local id/name. | Replace the whole project relationship explicitly; selecting a local project clears the previous sync identity and phase. |
+| D102 | Medium | deferred | Concurrent project edits | Presentation saves a full project snapshot for stage/status/cover edits, leaving a read-write window that can overwrite a simultaneous change from another source. | Future repository transaction should patch only requested fields against the latest owner-visible project. This iteration preserves the existing latest-snapshot guards; no claim of conflict-safe field merging. |
+| D103 | Medium | deferred | Trip amount input | The existing trip editor parses expense text as a double without rejecting NaN/Infinity. | Follow-up should use the shared money-input rules with historical amount preservation; project channel changes do not alter stored trip amounts. |
+| D104 | Medium | fixed | Note query ordering | Generated Isar thenByIdDesc compiles but fails at runtime with Unknown property id. | Query supported date/creation fields, use a stable id tie-break in memory, and run actual native Isar reads. |
+| D105 | High | fixed | Unowned project cleanup | Removing or implicitly claiming an unowned project with foreign-owner local notes can orphan those notes; manual cascade could also delete another owner's notes. | Preserve parents during unowned cleanup, refuse implicit claim through ordinary project save and refuse manual cascade atomically when foreign-owner notes exist. Report actual removals. Refresh note counts before confirmation and stop on read failure. |
+| D106 | High | fixed | Project account cache | Note/trip tables do not notify on an account change; a shared unowned project keeps the same scope and can retain the old account's cached records or read failure snapshot. | Independent account boundary clears note/trip snapshots immediately, invalidates pending reads and resets coalesced watchers. Hide the whole old detail while reading all new-account sources; any failure keeps the boundary until successful retry. |
+| D107 | High | fixed | Remote deletion of local notes parent | A remote project tombstone deletes its local parent, leaving local-only text records stored but inaccessible. | Preserve a local archived parent when notes exist, durably exclude it from cloud eligibility, retain tombstone identity for replay, and keep notes readable/editable without recreating the deleted cloud project. |
+| D108 | High | fixed | Editor account/restore context | A text editor opened before an account change or database restore can submit an old draft under the new owner or a reused local project id. | Capture owner/session/database context at editor opening; save/delete reject invalidated context while preserving the draft for recovery. |
+| D109 | Medium | fixed | Project deletion ACK timestamps | A deletion command returns a UTC snapshot but native Isar reads the same instant in local time; DateTime equality can reject a valid ACK/purge guard and leave an unchanged deletion pending. | Compare nullable project guard timestamps by instant without changing timestamp values; actual native Isar delete-return/ACK/purge regression. |
+| D110 | Medium | deferred | Name-based accounting project resolution | Existing expense/evidence creation and save paths resolve the parent by name and can overwrite an explicit parent relationship for duplicate names; a retained local archive may also block a name-only syncable lookup. | Follow-up should carry exact project identity through accounting editors/linkers and validate it before local or cloud writes. This iteration blocks accounting creation/editing from local archive details but does not claim duplicate-name accounting resolution is fixed. |
+| D111 | High | fixed | Photo channel parent identity | Photo creation from a project detail forwards only its name; duplicate-name projects can receive the photograph intended for the explicitly opened parent. | Carry the selected local project id through camera/gallery/save and lost-capture recovery; exact ids never fall back to a namesake and lookup failure preserves source files. Photos remain local-only. |
+| D112 | High | fixed | Recovered photo commit failure | Photo recovery falls back to a direct save after coordinator commit rejection, bypassing the owner's context guard and deleting the staged source. | Keep the recoverable draft and staged source after coordinator failure, report retryable failure and never bypass the common commit boundary. |
+| D113 | Medium | deferred | Photo save after file IO context changes | The existing photo save resolves a visible parent before asynchronous file IO, but addPhoto later stamps the current owner without validating the original parent/session/database context again. An account change during IO can still mismatch owner and parent. | Follow-up should capture immutable photo-save context and validate it before file lifecycle changes and DB commit. D111 verifies exact parent identity at lookup, not end-to-end asynchronous account isolation. |
+| U372 | Medium | fixed | Project hierarchy | Record-type tabs appear before stage scope; a plain project status and an unrelated stage button appear as one broken row. Naming alternates between nodes and stages. | Project status, stage scope and record-type navigation have a clear order, aligned theme-based controls and consistent stage terminology in both themes and large text. |
+| U373 | Medium | fixed | Project list context | Project cards omit actual status/stage count and say waiting for materials even when expenses/evidence exist without photos. | Show real project metadata only for defined projects, truthful record/last-photo copy and accessible light/dark layouts. |
+| U374 | Medium | fixed | Project record reading | Mixed activity does not present text descriptions and trip remarks as project context, and creation does not explain selected stage scope. | Channel-like chronological reading for text/photos/trips with readable remarks and explicit selected scope on creation; historical unassigned stages remain reachable. |
+| U375 | Medium | fixed | Evidence action ink surface | Evidence add actions paint an opaque sheet container between ListTile and Material, hiding ink and triggering current Flutter assertions during a real camera action. | Transparent Material inside the decorated sheet restores row ink; camera interaction and context propagation verified. |
+| U376 | Low | fixed | Note date picker | A raw date picker bypasses the app's Chinese date/theme contract. | Use the shared LifeLog date picker; test real date selection and date retention. |
+| U377 | Medium | fixed | Expanded project add sheet | Adding text/trip actions makes the fixed-height action list overflow at 320dp with 2x text. | Bound and scroll the action sheet; all actions stay reachable without clipping in both themes and large text. |
+
 ## Stable SDK release compatibility (2026-10-11)
 
 User authorised v1.4.39+45 and a GitHub push after removing the exact Flutter version requirement. Release preparation must validate the current stable SDK as well as the earlier local implementation results.

@@ -162,6 +162,7 @@ final class ProjectCubit extends Cubit<ProjectState> {
         syncId: current.syncId,
         name: current.name,
         status: current.status,
+        isLocalArchive: current.isLocalArchive,
         stageNames: _normalizeStageNames([
           if (!completeOrder) ...current.stageNames,
           ...proposed,
@@ -187,6 +188,7 @@ final class ProjectCubit extends Cubit<ProjectState> {
         syncId: entry.syncId,
         name: entry.name,
         status: status,
+        isLocalArchive: entry.isLocalArchive,
         stageNames: entry.stageNames,
         localCoverPath: entry.localCoverPath,
         coverImagePath: entry.coverImagePath,

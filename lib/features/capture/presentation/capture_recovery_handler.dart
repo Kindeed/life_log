@@ -13,7 +13,6 @@ import 'package:life_log/features/evidence/data/legacy_evidence_repository_adapt
 import 'package:life_log/features/evidence/domain/repositories/evidence_repository_port.dart';
 import 'package:life_log/features/evidence/presentation/evidence_editor_launcher.dart';
 import 'package:life_log/features/photo/presentation/capture_dialog.dart';
-import 'package:life_log/features/photo/presentation/photo_add_action_launcher.dart';
 
 /// 统一恢复因系统杀死遗失的媒体采集数据并协调界面路由。
 ///
@@ -131,11 +130,14 @@ Future<void> _handleRecoveredPhotoDraft(
   String? initialProject =
       (draft.draftValues['projectName'] as String?)?.trim() ??
       (draft.draftValues['project'] as String?)?.trim();
-  if (initialProject == null && draft.projectLocalId != null) {
+  final initialProjectId = draft.draftValues.containsKey('projectId')
+      ? draft.draftValues['projectId'] as int?
+      : draft.projectLocalId;
+  if (initialProject == null && initialProjectId != null) {
     if (serviceLocator.isRegistered<DbService>()) {
       try {
         final project = await serviceLocator<DbService>().getProject(
-          draft.projectLocalId!,
+          initialProjectId,
         );
         initialProject = project?.name;
       } catch (_) {}
@@ -143,14 +145,18 @@ Future<void> _handleRecoveredPhotoDraft(
   }
 
   if (!context.mounted) return;
-  final messenger = ScaffoldMessenger.maybeOf(context);
   showCaptureDialog(
     context,
     initialProject: initialProject,
-    onConfirm: (projectName, description) async {
+    initialProjectId: initialProjectId,
+    initialProjectStageName: draft.draftValues['projectStageName'] as String?,
+    onConfirm: (_, _) {},
+    onConfirmWithProject: (projectName, description, stage, projectId) async {
       try {
         await coordinator.updateDraftValues(draft.taskId, owner, {
           'projectName': projectName,
+          'projectId': projectId,
+          'projectStageName': stage,
           'description': description,
           'capturedAt': DateTime.now().toIso8601String(),
           'capturedAtSource': 'cameraRecovered',
@@ -159,17 +165,8 @@ Future<void> _handleRecoveredPhotoDraft(
         _showSnack(navigatorKey, '照片已保存至: $projectName');
       } catch (error, stackTrace) {
         _logError('提交恢复照片失败', error, stackTrace);
-        try {
-          await savePhotoFromCapturePath(
-            messenger: messenger,
-            tempPath: stagedPath,
-            projectName: projectName,
-            description: description,
-            capturedAt: DateTime.now(),
-            capturedAtSource: 'cameraRecovered',
-            onSaved: null,
-          );
-        } catch (_) {}
+        // The coordinator retains the draft and staged source for retry. A
+        // direct save would bypass its owner boundary and source lifecycle.
         _showSnack(navigatorKey, '保存恢复照片失败: $error');
       }
     },

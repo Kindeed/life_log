@@ -2,6 +2,7 @@ import 'package:equatable/equatable.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:life_log/common/utils/date_utils.dart';
 import 'package:life_log/core/errors/app_failure.dart';
+import 'package:life_log/features/project/domain/entities/project_entry.dart';
 import 'package:life_log/features/work_log/application/delete_work_log_entry.dart';
 import 'package:life_log/features/work_log/application/save_work_log_entry.dart';
 import 'package:life_log/features/work_log/domain/entities/work_log_entry.dart';
@@ -60,10 +61,15 @@ final class WorkLogEditorState extends Equatable {
     required DateTime selectedDate,
     WorkLogEntry? existingEntry,
     WorkLogEntryType? initialType,
+    ProjectEntry? initialProject,
+    String? initialProjectStageName,
     bool existingAlreadyDirty = false,
   }) {
     final entry = existingEntry;
     final type = entry?.type ?? initialType ?? WorkLogEntryType.work;
+    final project = entry == null && type == WorkLogEntryType.businessTrip
+        ? initialProject
+        : null;
     var leaveType = '年假';
     var customLeave = '';
 
@@ -104,15 +110,17 @@ final class WorkLogEditorState extends Equatable {
           : false,
       projectId: entry?.type == WorkLogEntryType.businessTrip
           ? entry?.projectId
-          : null,
+          : project?.id,
       projectSyncId: entry?.type == WorkLogEntryType.businessTrip
           ? entry?.projectSyncId
-          : null,
+          : project?.syncId,
       projectName: entry?.type == WorkLogEntryType.businessTrip
           ? entry?.projectName ?? ''
-          : '',
+          : project?.name.trim() ?? '',
       projectStageName: entry?.type == WorkLogEntryType.businessTrip
           ? entry?.projectStageName ?? ''
+          : project != null
+          ? initialProjectStageName?.trim() ?? ''
           : '',
       leaveType: leaveType,
       customLeave: customLeave,
@@ -202,6 +210,8 @@ final class WorkLogEditorCubit extends Cubit<WorkLogEditorState> {
     required DateTime selectedDate,
     WorkLogEntry? existingEntry,
     WorkLogEntryType? initialType,
+    ProjectEntry? initialProject,
+    String? initialProjectStageName,
     bool existingAlreadyDirty = false,
   }) : _saveEntry = saveEntry,
        _deleteEntry = deleteEntry,
@@ -210,6 +220,8 @@ final class WorkLogEditorCubit extends Cubit<WorkLogEditorState> {
            selectedDate: selectedDate,
            existingEntry: existingEntry,
            initialType: initialType,
+           initialProject: initialProject,
+           initialProjectStageName: initialProjectStageName,
            existingAlreadyDirty: existingAlreadyDirty,
          ),
        );
@@ -248,15 +260,18 @@ final class WorkLogEditorCubit extends Cubit<WorkLogEditorState> {
   }
 
   void changeProject({int? id, String? syncId, String? name}) {
+    if (_locked) return;
     final trimmedName = name?.trim() ?? '';
     emit(
-      _editingState(
-        projectId: id,
-        projectSyncId: syncId,
-        projectName: trimmedName,
-        projectStageName: '',
-        clearProject: id == null && syncId == null && trimmedName.isEmpty,
-      ),
+      state
+          .copyWith(clearProject: true)
+          .copyWith(
+            status: WorkLogEditorStatus.editing,
+            projectId: id,
+            projectSyncId: syncId,
+            projectName: trimmedName,
+            clearFailure: true,
+          ),
     );
   }
 

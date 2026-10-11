@@ -152,6 +152,39 @@ void main() {
     });
 
     test(
+      'existing ids choose a namesake by identity and never by list order',
+      () async {
+        final archive = _project(id: 8, name: 'Same name')
+          ..isLocalArchive = true;
+        final active = _project(id: 9, name: 'Same name');
+        final local = _ProjectLocalDataSourceFake(projects: [archive, active]);
+        final repository = ProjectRepository(localDataSource: local);
+        expect(await repository.findProject(9, 'Same name'), same(active));
+        expect(await repository.findProject(8, 'Same name'), same(archive));
+        expect(await repository.findProject(100, 'Same name'), isNull);
+      },
+    );
+
+    test(
+      'local retained archive saves never schedule a project upload',
+      () async {
+        final archive = _project(id: 8, name: 'Local retained')
+          ..isLocalArchive = true
+          ..syncId = 'deleted-cloud-id'
+          ..remoteId = 800;
+        final local = _ProjectLocalDataSourceFake();
+        final sync = _ProjectSyncGatewayFake(isAvailable: true);
+        final repository = ProjectRepository(
+          localDataSource: local,
+          syncGateway: sync,
+        );
+        await repository.saveProject(archive);
+        expect(local.addedProjects.single, same(archive));
+        expect(sync.syncRequests, isEmpty);
+      },
+    );
+
+    test(
       'skips clean remote project push and completes local-only cascade',
       () async {
         final cleanRemote = _project(id: 7, name: 'Remote')

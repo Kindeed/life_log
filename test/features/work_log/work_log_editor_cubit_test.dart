@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:life_log/core/di/service_locator.dart';
+import 'package:life_log/features/project/domain/entities/project_entry.dart';
 import 'package:life_log/features/work_log/application/delete_work_log_entry.dart';
 import 'package:life_log/features/work_log/application/save_work_log_entry.dart';
 import 'package:life_log/features/work_log/domain/entities/work_log_edit_draft.dart';
@@ -11,6 +12,7 @@ import 'package:life_log/features/work_log/domain/entities/work_log_entry.dart';
 import 'package:life_log/features/work_log/domain/repositories/work_log_repository_port.dart';
 import 'package:life_log/features/work_log/presentation/log_edit_view.dart';
 import 'package:life_log/features/work_log/presentation/work_log_editor_cubit.dart';
+import 'package:life_log/features/work_log/presentation/work_log_editor_launcher.dart';
 import 'package:life_log/features/work_log/work_log_feature_di.dart';
 
 void main() {
@@ -19,6 +21,209 @@ void main() {
   });
 
   group('WorkLogEditorCubit', () {
+    test(
+      'prefills and saves a new business trip in its project stage',
+      () async {
+        final repository = _EditorRepository();
+        final cubit = _editor(
+          repository: repository,
+          initialType: WorkLogEntryType.businessTrip,
+          initialProject: _project,
+          initialProjectStageName: ' 施工 ',
+        );
+        addTearDown(cubit.close);
+
+        expect(cubit.state.projectId, 7);
+        expect(cubit.state.projectSyncId, 'project-sync-7');
+        expect(cubit.state.projectName, '项目七');
+        expect(cubit.state.projectStageName, '施工');
+
+        await cubit.submit();
+
+        final saved = repository.savedEntries.single.entry;
+        expect(saved.type, WorkLogEntryType.businessTrip);
+        expect(saved.id, 0);
+        expect(saved.projectId, 7);
+        expect(saved.projectSyncId, 'project-sync-7');
+        expect(saved.projectName, '项目七');
+        expect(saved.projectStageName, '施工');
+      },
+    );
+
+    for (final type in [
+      WorkLogEntryType.work,
+      WorkLogEntryType.rest,
+      WorkLogEntryType.leave,
+    ]) {
+      test('does not inject project context into a new ${type.name}', () async {
+        final repository = _EditorRepository();
+        final cubit = _editor(
+          repository: repository,
+          initialType: type,
+          initialProject: _project,
+          initialProjectStageName: '施工',
+        );
+        addTearDown(cubit.close);
+
+        expect(cubit.state.projectId, isNull);
+        expect(cubit.state.projectSyncId, isNull);
+        expect(cubit.state.projectName, isEmpty);
+        expect(cubit.state.projectStageName, isEmpty);
+        await cubit.submit();
+        final saved = repository.savedEntries.single.entry;
+        expect(saved.type, type);
+        expect(saved.projectId, isNull);
+        expect(saved.projectSyncId, isNull);
+        expect(saved.projectName, isNull);
+        expect(saved.projectStageName, isNull);
+      });
+    }
+
+    test('does not inject a stage without an initial project', () {
+      final cubit = _editor(
+        initialType: WorkLogEntryType.businessTrip,
+        initialProjectStageName: '施工',
+      );
+      addTearDown(cubit.close);
+      expect(cubit.state.projectStageName, isEmpty);
+    });
+
+    for (final hasRelationship in [true, false]) {
+      test(
+        'existing trip keeps its ${hasRelationship ? 'own' : 'unassigned'} relationship',
+        () async {
+          final repository = _EditorRepository();
+          final cubit = _editor(
+            repository: repository,
+            existingEntry: _entry(
+              id: 45,
+              syncId: 'trip-sync-45',
+              type: WorkLogEntryType.businessTrip,
+              location: '',
+              transport: '高铁',
+              note: '',
+              projectId: hasRelationship ? 4 : null,
+              projectSyncId: hasRelationship ? 'project-sync-4' : null,
+              projectName: hasRelationship ? '旧项目' : null,
+              projectStageName: hasRelationship ? '旧阶段' : null,
+            ),
+            initialType: WorkLogEntryType.work,
+            initialProject: _project,
+            initialProjectStageName: '施工',
+          );
+          addTearDown(cubit.close);
+
+          await cubit.submit();
+
+          final call = repository.savedEntries.single;
+          expect(call.entry.id, 45);
+          expect(call.entry.syncId, 'trip-sync-45');
+          expect(call.entry.type, WorkLogEntryType.businessTrip);
+          expect(call.entry.projectId, hasRelationship ? 4 : null);
+          expect(
+            call.entry.projectSyncId,
+            hasRelationship ? 'project-sync-4' : null,
+          );
+          expect(call.entry.projectName, hasRelationship ? '旧项目' : null);
+          expect(call.entry.projectStageName, hasRelationship ? '旧阶段' : null);
+          expect(call.markDirty, isFalse);
+        },
+      );
+    }
+
+    test('existing ordinary work ignores initial trip context', () async {
+      final repository = _EditorRepository();
+      final cubit = _editor(
+        repository: repository,
+        existingEntry: _entry(id: 45),
+        initialType: WorkLogEntryType.businessTrip,
+        initialProject: _project,
+        initialProjectStageName: '施工',
+      );
+      addTearDown(cubit.close);
+      expect(cubit.state.type, WorkLogEntryType.work);
+      expect(cubit.state.projectName, isEmpty);
+      expect(cubit.state.projectStageName, isEmpty);
+      await cubit.submit();
+      expect(repository.savedEntries.single.entry.projectId, isNull);
+    });
+
+    test('changing the prefilled project clears its stage', () async {
+      final repository = _EditorRepository();
+      final cubit = _editor(
+        repository: repository,
+        initialType: WorkLogEntryType.businessTrip,
+        initialProject: _project,
+        initialProjectStageName: '施工',
+      );
+      addTearDown(cubit.close);
+      cubit.changeProject(id: 8, syncId: 'project-sync-8', name: '项目八');
+      expect(cubit.state.projectStageName, isEmpty);
+      await cubit.submit();
+      final saved = repository.savedEntries.single.entry;
+      expect(saved.projectId, 8);
+      expect(saved.projectSyncId, 'project-sync-8');
+      expect(saved.projectName, '项目八');
+      expect(saved.projectStageName, isNull);
+    });
+
+    test('switching away from trip context does not restore it later', () {
+      final cubit = _editor(
+        initialType: WorkLogEntryType.businessTrip,
+        initialProject: _project,
+        initialProjectStageName: '施工',
+      );
+      addTearDown(cubit.close);
+      cubit.changeType(WorkLogEntryType.work);
+      cubit.changeType(WorkLogEntryType.businessTrip);
+      expect(cubit.state.projectId, isNull);
+      expect(cubit.state.projectSyncId, isNull);
+      expect(cubit.state.projectName, isEmpty);
+      expect(cubit.state.projectStageName, isEmpty);
+    });
+
+    test(
+      'switching to a local project removes the previous cloud identity',
+      () async {
+        final repository = _EditorRepository();
+        final cubit = _editor(
+          repository: repository,
+          initialType: WorkLogEntryType.businessTrip,
+          initialProject: _project,
+          initialProjectStageName: '施工',
+        );
+        addTearDown(cubit.close);
+        cubit.changeProject(id: 8, name: '本地项目');
+        await cubit.submit();
+        final saved = repository.savedEntries.single.entry;
+        expect(saved.projectId, 8);
+        expect(saved.projectSyncId, isNull);
+        expect(saved.projectName, '本地项目');
+        expect(saved.projectStageName, isNull);
+      },
+    );
+
+    test(
+      'removing the selected project clears all relationship fields',
+      () async {
+        final repository = _EditorRepository();
+        final cubit = _editor(
+          repository: repository,
+          initialType: WorkLogEntryType.businessTrip,
+          initialProject: _project,
+          initialProjectStageName: '施工',
+        );
+        addTearDown(cubit.close);
+        cubit.changeProject();
+        await cubit.submit();
+        final saved = repository.savedEntries.single.entry;
+        expect(saved.projectId, isNull);
+        expect(saved.projectSyncId, isNull);
+        expect(saved.projectName, isNull);
+        expect(saved.projectStageName, isNull);
+      },
+    );
+
     test('initializes a business-trip draft from an existing entry', () {
       final cubit = _editor(
         existingEntry: _entry(
@@ -180,6 +385,63 @@ void main() {
   });
 
   group('AddLogSheet architecture guard', () {
+    for (final asSheet in [false, true]) {
+      testWidgets(
+        'launcher prefills and saves a trip ${asSheet ? 'sheet' : 'page'}',
+        (tester) async {
+          tester.view.devicePixelRatio = 1;
+          tester.view.physicalSize = const Size(375, 812);
+          addTearDown(tester.view.resetPhysicalSize);
+          addTearDown(tester.view.resetDevicePixelRatio);
+          final repository = _EditorRepository();
+          configureWorkLogFeatureDependencies(repository: repository);
+
+          await tester.pumpWidget(
+            ScreenUtilInit(
+              designSize: const Size(375, 812),
+              builder: (context, _) => MaterialApp(
+                home: Builder(
+                  builder: (context) => Scaffold(
+                    body: Center(
+                      child: ElevatedButton(
+                        onPressed: () {
+                          final launcher = asSheet
+                              ? openWorkLogEditorSheet
+                              : openWorkLogEditorPage;
+                          launcher(
+                            context,
+                            selectedDate: DateTime(2026, 5, 9),
+                            initialType: WorkLogEntryType.businessTrip,
+                            initialProject: _project,
+                            initialProjectStageName: '施工',
+                          );
+                        },
+                        child: const Text('new trip'),
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+            ),
+          );
+
+          await tester.tap(find.text('new trip'));
+          await tester.pumpAndSettle();
+          expect(find.text('城市/地点'), findsOneWidget);
+          expect(find.text('项目七'), findsOneWidget);
+          expect(find.text('施工'), findsOneWidget);
+          await tester.tap(find.text('保存'));
+          await tester.pumpAndSettle();
+          final saved = repository.savedEntries.single.entry;
+          expect(saved.type, WorkLogEntryType.businessTrip);
+          expect(saved.projectId, 7);
+          expect(saved.projectSyncId, 'project-sync-7');
+          expect(saved.projectName, '项目七');
+          expect(saved.projectStageName, '施工');
+        },
+      );
+    }
+
     testWidgets('page presentation exposes a visible back action', (
       tester,
     ) async {
@@ -340,6 +602,9 @@ WorkLogEditorCubit _editor({
   _EditorRepository? repository,
   WorkLogEntry? existingEntry,
   bool existingAlreadyDirty = false,
+  WorkLogEntryType? initialType,
+  ProjectEntry? initialProject,
+  String? initialProjectStageName,
 }) {
   final activeRepository = repository ?? _EditorRepository();
   return WorkLogEditorCubit(
@@ -348,11 +613,15 @@ WorkLogEditorCubit _editor({
     selectedDate: DateTime(2026, 5, 9, 18),
     existingEntry: existingEntry,
     existingAlreadyDirty: existingAlreadyDirty,
+    initialType: initialType,
+    initialProject: initialProject,
+    initialProjectStageName: initialProjectStageName,
   );
 }
 
 WorkLogEntry _entry({
   required int id,
+  String? syncId,
   WorkLogEntryType type = WorkLogEntryType.work,
   String? location,
   String? transport,
@@ -360,11 +629,13 @@ WorkLogEntry _entry({
   int? projectId,
   String? projectSyncId,
   String? projectName,
+  String? projectStageName,
   bool isReimbursed = false,
   String? note,
 }) {
   return WorkLogEntry(
     id: id,
+    syncId: syncId,
     date: DateTime(2026, 5, 9),
     type: type,
     overtimeHours: type == WorkLogEntryType.work ? 1 : null,
@@ -374,10 +645,19 @@ WorkLogEntry _entry({
     projectId: projectId,
     projectSyncId: projectSyncId,
     projectName: projectName,
+    projectStageName: projectStageName,
     isReimbursed: isReimbursed,
     note: note,
   );
 }
+
+const _project = ProjectEntry(
+  id: 7,
+  syncId: 'project-sync-7',
+  name: '项目七',
+  status: ProjectEntryStatus.active,
+  stageNames: ['施工', '验收'],
+);
 
 final class _SavedEditorEntry {
   final WorkLogEntry entry;

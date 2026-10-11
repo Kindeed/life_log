@@ -21,7 +21,15 @@ import 'package:life_log/features/photo/presentation/project_picker.dart';
 void showCaptureDialog(
   BuildContext context, {
   String? initialProject,
+  int? initialProjectId,
   String? initialProjectStageName,
+  FutureOr<void> Function(
+    String projectName,
+    String description,
+    String? stage,
+    int? projectId,
+  )?
+  onConfirmWithProject,
   FutureOr<void> Function(
     String projectName,
     String description,
@@ -37,7 +45,9 @@ void showCaptureDialog(
     backgroundColor: Colors.transparent,
     builder: (_) => _CaptureDialogSheet(
       initialProject: initialProject ?? '',
+      initialProjectId: initialProjectId,
       initialProjectStageName: initialProjectStageName,
+      onConfirmWithProject: onConfirmWithProject,
       onConfirmWithStage: onConfirmWithStage,
       onConfirm: onConfirm,
     ),
@@ -46,14 +56,19 @@ void showCaptureDialog(
 
 class _CaptureDialogSheet extends StatefulWidget {
   final String initialProject;
+  final int? initialProjectId;
   final String? initialProjectStageName;
+  final FutureOr<void> Function(String, String, String?, int?)?
+  onConfirmWithProject;
   final FutureOr<void> Function(String, String, String?)? onConfirmWithStage;
   final FutureOr<void> Function(String projectName, String description)
   onConfirm;
 
   const _CaptureDialogSheet({
     required this.initialProject,
+    this.initialProjectId,
     this.initialProjectStageName,
+    this.onConfirmWithProject,
     this.onConfirmWithStage,
     required this.onConfirm,
   });
@@ -68,6 +83,7 @@ class _CaptureDialogSheetState extends State<_CaptureDialogSheet> {
   late final PhotoCubit photoCubit;
   late Future<List<ProjectEntry>> _projects;
   late String _stage;
+  int? _projectId;
   String _lastProject = '';
 
   @override
@@ -77,6 +93,7 @@ class _CaptureDialogSheetState extends State<_CaptureDialogSheet> {
     _descCtrl = TextEditingController();
     photoCubit = serviceLocator<PhotoCubit>()..start();
     _stage = widget.initialProjectStageName ?? '';
+    _projectId = widget.initialProjectId;
     _lastProject = _projectCtrl.text.trim();
     _projects = serviceLocator.isRegistered<LoadProjectEntries>()
         ? serviceLocator<LoadProjectEntries>()().then(
@@ -89,6 +106,7 @@ class _CaptureDialogSheetState extends State<_CaptureDialogSheet> {
       if (name == _lastProject) return;
       setState(() {
         _lastProject = name;
+        _projectId = null;
         _stage = '';
       });
     });
@@ -168,9 +186,11 @@ class _CaptureDialogSheetState extends State<_CaptureDialogSheet> {
                 ),
               ),
               SizedBox(height: 16.h),
-              if (widget.onConfirmWithStage != null) ...[
+              if (widget.onConfirmWithProject != null ||
+                  widget.onConfirmWithStage != null) ...[
                 ProjectStageField(
                   projectName: _projectCtrl.text,
+                  projectId: _projectId,
                   selected: _stage,
                   projects: _projects,
                   onChanged: (value) => setState(() => _stage = value),
@@ -199,7 +219,14 @@ class _CaptureDialogSheetState extends State<_CaptureDialogSheet> {
                   navigator.pop();
                   unawaited(
                     Future<void>.sync(
-                      () => widget.onConfirmWithStage != null
+                      () => widget.onConfirmWithProject != null
+                          ? widget.onConfirmWithProject!(
+                              projectName,
+                              _descCtrl.text.trim(),
+                              _stage.isEmpty ? null : _stage,
+                              _projectId,
+                            )
+                          : widget.onConfirmWithStage != null
                           ? widget.onConfirmWithStage!(
                               projectName,
                               _descCtrl.text.trim(),

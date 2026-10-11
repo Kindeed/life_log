@@ -26,6 +26,7 @@ import 'package:life_log/features/expense/domain/entities/expense_record_entry_s
 import 'package:life_log/features/expense/presentation/expense_record_cubit.dart';
 import 'package:life_log/features/project/domain/entities/project_entry.dart';
 import 'package:life_log/features/project/presentation/project_cubit.dart';
+import 'package:life_log/features/project/presentation/project_status_badge.dart';
 import 'package:life_log/features/photo/presentation/photo_cubit.dart';
 import 'package:life_log/features/photo/presentation/create_project_sheet.dart';
 import 'package:life_log/features/project/presentation/project_detail_view.dart';
@@ -87,6 +88,10 @@ class _PhotoViewState extends State<PhotoView> {
               child: BlocBuilder<ProjectCubit, ProjectState>(
                 bloc: projectCubit,
                 builder: (context, projectState) {
+                  final projectsByName = <String, ProjectEntry>{};
+                  for (final project in projectState.entries) {
+                    projectsByName.putIfAbsent(project.name, () => project);
+                  }
                   return BlocBuilder<PhotoCubit, PhotoState>(
                     bloc: photoCubit,
                     builder: (context, photoState) {
@@ -210,23 +215,34 @@ class _PhotoViewState extends State<PhotoView> {
                                               SizedBox(height: 12.h),
                                           itemBuilder: (context, index) {
                                             final project = projects[index];
+                                            final projectEvidence =
+                                                evidenceState.entriesForProject(
+                                                  project.name,
+                                                );
+                                            final projectExpenses =
+                                                expenseRecords
+                                                    .where(
+                                                      (record) =>
+                                                          record.projectName ==
+                                                          project.name,
+                                                    )
+                                                    .toList();
                                             return ConstrainedPage(
                                               child: _ProjectCard(
+                                                key: ValueKey(
+                                                  'project-card-${project.name}',
+                                                ),
                                                 summary: project,
-                                                evidenceItems: evidenceState
-                                                    .entriesForProject(
-                                                      project.name,
-                                                    ),
-                                                pendingAmounts: evidenceState
-                                                    .entriesForProject(
-                                                      project.name,
-                                                    )
+                                                project:
+                                                    projectsByName[project
+                                                        .name],
+                                                evidenceItems: projectEvidence,
+                                                expenseCount:
+                                                    projectExpenses.length,
+                                                pendingAmounts: projectEvidence
                                                     .pendingAmountsByCurrency,
-                                                expenseTotals:
-                                                    _expenseTotalForProject(
-                                                      expenseRecords,
-                                                      project.name,
-                                                    ),
+                                                expenseTotals: projectExpenses
+                                                    .totalAmountsByCurrency,
                                                 isDark: isDark,
                                                 semantic: semantic,
                                                 textSecondary: textSecondary,
@@ -271,15 +287,6 @@ class _PhotoViewState extends State<PhotoView> {
     projectCubit.loadEntries();
     evidenceCubit.loadEntries();
     expenseCubit.loadEntries();
-  }
-
-  Map<String, double> _expenseTotalForProject(
-    List<ExpenseRecordEntry> records,
-    String project,
-  ) {
-    return records
-        .where((record) => record.projectName == project)
-        .totalAmountsByCurrency;
   }
 
   void _openCreateProjectSheet() {
@@ -505,7 +512,9 @@ class _ProjectOverview extends StatelessWidget {
 
 class _ProjectCard extends StatelessWidget {
   final PhotoProjectSummary summary;
+  final ProjectEntry? project;
   final List<EvidenceEntry> evidenceItems;
+  final int expenseCount;
   final Map<String, double> pendingAmounts;
   final Map<String, double> expenseTotals;
   final bool isDark;
@@ -514,8 +523,11 @@ class _ProjectCard extends StatelessWidget {
   final VoidCallback onTap;
 
   const _ProjectCard({
+    super.key,
     required this.summary,
+    required this.project,
     required this.evidenceItems,
+    required this.expenseCount,
     required this.pendingAmounts,
     required this.expenseTotals,
     required this.isDark,
@@ -526,6 +538,12 @@ class _ProjectCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final stageCount = project?.stageNames
+        .map((name) => name.trim())
+        .where((name) => name.isNotEmpty)
+        .toSet()
+        .length;
     return AppCard(
       onTap: onTap,
       padding: EdgeInsets.all(10.w),
@@ -542,10 +560,11 @@ class _ProjectCard extends StatelessWidget {
                     Expanded(
                       child: Text(
                         summary.name,
-                        maxLines: 1,
+                        maxLines: 2,
                         overflow: TextOverflow.ellipsis,
-                        style: Theme.of(context).textTheme.titleMedium
-                            ?.copyWith(fontWeight: FontWeight.w700),
+                        style: theme.textTheme.titleMedium?.copyWith(
+                          fontWeight: FontWeight.w700,
+                        ),
                       ),
                     ),
                     Icon(
@@ -555,14 +574,37 @@ class _ProjectCard extends StatelessWidget {
                     ),
                   ],
                 ),
+                if (project != null) ...[
+                  SizedBox(height: 6.h),
+                  Wrap(
+                    spacing: 8,
+                    runSpacing: 6,
+                    crossAxisAlignment: WrapCrossAlignment.center,
+                    children: [
+                      ProjectStatusBadge(status: project!.status),
+                      Text(
+                        stageCount == 0 ? '阶段未设置' : '已设 $stageCount 个阶段',
+                        style: theme.textTheme.bodySmall?.copyWith(
+                          color: textSecondary,
+                        ),
+                      ),
+                    ],
+                  ),
+                ],
                 SizedBox(height: 6.h),
                 Text(
                   summary.latestPhoto == null
-                      ? "等待添加资料"
-                      : "最近 ${_formatDate(summary.latestPhoto!.createdAt)}",
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  style: TextStyle(color: textSecondary, fontSize: 12.sp),
+                      ? [
+                          if (evidenceItems.isNotEmpty)
+                            '${evidenceItems.length} 份凭证',
+                          if (expenseCount > 0) '$expenseCount 笔支出',
+                          if (evidenceItems.isEmpty && expenseCount == 0)
+                            '尚未添加照片或账目',
+                        ].join(' · ')
+                      : '最近照片 ${_formatDate(summary.latestPhoto!.createdAt)}',
+                  style: theme.textTheme.bodySmall?.copyWith(
+                    color: textSecondary,
+                  ),
                 ),
                 SizedBox(height: 12.h),
                 Wrap(

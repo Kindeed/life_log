@@ -33,52 +33,57 @@ const ProjectSchema = CollectionSchema(
       type: IsarType.dateTime,
     ),
     r'isDirty': PropertySchema(id: 3, name: r'isDirty', type: IsarType.bool),
-    r'localCoverPath': PropertySchema(
+    r'isLocalArchive': PropertySchema(
       id: 4,
+      name: r'isLocalArchive',
+      type: IsarType.bool,
+    ),
+    r'localCoverPath': PropertySchema(
+      id: 5,
       name: r'localCoverPath',
       type: IsarType.string,
     ),
-    r'name': PropertySchema(id: 5, name: r'name', type: IsarType.string),
+    r'name': PropertySchema(id: 6, name: r'name', type: IsarType.string),
     r'ownerUserId': PropertySchema(
-      id: 6,
+      id: 7,
       name: r'ownerUserId',
       type: IsarType.string,
     ),
     r'pendingDelete': PropertySchema(
-      id: 7,
+      id: 8,
       name: r'pendingDelete',
       type: IsarType.bool,
     ),
-    r'remoteId': PropertySchema(id: 8, name: r'remoteId', type: IsarType.long),
+    r'remoteId': PropertySchema(id: 9, name: r'remoteId', type: IsarType.long),
     r'remoteUpdatedAt': PropertySchema(
-      id: 9,
+      id: 10,
       name: r'remoteUpdatedAt',
       type: IsarType.dateTime,
     ),
     r'remoteVersion': PropertySchema(
-      id: 10,
+      id: 11,
       name: r'remoteVersion',
       type: IsarType.long,
     ),
     r'stageNames': PropertySchema(
-      id: 11,
+      id: 12,
       name: r'stageNames',
       type: IsarType.stringList,
     ),
     r'status': PropertySchema(
-      id: 12,
+      id: 13,
       name: r'status',
       type: IsarType.byte,
       enumMap: _ProjectstatusEnumValueMap,
     ),
-    r'syncId': PropertySchema(id: 13, name: r'syncId', type: IsarType.string),
+    r'syncId': PropertySchema(id: 14, name: r'syncId', type: IsarType.string),
     r'syncedAt': PropertySchema(
-      id: 14,
+      id: 15,
       name: r'syncedAt',
       type: IsarType.dateTime,
     ),
     r'updatedAt': PropertySchema(
-      id: 15,
+      id: 16,
       name: r'updatedAt',
       type: IsarType.dateTime,
     ),
@@ -177,18 +182,19 @@ void _projectSerialize(
   writer.writeDateTime(offsets[1], object.createdAt);
   writer.writeDateTime(offsets[2], object.deletedAt);
   writer.writeBool(offsets[3], object.isDirty);
-  writer.writeString(offsets[4], object.localCoverPath);
-  writer.writeString(offsets[5], object.name);
-  writer.writeString(offsets[6], object.ownerUserId);
-  writer.writeBool(offsets[7], object.pendingDelete);
-  writer.writeLong(offsets[8], object.remoteId);
-  writer.writeDateTime(offsets[9], object.remoteUpdatedAt);
-  writer.writeLong(offsets[10], object.remoteVersion);
-  writer.writeStringList(offsets[11], object.stageNames);
-  writer.writeByte(offsets[12], object.status.index);
-  writer.writeString(offsets[13], object.syncId);
-  writer.writeDateTime(offsets[14], object.syncedAt);
-  writer.writeDateTime(offsets[15], object.updatedAt);
+  writer.writeBool(offsets[4], object.isLocalArchive);
+  writer.writeString(offsets[5], object.localCoverPath);
+  writer.writeString(offsets[6], object.name);
+  writer.writeString(offsets[7], object.ownerUserId);
+  writer.writeBool(offsets[8], object.pendingDelete);
+  writer.writeLong(offsets[9], object.remoteId);
+  writer.writeDateTime(offsets[10], object.remoteUpdatedAt);
+  writer.writeLong(offsets[11], object.remoteVersion);
+  writer.writeStringList(offsets[12], object.stageNames);
+  writer.writeByte(offsets[13], object.status.index);
+  writer.writeString(offsets[14], object.syncId);
+  writer.writeDateTime(offsets[15], object.syncedAt);
+  writer.writeDateTime(offsets[16], object.updatedAt);
 }
 
 Project _projectDeserialize(
@@ -203,20 +209,21 @@ Project _projectDeserialize(
   object.deletedAt = reader.readDateTimeOrNull(offsets[2]);
   object.id = id;
   object.isDirty = reader.readBool(offsets[3]);
-  object.localCoverPath = reader.readStringOrNull(offsets[4]);
-  object.name = reader.readString(offsets[5]);
-  object.ownerUserId = reader.readStringOrNull(offsets[6]);
-  object.pendingDelete = reader.readBool(offsets[7]);
-  object.remoteId = reader.readLongOrNull(offsets[8]);
-  object.remoteUpdatedAt = reader.readDateTimeOrNull(offsets[9]);
-  object.remoteVersion = reader.readLong(offsets[10]);
-  object.stageNames = reader.readStringList(offsets[11]) ?? [];
+  object.isLocalArchive = reader.readBool(offsets[4]);
+  object.localCoverPath = reader.readStringOrNull(offsets[5]);
+  object.name = reader.readString(offsets[6]);
+  object.ownerUserId = reader.readStringOrNull(offsets[7]);
+  object.pendingDelete = reader.readBool(offsets[8]);
+  object.remoteId = reader.readLongOrNull(offsets[9]);
+  object.remoteUpdatedAt = reader.readDateTimeOrNull(offsets[10]);
+  object.remoteVersion = reader.readLong(offsets[11]);
+  object.stageNames = reader.readStringList(offsets[12]) ?? [];
   object.status =
-      _ProjectstatusValueEnumMap[reader.readByteOrNull(offsets[12])] ??
+      _ProjectstatusValueEnumMap[reader.readByteOrNull(offsets[13])] ??
       ProjectStatus.active;
-  object.syncId = reader.readStringOrNull(offsets[13]);
-  object.syncedAt = reader.readDateTimeOrNull(offsets[14]);
-  object.updatedAt = reader.readDateTime(offsets[15]);
+  object.syncId = reader.readStringOrNull(offsets[14]);
+  object.syncedAt = reader.readDateTimeOrNull(offsets[15]);
+  object.updatedAt = reader.readDateTime(offsets[16]);
   return object;
 }
 
@@ -236,30 +243,32 @@ P _projectDeserializeProp<P>(
     case 3:
       return (reader.readBool(offset)) as P;
     case 4:
-      return (reader.readStringOrNull(offset)) as P;
-    case 5:
-      return (reader.readString(offset)) as P;
-    case 6:
-      return (reader.readStringOrNull(offset)) as P;
-    case 7:
       return (reader.readBool(offset)) as P;
+    case 5:
+      return (reader.readStringOrNull(offset)) as P;
+    case 6:
+      return (reader.readString(offset)) as P;
+    case 7:
+      return (reader.readStringOrNull(offset)) as P;
     case 8:
-      return (reader.readLongOrNull(offset)) as P;
+      return (reader.readBool(offset)) as P;
     case 9:
-      return (reader.readDateTimeOrNull(offset)) as P;
+      return (reader.readLongOrNull(offset)) as P;
     case 10:
-      return (reader.readLong(offset)) as P;
+      return (reader.readDateTimeOrNull(offset)) as P;
     case 11:
-      return (reader.readStringList(offset) ?? []) as P;
+      return (reader.readLong(offset)) as P;
     case 12:
+      return (reader.readStringList(offset) ?? []) as P;
+    case 13:
       return (_ProjectstatusValueEnumMap[reader.readByteOrNull(offset)] ??
               ProjectStatus.active)
           as P;
-    case 13:
-      return (reader.readStringOrNull(offset)) as P;
     case 14:
-      return (reader.readDateTimeOrNull(offset)) as P;
+      return (reader.readStringOrNull(offset)) as P;
     case 15:
+      return (reader.readDateTimeOrNull(offset)) as P;
+    case 16:
       return (reader.readDateTime(offset)) as P;
     default:
       throw IsarError('Unknown property with id $propertyId');
@@ -911,6 +920,16 @@ extension ProjectQueryFilter
     return QueryBuilder.apply(this, (query) {
       return query.addFilterCondition(
         FilterCondition.equalTo(property: r'isDirty', value: value),
+      );
+    });
+  }
+
+  QueryBuilder<Project, Project, QAfterFilterCondition> isLocalArchiveEqualTo(
+    bool value,
+  ) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(
+        FilterCondition.equalTo(property: r'isLocalArchive', value: value),
       );
     });
   }
@@ -2208,6 +2227,18 @@ extension ProjectQuerySortBy on QueryBuilder<Project, Project, QSortBy> {
     });
   }
 
+  QueryBuilder<Project, Project, QAfterSortBy> sortByIsLocalArchive() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'isLocalArchive', Sort.asc);
+    });
+  }
+
+  QueryBuilder<Project, Project, QAfterSortBy> sortByIsLocalArchiveDesc() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'isLocalArchive', Sort.desc);
+    });
+  }
+
   QueryBuilder<Project, Project, QAfterSortBy> sortByLocalCoverPath() {
     return QueryBuilder.apply(this, (query) {
       return query.addSortBy(r'localCoverPath', Sort.asc);
@@ -2403,6 +2434,18 @@ extension ProjectQuerySortThenBy
     });
   }
 
+  QueryBuilder<Project, Project, QAfterSortBy> thenByIsLocalArchive() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'isLocalArchive', Sort.asc);
+    });
+  }
+
+  QueryBuilder<Project, Project, QAfterSortBy> thenByIsLocalArchiveDesc() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'isLocalArchive', Sort.desc);
+    });
+  }
+
   QueryBuilder<Project, Project, QAfterSortBy> thenByLocalCoverPath() {
     return QueryBuilder.apply(this, (query) {
       return query.addSortBy(r'localCoverPath', Sort.asc);
@@ -2567,6 +2610,12 @@ extension ProjectQueryWhereDistinct
     });
   }
 
+  QueryBuilder<Project, Project, QDistinct> distinctByIsLocalArchive() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addDistinctBy(r'isLocalArchive');
+    });
+  }
+
   QueryBuilder<Project, Project, QDistinct> distinctByLocalCoverPath({
     bool caseSensitive = true,
   }) {
@@ -2680,6 +2729,12 @@ extension ProjectQueryProperty
   QueryBuilder<Project, bool, QQueryOperations> isDirtyProperty() {
     return QueryBuilder.apply(this, (query) {
       return query.addPropertyName(r'isDirty');
+    });
+  }
+
+  QueryBuilder<Project, bool, QQueryOperations> isLocalArchiveProperty() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addPropertyName(r'isLocalArchive');
     });
   }
 

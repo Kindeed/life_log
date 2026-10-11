@@ -28,6 +28,8 @@ class AddLogSheet extends StatefulWidget {
   final WorkLogEntry? existingEntry;
   final bool existingAlreadyDirty;
   final WorkLogEntryType? initialType;
+  final ProjectEntry? initialProject;
+  final String? initialProjectStageName;
   final bool asPage;
   final Future<void> Function()? onSavedOrDeleted;
 
@@ -37,6 +39,8 @@ class AddLogSheet extends StatefulWidget {
     this.existingEntry,
     this.existingAlreadyDirty = false,
     this.initialType,
+    this.initialProject,
+    this.initialProjectStageName,
     this.asPage = false,
     this.onSavedOrDeleted,
   });
@@ -72,6 +76,8 @@ class _AddLogSheetState extends State<AddLogSheet> {
       existingEntry: widget.existingEntry,
       existingAlreadyDirty: widget.existingAlreadyDirty,
       initialType: widget.initialType,
+      initialProject: widget.initialProject,
+      initialProjectStageName: widget.initialProjectStageName,
     );
     _projectEntriesFuture = _loadProjectEntries();
 
@@ -652,7 +658,7 @@ class _AddLogSheetState extends State<AddLogSheet> {
               items: values.map((value) {
                 return DropdownMenuItem<String>(
                   value: value,
-                  child: Text(value.isEmpty ? '不关联项目节点' : value),
+                  child: Text(value.isEmpty ? '不关联项目阶段' : value),
                 );
               }).toList(),
               onChanged: (value) {

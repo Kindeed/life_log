@@ -31,6 +31,7 @@ class PhotoRepository {
   Future<PhotoItem> processAndSavePhoto({
     required String tempPath,
     required String projectName,
+    int? projectId,
     String? projectStageName,
     required String description,
     required String deviceName,
@@ -40,13 +41,18 @@ class PhotoRepository {
     double? gpsLatitude,
     double? gpsLongitude,
   }) async {
+    // Resolve explicit identity before copying or removing any source file.
+    final project = await _projectResolver.ensureProject(
+      projectId == null
+          ? sanitizePathSegment(projectName, fallback: 'DefaultProject')
+          : projectName,
+      projectId: projectId,
+    );
     final appDocumentsPath = await _fileStore.appDocumentsPath();
-
     final safeProjectName = sanitizePathSegment(
-      projectName,
+      project.name,
       fallback: 'DefaultProject',
     );
-    final project = await _projectResolver.ensureProject(safeProjectName);
     final safeDeviceName = sanitizePathSegment(
       deviceName,
       fallback: 'UnknownDevice',

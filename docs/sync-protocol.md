@@ -1,15 +1,18 @@
 # LifeLog Sync Protocol
 
-Last updated: 2026-10-01
+Last updated: 2026-10-11
 
 ## Current Versions
 
-- Local schema version: `2026100101`
+- Local schema version: `2026101101`
 - Sync protocol version: `2`
 - Minimum supported app version: `1.4.19+25`
 - Minimum supported sync protocol version: `2`
 
-The local schema identifier includes the nullable owner scope on persisted sync conflicts. This additive local field does not change the remote sync protocol or minimum supported version.
+The local schema identifier includes owner-scoped project text records and the
+local archive marker on projects, as well as the nullable owner scope on
+persisted sync conflicts. These additive local fields do not change the remote
+sync protocol or minimum supported version.
 
 ## Entity Identity
 
@@ -26,6 +29,14 @@ Photos are local-only. `PhotoItem`, photo files, and photo metadata are excluded
 from Supabase pull, push, merge, attachment, and conflict pipelines.
 The nullable photo `projectStageName` is local grouping metadata only; adding it
 does not make photos or their stage assignments eligible for cloud sync.
+
+Project text records are also local-only and included in database backups.
+Their parent project identity is used to preserve local relationships; it does
+not make text records eligible for upload. A project retained after a remote
+tombstone has `isLocalArchive` set durably. It keeps its local id and tombstone
+identity for replay, but is excluded from candidate selection, sync identity
+preparation, direct pushes and late acknowledgements. Later live pulls cannot
+reactivate this archive. New cloud-eligible records must use another project.
 
 ## Cursor Policy
 

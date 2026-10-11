@@ -267,8 +267,11 @@ final class _PhotoLocalDataSourceFake implements PhotoLocalDataSource {
 
 final class _PhotoProjectResolverFake implements PhotoProjectResolver {
   @override
-  Future<PhotoLinkedProject> ensureProject(String name) async {
-    return PhotoLinkedProject(id: 1, name: name);
+  Future<PhotoLinkedProject> ensureProject(
+    String name, {
+    int? projectId,
+  }) async {
+    return PhotoLinkedProject(id: projectId ?? 1, name: name);
   }
 }
 

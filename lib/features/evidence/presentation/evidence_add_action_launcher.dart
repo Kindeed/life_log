@@ -76,7 +76,11 @@ void showEvidenceAddActions(
                 onTap: () {
                   Navigator.of(sheetContext).pop();
                   unawaited(
-                    _captureEvidence(context, initialProject: initialProject),
+                    _captureEvidence(
+                      context,
+                      initialProject: initialProject,
+                      initialProjectStageName: initialProjectStageName,
+                    ),
                   );
                 },
               ),
@@ -245,20 +249,23 @@ class _EvidenceActionTile extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    return ListTile(
-      minTileHeight: 56,
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(AppRadius.lg),
-      ),
-      leading: Icon(icon, color: theme.colorScheme.primary),
-      title: Text(
-        title,
-        style: theme.textTheme.titleSmall?.copyWith(
-          fontWeight: FontWeight.w600,
+    return Material(
+      color: Colors.transparent,
+      child: ListTile(
+        minTileHeight: 56,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(AppRadius.lg),
         ),
+        leading: Icon(icon, color: theme.colorScheme.primary),
+        title: Text(
+          title,
+          style: theme.textTheme.titleSmall?.copyWith(
+            fontWeight: FontWeight.w600,
+          ),
+        ),
+        subtitle: subtitle == null ? null : Text(subtitle!),
+        onTap: onTap,
       ),
-      subtitle: subtitle == null ? null : Text(subtitle!),
-      onTap: onTap,
     );
   }
 }

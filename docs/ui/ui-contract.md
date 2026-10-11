@@ -67,6 +67,53 @@ filters, full historical work logs, source failures and stable lazy rows with
 not payment history. Repositories still read complete visible collections;
 display pagination is not database pagination or measured device performance.
 
+## Project channel workflow (2026-10-11)
+
+Projects own an ordered list of stages. Stages scope records; they are not a
+completion percentage or an inferred current stage. A project detail opens one
+continuous record channel, without persistent activity/photo/ledger tabs.
+Project lifecycle is secondary text below the title. The compact stage selector
+scopes the channel; photo browsing and accounting are optional toolbar tools.
+Tools keep the same stage and return to the channel with its filter and scroll
+position preserved. Photo selection is cancelled by the first toolbar/system
+back; the next back returns to the channel. Lists use the same project status
+badge and show actual configured stage counts only for persisted projects.
+Historical name-only groups must not invent a status.
+
+The activity stream has a collapsible month/day directory using local calendar
+dates. Stage and type filters compose with that directory; counts describe only
+the current projection. After the first complete nonempty load, only the latest
+month and day open automatically. Later source updates do not open new dates or
+reopen an explicitly collapsed group. Month collapse retains its day flags;
+expand/collapse-all affects only dates in the current projection. Date flags
+survive filter changes and tool return, while each stage/type scope retains its
+own scroll position. A new scope starts at the top; an account boundary clears
+all flags and scroll storage. Only expanded records enter the lazy row list.
+Date headings reflow counts below the date at large text sizes, expose expansion
+semantics and honour reduced motion for their arrows.
+
+Within each day, the activity stream orders records by event time, breaking
+ties with creation time and a stable identity. Text records, photo descriptions,
+trip remarks and
+accounting notes are readable across the card width. The channel and ledger
+use compact 12dp surface corners without decorative borders or large icon
+containers. Photos use bounded decoding and wide previews; rows remain lazily
+built. Full photo descriptions are readable in the preview without editing.
+Stage summaries omit empty record categories. The stage bar counts the current
+section/type only and uses measured text width to reflow at larger text sizes.
+The quiet channel composer opens a protected text editor or the add menu.
+Creation inherits the selected project/stage; 全部阶段 creates
+an unassigned record unless the user selects a stage in the editor. Historical
+and unassigned stages remain reachable. Large text reflows and action sheets
+scroll within the screen.
+
+Text records are stored on this device and included in local database backups.
+Editors explain this scope, preserve failed drafts and reject saves/deletes
+after their owner/session/database context changes. An account change hides
+the entire old detail until all sources have been read successfully; retry
+must not reveal previous-account rows. A local archive retained after a remote
+deletion allows text/photo additions and shows old accounting/trip rows read-only.
+
 ## UI Models May Edit
 
 UI models may edit presentation-only files and shared UI primitives:

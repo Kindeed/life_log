@@ -23,6 +23,11 @@ class Project {
   @enumerated
   ProjectStatus status = ProjectStatus.active;
 
+  /// A cloud-deleted project retained as a local home for project notes.
+  /// The old remote identity is remembered only to reject deletion replays and
+  /// stale ACKs; this project must never enter a cloud upload candidate list.
+  bool isLocalArchive = false;
+
   List<String> stageNames = [];
 
   late DateTime createdAt;

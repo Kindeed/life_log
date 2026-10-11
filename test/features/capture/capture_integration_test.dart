@@ -125,9 +125,11 @@ class FakeAcquisitionPort implements AcquisitionPort {
 
 class FakeCommitPort implements CommitPort {
   final Map<String, CommitResult> committedMap = {};
+  Object? failure;
 
   @override
   Future<CommitResult> commit(CaptureDraft draft) async {
+    if (failure != null) throw failure!;
     final res = CommitResult(
       taskId: draft.taskId,
       purpose: draft.purpose,
@@ -168,6 +170,7 @@ class FakePhotoRepository implements PhotoRepositoryPort {
   Future<PhotoEntry> saveEntryFromPath({
     required String tempPath,
     required String projectName,
+    int? projectId,
     String? projectStageName,
     required String description,
     required String deviceName,
@@ -187,7 +190,7 @@ class FakePhotoRepository implements PhotoRepositoryPort {
       projectName: projectName,
       projectStageName: projectStageName,
       description: description,
-      projectId: null,
+      projectId: projectId,
       dateIndexed: DateTime.now(),
     );
     photos.add(entry);
@@ -392,7 +395,8 @@ void main() {
         taskId: 'photo_task_1',
         ownerContext: owner,
         purpose: CapturePurpose.photo,
-        draftValues: const {'projectName': '港珠澳大桥'},
+        projectLocalId: 37,
+        draftValues: const {'projectName': '港珠澳大桥', 'projectStageName': '施工'},
         state: CaptureState.pickerActive,
       );
       await journalPort.writeDraft(draft);
@@ -428,7 +432,69 @@ void main() {
       // 验证草稿已被提交并完成
       final savedDraft = await journalPort.readDraft('photo_task_1');
       expect(savedDraft?.state, CaptureState.committed);
+      expect(savedDraft?.draftValues['projectId'], 37);
+      expect(savedDraft?.draftValues['projectStageName'], '施工');
     });
+
+    for (final changeOwner in [false, true]) {
+      testWidgets(
+        'photo recovery retains staging without direct save when ${changeOwner ? 'owner context changes' : 'coordinator commit fails'}',
+        (tester) async {
+          final navigatorKey = GlobalKey<NavigatorState>();
+          final draft = CaptureDraft.create(
+            taskId: 'photo_failed_$changeOwner',
+            ownerContext: owner,
+            purpose: CapturePurpose.photo,
+            projectLocalId: 37,
+            draftValues: const {'projectName': '港珠澳大桥'},
+            state: CaptureState.pickerActive,
+          );
+          await journalPort.writeDraft(draft);
+          acquisitionPort.lostData = ['/camera/retain.jpg'];
+          await tester.pumpWidget(
+            ScreenUtilInit(
+              designSize: const Size(375, 812),
+              builder: (context, _) => MaterialApp(
+                navigatorKey: navigatorKey,
+                home: const Scaffold(body: Text('主界面')),
+              ),
+            ),
+          );
+          await tester.pumpAndSettle();
+          await recoverLostCaptureData(
+            navigatorKey,
+            coordinator: coordinator,
+            currentOwner: owner,
+          );
+          await tester.pumpAndSettle();
+          final staged = (await journalPort.readDraft(draft.taskId))!;
+          if (changeOwner) {
+            await journalPort.writeDraft(
+              staged.copyWith(
+                ownerContext: const CaptureOwnerContext(
+                  ownerUserId: 'other-owner',
+                  sessionEpoch: 99,
+                ),
+              ),
+            );
+          } else {
+            commitPort.failure = StateError('project context unavailable');
+          }
+          await tester.ensureVisible(find.text('确认录入'));
+          await tester.tap(find.text('确认录入'));
+          await tester.pumpAndSettle();
+          expect(photoRepo.photos, isEmpty);
+          expect(commitPort.committedMap, isEmpty);
+          expect(stagingPort.stagedByTask[draft.taskId], staged.stagedPaths);
+          final retained = (await journalPort.readDraft(draft.taskId))!;
+          expect(retained.isTerminal, isFalse);
+          if (!changeOwner) {
+            expect(retained.state, CaptureState.recoverableFailure);
+          }
+          expect(find.textContaining('保存恢复照片失败:'), findsOneWidget);
+        },
+      );
+    }
 
     testWidgets('新增凭证崩溃恢复协调：打开新增凭证编辑器 (existing == null)', (tester) async {
       final navigatorKey = GlobalKey<NavigatorState>();

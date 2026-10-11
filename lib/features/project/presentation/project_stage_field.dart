@@ -5,6 +5,7 @@ import 'package:life_log/features/project/domain/entities/project_entry.dart';
 /// its definition. Editing other fields must never discard that relationship.
 class ProjectStageField extends StatelessWidget {
   final String projectName;
+  final int? projectId;
   final String selected;
   final Future<List<ProjectEntry>> projects;
   final ValueChanged<String> onChanged;
@@ -12,6 +13,7 @@ class ProjectStageField extends StatelessWidget {
   const ProjectStageField({
     super.key,
     required this.projectName,
+    this.projectId,
     required this.selected,
     required this.projects,
     required this.onChanged,
@@ -26,9 +28,10 @@ class ProjectStageField extends StatelessWidget {
       builder: (context, snapshot) {
         final project = (snapshot.data ?? const <ProjectEntry>[])
             .where(
-              (p) =>
-                  p.name.trim().toLowerCase() ==
-                  projectName.trim().toLowerCase(),
+              (p) => projectId != null
+                  ? p.id == projectId
+                  : p.name.trim().toLowerCase() ==
+                        projectName.trim().toLowerCase(),
             )
             .firstOrNull;
         final values = <String>{
@@ -38,7 +41,9 @@ class ProjectStageField extends StatelessWidget {
         };
         return DropdownButtonFormField<String>(
           initialValue: selected,
-          key: ValueKey('$projectName:$selected:${values.join('|')}'),
+          key: ValueKey(
+            '$projectId:$projectName:$selected:${values.join('|')}',
+          ),
           isExpanded: true,
           decoration: const InputDecoration(
             labelText: '项目阶段',

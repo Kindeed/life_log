@@ -14,6 +14,7 @@ import 'package:photo_manager/photo_manager.dart';
 
 final class PhotoPendingCaptureStore {
   static const _projectKey = 'photo.pendingCapture.projectName';
+  static const _projectIdKey = 'photo.pendingCapture.projectId';
   static const _stageKey = 'photo.pendingCapture.stageName';
 
   final GetStorage _storage;
@@ -21,13 +22,18 @@ final class PhotoPendingCaptureStore {
   PhotoPendingCaptureStore({GetStorage? storage})
     : _storage = storage ?? GetStorage();
 
-  Future<void> rememberProject(String? projectName, {String? stageName}) async {
+  Future<void> rememberProject(
+    String? projectName, {
+    int? projectId,
+    String? stageName,
+  }) async {
     final normalized = projectName?.trim();
     if (normalized == null || normalized.isEmpty) {
       await clear();
       return;
     }
     await _storage.write(_projectKey, normalized);
+    await _storage.write(_projectIdKey, projectId);
     await _storage.write(_stageKey, stageName?.trim());
   }
 
@@ -37,9 +43,11 @@ final class PhotoPendingCaptureStore {
   }
 
   String? readStage() => _storage.read<String>(_stageKey);
+  int? readProjectId() => _storage.read<int>(_projectIdKey);
 
   Future<void> clear() async {
     await _storage.remove(_stageKey);
+    await _storage.remove(_projectIdKey);
     await _storage.remove(_projectKey);
   }
 }
@@ -47,6 +55,7 @@ final class PhotoPendingCaptureStore {
 Future<void> capturePhotoWithSystemCamera(
   BuildContext context, {
   String? initialProject,
+  int? initialProjectId,
   String? initialProjectStageName,
   Future<void> Function()? onSaved,
 }) async {
@@ -54,6 +63,7 @@ Future<void> capturePhotoWithSystemCamera(
   final pendingCaptureStore = PhotoPendingCaptureStore();
   await pendingCaptureStore.rememberProject(
     initialProject,
+    projectId: initialProjectId,
     stageName: initialProjectStageName,
   );
   try {
@@ -73,20 +83,23 @@ Future<void> capturePhotoWithSystemCamera(
     showCaptureDialog(
       context,
       initialProject: initialProject,
+      initialProjectId: initialProjectId,
       initialProjectStageName: initialProjectStageName,
       onConfirm: (_, _) {},
-      onConfirmWithStage: (projectName, description, projectStageName) =>
-          _savePhotoFromPath(
-            messenger: activeMessenger,
-            tempPath: image.path,
-            projectName: projectName,
-            projectStageName: projectStageName,
-            description: description,
-            sourceAssetId: null,
-            capturedAt: DateTime.now(),
-            capturedAtSource: 'cameraNow',
-            onSaved: onSaved,
-          ),
+      onConfirmWithProject:
+          (projectName, description, projectStageName, projectId) =>
+              _savePhotoFromPath(
+                messenger: activeMessenger,
+                tempPath: image.path,
+                projectName: projectName,
+                projectId: projectId,
+                projectStageName: projectStageName,
+                description: description,
+                sourceAssetId: null,
+                capturedAt: DateTime.now(),
+                capturedAtSource: 'cameraNow',
+                onSaved: onSaved,
+              ),
     );
   } catch (error, stackTrace) {
     await pendingCaptureStore.clear();
@@ -98,6 +111,7 @@ Future<void> capturePhotoWithSystemCamera(
 Future<void> importPhotoFromGallery(
   BuildContext context, {
   String? initialProject,
+  int? initialProjectId,
   String? initialProjectStageName,
   Future<void> Function()? onSaved,
 }) async {
@@ -113,22 +127,25 @@ Future<void> importPhotoFromGallery(
     showCaptureDialog(
       context,
       initialProject: initialProject,
+      initialProjectId: initialProjectId,
       initialProjectStageName: initialProjectStageName,
       onConfirm: (_, _) {},
-      onConfirmWithStage: (projectName, description, projectStageName) =>
-          _savePhotoFromPath(
-            messenger: messenger,
-            tempPath: result.file.path,
-            projectName: projectName,
-            projectStageName: projectStageName,
-            description: description,
-            sourceAssetId: result.asset.id,
-            capturedAt: result.asset.createDateTime,
-            capturedAtSource: 'gallery',
-            gpsLatitude: latLng?.latitude,
-            gpsLongitude: latLng?.longitude,
-            onSaved: onSaved,
-          ),
+      onConfirmWithProject:
+          (projectName, description, projectStageName, projectId) =>
+              _savePhotoFromPath(
+                messenger: messenger,
+                tempPath: result.file.path,
+                projectName: projectName,
+                projectId: projectId,
+                projectStageName: projectStageName,
+                description: description,
+                sourceAssetId: result.asset.id,
+                capturedAt: result.asset.createDateTime,
+                capturedAtSource: 'gallery',
+                gpsLatitude: latLng?.latitude,
+                gpsLongitude: latLng?.longitude,
+                onSaved: onSaved,
+              ),
     );
   } catch (error, stackTrace) {
     _logError('无法导入相册照片', error, stackTrace);
@@ -140,6 +157,7 @@ Future<void> savePhotoFromCapturePath({
   required ScaffoldMessengerState? messenger,
   required String tempPath,
   required String projectName,
+  int? projectId,
   String? projectStageName,
   required String description,
   DateTime? capturedAt,
@@ -150,6 +168,7 @@ Future<void> savePhotoFromCapturePath({
     messenger: messenger,
     tempPath: tempPath,
     projectName: projectName,
+    projectId: projectId,
     projectStageName: projectStageName,
     description: description,
     sourceAssetId: null,
@@ -163,6 +182,7 @@ Future<void> _savePhotoFromPath({
   required ScaffoldMessengerState? messenger,
   required String tempPath,
   required String projectName,
+  int? projectId,
   String? projectStageName,
   required String description,
   required String? sourceAssetId,
@@ -176,6 +196,7 @@ Future<void> _savePhotoFromPath({
     final result = await serviceLocator<SavePhotoFromPath>().call(
       tempPath: tempPath,
       projectName: projectName,
+      projectId: projectId,
       projectStageName: projectStageName,
       description: description,
       deviceName: await _deviceName(),

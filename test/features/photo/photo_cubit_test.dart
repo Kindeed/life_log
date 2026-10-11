@@ -322,6 +322,7 @@ final class _FakePhotoRepository implements PhotoRepositoryPort {
   Future<PhotoEntry> saveEntryFromPath({
     required String tempPath,
     required String projectName,
+    int? projectId,
     String? projectStageName,
     required String description,
     required String deviceName,

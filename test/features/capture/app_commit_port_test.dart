@@ -28,6 +28,8 @@ class _FakePhotoRepository implements PhotoRepositoryPort {
 
   String? lastTempPath;
   String? lastProjectName;
+  int? lastProjectId;
+  String? lastProjectStageName;
   String? lastDescription;
   String? lastDeviceName;
   bool? lastDeleteSource;
@@ -50,6 +52,7 @@ class _FakePhotoRepository implements PhotoRepositoryPort {
   Future<PhotoEntry> saveEntryFromPath({
     required String tempPath,
     required String projectName,
+    int? projectId,
     String? projectStageName,
     required String description,
     required String deviceName,
@@ -64,6 +67,8 @@ class _FakePhotoRepository implements PhotoRepositoryPort {
     }
     lastTempPath = tempPath;
     lastProjectName = projectName;
+    lastProjectId = projectId;
+    lastProjectStageName = projectStageName;
     lastDescription = description;
     lastDeviceName = deviceName;
     lastDeleteSource = deleteSource;
@@ -86,7 +91,7 @@ class _FakePhotoRepository implements PhotoRepositoryPort {
       deviceName: deviceName,
       projectName: projectName,
       projectStageName: projectStageName,
-      projectId: 1,
+      projectId: projectId,
       dateIndexed: DateTime(2026, 6, 18),
     );
     entries.add(entry);
@@ -262,9 +267,11 @@ void main() {
           taskId: 'task-photo-1',
           ownerContext: testOwner,
           purpose: CapturePurpose.photo,
+          projectLocalId: 77,
           stagedPaths: const ['/sandbox/staging/task-photo-1_image.jpg'],
           draftValues: const {
             'projectName': 'LifeLog App',
+            'projectStageName': '调试',
             'description': '现场拍摄第一张',
             'deviceName': 'Pixel 8',
             'capturedAt': '2026-06-18T10:00:00.000',
@@ -290,6 +297,8 @@ void main() {
           '/sandbox/staging/task-photo-1_image.jpg',
         );
         expect(photoRepo.lastProjectName, 'LifeLog App');
+        expect(photoRepo.lastProjectId, 77);
+        expect(photoRepo.lastProjectStageName, '调试');
         expect(photoRepo.lastDescription, '现场拍摄第一张');
         expect(photoRepo.lastDeviceName, 'Pixel 8');
         expect(
@@ -306,6 +315,25 @@ void main() {
         );
         expect(cached, isNotNull);
         expect(cached!.committedId, 101);
+      },
+    );
+
+    test(
+      'an explicit draft project id or cleared id overrides the capture origin',
+      () async {
+        for (final id in [88, null]) {
+          final draft = CaptureDraft.create(
+            taskId: 'photo_changed_$id',
+            ownerContext: testOwner,
+            purpose: CapturePurpose.photo,
+            projectLocalId: 77,
+            stagedPaths: const ['/sandbox/keep.jpg'],
+            draftValues: {'projectName': '新的项目', 'projectId': id},
+          );
+          await commitPort.commit(draft);
+          expect(photoRepo.lastProjectId, id);
+          expect(photoRepo.lastDeleteSource, isFalse);
+        }
       },
     );
 

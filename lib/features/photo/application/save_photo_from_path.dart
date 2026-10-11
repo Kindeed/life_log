@@ -11,6 +11,7 @@ final class SavePhotoFromPath {
   Future<AppResult<PhotoEntry>> call({
     required String tempPath,
     required String projectName,
+    int? projectId,
     String? projectStageName,
     required String description,
     required String deviceName,
@@ -24,6 +25,7 @@ final class SavePhotoFromPath {
       final entry = await _repository.saveEntryFromPath(
         tempPath: tempPath,
         projectName: projectName,
+        projectId: projectId,
         projectStageName: projectStageName,
         description: description,
         deviceName: deviceName,

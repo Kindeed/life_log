@@ -15,11 +15,22 @@ import 'package:life_log/core/di/service_locator.dart';
 import 'package:life_log/core/sync/get_storage_sync_cursor_store.dart';
 import 'package:life_log/core/sync/sync_cursor_store.dart';
 import 'package:life_log/features/statistics/presentation/statistics_controller.dart';
+import 'package:life_log/features/project/data/project_model.dart';
+import 'package:life_log/features/project/data/project_note_dao.dart';
+import 'package:life_log/features/project/data/project_note_model.dart';
+import 'package:life_log/features/project/data/project_note_repository.dart';
+import 'package:life_log/features/project/domain/entities/project_note_entry.dart';
+import 'package:life_log/features/project/domain/entities/project_record_scope.dart';
 import 'package:life_log/features/work_log/data/work_log_model.dart';
+import 'package:life_log/features/photo/data/photo_model.dart';
+import 'package:life_log/features/expense/data/expense_record_model.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../../../tool/isar_test_runtime.dart' show initializeTestIsar;
 import '../../support/test_get_storage.dart';
+import '../../fixtures/project_before_local_notes/project_model.dart'
+    as old
+    show Project, ProjectSchema;
 
 void main() {
   const pathChannel = MethodChannel('plugins.flutter.io/path_provider');
@@ -91,6 +102,263 @@ void main() {
     await serviceLocator.reset();
     await directory.delete(recursive: true);
   });
+
+  test(
+    'local project notes survive export and restore with the same DAO handle',
+    () async {
+      final project = Project()
+        ..name = '设备调试'
+        ..createdAt = DateTime(2026, 10, 1)
+        ..updatedAt = DateTime(2026, 10, 1);
+      await db.database.writeTxn(() async {
+        project.id = await db.isar.projects.put(project);
+      });
+      final repository = ProjectNoteRepository(
+        ProjectNoteDao(
+          database: db.database,
+          currentOwnerUserId: () => db.currentOwnerUserId,
+        ),
+      );
+      final note = await repository.saveEntry(
+        ProjectNoteEntry(
+          projectId: project.id,
+          projectName: project.name,
+          projectStageName: '试产',
+          content: '备份中的设备状态和生产安排',
+          date: DateTime(2026, 10, 10, 8, 30),
+          createdAt: DateTime(2026, 10, 10),
+          updatedAt: DateTime(2026, 10, 10),
+        ),
+      );
+      final notesBackup = File('${directory.path}/project-notes.isar');
+      await db.isar.copyToFile(notesBackup.path);
+      await repository.deleteEntry(note.id);
+      final scope = ProjectRecordScope(name: project.name, id: project.id);
+      expect(await repository.getEntries(scope), isEmpty);
+
+      final restored = repository.watchEntries().first;
+      await BackupService.restoreFromBackup(notesBackup);
+      await restored.timeout(const Duration(seconds: 3));
+      final entries = await repository.getEntries(scope);
+      expect(entries.single, note);
+      final change = repository.watchEntries().first;
+      await repository.deleteEntry(note.id);
+      await change.timeout(const Duration(seconds: 3));
+      expect(await repository.getEntries(scope), isEmpty);
+    },
+  );
+
+  test(
+    'backup notes remain isolated by their original local account after restore',
+    () async {
+      final project = Project()
+        ..name = '共享本地项目'
+        ..createdAt = DateTime(2026, 10, 1)
+        ..updatedAt = DateTime(2026, 10, 1);
+      await db.database.writeTxn(() async {
+        project.id = await db.isar.projects.put(project);
+      });
+      String? owner;
+      final repository = ProjectNoteRepository(
+        ProjectNoteDao(database: db.database, currentOwnerUserId: () => owner),
+      );
+      ProjectNoteEntry draft(String content) => ProjectNoteEntry(
+        projectId: project.id,
+        projectName: project.name,
+        content: content,
+        date: DateTime(2026, 10, 11),
+        createdAt: DateTime(2026, 10, 11),
+        updatedAt: DateTime(2026, 10, 11),
+      );
+      owner = 'owner-a';
+      final a = await repository.saveEntry(draft('A的本地记录'));
+      owner = 'owner-b';
+      final b = await repository.saveEntry(draft('B的本地记录'));
+      owner = null;
+      final local = await repository.saveEntry(draft('未归属本地记录'));
+      final notesBackup = File('${directory.path}/account-notes.isar');
+      await db.isar.copyToFile(notesBackup.path);
+      await repository.deleteEntry(local.id);
+      await BackupService.restoreFromBackup(notesBackup);
+      final scope = ProjectRecordScope(name: project.name, id: project.id);
+      owner = 'owner-a';
+      expect(
+        (await repository.getEntries(scope)).map((entry) => entry.id).toSet(),
+        {a.id, local.id},
+      );
+      await expectLater(repository.deleteEntry(b.id), throwsStateError);
+      owner = 'owner-b';
+      expect(
+        (await repository.getEntries(scope)).map((entry) => entry.id).toSet(),
+        {b.id, local.id},
+      );
+      owner = null;
+      expect((await repository.getEntries(scope)).single.id, local.id);
+    },
+  );
+
+  test(
+    'local archive flags survive backup and restored ids reject an older draft context',
+    () async {
+      final project = Project()
+        ..name = '云删后本地保留'
+        ..syncId = 'cloud-deleted-parent'
+        ..remoteId = 64
+        ..remoteVersion = 4
+        ..createdAt = DateTime(2026, 10, 1)
+        ..updatedAt = DateTime(2026, 10, 1);
+      await db.database.writeTxn(() async {
+        project.id = await db.isar.projects.put(project);
+      });
+      final repository = ProjectNoteRepository(
+        ProjectNoteDao(
+          database: db.database,
+          currentOwnerUserId: () => db.currentOwnerUserId,
+          contextToken: () => db.databaseGeneration,
+        ),
+      );
+      final note = await repository.saveEntry(
+        ProjectNoteEntry(
+          projectId: project.id,
+          projectSyncId: project.syncId,
+          projectName: project.name,
+          content: '保持本地设备记录',
+          date: DateTime(2026, 10, 11),
+          createdAt: DateTime(2026, 10, 11),
+          updatedAt: DateTime(2026, 10, 11),
+        ),
+      );
+      await db.syncRemoteProjectToLocal({
+        'id': 64,
+        'sync_id': project.syncId,
+        'version': 5,
+        'deleted_at': '2026-10-11T12:00:00Z',
+        'updated_at': '2026-10-11T12:00:00Z',
+      });
+      final archiveBackup = File('${directory.path}/local-archive.isar');
+      await db.isar.copyToFile(archiveBackup.path);
+      final olderContext = repository.captureContext();
+      await BackupService.restoreFromBackup(archiveBackup);
+      final restoredProject = (await db.getProject(project.id))!;
+      expect(restoredProject.isLocalArchive, isTrue);
+      expect(restoredProject.status, ProjectStatus.archived);
+      expect(await db.getAllProjectsForSync(), isEmpty);
+      expect(await db.getPendingProjectsForSync(), isEmpty);
+      final scope = ProjectRecordScope(
+        name: project.name,
+        id: project.id,
+        syncId: project.syncId,
+      );
+      expect((await repository.getEntries(scope)).single, note);
+      await expectLater(
+        repository.saveEntry(note, expectedContext: olderContext),
+        throwsStateError,
+      );
+      await expectLater(
+        repository.deleteEntry(note.id, expectedContext: olderContext),
+        throwsStateError,
+      );
+      expect((await repository.getEntries(scope)).single, note);
+      await repository.saveEntry(
+        note,
+        expectedContext: repository.captureContext(),
+      );
+    },
+  );
+
+  test(
+    'a pre-notes backup migrates without removing projects or work logs',
+    () async {
+      final olderName = 'pre_notes_${DateTime.now().microsecondsSinceEpoch}';
+      final older = await IsarDatabase.open(
+        schemas: DbService.schemas
+            .where((schema) => schema.name != ProjectNoteSchema.name)
+            .map(
+              (schema) => schema.name == 'Project' ? old.ProjectSchema : schema,
+            )
+            .toList(),
+        directory: directory.path,
+        name: olderName,
+        inspector: false,
+      );
+      final oldBackup = File('${directory.path}/pre-notes-export.isar');
+      try {
+        await older.writeTxn(() async {
+          await older.isar.workLogs.put(_workLog('旧版备份工时'));
+          final project = old.Project()
+            ..name = '旧版项目'
+            ..syncId = 'old-parent-identity'
+            ..remoteId = 88
+            ..remoteVersion = 9
+            ..stageNames = ['生产', '验收']
+            ..createdAt = DateTime(2026, 10, 1)
+            ..updatedAt = DateTime(2026, 10, 1);
+          project.id = await older.isar.collection<old.Project>().put(project);
+          await older.isar.photoItems.put(
+            PhotoItem()
+              ..projectId = project.id
+              ..projectName = project.name
+              ..projectStageName = '生产'
+              ..description = '升级前设备状态'
+              ..fileName = 'local.jpg'
+              ..filePath = '/local-only/local.jpg'
+              ..dateIndexed = DateTime(2026, 10, 1)
+              ..createdAt = DateTime(2026, 10, 1),
+          );
+          await older.isar.workLogs.put(
+            _workLog('旧版项目出差')
+              ..type = LogType.businessTrip
+              ..projectId = project.id
+              ..projectSyncId = project.syncId
+              ..projectName = project.name
+              ..projectStageName = '验收',
+          );
+          await older.isar.expenseRecords.put(
+            ExpenseRecord()
+              ..projectId = project.id
+              ..projectSyncId = project.syncId
+              ..projectName = project.name
+              ..projectStageName = '验收'
+              ..expenseDate = DateTime(2026, 10, 1)
+              ..amount = 1234.56
+              ..currency = 'USD'
+              ..note = '旧版原币金额',
+          );
+        });
+        await older.isar.copyToFile(oldBackup.path);
+      } finally {
+        await older.close();
+      }
+      await BackupService.restoreFromBackup(oldBackup);
+      expect(
+        (await db.isar.workLogs.where().findAll()).map((log) => log.note),
+        containsAll(['旧版备份工时', '旧版项目出差']),
+      );
+      final project = (await db.isar.projects.where().findAll()).single;
+      expect(project.name, '旧版项目');
+      expect(project.stageNames, ['生产', '验收']);
+      expect(project.isLocalArchive, isFalse);
+      expect(project.syncId, 'old-parent-identity');
+      expect(project.remoteId, 88);
+      expect(project.remoteVersion, 9);
+      final photo = (await db.isar.photoItems.where().findAll()).single;
+      expect(photo.projectId, project.id);
+      expect(photo.description, '升级前设备状态');
+      expect(photo.filePath, '/local-only/local.jpg');
+      final trip = (await db.isar.workLogs.where().findAll()).singleWhere(
+        (log) => log.type == LogType.businessTrip,
+      );
+      expect(trip.projectId, project.id);
+      expect(trip.projectSyncId, project.syncId);
+      expect(trip.projectStageName, '验收');
+      final amount = (await db.isar.expenseRecords.where().findAll()).single;
+      expect(amount.amount, 1234.56);
+      expect(amount.currency, 'USD');
+      expect(amount.projectId, project.id);
+      expect(amount.projectSyncId, project.syncId);
+      expect(await db.isar.projectNotes.count(), 0);
+    },
+  );
 
   test(
     'public backup restore keeps the injected database handle usable',

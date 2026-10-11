@@ -3,10 +3,18 @@ import 'package:life_log/features/photo/application/assign_photo_stage.dart';
 import 'package:life_log/common/widgets/app_sheet_scaffold.dart';
 import 'package:life_log/features/project/presentation/project_stage_summary.dart';
 import 'package:life_log/features/project/presentation/project_stages_sheet.dart';
+import 'package:life_log/features/project/presentation/project_channel_stage_bar.dart';
+import 'package:life_log/features/project/presentation/project_channel_composer.dart';
+import 'package:life_log/features/project/presentation/project_channel_record.dart';
+import 'package:life_log/features/project/presentation/project_channel_group_header.dart';
+import 'package:life_log/features/project/presentation/project_note_editor.dart';
+import 'package:life_log/features/project/presentation/project_note_cubit.dart';
+import 'package:life_log/features/project/domain/entities/project_note_entry.dart';
+import 'package:life_log/features/project/application/load_project_note_entries.dart';
+import 'package:life_log/features/project/application/watch_project_note_entries.dart';
 import 'dart:async';
 
 import 'package:life_log/common/widgets/app_local_thumbnail.dart';
-import 'package:life_log/common/widgets/app_card.dart';
 import 'package:life_log/common/widgets/app_page_route.dart';
 import 'package:life_log/common/theme/app_motion.dart';
 import 'package:life_log/common/widgets/app_empty_state.dart';
@@ -53,6 +61,7 @@ import 'package:life_log/features/project/presentation/project_cubit.dart';
 import 'package:life_log/features/work_log/application/load_project_work_log_trips.dart';
 import 'package:life_log/features/work_log/domain/entities/work_log_entry.dart';
 import 'package:life_log/features/more/presentation/quick_action_contract.dart';
+import 'package:life_log/features/profile/domain/repositories/profile_account_repository_port.dart';
 
 class ProjectDetailView extends StatefulWidget {
   final String projectName;
@@ -65,6 +74,9 @@ class ProjectDetailView extends StatefulWidget {
   final ExpenseRecordCubit? expenseCubit;
   final LoadProjectWorkLogTrips? loadProjectWorkLogTrips;
   final WatchWorkLogEntries? watchWorkLogEntries;
+  final LoadProjectNoteEntries? loadProjectNotes;
+  final WatchProjectNoteEntries? watchProjectNotes;
+  final Stream<void> Function()? watchAccountScope;
   final DeleteProjectEntry? deleteProjectEntry;
   final DeletePhotoEntries? deletePhotoEntries;
   final ExportPhotoEntries? exportPhotoEntries;
@@ -82,6 +94,9 @@ class ProjectDetailView extends StatefulWidget {
     this.expenseCubit,
     this.loadProjectWorkLogTrips,
     this.watchWorkLogEntries,
+    this.loadProjectNotes,
+    this.watchProjectNotes,
+    this.watchAccountScope,
     this.deleteProjectEntry,
     this.deletePhotoEntries,
     this.exportPhotoEntries,
@@ -94,13 +109,20 @@ class ProjectDetailView extends StatefulWidget {
   State<ProjectDetailView> createState() => _ProjectDetailViewState();
 }
 
-class _ProjectDetailViewState extends State<ProjectDetailView>
-    with SingleTickerProviderStateMixin {
+enum _ProjectDetailSection { channel, photos, ledger }
+
+class _ProjectDetailViewState extends State<ProjectDetailView> {
   late final ProjectCubit _projectCubit;
   late final PhotoCubit _photoCubit;
   late final EvidenceCubit _evidenceCubit;
   late final ExpenseRecordCubit _expenseCubit;
   late final ProjectTripsCubit _tripsCubit;
+  late final ProjectNoteCubit _notesCubit;
+  StreamSubscription<ProjectNoteState>? _notesSubscription;
+  StreamSubscription<void>? _accountSubscription;
+  int _accountReloadGeneration = 0;
+  bool _accountReloading = false;
+  bool _accountReadFailed = false;
   StreamSubscription<ProjectState>? _projectSubscription;
   late final DeleteProjectEntry? _deleteProject;
   late final ImagePicker _imagePicker;
@@ -111,7 +133,7 @@ class _ProjectDetailViewState extends State<ProjectDetailView>
   bool _ownsEvidenceCubit = false;
   bool _ownsExpenseCubit = false;
 
-  late final TabController _tabController;
+  _ProjectDetailSection _section = _ProjectDetailSection.channel;
   ProjectEntry? get _project => widget.projectId == null
       ? _projectCubit.state.entryNamed(widget.projectName)
       : _projectCubit.state.entries
@@ -144,19 +166,30 @@ class _ProjectDetailViewState extends State<ProjectDetailView>
   List<WorkLogEntry> get _projectTrips => _tripsCubit.state.entries
       .where((e) => _stageMatches(e.projectStageName))
       .toList();
+  List<ProjectNoteEntry> get _projectNotes => _notesCubit.state.entries
+      .where((e) => _stageMatches(e.projectStageName))
+      .toList();
   bool get _hasReadFailure =>
       _projectCubit.state.failure != null ||
       _photoCubit.state.failure != null ||
       _evidenceCubit.state.failure != null ||
       _expenseCubit.state.failure != null ||
-      _tripsCubit.state.failure != null;
+      _tripsCubit.state.failure != null ||
+      _notesCubit.state.failure != null;
   bool get _sourcesLoading =>
       _projectCubit.state.status == ProjectReadStatus.loading ||
       _photoCubit.state.status == PhotoStatus.loading ||
       _evidenceCubit.state.status == EvidenceStatus.loading ||
       _expenseCubit.state.status == ExpenseRecordStatus.loading ||
-      _tripsCubit.state.loading;
+      _tripsCubit.state.loading ||
+      _notesCubit.state.loading;
   String _selectedTimelineFilter = '全部';
+  final Set<String> _expandedMonths = {};
+  final Set<String> _expandedDays = {};
+  bool _directoryInitialized = false;
+  List<_ChannelMonth> _channelMonths = const [];
+  PageStorageBucket _detailPageStorage = PageStorageBucket();
+  final Map<(String?, String), PageStorageBucket> _channelPageStorage = {};
   String? _selectedStage;
   bool _stageMatches(String? name) =>
       _selectedStage == null || (name?.trim() ?? '') == _selectedStage;
@@ -209,26 +242,99 @@ class _ProjectDetailViewState extends State<ProjectDetailView>
           (serviceLocator.isRegistered<WatchWorkLogEntries>()
               ? serviceLocator<WatchWorkLogEntries>()
               : null),
+      watchScope: widget.watchAccountScope ?? _watchAccountScope,
     )..start();
-    _projectSubscription = _projectCubit.stream.listen(
-      (_) => _tripsCubit.setProject(_scope),
-    );
+    _notesCubit = ProjectNoteCubit(
+      scope: _scope,
+      loadEntries:
+          widget.loadProjectNotes ??
+          (serviceLocator.isRegistered<LoadProjectNoteEntries>()
+              ? serviceLocator<LoadProjectNoteEntries>()
+              : null),
+      watchEntries:
+          widget.watchProjectNotes ??
+          (serviceLocator.isRegistered<WatchProjectNoteEntries>()
+              ? serviceLocator<WatchProjectNoteEntries>()
+              : null),
+    )..start();
+    _notesSubscription = _notesCubit.stream.listen((_) {
+      if (mounted) setState(() {});
+    });
+    _projectSubscription = _projectCubit.stream.listen((_) {
+      _tripsCubit.setProject(_scope);
+      _notesCubit.setProject(_scope);
+    });
+    _accountSubscription = (widget.watchAccountScope ?? _watchAccountScope)()
+        .listen((_) => unawaited(_reloadAccountRecords()));
     _deleteProject =
         widget.deleteProjectEntry ??
         (serviceLocator.isRegistered<DeleteProjectEntry>()
             ? serviceLocator<DeleteProjectEntry>()
             : null);
-
-    _tabController = TabController(length: 3, vsync: this);
-    _tabController.addListener(_handleTabChanged);
   }
 
-  void _handleTabChanged() {
-    if (!mounted) return;
-    if (_tabController.index != 1 && _isMultiSelectMode) {
+  void _openSection(_ProjectDetailSection section) {
+    if (_photoBatchBusy) return;
+    setState(() {
+      _section = section;
+      _selectedPhotoIds.clear();
+      _isMultiSelectMode = false;
+    });
+  }
+
+  void _returnToChannel() {
+    if (_photoBatchBusy) return;
+    if (_isMultiSelectMode) {
       _exitMultiSelectMode();
+    } else {
+      _openSection(_ProjectDetailSection.channel);
     }
-    setState(() {});
+  }
+
+  Stream<void> _watchAccountScope() {
+    if (!serviceLocator.isRegistered<ProfileAccountRepositoryPort>()) {
+      return const Stream<void>.empty();
+    }
+    final account = serviceLocator<ProfileAccountRepositoryPort>();
+    final initial = account.loadAccount();
+    var first = true;
+    return account
+        .watchAccount()
+        .where((snapshot) {
+          if (first) {
+            first = false;
+            return snapshot != initial;
+          }
+          return true;
+        })
+        .map((_) {});
+  }
+
+  Future<void> _reloadAccountRecords() async {
+    if (!mounted) return;
+    final generation = ++_accountReloadGeneration;
+    setState(() {
+      _accountReloading = true;
+      _accountReadFailed = false;
+      _selectedStage = null;
+      _selectedTimelineFilter = '全部';
+      _expandedMonths.clear();
+      _expandedDays.clear();
+      _directoryInitialized = false;
+      _channelMonths = const [];
+      _detailPageStorage = PageStorageBucket();
+      _channelPageStorage.clear();
+      _section = _ProjectDetailSection.channel;
+      _selectedPhotoIds.clear();
+      _isMultiSelectMode = false;
+    });
+    await _refreshRecords();
+    if (!mounted || generation != _accountReloadGeneration) return;
+    setState(() {
+      // A failed owner-scoped read must not reveal retained rows from the prior account.
+      _accountReadFailed = _hasReadFailure;
+      _accountReloading = _accountReadFailed;
+    });
   }
 
   Future<void> _refreshRecords() => Future.wait([
@@ -237,14 +343,16 @@ class _ProjectDetailViewState extends State<ProjectDetailView>
     _evidenceCubit.loadEntries(background: true),
     _expenseCubit.loadEntries(background: true),
     _tripsCubit.loadEntries(),
+    _notesCubit.loadEntries(background: true),
   ]);
 
   @override
   void dispose() {
-    _tabController.removeListener(_handleTabChanged);
-    _tabController.dispose();
     _projectSubscription?.cancel();
+    _notesSubscription?.cancel();
+    _accountSubscription?.cancel();
     _tripsCubit.close();
+    _notesCubit.close();
     if (_ownsProjectCubit) _projectCubit.close();
     if (_ownsPhotoCubit) _photoCubit.close();
     if (_ownsEvidenceCubit) _evidenceCubit.close();
@@ -261,6 +369,17 @@ class _ProjectDetailViewState extends State<ProjectDetailView>
 
   @override
   Widget build(BuildContext context) {
+    if (_accountReloading) {
+      return Scaffold(
+        appBar: AppBar(title: const Text('项目记录')),
+        body: _accountReadFailed
+            ? AppLoadFailure(
+                message: '账号切换后读取项目失败，请重试。',
+                onRetry: () => unawaited(_reloadAccountRecords()),
+              )
+            : const Center(child: CircularProgressIndicator()),
+      );
+    }
     final theme = Theme.of(context);
     final secondary = theme.colorScheme.onSurfaceVariant;
     return BlocBuilder<ProjectCubit, ProjectState>(
@@ -318,18 +437,18 @@ class _ProjectDetailViewState extends State<ProjectDetailView>
                           expenses: _allProjectExpenses,
                           evidence: allEvidence,
                           trips: _tripsCubit.state.entries,
+                          notes: _notesCubit.state.entries,
                         );
                         _selectedPhotoIds.retainAll(
                           photos.map((photo) => photo.id),
                         );
                         return PopScope<void>(
-                          canPop: !_isMultiSelectMode && !_photoBatchBusy,
+                          canPop:
+                              _section == _ProjectDetailSection.channel &&
+                              !_isMultiSelectMode &&
+                              !_photoBatchBusy,
                           onPopInvokedWithResult: (didPop, _) {
-                            if (!didPop &&
-                                _isMultiSelectMode &&
-                                !_photoBatchBusy) {
-                              _exitMultiSelectMode();
-                            }
+                            if (!didPop) _returnToChannel();
                           },
                           child: Scaffold(
                             appBar: _buildAppBar(
@@ -340,44 +459,56 @@ class _ProjectDetailViewState extends State<ProjectDetailView>
                             ),
                             body: Column(
                               children: [
-                                if (_project != null)
-                                  Padding(
-                                    padding: const EdgeInsets.symmetric(
-                                      horizontal: 16,
-                                    ),
-                                    child: Row(
-                                      children: [
-                                        Text(
-                                          _project!.label,
-                                          style: theme.textTheme.bodySmall
-                                              ?.copyWith(color: secondary),
-                                        ),
-                                        const SizedBox(width: 8),
-                                        Expanded(
-                                          child: TextButton.icon(
-                                            key: const ValueKey(
-                                              'project-stage-selector',
-                                            ),
-                                            onPressed: _photoBatchBusy
-                                                ? null
-                                                : () => _chooseStage(
-                                                    stageSummaries,
-                                                  ),
-                                            icon: const Icon(
-                                              Icons.account_tree_outlined,
-                                              size: 18,
-                                            ),
-                                            label: Text(
-                                              _selectedStage == null
-                                                  ? '全部阶段 · ${stageSummaries.where((s) => s.name.isNotEmpty).length}'
-                                                  : _selectedStage!.isEmpty
-                                                  ? '未分阶段'
-                                                  : _selectedStage!,
-                                              maxLines: 2,
-                                            ),
+                                Padding(
+                                  padding: const EdgeInsets.fromLTRB(
+                                    4,
+                                    0,
+                                    12,
+                                    4,
+                                  ),
+                                  child: Row(
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.start,
+                                    children: [
+                                      Expanded(
+                                        child: ProjectChannelStageBar(
+                                          selectedStage: _selectedStage,
+                                          stageCount: stageSummaries
+                                              .where((s) => s.name.isNotEmpty)
+                                              .length,
+                                          recordCount: _visibleRecordCount(
+                                            photos.length,
+                                            evidence.length,
                                           ),
+                                          onSelect:
+                                              _photoBatchBusy ||
+                                                  _project == null
+                                              ? null
+                                              : () => _chooseStage(
+                                                  stageSummaries,
+                                                ),
                                         ),
+                                      ),
+                                      if (_section ==
+                                          _ProjectDetailSection.channel) ...[
+                                        _buildDateDirectoryMenu(),
+                                        _buildRecordFilter(),
                                       ],
+                                    ],
+                                  ),
+                                ),
+                                if (_project?.isLocalArchive == true)
+                                  Padding(
+                                    padding: const EdgeInsets.fromLTRB(
+                                      16,
+                                      4,
+                                      16,
+                                      8,
+                                    ),
+                                    child: Text(
+                                      '云端项目已删除，本机记录仍可查看和补记。',
+                                      style: theme.textTheme.bodySmall
+                                          ?.copyWith(color: secondary),
                                     ),
                                   ),
                                 if (_hasReadFailure)
@@ -395,23 +526,41 @@ class _ProjectDetailViewState extends State<ProjectDetailView>
                                 if (_sourcesLoading)
                                   const LinearProgressIndicator(minHeight: 2),
                                 Expanded(
-                                  child: TabBarView(
-                                    controller: _tabController,
-                                    children: [
-                                      _buildTimelineTab(
-                                        theme,
-                                        secondary,
-                                        photos,
-                                        evidence,
-                                      ),
-                                      _buildPhotosTab(theme, secondary, photos),
-                                      _buildExpensesTab(
-                                        theme,
-                                        theme.colorScheme.onSurface,
-                                        secondary,
-                                        evidence,
-                                      ),
-                                    ],
+                                  child: PageStorage(
+                                    key: ValueKey(_accountReloadGeneration),
+                                    bucket: _detailPageStorage,
+                                    child: _buildSectionBody(switch (_section) {
+                                      _ProjectDetailSection.channel =>
+                                        PageStorage(
+                                          key: ValueKey((
+                                            _selectedStage,
+                                            _selectedTimelineFilter,
+                                          )),
+                                          bucket: _channelPageStorage
+                                              .putIfAbsent((
+                                                _selectedStage,
+                                                _selectedTimelineFilter,
+                                              ), PageStorageBucket.new),
+                                          child: _buildTimelineTab(
+                                            theme,
+                                            photos,
+                                            evidence,
+                                          ),
+                                        ),
+                                      _ProjectDetailSection.photos =>
+                                        _buildPhotosTab(
+                                          theme,
+                                          secondary,
+                                          photos,
+                                        ),
+                                      _ProjectDetailSection.ledger =>
+                                        _buildExpensesTab(
+                                          theme,
+                                          theme.colorScheme.onSurface,
+                                          secondary,
+                                          evidence,
+                                        ),
+                                    }),
                                   ),
                                 ),
                               ],
@@ -421,10 +570,19 @@ class _ProjectDetailViewState extends State<ProjectDetailView>
                                     theme.colorScheme.onSurface,
                                     photos,
                                   )
+                                : _section == _ProjectDetailSection.channel
+                                ? ProjectChannelComposer(
+                                    onWrite: _project == null
+                                        ? null
+                                        : () => _openNoteEditor(),
+                                    onAdd: _showAddRecordActions,
+                                  )
                                 : null,
                             floatingActionButtonLocation:
                                 FloatingActionButtonLocation.endFloat,
-                            floatingActionButton: _isMultiSelectMode
+                            floatingActionButton:
+                                _isMultiSelectMode ||
+                                    _section == _ProjectDetailSection.channel
                                 ? null
                                 : AppFloatingActionPill(
                                     label: '添加记录',
@@ -447,6 +605,91 @@ class _ProjectDetailViewState extends State<ProjectDetailView>
       },
     );
   }
+
+  Widget _buildSectionBody(Widget child) {
+    final keyed = KeyedSubtree(key: ValueKey(_section), child: child);
+    final duration = AppMotion.duration(context, AppMotion.normal);
+    if (duration == Duration.zero) return keyed;
+    return AnimatedSwitcher(
+      duration: duration,
+      reverseDuration: AppMotion.pageExit,
+      switchInCurve: AppMotion.standardDecelerate,
+      switchOutCurve: AppMotion.standard,
+      child: keyed,
+    );
+  }
+
+  int _visibleRecordCount(int photoCount, int evidenceCount) {
+    final expenseCount = _directProjectExpenses.length;
+    if (_section == _ProjectDetailSection.photos) return photoCount;
+    if (_section == _ProjectDetailSection.ledger) {
+      return expenseCount + evidenceCount;
+    }
+    final counts = {
+      '文字': _projectNotes.length,
+      '照片': photoCount,
+      '费用': expenseCount,
+      '凭证': evidenceCount,
+      '出差': _projectTrips.length,
+    };
+    return counts[_selectedTimelineFilter] ??
+        counts.values.fold(0, (total, count) => total + count);
+  }
+
+  Widget _buildRecordFilter() => PopupMenuButton<String>(
+    tooltip: '筛选记录',
+    initialValue: _selectedTimelineFilter,
+    onSelected: (value) => setState(() => _selectedTimelineFilter = value),
+    child: SizedBox(
+      width: 48,
+      height: 48,
+      child: Icon(
+        _selectedTimelineFilter == '全部'
+            ? Icons.filter_list_rounded
+            : Icons.filter_alt_rounded,
+        color: _selectedTimelineFilter == '全部'
+            ? null
+            : Theme.of(context).colorScheme.primary,
+      ),
+    ),
+    itemBuilder: (_) => [
+      for (final type in ['全部', '文字', '照片', '费用', '凭证', '出差'])
+        CheckedPopupMenuItem(
+          value: type,
+          checked: _selectedTimelineFilter == type,
+          child: Text(type == '全部' ? '全部记录' : type),
+        ),
+    ],
+  );
+
+  Widget _buildDateDirectoryMenu() => PopupMenuButton<String>(
+    tooltip: '日期目录',
+    onSelected: (action) {
+      setState(() {
+        _directoryInitialized = true;
+        for (final month in _channelMonths) {
+          if (action == 'expand-all') {
+            _expandedMonths.add(month.key);
+            _expandedDays.addAll(month.days.map((day) => day.key));
+          } else {
+            _expandedMonths.remove(month.key);
+            for (final day in month.days) {
+              _expandedDays.remove(day.key);
+            }
+          }
+        }
+      });
+    },
+    child: const SizedBox(
+      width: 48,
+      height: 48,
+      child: Icon(Icons.unfold_more_rounded),
+    ),
+    itemBuilder: (_) => const [
+      PopupMenuItem(value: 'expand-all', child: Text('全部展开')),
+      PopupMenuItem(value: 'collapse-all', child: Text('全部收起')),
+    ],
+  );
 
   Widget _emptyTab({
     required String title,
@@ -473,24 +716,41 @@ class _ProjectDetailViewState extends State<ProjectDetailView>
       context,
       title: '添加到「$_projectName」',
       actions: [
+        if (_project != null)
+          PhotoActionSheetItem(
+            icon: Icons.edit_note_rounded,
+            title: '写文字记录',
+            subtitle: _selectedStage == null
+                ? '设备状态、现场进展、沟通与跟进事项'
+                : '记录到${_selectedStage!.isEmpty ? '未分阶段' : '「$_selectedStage」'}',
+            onTap: _openNoteEditor,
+          ),
         PhotoActionSheetItem(
           icon: Icons.photo_camera_outlined,
           title: QuickActionLabels.addPhoto,
           subtitle: '拍摄或导入现场照片',
           onTap: _showAddPhotoActions,
         ),
-        PhotoActionSheetItem(
-          icon: Icons.payments_outlined,
-          title: QuickActionLabels.recordExpense,
-          subtitle: '记录一笔实际支出',
-          onTap: _openAddExpense,
-        ),
-        PhotoActionSheetItem(
-          icon: Icons.receipt_long_outlined,
-          title: QuickActionLabels.addEvidence,
-          subtitle: '保存发票、付款截图或报销材料',
-          onTap: _showEvidenceAddActions,
-        ),
+        if (_project?.isLocalArchive != true) ...[
+          PhotoActionSheetItem(
+            icon: Icons.luggage_outlined,
+            title: '记录出差',
+            subtitle: '关联当前项目与所查看的阶段',
+            onTap: _openAddTrip,
+          ),
+          PhotoActionSheetItem(
+            icon: Icons.payments_outlined,
+            title: QuickActionLabels.recordExpense,
+            subtitle: '记录一笔实际支出',
+            onTap: _openAddExpense,
+          ),
+          PhotoActionSheetItem(
+            icon: Icons.receipt_long_outlined,
+            title: QuickActionLabels.addEvidence,
+            subtitle: '保存发票、付款截图或报销材料',
+            onTap: _showEvidenceAddActions,
+          ),
+        ],
       ],
     );
   }
@@ -501,15 +761,49 @@ class _ProjectDetailViewState extends State<ProjectDetailView>
     ProjectEntry? project,
     List<PhotoEntry> projectPhotos,
   ) {
+    final title = switch (_section) {
+      _ProjectDetailSection.channel => _projectName,
+      _ProjectDetailSection.photos => '项目照片',
+      _ProjectDetailSection.ledger => '项目账目',
+    };
+    final subtitle = _section == _ProjectDetailSection.channel
+        ? project?.isLocalArchive == true
+              ? '本地保留'
+              : project?.status.label ?? '项目记录'
+        : _projectName;
+    final scaler = MediaQuery.textScalerOf(context);
+    final titleHeight = scaler.scale(22) * 1.25 + scaler.scale(12) * 1.3 + 12;
     return AppBar(
       titleSpacing: 0,
-      title: Text(
-        _projectName,
-        maxLines: 1,
-        overflow: TextOverflow.ellipsis,
-        style: theme.textTheme.titleLarge?.copyWith(
-          fontWeight: FontWeight.w700,
-        ),
+      toolbarHeight: titleHeight > 68 ? titleHeight : 68,
+      leading: _section == _ProjectDetailSection.channel
+          ? null
+          : IconButton(
+              tooltip: '返回项目记录',
+              onPressed: _photoBatchBusy ? null : _returnToChannel,
+              icon: const Icon(Icons.arrow_back_rounded),
+            ),
+      title: Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            title,
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+            style: theme.textTheme.titleLarge?.copyWith(
+              fontWeight: FontWeight.w600,
+            ),
+          ),
+          Text(
+            subtitle,
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+            style: theme.textTheme.labelMedium?.copyWith(
+              color: theme.colorScheme.onSurfaceVariant,
+            ),
+          ),
+        ],
       ),
       actions: [
         if (_isMultiSelectMode) ...[
@@ -538,7 +832,20 @@ class _ProjectDetailViewState extends State<ProjectDetailView>
             child: const Text("取消"),
           ),
         ] else ...[
-          if (_tabController.index == 1 && projectPhotos.isNotEmpty)
+          if (_section != _ProjectDetailSection.photos)
+            IconButton(
+              tooltip: '查看照片',
+              icon: const Icon(Icons.photo_library_outlined),
+              onPressed: () => _openSection(_ProjectDetailSection.photos),
+            ),
+          if (_section != _ProjectDetailSection.ledger)
+            IconButton(
+              tooltip: '查看账目',
+              icon: const Icon(Icons.receipt_long_outlined),
+              onPressed: () => _openSection(_ProjectDetailSection.ledger),
+            ),
+          if (_section == _ProjectDetailSection.photos &&
+              projectPhotos.isNotEmpty)
             IconButton(
               icon: const Icon(Icons.checklist_rtl_rounded),
               tooltip: "批量选择",
@@ -574,29 +881,30 @@ class _ProjectDetailViewState extends State<ProjectDetailView>
                   children: [
                     Icon(Icons.flag_outlined, size: 20),
                     SizedBox(width: 8),
-                    Text('节点管理'),
+                    Text('阶段管理'),
                   ],
                 ),
               ),
-              PopupMenuItem(
-                value: 'archive',
-                child: Row(
-                  children: [
-                    Icon(
-                      project?.status == ProjectEntryStatus.archived
-                          ? Icons.unarchive_outlined
-                          : Icons.archive_outlined,
-                      size: 20,
-                    ),
-                    const SizedBox(width: 8),
-                    Text(
-                      project?.status == ProjectEntryStatus.archived
-                          ? '取消归档'
-                          : '归档项目',
-                    ),
-                  ],
+              if (project?.isLocalArchive != true)
+                PopupMenuItem(
+                  value: 'archive',
+                  child: Row(
+                    children: [
+                      Icon(
+                        project?.status == ProjectEntryStatus.archived
+                            ? Icons.unarchive_outlined
+                            : Icons.archive_outlined,
+                        size: 20,
+                      ),
+                      const SizedBox(width: 8),
+                      Text(
+                        project?.status == ProjectEntryStatus.archived
+                            ? '取消归档'
+                            : '归档项目',
+                      ),
+                    ],
+                  ),
                 ),
-              ),
               const PopupMenuItem(
                 value: 'cover',
                 child: Row(
@@ -637,21 +945,31 @@ class _ProjectDetailViewState extends State<ProjectDetailView>
           ),
         ],
       ],
-      bottom: TabBar(
-        controller: _tabController,
-        onTap: (index) => _tabController.animateTo(
-          index,
-          duration: AppMotion.duration(context, AppMotion.normal),
-        ),
-        dividerColor: Colors.transparent,
-        tabs: const [
-          Tab(text: '动态'),
-          Tab(text: '照片'),
-          Tab(text: '账目'),
-        ],
-      ),
     );
   }
+
+  Future<void> _openNoteEditor({ProjectNoteEntry? existing}) async {
+    final project = _project;
+    if (project == null) return;
+    final changed = await showProjectNoteEditor(
+      context,
+      project: project,
+      existing: existing,
+      initialStage: _selectedStage,
+    );
+    if (mounted && changed == true) {
+      unawaited(_notesCubit.loadEntries(background: true));
+    }
+  }
+
+  Future<void> _openAddTrip() => openWorkLogEditorSheet(
+    context,
+    selectedDate: DateTime.now(),
+    initialType: WorkLogEntryType.businessTrip,
+    initialProject: _project,
+    initialProjectStageName: _selectedStage,
+    onSavedOrDeleted: _tripsCubit.loadEntries,
+  );
 
   Future<void> _pickProjectCover(ProjectEntry project) async {
     final image = await _imagePicker.pickImage(source: ImageSource.gallery);
@@ -693,94 +1011,121 @@ class _ProjectDetailViewState extends State<ProjectDetailView>
     }
   }
 
-  // --- Tab 1: 动态/时间线 ---
+  // Unified project record channel.
   Widget _buildTimelineTab(
     ThemeData theme,
-    Color textSecondary,
     List<PhotoEntry> projectPhotos,
     List<EvidenceEntry> projectEvidence,
   ) {
-    final timelineItems = <_DetailTimelineItem>[
-      ...projectPhotos.map(
-        (photo) => _DetailTimelineItem(
-          date: photo.capturedAt ?? photo.createdAt,
-          type: '照片',
-          title: photo.description?.trim().isNotEmpty == true
-              ? photo.description!.trim()
-              : photo.fileName,
-          subtitle: [
-            photo.deviceName ?? '项目照片',
-            if (photo.projectStageName?.isNotEmpty == true)
-              photo.projectStageName!,
-          ].join(' · '),
-          icon: Icons.photo_library_rounded,
-          iconColor: theme.colorScheme.primary,
-          rawItem: photo,
-        ),
-      ),
-      ..._directProjectExpenses.map((expense) {
-        final title = expense.merchant?.trim().isNotEmpty == true
-            ? expense.merchant!.trim()
-            : expense.category.label;
-        final subtitleParts = [
-          expense.category.label,
-          if (expense.projectStageName?.trim().isNotEmpty == true)
-            expense.projectStageName!.trim(),
-          projectAmount(expense.amount, expense.currency),
-        ];
-        return _DetailTimelineItem(
-          date: expense.expenseDate,
-          type: '费用',
-          title: title,
-          subtitle: subtitleParts.join(' · '),
-          amount: expense.amount,
-          icon: Icons.payments_rounded,
-          iconColor: theme.semanticColors.success,
-          rawItem: expense,
-        );
-      }),
-      ...projectEvidence.map((evidence) {
-        final legacy = legacyEvidenceFromEntry(evidence);
-        return _DetailTimelineItem(
-          date: evidence.evidenceDate,
-          type: '凭证',
-          title: evidenceDisplayTitle(legacy),
-          subtitle: [
-            evidenceDisplaySubtitle(legacy),
-            if (evidence.projectStageName?.trim().isNotEmpty == true)
-              evidence.projectStageName!.trim(),
-            evidence.status.label,
-            if ((evidence.amount ?? 0) > 0)
-              projectAmount(evidence.amount ?? 0, evidence.currency),
-          ].join(' · '),
-          amount: evidence.amount,
-          icon: Icons.receipt_long_rounded,
-          iconColor: theme.colorScheme.tertiary,
-          rawItem: evidence,
-        );
-      }),
-      ..._projectTrips.map(
-        (trip) => _DetailTimelineItem(
-          date: trip.date,
-          type: '出差',
-          title: trip.location?.trim().isNotEmpty == true
-              ? trip.location!.trim()
-              : '出差记录',
-          subtitle: [
-            if (trip.transport?.trim().isNotEmpty == true)
-              trip.transport!.trim(),
-            if (trip.projectStageName?.trim().isNotEmpty == true)
-              trip.projectStageName!.trim(),
-            if ((trip.expenses ?? 0) > 0) formatMoney(trip.expenses ?? 0),
-            trip.isReimbursed ? '已报销' : '未报销',
-          ].join(' · '),
-          amount: trip.expenses,
-          icon: Icons.luggage_rounded,
-          iconColor: theme.semanticColors.warning,
-          rawItem: trip,
-        ),
-      ),
-    ]..sort((a, b) => b.date.compareTo(a.date));
+    final timelineItems =
+        <_DetailTimelineItem>[
+          ..._projectNotes.map(
+            (note) => _DetailTimelineItem(
+              date: note.date,
+              type: '文字',
+              title: '文字记录',
+              subtitle: note.projectStageName?.trim().isNotEmpty == true
+                  ? note.projectStageName!.trim()
+                  : '未分阶段',
+              content: note.content,
+              icon: Icons.edit_note_rounded,
+              iconColor: theme.colorScheme.primary,
+              rawItem: note,
+            ),
+          ),
+          ...projectPhotos.map(
+            (photo) => _DetailTimelineItem(
+              date: photo.capturedAt ?? photo.createdAt,
+              type: '照片',
+              title: photo.deviceName?.trim().isNotEmpty == true
+                  ? photo.deviceName!.trim()
+                  : photo.fileName,
+              content: photo.description,
+              subtitle: [
+                photo.deviceName ?? '项目照片',
+                if (photo.projectStageName?.isNotEmpty == true)
+                  photo.projectStageName!,
+              ].join(' · '),
+              icon: Icons.photo_library_rounded,
+              iconColor: theme.colorScheme.primary,
+              rawItem: photo,
+            ),
+          ),
+          ..._directProjectExpenses.map((expense) {
+            final title = expense.merchant?.trim().isNotEmpty == true
+                ? expense.merchant!.trim()
+                : expense.category.label;
+            final subtitleParts = [
+              expense.category.label,
+              if (expense.projectStageName?.trim().isNotEmpty == true)
+                expense.projectStageName!.trim(),
+              projectAmount(expense.amount, expense.currency),
+            ];
+            return _DetailTimelineItem(
+              date: expense.expenseDate,
+              type: '费用',
+              title: title,
+              subtitle: subtitleParts.join(' · '),
+              amount: expense.amount,
+              content: expense.note,
+              icon: Icons.payments_rounded,
+              iconColor: theme.semanticColors.success,
+              rawItem: expense,
+            );
+          }),
+          ...projectEvidence.map((evidence) {
+            final legacy = legacyEvidenceFromEntry(evidence);
+            return _DetailTimelineItem(
+              date: evidence.evidenceDate,
+              type: '凭证',
+              title: evidenceDisplayTitle(legacy),
+              subtitle: [
+                evidenceDisplaySubtitle(legacy),
+                if (evidence.projectStageName?.trim().isNotEmpty == true)
+                  evidence.projectStageName!.trim(),
+                evidence.status.label,
+                if ((evidence.amount ?? 0) > 0)
+                  projectAmount(evidence.amount ?? 0, evidence.currency),
+              ].join(' · '),
+              amount: evidence.amount,
+              content: evidence.note,
+              icon: Icons.receipt_long_rounded,
+              iconColor: theme.colorScheme.tertiary,
+              rawItem: evidence,
+            );
+          }),
+          ..._projectTrips.map(
+            (trip) => _DetailTimelineItem(
+              date: trip.date,
+              type: '出差',
+              title: trip.location?.trim().isNotEmpty == true
+                  ? trip.location!.trim()
+                  : '出差记录',
+              subtitle: [
+                if (trip.transport?.trim().isNotEmpty == true)
+                  trip.transport!.trim(),
+                if (trip.projectStageName?.trim().isNotEmpty == true)
+                  trip.projectStageName!.trim(),
+                if ((trip.expenses ?? 0) > 0) formatMoney(trip.expenses ?? 0),
+                trip.isReimbursed ? '已报销' : '未报销',
+              ].join(' · '),
+              amount: trip.expenses,
+              content: trip.note,
+              icon: Icons.luggage_rounded,
+              iconColor: theme.semanticColors.warning,
+              rawItem: trip,
+            ),
+          ),
+        ]..sort((a, b) {
+          final dateOrder = b.date.compareTo(a.date);
+          if (dateOrder != 0) return dateOrder;
+          final createdOrder = _recordCreatedAt(
+            b.rawItem,
+          ).compareTo(_recordCreatedAt(a.rawItem));
+          if (createdOrder != 0) return createdOrder;
+          final idOrder = _recordId(b.rawItem).compareTo(_recordId(a.rawItem));
+          return idOrder != 0 ? idOrder : a.type.compareTo(b.type);
+        });
 
     final filteredItems = timelineItems
         .where(
@@ -789,125 +1134,133 @@ class _ProjectDetailViewState extends State<ProjectDetailView>
               item.type == _selectedTimelineFilter,
         )
         .toList();
-    final rows = <Object>[];
-    String? previousDay;
+    final months = <String, Map<String, List<_DetailTimelineItem>>>{};
     for (final item in filteredItems) {
       final day = formatDateYmd(item.date);
-      if (day != previousDay) {
-        rows.add(day);
-        previousDay = day;
-      }
-      rows.add(item);
+      (months
+              .putIfAbsent(day.substring(0, 7), () => {})
+              .putIfAbsent(day, () => []))
+          .add(item);
     }
-    return Column(
-      children: [
-        Padding(
-          padding: const EdgeInsets.fromLTRB(16, 8, 16, 0),
-          child: Row(
-            children: [
-              Expanded(
-                child: Text(
-                  '${filteredItems.length} 条记录',
-                  style: theme.textTheme.bodySmall?.copyWith(
-                    color: textSecondary,
-                  ),
-                ),
-              ),
-              PopupMenuButton<String>(
-                tooltip: '筛选动态',
-                initialValue: _selectedTimelineFilter,
-                onSelected: (value) =>
-                    setState(() => _selectedTimelineFilter = value),
-                itemBuilder: (_) => [
-                  for (final type in ['全部', '照片', '费用', '凭证', '出差'])
-                    CheckedPopupMenuItem(
-                      value: type,
-                      checked: _selectedTimelineFilter == type,
-                      child: Text(type == '全部' ? '全部动态' : type),
-                    ),
-                ],
-                child: ConstrainedBox(
-                  constraints: const BoxConstraints(minHeight: 48),
-                  child: Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Text(
-                        _selectedTimelineFilter == '全部'
-                            ? '全部动态'
-                            : _selectedTimelineFilter,
-                        style: theme.textTheme.labelLarge,
-                      ),
-                      const SizedBox(width: 4),
-                      const Icon(Icons.expand_more_rounded, size: 20),
-                    ],
-                  ),
-                ),
-              ),
-            ],
-          ),
-        ),
-        Expanded(
-          child: filteredItems.isEmpty
-              ? _emptyTab(
-                  title: _selectedTimelineFilter == '全部' ? '项目还没有动态' : '暂无这类记录',
-                  message: _selectedTimelineFilter == '全部'
-                      ? '添加照片、支出或凭证，留下项目的进展。'
-                      : '切换筛选查看其他项目动态。',
-                  icon: Icons.timeline_rounded,
-                )
-              : RefreshIndicator(
-                  onRefresh: _refreshRecords,
-                  child: ListView.builder(
-                    key: const PageStorageKey('project-activity'),
-                    physics: const AlwaysScrollableScrollPhysics(),
-                    padding: const EdgeInsets.fromLTRB(16, 0, 16, 100),
-                    itemCount: rows.length,
-                    itemBuilder: (_, index) {
-                      final row = rows[index];
-                      if (row is String) {
-                        return Padding(
-                          padding: const EdgeInsets.fromLTRB(4, 16, 4, 10),
-                          child: Text(
-                            row,
-                            style: theme.textTheme.labelLarge?.copyWith(
-                              color: textSecondary,
-                            ),
-                          ),
-                        );
-                      }
-                      final item = row as _DetailTimelineItem;
-                      return Padding(
-                        padding: const EdgeInsets.only(bottom: 10),
-                        child: _recordRow(
-                          key: ValueKey(
-                            'activity-${item.type}-${_recordId(item.rawItem)}',
-                          ),
-                          theme: theme,
-                          icon: item.icon,
-                          color: item.iconColor,
-                          title: item.title,
-                          subtitle: '${item.type} · ${item.subtitle}',
-                          photo: item.rawItem is PhotoEntry
-                              ? item.rawItem as PhotoEntry
-                              : null,
-                          onTap: () =>
-                              _handleTimelineItemTap(item, projectPhotos),
-                        ),
-                      );
-                    },
-                  ),
-                ),
-        ),
+    _channelMonths = [
+      for (final month in months.entries)
+        _ChannelMonth(month.key, [
+          for (final day in month.value.entries)
+            _ChannelDay(day.key, day.value),
+        ]),
+    ];
+    if (!_directoryInitialized &&
+        _channelMonths.isNotEmpty &&
+        !_sourcesLoading &&
+        !_hasReadFailure) {
+      _directoryInitialized = true;
+      _expandedMonths.add(_channelMonths.first.key);
+      _expandedDays.add(_channelMonths.first.days.first.key);
+    }
+    final rows = <Object>[
+      for (final month in _channelMonths) ...[
+        month,
+        if (_expandedMonths.contains(month.key))
+          for (final day in month.days) ...[
+            day,
+            if (_expandedDays.contains(day.key)) ...day.items,
+          ],
       ],
-    );
+    ];
+    final rowIndexes = {
+      for (var i = 0; i < rows.length; i++) _channelRowKey(rows[i]): i,
+    };
+    return filteredItems.isEmpty
+        ? _emptyTab(
+            title: _selectedTimelineFilter == '全部' ? '开始记录这个项目' : '暂无这类记录',
+            message: _selectedTimelineFilter == '全部'
+                ? '设备状态、生产安排、现场照片，都可以记在这里。'
+                : '切换筛选查看其他项目记录。',
+            icon: Icons.edit_note_rounded,
+          )
+        : RefreshIndicator(
+            onRefresh: _refreshRecords,
+            child: ListView.builder(
+              key: const PageStorageKey('project-activity'),
+              physics: const AlwaysScrollableScrollPhysics(),
+              padding: const EdgeInsets.fromLTRB(12, 6, 12, 20),
+              itemCount: rows.length,
+              findChildIndexCallback: (key) => rowIndexes[key],
+              itemBuilder: (_, index) {
+                final row = rows[index];
+                if (row is _ChannelMonth || row is _ChannelDay) {
+                  final isMonth = row is _ChannelMonth;
+                  final dateKey = isMonth ? row.key : (row as _ChannelDay).key;
+                  final expanded = (isMonth ? _expandedMonths : _expandedDays)
+                      .contains(dateKey);
+                  return Padding(
+                    key: _channelRowKey(row),
+                    padding: const EdgeInsets.only(bottom: 4),
+                    child: ProjectChannelGroupHeader(
+                      date: DateTime.parse(isMonth ? '$dateKey-01' : dateKey),
+                      level: isMonth
+                          ? ProjectChannelDateLevel.month
+                          : ProjectChannelDateLevel.day,
+                      recordCount: isMonth
+                          ? row.recordCount
+                          : (row as _ChannelDay).items.length,
+                      dayCount: isMonth ? row.days.length : null,
+                      expanded: expanded,
+                      onToggle: () => setState(() {
+                        _directoryInitialized = true;
+                        final keys = isMonth ? _expandedMonths : _expandedDays;
+                        if (!keys.remove(dateKey)) keys.add(dateKey);
+                      }),
+                    ),
+                  );
+                }
+                final item = row as _DetailTimelineItem;
+                return Padding(
+                  key: _channelRowKey(row),
+                  padding: const EdgeInsets.only(bottom: 10),
+                  child: ProjectChannelRecord(
+                    icon: item.icon,
+                    color: item.iconColor,
+                    title: item.title,
+                    subtitle: item.subtitle,
+                    typeLabel: item.type,
+                    eventTime: item.date,
+                    content: item.content,
+                    photo: item.rawItem is PhotoEntry
+                        ? item.rawItem as PhotoEntry
+                        : null,
+                    onTap: () => _handleTimelineItemTap(item, projectPhotos),
+                  ),
+                );
+              },
+            ),
+          );
   }
+
+  ValueKey<String> _channelRowKey(Object row) => ValueKey(switch (row) {
+    _ChannelMonth month => 'channel-month-${month.key}',
+    _ChannelDay day => 'channel-day-${day.key}',
+    _DetailTimelineItem item =>
+      'activity-${item.type}-${_recordId(item.rawItem)}',
+    _ => throw StateError('Unsupported channel row'),
+  });
 
   int _recordId(Object record) => switch (record) {
     PhotoEntry e => e.id,
     ExpenseRecordEntry e => e.id,
     EvidenceEntry e => e.id,
     WorkLogEntry e => e.id,
+    ProjectNoteEntry e => e.id,
     _ => 0,
+  };
+
+  DateTime _recordCreatedAt(Object record) => switch (record) {
+    PhotoEntry e => e.createdAt,
+    ExpenseRecordEntry e => e.createdAt ?? e.expenseDate,
+    EvidenceEntry e => e.createdAt ?? e.evidenceDate,
+    WorkLogEntry e => e.createdAt ?? e.date,
+    ProjectNoteEntry e => e.createdAt,
+    _ => DateTime(1900),
   };
 
   Widget _recordRow({
@@ -917,91 +1270,88 @@ class _ProjectDetailViewState extends State<ProjectDetailView>
     required Color color,
     required String title,
     required String subtitle,
-    PhotoEntry? photo,
     String? amount,
     String? status,
     required VoidCallback onTap,
   }) {
-    final large = MediaQuery.textScalerOf(context).scale(14) > 21;
-    final detail = Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(
-          title,
-          maxLines: 2,
-          overflow: TextOverflow.ellipsis,
-          style: theme.textTheme.titleSmall?.copyWith(
-            fontWeight: FontWeight.w600,
-          ),
-        ),
-        const SizedBox(height: 4),
-        Text(
-          subtitle,
-          style: theme.textTheme.bodySmall?.copyWith(
-            color: theme.colorScheme.onSurfaceVariant,
-          ),
-        ),
-        if (amount != null) ...[
-          const SizedBox(height: 8),
-          Wrap(
-            spacing: 10,
-            runSpacing: 4,
-            crossAxisAlignment: WrapCrossAlignment.center,
+    return _ledgerSurface(
+      theme,
+      key: key,
+      onTap: onTap,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text(
-                amount,
-                style: theme.textTheme.titleSmall?.copyWith(
-                  fontWeight: FontWeight.w700,
-                ),
+              Padding(
+                padding: const EdgeInsets.only(top: 2),
+                child: Icon(icon, size: 18, color: color),
               ),
-              if (status != null)
-                Text(
-                  status,
-                  style: theme.textTheme.labelMedium?.copyWith(
-                    color: theme.colorScheme.onSurfaceVariant,
+              const SizedBox(width: 8),
+              Expanded(
+                child: Text(
+                  title,
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
+                  style: theme.textTheme.titleSmall?.copyWith(
+                    fontWeight: FontWeight.w600,
                   ),
                 ),
+              ),
             ],
           ),
-        ],
-      ],
-    );
-    final leading = ClipRRect(
-      borderRadius: BorderRadius.circular(AppRadius.sm),
-      child: SizedBox(
-        width: 52,
-        height: 52,
-        child: photo != null
-            ? AppLocalThumbnail(
-                filePath: photo.filePath,
-                errorBuilder: (_, error, stack) => ColoredBox(
-                  color: theme.semanticColors.mutedSurface,
-                  child: Icon(Icons.image_not_supported_outlined, color: color),
-                ),
-              )
-            : ColoredBox(
-                color: color.withValues(alpha: .10),
-                child: Icon(icon, size: 24, color: color),
-              ),
-      ),
-    );
-    return AppCard(
-      key: key,
-      padding: const EdgeInsets.all(16),
-      onTap: onTap,
-      child: large
-          ? Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [leading, const SizedBox(height: 12), detail],
-            )
-          : Row(
-              crossAxisAlignment: CrossAxisAlignment.start,
+          const SizedBox(height: 4),
+          Text(
+            subtitle,
+            style: theme.textTheme.bodySmall?.copyWith(
+              color: theme.colorScheme.onSurfaceVariant,
+            ),
+          ),
+          if (amount != null) ...[
+            const SizedBox(height: 10),
+            Wrap(
+              spacing: 10,
+              runSpacing: 4,
+              crossAxisAlignment: WrapCrossAlignment.center,
               children: [
-                leading,
-                const SizedBox(width: 12),
-                Expanded(child: detail),
+                Text(
+                  amount,
+                  style: theme.textTheme.titleSmall?.copyWith(
+                    fontWeight: FontWeight.w700,
+                  ),
+                ),
+                if (status != null)
+                  Text(
+                    status,
+                    style: theme.textTheme.labelMedium?.copyWith(
+                      color: theme.colorScheme.onSurfaceVariant,
+                    ),
+                  ),
               ],
             ),
+          ],
+        ],
+      ),
+    );
+  }
+
+  Widget _ledgerSurface(
+    ThemeData theme, {
+    Key? key,
+    VoidCallback? onTap,
+    required Widget child,
+  }) {
+    final radius = BorderRadius.circular(AppRadius.sm);
+    final content = Padding(padding: const EdgeInsets.all(16), child: child);
+    return Material(
+      key: key,
+      color: theme.colorScheme.surface,
+      borderRadius: radius,
+      clipBehavior: Clip.antiAlias,
+      child: onTap == null
+          ? content
+          : InkWell(onTap: onTap, borderRadius: radius, child: content),
     );
   }
 
@@ -1009,7 +1359,16 @@ class _ProjectDetailViewState extends State<ProjectDetailView>
     _DetailTimelineItem item,
     List<PhotoEntry> projectPhotos,
   ) {
-    if (item.type == '照片' && item.rawItem is PhotoEntry) {
+    if (_project?.isLocalArchive == true &&
+        (item.rawItem is ExpenseRecordEntry ||
+            item.rawItem is EvidenceEntry ||
+            item.rawItem is WorkLogEntry)) {
+      unawaited(_showArchivedRecord(item.title, item.subtitle, item.content));
+      return;
+    }
+    if (item.rawItem is ProjectNoteEntry) {
+      unawaited(_openNoteEditor(existing: item.rawItem as ProjectNoteEntry));
+    } else if (item.type == '照片' && item.rawItem is PhotoEntry) {
       final photo = item.rawItem as PhotoEntry;
       final idx = projectPhotos.indexWhere((p) => p.id == photo.id);
       _openPhotoPreview(projectPhotos, idx >= 0 ? idx : 0);
@@ -1039,7 +1398,7 @@ class _ProjectDetailViewState extends State<ProjectDetailView>
     }
   }
 
-  // --- Tab 2: 照片网格与批量操作 ---
+  // Optional photo browser and batch operations.
   Widget _buildPhotosTab(
     ThemeData theme,
     Color textSecondary,
@@ -1103,13 +1462,19 @@ class _ProjectDetailViewState extends State<ProjectDetailView>
                     fit: StackFit.expand,
                     children: [
                       ClipRRect(
-                        borderRadius: BorderRadius.circular(AppRadius.md),
+                        borderRadius: BorderRadius.circular(AppRadius.sm),
                         child: AppLocalThumbnail(
                           filePath: photo.filePath,
-                          errorBuilder: (ctx, err, stack) => Center(
-                            child: Icon(
-                              Icons.broken_image_rounded,
-                              color: textSecondary,
+                          errorBuilder: (ctx, err, stack) => Semantics(
+                            label: '照片文件不可用',
+                            child: ColoredBox(
+                              color: theme.semanticColors.mutedSurface,
+                              child: Center(
+                                child: Icon(
+                                  Icons.broken_image_rounded,
+                                  color: textSecondary,
+                                ),
+                              ),
                             ),
                           ),
                         ),
@@ -1217,7 +1582,7 @@ class _ProjectDetailViewState extends State<ProjectDetailView>
     );
   }
 
-  // --- Tab 3: 费用与凭证展示 ---
+  // Optional expense and evidence ledger.
   Widget _buildExpensesTab(
     ThemeData theme,
     Color textPrimary,
@@ -1237,7 +1602,8 @@ class _ProjectDetailViewState extends State<ProjectDetailView>
         .where((e) => e.status != EvidenceEntryStatus.reimbursed)
         .length;
     final rows = <Object>[
-      AppCard(
+      _ledgerSurface(
+        theme,
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
@@ -1326,13 +1692,22 @@ class _ProjectDetailViewState extends State<ProjectDetailView>
         ? '金额未填写'
         : projectAmount(evidence.amount!, evidence.currency),
     status: evidence.status.label,
-    onTap: () => unawaited(
-      showEvidenceDetailSheet(context, legacyEvidenceFromEntry(evidence)).then((
-        _,
-      ) {
-        if (mounted) return _evidenceCubit.loadEntries(background: true);
-      }),
-    ),
+    onTap: () => _project?.isLocalArchive == true
+        ? unawaited(
+            _showArchivedRecord(
+              evidenceDisplayTitle(legacyEvidenceFromEntry(evidence)),
+              '${formatDateYmd(evidence.evidenceDate)} · ${evidence.amount == null ? '金额未填写' : projectAmount(evidence.amount!, evidence.currency)} · ${evidence.status.label}',
+              evidence.note,
+            ),
+          )
+        : unawaited(
+            showEvidenceDetailSheet(
+              context,
+              legacyEvidenceFromEntry(evidence),
+            ).then((_) {
+              if (mounted) return _evidenceCubit.loadEntries(background: true);
+            }),
+          ),
   );
 
   Widget _ledgerHeading(ThemeData theme, String title) => Padding(
@@ -1354,6 +1729,18 @@ class _ProjectDetailViewState extends State<ProjectDetailView>
   }
 
   void _openExpenseEditor({ExpenseRecordEntry? record}) {
+    if (_project?.isLocalArchive == true) {
+      if (record != null) {
+        unawaited(
+          _showArchivedRecord(
+            record.merchant ?? record.category.label,
+            '${formatDateYmd(record.expenseDate)} · ${projectAmount(record.amount, record.currency)}',
+            record.note,
+          ),
+        );
+      }
+      return;
+    }
     unawaited(
       openExpenseRecordEditorPage(
         context,
@@ -1364,6 +1751,32 @@ class _ProjectDetailViewState extends State<ProjectDetailView>
       ),
     );
   }
+
+  Future<void> _showArchivedRecord(
+    String title,
+    String subtitle,
+    String? content,
+  ) => showAppBottomSheet<void>(
+    context: context,
+    isScrollControlled: true,
+    backgroundColor: Colors.transparent,
+    builder: (_) => AppSheetScaffold(
+      title: title,
+      scrollable: true,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          const Text('云端项目已删除，这条记录保留在本机供回看。新的出差和账目请关联到其他项目。'),
+          const SizedBox(height: 16),
+          SelectableText(subtitle),
+          if (content?.trim().isNotEmpty == true) ...[
+            const SizedBox(height: 16),
+            SelectableText(content!.trim()),
+          ],
+        ],
+      ),
+    ),
+  );
 
   void _showAddPhotoActions() {
     showPhotoActionSheet(
@@ -1378,6 +1791,7 @@ class _ProjectDetailViewState extends State<ProjectDetailView>
               capturePhotoWithSystemCamera(
                 context,
                 initialProject: _projectName,
+                initialProjectId: _project?.id,
                 initialProjectStageName: _selectedStage,
                 onSaved: _photoCubit.loadEntries,
               ),
@@ -1393,6 +1807,7 @@ class _ProjectDetailViewState extends State<ProjectDetailView>
               importPhotoFromGallery(
                 context,
                 initialProject: _projectName,
+                initialProjectId: _project?.id,
                 initialProjectStageName: _selectedStage,
                 onSaved: _photoCubit.loadEntries,
               ),
@@ -1525,6 +1940,7 @@ class _ProjectDetailViewState extends State<ProjectDetailView>
         content: StatefulBuilder(
           builder: (context, update) => ProjectStageField(
             projectName: _projectName,
+            projectId: _project?.id,
             selected: stage,
             projects: projects,
             onChanged: (value) => update(() => stage = value),
@@ -1589,6 +2005,14 @@ class _ProjectDetailViewState extends State<ProjectDetailView>
 
   Future<void> _showDeleteProjectDialog(ProjectEntry project) async {
     final messenger = ScaffoldMessenger.of(context);
+    await _notesCubit.loadEntries(background: true);
+    if (!mounted) return;
+    if (_notesCubit.state.failure != null) {
+      messenger.showSnackBar(
+        const SnackBar(content: Text('读取项目文字记录失败，请重试后再删除。')),
+      );
+      return;
+    }
     final projectPhotos = _photoCubit.state.entries
         .where((e) => _scope.contains(name: e.projectName, id: e.projectId))
         .toList();
@@ -1606,9 +2030,11 @@ class _ProjectDetailViewState extends State<ProjectDetailView>
     final evidenceCount = evidenceItems.length;
     final expenseCount = expenseItems.length;
     final tripCount = _tripsCubit.state.entries.length;
-    final hasChildren = evidenceCount + expenseCount + tripCount > 0;
+    final noteCount = _notesCubit.state.entries.length;
+    final hasChildren =
+        evidenceCount + expenseCount + tripCount + noteCount > 0;
     final message = hasChildren
-        ? "删除项目「$_projectName」后会删除 $evidenceCount 份凭证和 $expenseCount 条项目费用，解除 $tripCount 条已关联的出差记录；$mediaCount 张项目照片将保留并移除项目关联。同步项目会先标记为待删除，待同步完成后再清理。"
+        ? "删除项目「$_projectName」后会删除 $noteCount 条文字记录、$evidenceCount 份凭证和 $expenseCount 条项目费用，解除 $tripCount 条已关联的出差记录；$mediaCount 张项目照片将保留并移除项目关联。同步项目会先标记为待删除，待同步完成后再清理。"
         : mediaCount > 0
         ? "删除项目「$_projectName」后，$mediaCount 张项目照片将保留并移除项目关联；同步项目会先标记为待删除。"
         : "删除项目「$_projectName」后，同步项目会先标记为待删除；本地项目删除后无法恢复。";
@@ -1667,6 +2093,7 @@ class _ProjectDetailViewState extends State<ProjectDetailView>
               )
               .map((e) => e.projectStageName ?? ''),
           ..._tripsCubit.state.entries.map((e) => e.projectStageName ?? ''),
+          ..._notesCubit.state.entries.map((e) => e.projectStageName ?? ''),
         ],
       );
 
@@ -1680,12 +2107,12 @@ class _ProjectDetailViewState extends State<ProjectDetailView>
       isScrollControlled: true,
       backgroundColor: Colors.transparent,
       builder: (sheetContext) => AppSheetScaffold(
-        title: '选择项目阶段',
+        title: '选择阶段',
         scrollable: true,
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            const Text('阶段按顺序保留，切换后可查看或补记对应记录。'),
+            const Text('选择阶段，查看或补记这一环节的记录。'),
             ListTile(
               title: const Text('全部阶段'),
               trailing: _selectedStage == null
@@ -1707,13 +2134,23 @@ class _ProjectDetailViewState extends State<ProjectDetailView>
                       ? '未分阶段'
                       : '${index + 1}. ${ordered[index].name}',
                 ),
-                subtitle: Text(
-                  [
-                    '${ordered[index].photos} 张照片 · ${ordered[index].expenses} 笔支出 · ${ordered[index].evidence} 份凭证 · ${ordered[index].trips} 条出差',
+                subtitle: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Wrap(
+                      spacing: 12,
+                      runSpacing: 4,
+                      children: [
+                        for (final part in _stageRecordSummary(
+                          ordered[index],
+                        ).split(' · '))
+                          Text(part),
+                      ],
+                    ),
                     for (final code
                         in (ordered[index].totals.keys.toList()..sort()))
-                      projectAmount(ordered[index].totals[code]!, code),
-                  ].join('\n'),
+                      Text(projectAmount(ordered[index].totals[code]!, code)),
+                  ],
                 ),
                 trailing: _selectedStage == ordered[index].name
                     ? const Icon(Icons.check_rounded)
@@ -1743,6 +2180,33 @@ class _ProjectDetailViewState extends State<ProjectDetailView>
       ),
     );
   }
+
+  String _stageRecordSummary(ProjectStageSummary stage) {
+    final parts = [
+      if (stage.notes > 0) '${stage.notes} 条文字',
+      if (stage.photos > 0) '${stage.photos} 张照片',
+      if (stage.trips > 0) '${stage.trips} 条出差',
+      if (stage.expenses > 0) '${stage.expenses} 笔支出',
+      if (stage.evidence > 0) '${stage.evidence} 份凭证',
+    ];
+    return parts.isEmpty ? '暂无记录' : parts.join(' · ');
+  }
+}
+
+class _ChannelMonth {
+  final String key;
+  final List<_ChannelDay> days;
+
+  _ChannelMonth(this.key, this.days);
+
+  int get recordCount => days.fold(0, (total, day) => total + day.items.length);
+}
+
+class _ChannelDay {
+  final String key;
+  final List<_DetailTimelineItem> items;
+
+  _ChannelDay(this.key, this.items);
 }
 
 class _DetailTimelineItem {
@@ -1754,6 +2218,7 @@ class _DetailTimelineItem {
   final IconData icon;
   final Color iconColor;
   final Object rawItem;
+  final String? content;
 
   const _DetailTimelineItem({
     required this.date,
@@ -1764,6 +2229,7 @@ class _DetailTimelineItem {
     required this.icon,
     required this.iconColor,
     required this.rawItem,
+    this.content,
   });
 }
 

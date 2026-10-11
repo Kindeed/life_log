@@ -8,6 +8,7 @@ abstract interface class PhotoRepositoryPort {
   Future<PhotoEntry> saveEntryFromPath({
     required String tempPath,
     required String projectName,
+    int? projectId,
     String? projectStageName,
     required String description,
     required String deviceName,

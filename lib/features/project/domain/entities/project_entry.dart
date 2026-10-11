@@ -7,6 +7,7 @@ final class ProjectEntry extends Equatable {
   final String? syncId;
   final String name;
   final ProjectEntryStatus status;
+  final bool isLocalArchive;
   final List<String> stageNames;
   final String? localCoverPath;
   final String? coverImagePath;
@@ -16,6 +17,7 @@ final class ProjectEntry extends Equatable {
     this.syncId,
     required this.name,
     required this.status,
+    this.isLocalArchive = false,
     this.stageNames = const <String>[],
     this.localCoverPath,
     this.coverImagePath,
@@ -29,6 +31,7 @@ final class ProjectEntry extends Equatable {
     syncId,
     name,
     status,
+    isLocalArchive,
     stageNames,
     localCoverPath,
     coverImagePath,

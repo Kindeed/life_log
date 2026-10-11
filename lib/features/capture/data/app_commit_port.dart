@@ -55,6 +55,10 @@ class AppCommitPort implements CommitPort {
         (draft.draftValues['projectName'] as String?)?.trim() ??
         (draft.draftValues['project'] as String?)?.trim() ??
         '';
+    // A null draft value means the user explicitly changed the project name.
+    final projectId = draft.draftValues.containsKey('projectId')
+        ? draft.draftValues['projectId'] as int?
+        : draft.projectLocalId;
     final description =
         (draft.draftValues['description'] as String?)?.trim() ??
         (draft.draftValues['desc'] as String?)?.trim() ??
@@ -77,6 +81,7 @@ class AppCommitPort implements CommitPort {
     final result = await _savePhotoFromPath(
       tempPath: tempPath,
       projectName: projectName,
+      projectId: projectId,
       projectStageName: draft.draftValues['projectStageName'] as String?,
       description: description,
       deviceName: deviceName,

@@ -27,6 +27,7 @@ import 'package:life_log/features/evidence/data/evidence_model.dart';
 import 'package:life_log/features/expense/data/expense_record_dao.dart';
 import 'package:life_log/features/expense/data/expense_record_model.dart';
 import 'package:life_log/features/project/data/project_model.dart';
+import 'package:life_log/features/project/data/project_note_model.dart';
 import '../utils/date_utils.dart';
 import '../services/auth_service.dart';
 import '../utils/sync_id_policy.dart';
@@ -45,6 +46,7 @@ class DbService {
     ExpenseEvidenceSchema,
     ExpenseRecordSchema,
     ProjectSchema,
+    ProjectNoteSchema,
     LocalDataMigrationBatchSchema,
     EvidenceAttachmentSchema,
     SyncConflictRecordSchema,
@@ -349,6 +351,7 @@ class DbService {
       ..pendingDelete = source.pendingDelete
       ..name = source.name
       ..status = source.status
+      ..isLocalArchive = source.isLocalArchive
       ..createdAt = source.createdAt
       ..updatedAt = source.updatedAt
       ..localCoverPath = source.localCoverPath
@@ -545,6 +548,7 @@ class DbService {
     project.syncedAt = existing.syncedAt;
     project.pendingDelete = project.pendingDelete || existing.pendingDelete;
     project.deletedAt ??= existing.deletedAt;
+    project.isLocalArchive = existing.isLocalArchive;
   }
 
   DateTime _parseRemoteDateTime(dynamic value, {DateTime? fallback}) {
@@ -652,9 +656,10 @@ class DbService {
   }
 
   bool _isProjectSyncEligible(Project project) {
-    return project.remoteId != null ||
-        project.syncId != null ||
-        project.pendingDelete;
+    return !project.isLocalArchive &&
+        (project.remoteId != null ||
+            project.syncId != null ||
+            project.pendingDelete);
   }
 
   bool _belongsToOwner(String? recordOwnerUserId, String ownerUserId) {
@@ -704,8 +709,12 @@ class DbService {
         .filter()
         .ownerUserIdIsNull()
         .count();
-    final projects = await isar.projects.filter().ownerUserIdIsNull().count();
+    final projects = (await _removableUnownedProjects()).length;
     final photos = await isar.photoItems.filter().ownerUserIdIsNull().count();
+    final projectNotes = await isar.projectNotes
+        .filter()
+        .ownerUserIdIsNull()
+        .count();
 
     return LocalDataMigrationSummary(
       workLogs: logs,
@@ -714,6 +723,7 @@ class DbService {
       expenseRecords: expenseRecords,
       projects: projects,
       photos: photos,
+      projectNotes: projectNotes,
     );
   }
 
@@ -758,12 +768,43 @@ class DbService {
           .findAll();
       await isar.photoItems.deleteAll(photos.map((item) => item.id).toList());
 
-      final projects = await isar.projects
+      final notes = await isar.projectNotes
           .filter()
           .ownerUserIdIsNull()
           .findAll();
+      await isar.projectNotes.deleteAll(notes.map((item) => item.id).toList());
+
+      final projects = await _removableUnownedProjects();
       await isar.projects.deleteAll(projects.map((item) => item.id).toList());
     });
+  }
+
+  /// An unowned parent may already contain a signed-in user's local notes.
+  /// Removing the parent would make those owned records inaccessible. Keep
+  /// these projects, including when the note belongs to another local account.
+  Future<List<Project>> _removableUnownedProjects() async {
+    final notes = await isar.projectNotes
+        .filter()
+        .ownerUserIdIsNotNull()
+        .findAll();
+    final protectedIds = notes
+        .map((note) => note.projectId)
+        .whereType<int>()
+        .toSet();
+    final projects = await isar.projects.filter().ownerUserIdIsNull().findAll();
+    return projects
+        .where((project) => !protectedIds.contains(project.id))
+        .toList();
+  }
+
+  Future<bool> _projectHasForeignNotes(int projectId, String? owner) async {
+    final notes = await isar.projectNotes
+        .filter()
+        .projectIdEqualTo(projectId)
+        .findAll();
+    return notes.any(
+      (note) => note.ownerUserId != null && note.ownerUserId != owner,
+    );
   }
 
   Future<int> startLocalDataMigrationBatch({
@@ -877,6 +918,17 @@ class DbService {
         await isar.photoItems.putAll(photos);
       }
 
+      final notes = await isar.projectNotes
+          .filter()
+          .ownerUserIdIsNull()
+          .findAll();
+      for (final note in notes) {
+        note.ownerUserId = ownerUserId;
+      }
+      if (notes.isNotEmpty) {
+        await isar.projectNotes.putAll(notes);
+      }
+
       final syncableProjectNames = await _getSyncableProjectNames(
         ownerUserId: ownerUserId,
       );
@@ -885,12 +937,26 @@ class DbService {
           .filter()
           .ownerUserIdIsNull()
           .findAll();
+      final ownedNotes = await isar.projectNotes
+          .filter()
+          .ownerUserIdIsNotNull()
+          .findAll();
+      final foreignNoteProjectIds = ownedNotes
+          .where((note) => note.ownerUserId != ownerUserId)
+          .map((note) => note.projectId)
+          .whereType<int>()
+          .toSet();
       for (final project in projects) {
+        // A shared local parent remains visible to both local accounts. Claim
+        // only the caller's unowned notes; never hide another account's notes
+        // by claiming the parent exclusively.
+        if (foreignNoteProjectIds.contains(project.id)) continue;
         project.ownerUserId = ownerUserId;
         final syncable = syncableProjectNames.contains(
           project.name.trim().toLowerCase(),
         );
-        if (syncable || _isProjectSyncEligible(project)) {
+        if (!project.isLocalArchive &&
+            (syncable || _isProjectSyncEligible(project))) {
           project.syncId = ensureSyncId(project.syncId);
           project.isDirty = true;
         }
@@ -2031,6 +2097,23 @@ class DbService {
       final existing = _isNewRecordId(project.id)
           ? null
           : await isar.projects.get(project.id);
+      final owner = currentOwnerUserId;
+      if (existing != null && !_isVisibleToCurrentUser(existing.ownerUserId)) {
+        throw StateError('项目不属于当前账号');
+      }
+      final nextOwner = project.ownerUserId ?? existing?.ownerUserId ?? owner;
+      if (nextOwner != null && nextOwner != owner) {
+        throw StateError('项目不属于当前账号');
+      }
+      if (existing != null &&
+          existing.ownerUserId == null &&
+          nextOwner != null &&
+          await _projectHasForeignNotes(existing.id, nextOwner)) {
+        throw StateError('项目包含其他账号的本地记录，无法改为当前账号的项目');
+      }
+      if (owner != currentOwnerUserId) {
+        throw StateError('账号已变化，请重新打开项目');
+      }
       _stampProjectOwner(project, existing);
       _preserveProjectSyncIdentity(project, existing);
       if (existing != null) {
@@ -2042,6 +2125,13 @@ class DbService {
         project.isDirty =
             project.isDirty ||
             project.remoteId == null && project.syncId != null;
+      }
+      if (project.isLocalArchive) {
+        project
+          ..status = ProjectStatus.archived
+          ..isDirty = false
+          ..deletedAt = null
+          ..pendingDelete = false;
       }
       final savedId = await isar.projects.put(project);
       _recordMutation('projects', savedId, project);
@@ -2057,6 +2147,7 @@ class DbService {
         .where(
           (project) =>
               _belongsToCurrentUser(project.ownerUserId) &&
+              !project.isLocalArchive &&
               (_isProjectSyncEligible(project) ||
                   syncableProjectNames.contains(
                     project.name.trim().toLowerCase(),
@@ -2080,6 +2171,7 @@ class DbService {
             .where(
               (project) =>
                   project.ownerUserId == owner &&
+                  !project.isLocalArchive &&
                   (_isProjectSyncEligible(project) ||
                       syncableProjectNames.contains(
                         project.name.trim().toLowerCase(),
@@ -2106,6 +2198,9 @@ class DbService {
       final project = await isar.projects.get(id);
       if (project == null) return null;
       if (!_isVisibleToCurrentUser(project.ownerUserId)) return null;
+      if (project.isLocalArchive) {
+        throw StateError('请通过项目删除功能处理本地保留项目和记录');
+      }
       project.deletedAt = DateTime.now().toUtc();
       project.pendingDelete = true;
       project.isDirty = true;
@@ -2130,6 +2225,14 @@ class DbService {
       final project = await isar.projects.get(projectId);
       if (project == null || !_isVisibleToCurrentUser(project.ownerUserId)) {
         return null;
+      }
+
+      final notes = await isar.projectNotes
+          .filter()
+          .projectIdEqualTo(project.id)
+          .findAll();
+      if (await _projectHasForeignNotes(project.id, currentOwnerUserId)) {
+        throw StateError('项目包含其他账号的本地记录，无法删除');
       }
 
       final projectNames = {
@@ -2245,7 +2348,22 @@ class DbService {
       }
 
       Project? deletedProject;
-      if (project.remoteId == null && project.syncId == null) {
+      // Channel notes belong to the project and are removed atomically. They
+      // have explicit identities, so a same-name project must never match.
+      final noteIds = notes
+          .where(
+            (note) =>
+                _isVisibleToCurrentUser(note.ownerUserId) &&
+                (note.projectSyncId == null ||
+                    project.syncId == null ||
+                    note.projectSyncId == project.syncId),
+          )
+          .map((note) => note.id)
+          .toList();
+      await isar.projectNotes.deleteAll(noteIds);
+
+      if (project.isLocalArchive ||
+          (project.remoteId == null && project.syncId == null)) {
         await isar.projects.delete(project.id);
       } else {
         final now = DateTime.now().toUtc();
@@ -2274,14 +2392,16 @@ class DbService {
     await _syncWrite(context, (owner) async {
       final live = await isar.projects.get(id);
       if (live == null || live.ownerUserId != owner) return;
+      if (live.isLocalArchive) return;
       if (sentSnapshot != null &&
           (!_hasSameMutationEpoch('projects', live.id, sentSnapshot) ||
               !live.pendingDelete ||
-              live.deletedAt != sentSnapshot.deletedAt ||
+              !_sameNullableInstant(live.deletedAt, sentSnapshot.deletedAt) ||
               live.hasBusinessChangesComparedTo(sentSnapshot))) {
         return;
       }
-      await isar.projects.delete(id);
+      final retained = await _retainProjectNotesArchiveInTxn(live);
+      if (!retained) await isar.projects.delete(id);
     });
   }
 
@@ -2294,6 +2414,7 @@ class DbService {
     await _syncWrite(context, (owner) async {
       final live = await isar.projects.get(ack.id);
       if (live == null ||
+          live.isLocalArchive ||
           live.ownerUserId != owner ||
           sent.ownerUserId != owner ||
           (live.syncId != null &&
@@ -2305,9 +2426,9 @@ class DbService {
       final unchanged =
           _hasSameMutationEpoch('projects', live.id, sent) &&
           !live.hasBusinessChangesComparedTo(sent) &&
-          live.deletedAt == sent.deletedAt &&
+          _sameNullableInstant(live.deletedAt, sent.deletedAt) &&
           live.pendingDelete == sent.pendingDelete &&
-          live.updatedAt == sent.updatedAt;
+          _sameNullableInstant(live.updatedAt, sent.updatedAt);
       live
         ..remoteId = ack.remoteId
         ..syncId = ack.syncId ?? live.syncId
@@ -2337,6 +2458,9 @@ class DbService {
     final safeName = name.trim().isEmpty ? 'DefaultProject' : name.trim();
     for (final project in await getAllProjects()) {
       if (project.name.toLowerCase() == safeName.toLowerCase()) {
+        if (syncable && project.isLocalArchive) {
+          throw StateError('项目已从云端删除，仅保留本地记录；请新建项目用于同步');
+        }
         if (syncable && project.syncId == null) {
           project.syncId = ensureSyncId(project.syncId);
           project.isDirty = true;
@@ -2381,6 +2505,7 @@ class DbService {
       final projects = await isar.projects.where().findAll();
       for (final item in projects) {
         if (item.ownerUserId == owner &&
+            !item.isLocalArchive &&
             item.name.toLowerCase() == normalizedName!.toLowerCase()) {
           project = item;
           break;
@@ -3060,6 +3185,10 @@ class DbService {
       owner,
     );
 
+    // Its identity is retained only as a durable record of a cloud deletion.
+    // Replays and late non-deleted rows must not resurrect the local archive.
+    if (project?.isLocalArchive == true) return;
+
     if (project != null && project.isDirty) {
       // Pulls keep the local edit's base version and tombstone. The versioned
       // push must detect a competing remote edit rather than silently rebase.
@@ -3069,7 +3198,14 @@ class DbService {
       return;
     }
     if (remoteDeletedAt != null) {
-      if (project != null) await isar.projects.delete(project.id);
+      if (project != null) {
+        final retained = await _retainProjectNotesArchiveInTxn(
+          project,
+          remoteVersion: remoteVersion,
+          remoteUpdatedAt: remoteUpdatedAt,
+        );
+        if (!retained) await isar.projects.delete(project.id);
+      }
       return;
     }
     project ??= Project();
@@ -3100,6 +3236,37 @@ class DbService {
 
     await isar.projects.put(project);
   }
+
+  Future<bool> _retainProjectNotesArchiveInTxn(
+    Project project, {
+    int? remoteVersion,
+    DateTime? remoteUpdatedAt,
+  }) async {
+    final hasNotes = await isar.projectNotes
+        .filter()
+        .projectIdEqualTo(project.id)
+        .isNotEmpty();
+    if (!hasNotes) return false;
+    project
+      ..status = ProjectStatus.archived
+      ..isLocalArchive = true
+      ..isDirty = false
+      ..deletedAt = null
+      ..pendingDelete = false;
+    if (remoteVersion != null) project.remoteVersion = remoteVersion;
+    if (remoteUpdatedAt != null) {
+      project
+        ..remoteUpdatedAt = remoteUpdatedAt
+        ..syncedAt = remoteUpdatedAt;
+    }
+    await isar.projects.put(project);
+    _recordMutation('projects', project.id, project);
+    return true;
+  }
+
+  bool _sameNullableInstant(DateTime? left, DateTime? right) => left == null
+      ? right == null
+      : right != null && left.isAtSameMomentAs(right);
 }
 
 class _ProjectLink {

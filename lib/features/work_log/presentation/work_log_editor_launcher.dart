@@ -3,6 +3,7 @@ import 'package:life_log/common/widgets/app_bottom_sheet.dart';
 import 'package:life_log/common/widgets/app_feedback.dart';
 import 'package:life_log/common/widgets/app_page_route.dart';
 import 'package:life_log/core/di/service_locator.dart';
+import 'package:life_log/features/project/domain/entities/project_entry.dart';
 import 'package:life_log/features/work_log/application/load_work_log_edit_draft.dart';
 import 'package:life_log/features/work_log/domain/entities/work_log_entry.dart';
 import 'package:life_log/features/work_log/presentation/add_log_sheet.dart';
@@ -13,6 +14,8 @@ Future<void> openWorkLogEditorPage(
   required DateTime selectedDate,
   WorkLogEntry? existingEntry,
   WorkLogEntryType? initialType,
+  ProjectEntry? initialProject,
+  String? initialProjectStageName,
   Future<void> Function()? onSavedOrDeleted,
 }) async {
   final draft = await _loadEditDraft(context, existingEntry);
@@ -25,6 +28,8 @@ Future<void> openWorkLogEditorPage(
         existingEntry: draft.entry,
         existingAlreadyDirty: draft.alreadyDirty,
         initialType: initialType,
+        initialProject: initialProject,
+        initialProjectStageName: initialProjectStageName,
         onSavedOrDeleted: onSavedOrDeleted,
       ),
     ),
@@ -34,7 +39,10 @@ Future<void> openWorkLogEditorPage(
 Future<void> openWorkLogEditorSheet(
   BuildContext context, {
   required DateTime selectedDate,
-  required WorkLogEntry existingEntry,
+  WorkLogEntry? existingEntry,
+  WorkLogEntryType? initialType,
+  ProjectEntry? initialProject,
+  String? initialProjectStageName,
   Future<void> Function()? onSavedOrDeleted,
 }) async {
   final draft = await _loadEditDraft(context, existingEntry);
@@ -49,6 +57,9 @@ Future<void> openWorkLogEditorSheet(
       selectedDate: selectedDate,
       existingEntry: draft.entry,
       existingAlreadyDirty: draft.alreadyDirty,
+      initialType: initialType,
+      initialProject: initialProject,
+      initialProjectStageName: initialProjectStageName,
       onSavedOrDeleted: onSavedOrDeleted,
     ),
   );

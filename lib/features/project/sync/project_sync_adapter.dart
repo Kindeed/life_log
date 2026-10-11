@@ -101,8 +101,18 @@ final class ProjectSyncAdapter implements SyncAdapter<Project> {
   @override
   Future<PushResult> pushLocalChange(Project entity) async {
     _checkCurrent();
+    if (entity.isLocalArchive) {
+      throw StateError('Local archive projects cannot be uploaded');
+    }
     if (entity.ownerUserId != userId) {
       throw StateError('Local sync entity belongs to a different owner');
+    }
+    final live = await dbService.getProject(entity.id);
+    _checkCurrent();
+    if (live == null || live.isLocalArchive || live.ownerUserId != userId) {
+      throw StateError(
+        'Project is unavailable or retained only as a local archive',
+      );
     }
     _sentSnapshots[entity.id] = DbService.snapshotProject(entity);
     if (entity.pendingDelete) {
