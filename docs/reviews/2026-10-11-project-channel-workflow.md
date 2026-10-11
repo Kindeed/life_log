@@ -1,11 +1,14 @@
 # Project stages and channel workflow
 
 Date: 2026-10-11. Baseline: `abdeab4007d0b519feba90731b2914bc31387756`
-(`v1.4.39+45`). This iteration is prepared for `v1.4.41+47` following the
-user's request to upgrade and push to GitHub. The development verification
-batches below retain their original scopes and counts.
+(`v1.4.39+45`). The channel/date-directory iteration was published as
+`v1.4.41+47`. The subsequent visual-hierarchy refinement is prepared as
+`v1.4.42+48` following the user's request to upgrade and push to GitHub.
+The development verification batches below retain their original scopes and
+counts; the version-only release preparation does not repeat the 75 project
+cases that already passed for this presentation.
 
-Release preparation adds 7 passing workflow/package checks, enforced-lockfile
+The v1.4.40/v1.4.41 release preparation adds 7 passing workflow/package checks, enforced-lockfile
 validation with the CI package host, a read-only format check of 514 Dart files
 with no changes, and clean diff checks. The reviewed lockfile is unchanged.
 No project or application test batch was repeated for the version/notes bump.
@@ -23,6 +26,14 @@ All 4 sync-idempotency policy tests pass after the assertion update, with strict
 test-file analysis, formatting and diff checks. The correction changes no
 production deletion code or dependency versions; the project tests are not
 repeated locally for this test-only fix.
+
+For `v1.4.42+48`, all 10 focused workflow/package/Android release checks pass
+(3 workflow, 4 package and 3 Android checks), with strict scoped analysis.
+Enforced-lockfile validation uses the CI package host and preserves the exact
+reviewed lockfile hash. Read-only formatting checks 515 Dart files with no
+changes, and diff checks pass. The 75 previously passing project cases are not
+repeated for the version/notes bump. The matching GitHub tag invokes the existing
+signed Android verification, build and publication workflow.
 
 ## Product direction
 
@@ -126,6 +137,57 @@ and reduced-motion preferences; no large record-list height animation is used.
 
 Current directory evidence is kept in `project-channel-folders`, separately
 from both earlier review image directories.
+
+## Visual hierarchy refinement
+
+The expanded outline now has three visible levels: a stronger month heading,
+inset date headings and more deeply inset record bodies. All rows in a month
+share one continuous low-emphasis background; internal record padding stays
+inside that background. Only the first/last visible rows round the group's
+outer corners, and only month-to-month spacing reveals the page background.
+Two lightweight guide levels show day and record ownership and stop at the
+actual final child. Month/day disclosures precede their titles. Dates and
+weekdays are separate whole text segments, with secondary counts reflowing
+below on narrow screens or at large text sizes.
+
+The channel still flattens only expanded groups into lazy rows with the same
+stable keys and child-index lookup. A linear metadata pass supplies each row's
+day/month endpoints; drawing guides does not scan neighboring records or build
+an entire expanded subtree. Fold, filter, refresh, account and scroll-storage
+behavior remains covered by the existing project-detail cases.
+
+**75 focused cases pass**, counted once: 62 across the two detail test files
+(the previous 61 plus one endpoint regression) and 13 date-header cases. Actual
+month-title, date-title and record-body origins now progress inward. The four
+directory geometry cases also check consecutive surface rectangles and rendered
+join pixels, covering light/dark at 390dp and 320dp/2x. All twelve final
+default/expanded/collapsed previews in `project-channel-hierarchy` were visually
+reviewed. The four affected media geometry cases pass, including real
+missing-file fallbacks after scrolling the lazy photo row into view (U399).
+
+The first detail batch passed 60 cases and failed two 320dp/2x capture helpers
+because their photo was no longer mounted. After fixing the helper, only eight
+directory/media geometry cases were rerun. A final drawing refinement reran only
+the four directory cases: independent antialiased surfaces left one-pixel dark
+seams despite continuous rectangles. Painting their straight joins without
+antialiasing, within the row bounds, removes those seams while preserving actual
+outer corners (U400). Targeted reruns are not added to the 75-case total.
+
+Strict analysis passes for the changed source and related tests; the final
+surface painter also passes strict analysis. All five changed Dart files format
+unchanged and `git diff --check` passes. The dependency lockfile and application
+version were unchanged during UI verification; release preparation subsequently
+bumps only the application version to `1.4.42+48`. This UI refinement does not
+repeat the previous full-app,
+118-test presentation or 266-test storage/workflow batches, and it does not
+claim phone frame-time measurements.
+
+```powershell
+flutter test --no-pub test/features/project/project_detail_ui_test.dart `
+  test/features/project/project_detail_view_test.dart --reporter expanded
+flutter test --no-pub test/features/project/project_channel_group_header_test.dart `
+  --reporter expanded
+```
 
 ## Data boundaries
 

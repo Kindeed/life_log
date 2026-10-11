@@ -7,6 +7,7 @@ import 'package:life_log/features/project/presentation/project_channel_stage_bar
 import 'package:life_log/features/project/presentation/project_channel_composer.dart';
 import 'package:life_log/features/project/presentation/project_channel_record.dart';
 import 'package:life_log/features/project/presentation/project_channel_group_header.dart';
+import 'package:life_log/features/project/presentation/project_channel_outline_row.dart';
 import 'package:life_log/features/project/presentation/project_note_editor.dart';
 import 'package:life_log/features/project/presentation/project_note_cubit.dart';
 import 'package:life_log/features/project/domain/entities/project_note_entry.dart';
@@ -1157,18 +1158,35 @@ class _ProjectDetailViewState extends State<ProjectDetailView> {
       _expandedMonths.add(_channelMonths.first.key);
       _expandedDays.add(_channelMonths.first.days.first.key);
     }
-    final rows = <Object>[
-      for (final month in _channelMonths) ...[
-        month,
-        if (_expandedMonths.contains(month.key))
-          for (final day in month.days) ...[
+    final rows = <_ChannelOutlineEntry>[];
+    for (final month in _channelMonths) {
+      rows.add(_ChannelOutlineEntry(month));
+      if (!_expandedMonths.contains(month.key)) continue;
+      for (var dayIndex = 0; dayIndex < month.days.length; dayIndex++) {
+        final day = month.days[dayIndex];
+        final hasFollowingDay = dayIndex < month.days.length - 1;
+        final expanded = _expandedDays.contains(day.key);
+        rows.add(
+          _ChannelOutlineEntry(
             day,
-            if (_expandedDays.contains(day.key)) ...day.items,
-          ],
-      ],
-    ];
+            hasFollowingDay: hasFollowingDay,
+            continuesDay: expanded,
+          ),
+        );
+        if (!expanded) continue;
+        for (var itemIndex = 0; itemIndex < day.items.length; itemIndex++) {
+          rows.add(
+            _ChannelOutlineEntry(
+              day.items[itemIndex],
+              hasFollowingDay: hasFollowingDay,
+              continuesDay: itemIndex < day.items.length - 1,
+            ),
+          );
+        }
+      }
+    }
     final rowIndexes = {
-      for (var i = 0; i < rows.length; i++) _channelRowKey(rows[i]): i,
+      for (var i = 0; i < rows.length; i++) _channelRowKey(rows[i].row): i,
     };
     return filteredItems.isEmpty
         ? _emptyTab(
@@ -1187,15 +1205,24 @@ class _ProjectDetailViewState extends State<ProjectDetailView> {
               itemCount: rows.length,
               findChildIndexCallback: (key) => rowIndexes[key],
               itemBuilder: (_, index) {
-                final row = rows[index];
+                final entry = rows[index];
+                final row = entry.row;
+                final isLastInMonth =
+                    index == rows.length - 1 ||
+                    rows[index + 1].row is _ChannelMonth;
                 if (row is _ChannelMonth || row is _ChannelDay) {
                   final isMonth = row is _ChannelMonth;
                   final dateKey = isMonth ? row.key : (row as _ChannelDay).key;
                   final expanded = (isMonth ? _expandedMonths : _expandedDays)
                       .contains(dateKey);
-                  return Padding(
+                  return ProjectChannelOutlineRow(
                     key: _channelRowKey(row),
-                    padding: const EdgeInsets.only(bottom: 4),
+                    level: isMonth
+                        ? ProjectChannelOutlineLevel.month
+                        : ProjectChannelOutlineLevel.day,
+                    isLastInMonth: isLastInMonth,
+                    hasFollowingDay: entry.hasFollowingDay,
+                    continuesDay: entry.continuesDay,
                     child: ProjectChannelGroupHeader(
                       date: DateTime.parse(isMonth ? '$dateKey-01' : dateKey),
                       level: isMonth
@@ -1215,9 +1242,12 @@ class _ProjectDetailViewState extends State<ProjectDetailView> {
                   );
                 }
                 final item = row as _DetailTimelineItem;
-                return Padding(
+                return ProjectChannelOutlineRow(
                   key: _channelRowKey(row),
-                  padding: const EdgeInsets.only(bottom: 10),
+                  level: ProjectChannelOutlineLevel.record,
+                  isLastInMonth: isLastInMonth,
+                  hasFollowingDay: entry.hasFollowingDay,
+                  continuesDay: entry.continuesDay,
                   child: ProjectChannelRecord(
                     icon: item.icon,
                     color: item.iconColor,
@@ -2191,6 +2221,18 @@ class _ProjectDetailViewState extends State<ProjectDetailView> {
     ];
     return parts.isEmpty ? '暂无记录' : parts.join(' · ');
   }
+}
+
+class _ChannelOutlineEntry {
+  final Object row;
+  final bool hasFollowingDay;
+  final bool continuesDay;
+
+  const _ChannelOutlineEntry(
+    this.row, {
+    this.hasFollowingDay = false,
+    this.continuesDay = false,
+  });
 }
 
 class _ChannelMonth {

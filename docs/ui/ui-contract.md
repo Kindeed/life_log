@@ -92,6 +92,16 @@ all flags and scroll storage. Only expanded records enter the lazy row list.
 Date headings reflow counts below the date at large text sizes, expose expansion
 semantics and honour reduced motion for their arrows.
 
+Expanded months form one continuous low-emphasis surface. Month headings own
+the top corners; only the final visible day or record closes the bottom corners.
+Month-to-month spacing stays outside that surface, while record spacing stays
+inside it. Dates and record bodies use progressively deeper insets, reduced on
+narrow screens to preserve reading width. Decorative tree guides stop at their
+actual last child and never continue into another month. Disclosure arrows sit
+before the titles; month typography is stronger than date typography. Dates and
+weekdays remain whole text segments, with counts moving below at large text
+sizes. These decorations must preserve stable lazy row keys and fold state.
+
 Within each day, the activity stream orders records by event time, breaking
 ties with creation time and a stable identity. Text records, photo descriptions,
 trip remarks and

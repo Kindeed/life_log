@@ -30,11 +30,15 @@ class ProjectChannelGroupHeader extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final month = level == ProjectChannelDateLevel.month;
+    final fullDate =
+        '${date.year}-${date.month.toString().padLeft(2, '0')}-${date.day.toString().padLeft(2, '0')}';
+    const weekdays = ['一', '二', '三', '四', '五', '六', '日'];
     final label = month
         ? '${date.year}年${date.month}月'
-        : '${date.year}-${date.month.toString().padLeft(2, '0')}-${date.day.toString().padLeft(2, '0')}';
+        : '${date.month}月${date.day}日';
+    final weekday = '周${weekdays[date.weekday - 1]}';
     final titleStyle =
-        (month ? theme.textTheme.titleSmall : theme.textTheme.bodySmall)
+        (month ? theme.textTheme.titleMedium : theme.textTheme.bodyMedium)
             ?.copyWith(
               color: theme.colorScheme.onSurface,
               fontWeight: month ? FontWeight.w600 : FontWeight.w500,
@@ -60,109 +64,113 @@ class ProjectChannelGroupHeader extends StatelessWidget {
       crossAxisAlignment: WrapCrossAlignment.center,
       children: [
         if (days != null) ...[
-          Text(
-            days,
-            maxLines: 1,
-            overflow: TextOverflow.ellipsis,
-            style: countStyle,
-          ),
+          Text(days, style: countStyle),
           Text('·', style: countStyle),
         ],
-        Text(
-          records,
-          maxLines: 1,
-          overflow: TextOverflow.ellipsis,
-          style: countStyle,
-        ),
+        Text(records, style: countStyle),
       ],
     );
-    return Padding(
-      padding: EdgeInsets.only(left: month ? 0 : AppSpacing.sm),
-      child: Semantics(
-        label: [label, if (days != null) days, records].join('，'),
-        hint: '${expanded ? '收起' : '展开'}${month ? '本月' : '当天'}记录',
-        button: true,
-        expanded: expanded,
-        onTap: onToggle,
-        child: ExcludeSemantics(
-          child: AppPressFeedback(
-            child: TextButton(
-              onPressed: onToggle,
-              style: TextButton.styleFrom(
-                minimumSize: const Size(48, 48),
-                alignment: Alignment.centerLeft,
-                padding: const EdgeInsets.symmetric(
-                  horizontal: AppSpacing.xs,
-                  vertical: AppSpacing.sm,
-                ),
-                foregroundColor: theme.colorScheme.onSurface,
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(AppRadius.xs),
+    return Semantics(
+      label: [
+        month ? label : fullDate,
+        if (days != null) days,
+        records,
+      ].join('，'),
+      hint: '${expanded ? '收起' : '展开'}${month ? '本月' : '当天'}记录',
+      button: true,
+      expanded: expanded,
+      onTap: onToggle,
+      child: ExcludeSemantics(
+        child: AppPressFeedback(
+          child: TextButton(
+            onPressed: onToggle,
+            style: TextButton.styleFrom(
+              minimumSize: const Size(48, 48),
+              alignment: Alignment.centerLeft,
+              padding: const EdgeInsets.symmetric(
+                horizontal: AppSpacing.sm,
+                vertical: AppSpacing.sm,
+              ),
+              foregroundColor: theme.colorScheme.onSurface,
+              backgroundColor: month
+                  ? theme.colorScheme.surfaceContainerLow
+                  : Colors.transparent,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.vertical(
+                  top: const Radius.circular(AppRadius.sm),
+                  bottom: Radius.circular(month && expanded ? 0 : AppRadius.sm),
                 ),
               ),
-              child: LayoutBuilder(
-                builder: (context, constraints) {
-                  final titleWidth = _measure(context, label, titleStyle);
-                  final summaryWidth =
-                      _measure(context, records, countStyle) +
-                      (days == null
-                          ? 0
-                          : _measure(context, days, countStyle) +
-                                _measure(context, '·', countStyle) +
-                                AppSpacing.xs * 2);
-                  final singleRow =
-                      titleWidth +
-                          AppSpacing.lg +
-                          summaryWidth +
-                          AppSpacing.xs +
-                          18 <=
-                      constraints.maxWidth;
-                  final title = Text(
-                    label,
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                    style: titleStyle,
-                  );
-                  if (singleRow) {
-                    return Row(
-                      children: [
-                        Expanded(child: title),
-                        const SizedBox(width: AppSpacing.lg),
-                        summary,
-                        const SizedBox(width: AppSpacing.xs),
-                        arrow,
-                      ],
-                    );
-                  }
-                  final arrowWithTitle =
-                      titleWidth + AppSpacing.xs + 18 <= constraints.maxWidth;
-                  return Column(
-                    mainAxisSize: MainAxisSize.min,
-                    crossAxisAlignment: CrossAxisAlignment.stretch,
+            ),
+            child: LayoutBuilder(
+              builder: (context, constraints) {
+                final titleSize = _measureSize(context, label, titleStyle);
+                final titleWidth =
+                    titleSize.width +
+                    (month
+                        ? 0
+                        : AppSpacing.sm +
+                              _measure(context, weekday, countStyle));
+                final summaryWidth =
+                    _measure(context, records, countStyle) +
+                    (days == null
+                        ? 0
+                        : _measure(context, days, countStyle) +
+                              _measure(context, '·', countStyle) +
+                              AppSpacing.xs * 2);
+                final singleRow =
+                    18 +
+                        AppSpacing.xs +
+                        titleWidth +
+                        AppSpacing.lg +
+                        summaryWidth <=
+                    constraints.maxWidth;
+                final title = month
+                    ? Text(label, style: titleStyle)
+                    : Wrap(
+                        spacing: AppSpacing.sm,
+                        runSpacing: AppSpacing.xs,
+                        crossAxisAlignment: WrapCrossAlignment.center,
+                        children: [
+                          Text(label, style: titleStyle, softWrap: false),
+                          Text(weekday, style: countStyle, softWrap: false),
+                        ],
+                      );
+                if (singleRow) {
+                  return Row(
                     children: [
-                      Row(
-                        children: [
-                          Expanded(child: title),
-                          if (arrowWithTitle) ...[
-                            const SizedBox(width: AppSpacing.xs),
-                            arrow,
-                          ],
-                        ],
-                      ),
-                      const SizedBox(height: AppSpacing.xs),
-                      Row(
-                        children: [
-                          Expanded(child: summary),
-                          if (!arrowWithTitle) ...[
-                            const SizedBox(width: AppSpacing.xs),
-                            arrow,
-                          ],
-                        ],
-                      ),
+                      arrow,
+                      const SizedBox(width: AppSpacing.xs),
+                      Expanded(child: title),
+                      const SizedBox(width: AppSpacing.lg),
+                      summary,
                     ],
                   );
-                },
-              ),
+                }
+                return Column(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    Row(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        SizedBox(
+                          width: 18,
+                          height: titleSize.height,
+                          child: Center(child: arrow),
+                        ),
+                        const SizedBox(width: AppSpacing.xs),
+                        Expanded(child: title),
+                      ],
+                    ),
+                    const SizedBox(height: AppSpacing.xs),
+                    Padding(
+                      padding: const EdgeInsets.only(left: 18 + AppSpacing.xs),
+                      child: summary,
+                    ),
+                  ],
+                );
+              },
             ),
           ),
         ),
@@ -171,7 +179,10 @@ class ProjectChannelGroupHeader extends StatelessWidget {
   }
 }
 
-double _measure(BuildContext context, String text, TextStyle? style) {
+double _measure(BuildContext context, String text, TextStyle? style) =>
+    _measureSize(context, text, style).width;
+
+Size _measureSize(BuildContext context, String text, TextStyle? style) {
   final painter = TextPainter(
     text: TextSpan(
       text: text,
@@ -182,7 +193,7 @@ double _measure(BuildContext context, String text, TextStyle? style) {
     locale: Localizations.maybeLocaleOf(context),
     maxLines: 1,
   )..layout();
-  final width = painter.width;
+  final size = painter.size;
   painter.dispose();
-  return width;
+  return size;
 }

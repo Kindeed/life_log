@@ -26,11 +26,12 @@ void main() {
             onToggle: () => toggles++,
           );
           final month = level == ProjectChannelDateLevel.month;
-          final label = month ? '2026年10月' : '2026-10-11';
+          final label = month ? '2026年10月' : '10月11日';
           final semanticsLabel = month
               ? '2026年10月，3 天，24 条记录'
               : '2026-10-11，24 条记录';
           expect(find.text(label), findsOneWidget);
+          expect(find.text('周日'), month ? findsNothing : findsOneWidget);
           expect(find.text('24 条记录'), findsOneWidget);
           expect(find.text('3 天'), month ? findsOneWidget : findsNothing);
           final node = tester.getSemantics(
@@ -53,6 +54,18 @@ void main() {
             tester.getSize(find.byType(TextButton)).height,
             greaterThanOrEqualTo(48),
           );
+          if (month) {
+            final button = tester.widget<TextButton>(find.byType(TextButton));
+            final shape =
+                button.style!.shape!.resolve({})! as RoundedRectangleBorder;
+            expect(
+              shape.borderRadius,
+              BorderRadius.vertical(
+                top: const Radius.circular(12),
+                bottom: Radius.circular(expanded ? 0 : 12),
+              ),
+            );
+          }
           await tester.tap(find.text(label));
           await tester.pumpAndSettle();
           expect(toggles, 1);
@@ -86,7 +99,7 @@ void main() {
         records: 0,
         onToggle: () {},
       );
-      expect(find.text('2026-10-11'), findsOneWidget);
+      expect(find.text('10月11日'), findsOneWidget);
       expect(find.text('99 天'), findsNothing);
       expect(tester.takeException(), isNull);
     },
@@ -94,7 +107,7 @@ void main() {
 
   for (final dark in [false, true]) {
     testWidgets(
-      'month/day hierarchy reflows without splitting text dark=$dark',
+      'outer outline owns indentation and headers reflow dark=$dark',
       (tester) async {
         await _show(
           tester,
@@ -105,14 +118,17 @@ void main() {
           onToggle: () {},
         );
         final monthButton = _buttonFor('2026年10月');
-        final dayButton = _buttonFor('2026-10-11');
+        final dayButton = _buttonFor('10月11日');
         final monthRect = tester.getRect(monthButton);
         final dayRect = tester.getRect(dayButton);
-        expect(dayRect.left - monthRect.left, closeTo(8, 0.01));
+        expect(dayRect.left, closeTo(monthRect.left, 0.01));
         expect(monthRect.height, greaterThanOrEqualTo(48));
         expect(dayRect.height, greaterThanOrEqualTo(48));
-        for (final label in ['2026年10月', '2026-10-11', '3 天']) {
-          expect(_lineCount(tester, find.text(label), label), 1);
+        for (final label in ['2026年10月', '10月11日', '周日', '3 天']) {
+          expect(
+            _lineCount(tester, find.text(label), label),
+            label == '2026年10月' ? inInclusiveRange(1, 2) : 1,
+          );
           expect(
             _paragraph(tester, find.text(label)).didExceedMaxLines,
             isFalse,
@@ -127,9 +143,7 @@ void main() {
           expect(_paragraph(tester, count).didExceedMaxLines, isFalse);
           final title = find.descendant(
             of: button,
-            matching: find.text(
-              button == monthButton ? '2026年10月' : '2026-10-11',
-            ),
+            matching: find.text(button == monthButton ? '2026年10月' : '10月11日'),
           );
           expect(
             tester.getRect(title).bottom,
@@ -140,7 +154,9 @@ void main() {
           expect(
             AppStatusColors.contrast(
               text.style!.color!,
-              theme.scaffoldBackgroundColor,
+              button == monthButton
+                  ? theme.colorScheme.surfaceContainerLow
+                  : theme.scaffoldBackgroundColor,
             ),
             greaterThanOrEqualTo(4.5),
           );
@@ -156,7 +172,7 @@ void main() {
     tester,
   ) async {
     await _show(tester, both: true, onToggle: () {});
-    for (final label in ['2026年10月', '2026-10-11']) {
+    for (final label in ['2026年10月', '10月11日']) {
       final button = _buttonFor(label);
       final count = find.descendant(of: button, matching: find.text('24 条记录'));
       expect(
@@ -168,6 +184,104 @@ void main() {
         lessThan(tester.getRect(count).left),
       );
       expect(_lineCount(tester, find.text(label), label), 1);
+    }
+    expect(tester.takeException(), isNull);
+  });
+
+  testWidgets('weekday wraps as a complete fragment below the complete date', (
+    tester,
+  ) async {
+    await _show(
+      tester,
+      width: 252,
+      scale: 2,
+      level: ProjectChannelDateLevel.day,
+      onToggle: () {},
+    );
+    final date = find.text('10月11日');
+    final weekday = find.text('周日');
+    for (final (text, label) in [(date, '10月11日'), (weekday, '周日')]) {
+      expect(_lineCount(tester, text, label), 1);
+      final paragraph = _paragraph(tester, text);
+      final boxes = paragraph.getBoxesForSelection(
+        TextSelection(baseOffset: 0, extentOffset: label.length),
+      );
+      expect(boxes.last.right, lessThanOrEqualTo(paragraph.size.width));
+      expect(paragraph.didExceedMaxLines, isFalse);
+    }
+    expect(tester.getRect(date).bottom, lessThan(tester.getRect(weekday).top));
+    expect(
+      tester.getRect(find.byType(AnimatedRotation)).center.dy,
+      closeTo(tester.getRect(date).center.dy, 0.01),
+    );
+    expect(
+      tester.widget<Text>(weekday).style!.fontSize!,
+      lessThan(tester.widget<Text>(date).style!.fontSize!),
+    );
+    expect(
+      tester.widget<Text>(weekday).style!.color,
+      AppTheme.light.colorScheme.onSurfaceVariant,
+    );
+    expect(tester.takeException(), isNull);
+  });
+
+  testWidgets('month anchor is distinct with a leading disclosure control', (
+    tester,
+  ) async {
+    await _show(tester, both: true, onToggle: () {});
+    final theme = AppTheme.light;
+    final month = tester.widget<TextButton>(_buttonFor('2026年10月'));
+    final day = tester.widget<TextButton>(_buttonFor('10月11日'));
+    expect(
+      month.style!.backgroundColor!.resolve({}),
+      theme.colorScheme.surfaceContainerLow,
+    );
+    expect(day.style!.backgroundColor!.resolve({}), Colors.transparent);
+    final shape = month.style!.shape!.resolve({})! as RoundedRectangleBorder;
+    expect(
+      shape.borderRadius,
+      const BorderRadius.vertical(top: Radius.circular(12)),
+    );
+    expect(
+      tester.widget<Text>(find.text('2026年10月')).style!.fontSize,
+      greaterThan(tester.widget<Text>(find.text('10月11日')).style!.fontSize!),
+    );
+    for (final label in ['2026年10月', '10月11日']) {
+      final arrow = find.descendant(
+        of: _buttonFor(label),
+        matching: find.byType(AnimatedRotation),
+      );
+      final titleRect = tester.getRect(find.text(label));
+      final arrowRect = tester.getRect(arrow);
+      expect(titleRect.left - arrowRect.right, closeTo(4, 0.01));
+      expect(titleRect.center.dy, closeTo(arrowRect.center.dy, 0.01));
+    }
+    expect(tester.takeException(), isNull);
+  });
+
+  testWidgets('long counts wrap in a narrow outline without truncation', (
+    tester,
+  ) async {
+    await _show(
+      tester,
+      width: 252,
+      scale: 2,
+      both: true,
+      records: 987654321,
+      dayCount: 87654321,
+      onToggle: () {},
+    );
+    for (final label in ['2026年10月', '10月11日']) {
+      final button = _buttonFor(label);
+      final count = find.descendant(
+        of: button,
+        matching: find.text('987654321 条记录'),
+      );
+      final text = tester.widget<Text>(count);
+      expect(text.maxLines, isNull);
+      expect(text.overflow, isNull);
+      expect(_paragraph(tester, count).didExceedMaxLines, isFalse);
+      expect(tester.getRect(count).right, lessThanOrEqualTo(236));
     }
     expect(tester.takeException(), isNull);
   });

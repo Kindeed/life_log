@@ -5,7 +5,33 @@
 
 This is the active defect ledger. `REVIEW_REPORT.md` is historical context only. Photo sync findings from older reports are superseded by `AGENTS.md`: photos remain local-only and must not enter Supabase sync.
 
-## Project channel release preparation (2026-10-11)
+## Project outline visual hierarchy (2026-10-11)
+
+Final verification: 75 focused cases pass, counted once (62 project-detail and
+13 date-header cases). Four directory geometry cases cover light/dark, 390dp
+and 320dp/2x, with actual text-origin and contiguous-background checks plus a
+raster check for surface seams. All twelve directory-state previews were
+visually reviewed in `project-channel-hierarchy`. The four directly affected
+media geometry cases also pass. Only failed or changed geometry was rerun;
+the earlier whole-app, storage and sync batches were not repeated.
+
+| ID | Severity | Status | Area | Finding | Acceptance |
+| --- | --- | --- | --- | --- | --- |
+| U398 | Medium | fixed | Project month/day/record hierarchy | Expanded month and day headings differ by only a small inset, while their records return to the list edge. Independent row gaps make dates and records appear disconnected from their parent month. | Added a continuous month surface, progressive date/record insets and lightweight tree guides with correct group endings. All 75 focused cases pass, including actual text geometry, 48dp controls, light/dark and 320dp/2x, fold/filter/scroll/account state, stable keys and lazy record construction. Twelve directory-state previews were visually checked. |
+| U399 | Low | fixed | Project hierarchy media capture helper | The narrower 320dp/2x record column makes a text record taller and leaves the following lazy photo outside the viewport cache. The geometry helper assumes its Image is mounted and throws Bad state: No element. | Scroll the fixture's stable photo row into view before resolving its real image stream and retain the public BuildOwner/cache/error handling. Both affected cases pass; all eight directory/media geometry cases pass with capture enabled, without repeating the other 54 detail cases. |
+| U400 | Low | fixed | Fractional outline surface edges | Dark 320dp/2x preview shows one-pixel seams across adjacent month-surface rows despite contiguous layout rectangles; painting antialiases their fractional shared edges. Merely removing zero-radius rounded painting does not remove the seams. | Paint straight joining areas without antialiasing inside each row's bounds, retaining actual month corners. All four directory geometry cases pass with raster seam assertions. The dark large-text capture now has uninterrupted surface color at the previously affected edges; no overpainting outside the row is required. |
+
+## Project hierarchy release preparation (2026-10-11)
+
+The user authorised publishing the approved hierarchy design as `v1.4.42+48`.
+All 10 focused workflow/package/Android release checks pass, with strict scoped
+analysis, enforced-lockfile validation and a read-only format check of 515 Dart
+files with no changes. The 75 project cases already passed for this exact UI;
+they are not repeated for the version/notes bump. The existing signed Android
+GitHub tag workflow verifies and publishes the release. No database, cloud,
+dependency or signing-configuration change is included.
+
+## Historical project channel release preparation (2026-10-11)
 
 User authorised a version upgrade and GitHub push. The project workflow,
 single-channel UI and date-directory iterations below are prepared as

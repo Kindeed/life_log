@@ -33,6 +33,7 @@ import 'package:life_log/features/project/domain/repositories/project_repository
 import 'package:life_log/features/project/presentation/project_cubit.dart';
 import 'package:life_log/features/project/presentation/project_channel_record.dart';
 import 'package:life_log/features/project/presentation/project_channel_group_header.dart';
+import 'package:life_log/features/project/presentation/project_channel_outline_row.dart';
 import 'package:life_log/features/project/presentation/project_channel_stage_bar.dart';
 import 'package:life_log/features/project/presentation/project_detail_view.dart';
 import 'package:life_log/features/project/domain/entities/project_note_entry.dart';
@@ -1406,6 +1407,52 @@ void main() {
     },
   );
 
+  testWidgets('outline guides end at the visible month and day boundaries', (
+    tester,
+  ) async {
+    _phone(tester);
+    final f = await _folderFixture();
+    f.notes.entries.add(_note(45, '十月7日第二条记录', stage: '立项'));
+    await tester.pumpWidget(_harness(f.view()));
+    await tester.pumpAndSettle();
+    final reads = _readCounts(f);
+
+    expect(_outlineRow(tester, 'channel-month-2026-10').isLastInMonth, isFalse);
+    final latest = _outlineRow(tester, 'channel-day-2026-10-07');
+    expect(latest.hasFollowingDay, isTrue);
+    expect(latest.continuesDay, isTrue);
+    expect(_outlineRow(tester, 'activity-文字-45').continuesDay, isTrue);
+    expect(_outlineRow(tester, 'activity-文字-41').continuesDay, isFalse);
+    expect(_outlineRow(tester, 'activity-文字-41').hasFollowingDay, isTrue);
+    final foldedLastDay = _outlineRow(tester, 'channel-day-2026-10-06');
+    expect(foldedLastDay.isLastInMonth, isTrue);
+    expect(foldedLastDay.hasFollowingDay, isFalse);
+    expect(foldedLastDay.continuesDay, isFalse);
+    expect(_outlineRow(tester, 'channel-month-2026-09').isLastInMonth, isTrue);
+
+    await _tapChannelHeader(tester, 'channel-day-2026-10-06');
+    final openLastDay = _outlineRow(tester, 'channel-day-2026-10-06');
+    expect(openLastDay.isLastInMonth, isFalse);
+    expect(openLastDay.continuesDay, isTrue);
+    final lastRecord = _outlineRow(tester, 'activity-文字-42');
+    expect(lastRecord.isLastInMonth, isTrue);
+    expect(lastRecord.hasFollowingDay, isFalse);
+    expect(lastRecord.continuesDay, isFalse);
+
+    await _tapChannelHeader(tester, 'channel-day-2026-10-07');
+    expect(_outlineRow(tester, 'channel-day-2026-10-07').continuesDay, isFalse);
+    expect(
+      _outlineRow(tester, 'channel-day-2026-10-07').hasFollowingDay,
+      isTrue,
+    );
+    expect(find.byKey(const ValueKey('activity-文字-41')), findsNothing);
+    await _tapChannelHeader(tester, 'channel-month-2026-10');
+    expect(_outlineRow(tester, 'channel-month-2026-10').isLastInMonth, isTrue);
+    expect(find.byKey(const ValueKey('channel-day-2026-10-06')), findsNothing);
+    expect(_readCounts(f), reads);
+    expect(tester.takeException(), isNull);
+  });
+
   testWidgets(
     'directory controls expand all records and fold them without reads',
     (tester) async {
@@ -1906,6 +1953,7 @@ void main() {
             tester.getSize(find.byTooltip('日期目录')).height,
             greaterThanOrEqualTo(48),
           );
+          await _expectDirectoryHierarchy(tester, boundary);
           expect(tester.takeException(), isNull);
           await _capture(tester, boundary, '$prefix-default');
           await _directoryAction(tester, '全部收起');
@@ -1914,6 +1962,7 @@ void main() {
           await _capture(tester, boundary, '$prefix-collapsed');
           await _directoryAction(tester, '全部展开');
           expect(find.text('十月7日设备说明'), findsOneWidget);
+          await _expectDirectoryHierarchy(tester, boundary);
           expect(tester.takeException(), isNull);
           await _capture(tester, boundary, '$prefix-expanded');
         },
@@ -2155,6 +2204,102 @@ ProjectChannelGroupHeader _dateHeader(WidgetTester tester, String key) =>
       ),
     );
 
+ProjectChannelOutlineRow _outlineRow(WidgetTester tester, String key) =>
+    tester.widget<ProjectChannelOutlineRow>(find.byKey(ValueKey(key)));
+
+Future<void> _expectDirectoryHierarchy(
+  WidgetTester tester,
+  GlobalKey boundary,
+) async {
+  final month = find.byKey(const ValueKey('channel-month-2026-10'));
+  final day = find.byKey(const ValueKey('channel-day-2026-10-07'));
+  final monthTitle = find.descendant(
+    of: month,
+    matching: find.text('2026年10月'),
+  );
+  final dayTitle = find.descendant(of: day, matching: find.text('10月7日'));
+  final record = find.descendant(
+    of: find.byKey(const ValueKey('activity-文字-41')),
+    matching: find.byType(ProjectChannelRecord),
+  );
+  expect(monthTitle, findsOneWidget);
+  expect(dayTitle, findsOneWidget);
+  expect(record, findsOneWidget);
+  expect(
+    tester.getTopLeft(dayTitle).dx,
+    greaterThan(tester.getTopLeft(monthTitle).dx),
+  );
+  expect(
+    tester.getTopLeft(find.text('十月7日设备说明')).dx,
+    greaterThan(tester.getTopLeft(dayTitle).dx),
+  );
+  expect(tester.getTopLeft(record).dx, greaterThan(tester.getTopLeft(day).dx));
+  for (final heading in [month, day]) {
+    final button = find.descendant(
+      of: heading,
+      matching: find.byType(TextButton),
+    );
+    expect(tester.getSize(button).height, greaterThanOrEqualTo(48));
+  }
+  final surfaceColor = Theme.of(
+    tester.element(month),
+  ).colorScheme.surfaceContainerLow;
+  Finder surface(Finder row) => find
+      .descendant(
+        of: row,
+        matching: find.byWidgetPredicate(
+          (widget) =>
+              widget is DecoratedBox &&
+              widget.decoration is BoxDecoration &&
+              (widget.decoration as BoxDecoration).color == surfaceColor,
+        ),
+      )
+      .first;
+  final monthSurface = tester.getRect(surface(month));
+  final daySurface = tester.getRect(surface(day));
+  final recordSurface = tester.getRect(
+    surface(find.byKey(const ValueKey('activity-文字-41'))),
+  );
+  // The shared month plate has no page-background gap between its lazy rows.
+  expect(monthSurface.bottom, closeTo(daySurface.top, 0.01));
+  expect(daySurface.bottom, closeTo(recordSurface.top, 0.01));
+  expect(daySurface.left, closeTo(monthSurface.left, 0.01));
+  expect(recordSurface.right, closeTo(monthSurface.right, 0.01));
+  // Geometrically touching fractional edges can still expose page-background
+  // hairlines after rasterization. Check a quiet column beyond record insets.
+  final origin = tester.getTopLeft(find.byKey(boundary));
+  await tester.runAsync(() async {
+    const ratio = 2.0;
+    final image =
+        await (boundary.currentContext!.findRenderObject()!
+                as RenderRepaintBoundary)
+            .toImage(pixelRatio: ratio);
+    try {
+      final data = await image.toByteData(format: ui.ImageByteFormat.rawRgba);
+      final bytes = data!.buffer.asUint8List();
+      final x = ((monthSurface.right - origin.dx - 4) * ratio).floor();
+      for (final edge in [monthSurface.bottom, daySurface.bottom]) {
+        final y = (edge - origin.dy) * ratio;
+        for (var pixelY = y.floor() - 1; pixelY <= y.ceil() + 1; pixelY++) {
+          final offset = (pixelY * image.width + x) * 4;
+          final actual =
+              (bytes[offset + 3] << 24) |
+              (bytes[offset] << 16) |
+              (bytes[offset + 1] << 8) |
+              bytes[offset + 2];
+          expect(
+            actual,
+            surfaceColor.toARGB32(),
+            reason: 'Month surface exposes a raster gap at ($x, $pixelY)',
+          );
+        }
+      }
+    } finally {
+      image.dispose();
+    }
+  });
+}
+
 Future<void> _directoryAction(WidgetTester tester, String label) async {
   await tester.tap(find.byTooltip('日期目录'));
   await tester.pumpAndSettle();
@@ -2260,8 +2405,21 @@ Future<void> _capture(
   });
 }
 
-Future<void> _settleUnavailableChannelPhoto(WidgetTester tester) =>
-    _settleUnavailablePhoto(tester, scope: find.byType(ProjectChannelRecord));
+Future<void> _settleUnavailableChannelPhoto(WidgetTester tester) async {
+  final photo = find.byKey(const ValueKey('activity-照片-40'));
+  if (photo.evaluate().isEmpty) {
+    // Narrow, large-text records can put this lazy row beyond the cache extent.
+    await tester.scrollUntilVisible(
+      photo,
+      160,
+      scrollable: _channelScrollable(),
+    );
+  } else {
+    await tester.ensureVisible(photo);
+  }
+  await tester.pumpAndSettle();
+  await _settleUnavailablePhoto(tester, scope: photo);
+}
 
 Future<void> _settleUnavailablePhoto(
   WidgetTester tester, {
