@@ -4,17 +4,20 @@ import 'dart:async';
 import 'package:life_log/common/widgets/app_local_thumbnail.dart';
 
 import 'package:flutter/material.dart';
+import 'package:life_log/common/widgets/app_page_route.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:life_log/core/di/service_locator.dart';
 import 'package:life_log/features/evidence/domain/entities/evidence_entry.dart';
+import 'package:life_log/features/evidence/domain/entities/evidence_entry_stats.dart';
 import 'package:life_log/features/evidence/presentation/evidence_add_action_launcher.dart';
 import 'package:life_log/features/evidence/presentation/evidence_cubit.dart';
 import 'package:life_log/features/evidence/presentation/evidence_detail_launcher.dart';
 import 'package:life_log/features/evidence/presentation/evidence_legacy_view_adapter.dart';
 import 'package:life_log/features/evidence/presentation/evidence_summary_utils.dart';
 import 'package:life_log/features/expense/domain/entities/expense_record_entry.dart';
+import 'package:life_log/features/expense/domain/entities/expense_record_entry_stats.dart';
 import 'package:life_log/features/expense/presentation/expense_record_cubit.dart';
 import 'package:life_log/features/expense/presentation/expense_record_editor_launcher.dart';
 import 'package:life_log/features/project/application/delete_project_entry.dart';
@@ -527,9 +530,9 @@ class _ProjectGalleryViewState extends State<ProjectGalleryView>
     int initialIndex,
   ) async {
     final deleted = await Navigator.of(context).push<bool>(
-      MaterialPageRoute<bool>(
-        builder: (_) =>
-            PhotoPreviewView(photos: photos, initialIndex: initialIndex),
+      appPageRoute<bool>(
+        context,
+        PhotoPreviewView(photos: photos, initialIndex: initialIndex),
       ),
     );
     if (deleted == true && mounted) {
@@ -669,13 +672,8 @@ class _ProjectGalleryViewState extends State<ProjectGalleryView>
     final projectPhotos = photoState.entriesForProject(widget.projectName);
     final evidenceItems = evidenceState.entriesForProject(widget.projectName);
     final expenseItems = expenseState.entriesForProject(widget.projectName);
-    final pendingEvidenceAmount = evidenceItems
-        .where((item) => item.status != EvidenceEntryStatus.reimbursed)
-        .fold<double>(0, (sum, item) => sum + (item.amount ?? 0));
-    final expenseTotal = expenseItems.fold<double>(
-      0,
-      (sum, item) => sum + item.amount,
-    );
+    final pendingEvidenceAmounts = evidenceItems.pendingAmountsByCurrency;
+    final expenseTotals = expenseItems.totalAmountsByCurrency;
 
     return ListView(
       padding: EdgeInsets.all(16.w),
@@ -743,13 +741,8 @@ class _ProjectGalleryViewState extends State<ProjectGalleryView>
           SizedBox(height: 12.h),
         ],
         SizedBox(height: 12.h),
-        GridView.count(
-          crossAxisCount: 2,
-          crossAxisSpacing: 10.w,
-          mainAxisSpacing: 10.h,
-          shrinkWrap: true,
-          physics: const NeverScrollableScrollPhysics(),
-          childAspectRatio: 2.3,
+        Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
             _ProjectMetricTile(
               icon: Icons.photo_library_rounded,
@@ -761,21 +754,23 @@ class _ProjectGalleryViewState extends State<ProjectGalleryView>
               label: '凭证',
               value: evidenceItems.length.toString(),
             ),
-            _ProjectMetricTile(
-              icon: Icons.payments_rounded,
-              label: '项目费用',
-              value: formatMoney(expenseTotal),
-            ),
+            for (final amount in expenseTotals.entries)
+              _ProjectMetricTile(
+                icon: Icons.payments_rounded,
+                label: '项目费用 · ${amount.key}',
+                value: formatMoney(amount.value, currency: amount.key),
+              ),
             _ProjectMetricTile(
               icon: Icons.luggage_rounded,
               label: '出差',
               value: projectTrips.length.toString(),
             ),
-            _ProjectMetricTile(
-              icon: Icons.assignment_late_outlined,
-              label: '待报销',
-              value: formatMoney(pendingEvidenceAmount),
-            ),
+            for (final amount in pendingEvidenceAmounts.entries)
+              _ProjectMetricTile(
+                icon: Icons.assignment_late_outlined,
+                label: '待报销 · ${amount.key}',
+                value: formatMoney(amount.value, currency: amount.key),
+              ),
           ],
         ),
         SizedBox(height: 12.h),
@@ -834,7 +829,8 @@ class _ProjectGalleryViewState extends State<ProjectGalleryView>
                 if (entry.projectStageName?.trim().isNotEmpty == true)
                   entry.projectStageName!.trim(),
                 entry.status.label,
-                if ((entry.amount ?? 0) > 0) formatMoney(entry.amount ?? 0),
+                if (entry.amount != null)
+                  formatMoney(entry.amount!, currency: entry.currency),
               ].join(' · '),
               icon: Icons.receipt_long_rounded,
             );
@@ -853,7 +849,7 @@ class _ProjectGalleryViewState extends State<ProjectGalleryView>
                     entry.category.label,
                     if (entry.projectStageName?.trim().isNotEmpty == true)
                       entry.projectStageName!.trim(),
-                    formatMoney(entry.amount),
+                    formatMoney(entry.amount, currency: entry.currency),
                   ].join(' · '),
                   icon: Icons.payments_rounded,
                 ),
@@ -985,7 +981,11 @@ class _ProjectGalleryViewState extends State<ProjectGalleryView>
               maxLines: 1,
               overflow: TextOverflow.ellipsis,
             ),
-            trailing: Text(formatMoney(item.amount ?? 0)),
+            trailing: Text(
+              item.amount == null
+                  ? '未填金额'
+                  : formatMoney(item.amount!, currency: item.currency),
+            ),
             onTap: () => showEvidenceDetailSheet(context, legacyItem),
           ),
         );
@@ -1018,7 +1018,9 @@ class _ProjectGalleryViewState extends State<ProjectGalleryView>
               maxLines: 1,
               overflow: TextOverflow.ellipsis,
             ),
-            trailing: Text(formatMoney(record.amount)),
+            trailing: Text(
+              formatMoney(record.amount, currency: record.currency),
+            ),
             onTap: () => openExpenseRecordEditorPage(
               context,
               entry: record,
@@ -1159,16 +1161,12 @@ class _ProjectMetricTile extends StatelessWidget {
                 children: [
                   Text(
                     value,
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
                     style: theme.textTheme.titleMedium?.copyWith(
                       fontWeight: FontWeight.w800,
                     ),
                   ),
                   Text(
                     label,
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
                     style: TextStyle(color: theme.colorScheme.onSurfaceVariant),
                   ),
                 ],

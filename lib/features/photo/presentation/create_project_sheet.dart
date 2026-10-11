@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
+import 'package:life_log/common/widgets/app_bottom_sheet.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:life_log/common/widgets/app_button.dart';
 import 'package:life_log/common/widgets/app_unsaved_changes_guard.dart';
-import 'package:life_log/common/theme/app_motion.dart';
 import 'package:life_log/common/widgets/app_sheet_scaffold.dart';
 import 'package:life_log/common/widgets/app_text_field.dart';
 import 'package:life_log/core/di/service_locator.dart';
@@ -14,15 +14,11 @@ void showCreateProjectSheet(
   String? initialName,
   Future<void> Function(ProjectEntry project)? onCreated,
 }) {
-  showModalBottomSheet<void>(
+  showAppBottomSheet<void>(
     context: context,
     isScrollControlled: true,
     isDismissible: false,
     enableDrag: false,
-    sheetAnimationStyle: AnimationStyle(
-      duration: AppMotion.duration(context, AppMotion.sheet),
-      reverseDuration: AppMotion.duration(context, AppMotion.normal),
-    ),
     backgroundColor: Colors.transparent,
     builder: (_) =>
         _CreateProjectSheet(initialName: initialName, onCreated: onCreated),

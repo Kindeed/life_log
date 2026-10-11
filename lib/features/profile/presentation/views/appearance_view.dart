@@ -1,11 +1,10 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_screenutil/flutter_screenutil.dart';
+import 'package:life_log/common/layout/constrained_page.dart';
 import 'package:life_log/common/theme/theme_controller.dart';
-import 'package:life_log/common/widgets/app_card.dart';
+import 'package:life_log/common/widgets/app_settings.dart';
 import 'package:life_log/core/di/service_locator.dart';
 import 'package:life_log/features/photo/presentation/photo_display_preferences.dart';
 
-/// 外观设置页面
 class AppearanceView extends StatelessWidget {
   const AppearanceView({super.key});
 
@@ -13,198 +12,87 @@ class AppearanceView extends StatelessWidget {
   Widget build(BuildContext context) {
     final themeController = serviceLocator<ThemeController>();
     final photoDisplayPreferences = serviceLocator<PhotoDisplayPreferences>();
-    final theme = Theme.of(context);
-    final textPrimary = theme.colorScheme.onSurface;
-    final textSecondary = theme.colorScheme.onSurfaceVariant;
-
     return Scaffold(
-      backgroundColor: theme.scaffoldBackgroundColor,
       appBar: AppBar(title: const Text('外观设置')),
-      body: AnimatedBuilder(
-        animation: Listenable.merge([themeController, photoDisplayPreferences]),
-        builder: (context, _) {
-          return SingleChildScrollView(
-            padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 16.h),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                _buildSectionTitle('主题模式', textPrimary),
-                SizedBox(height: 12.h),
-                _buildThemeSelector(
-                  themeController,
-                  theme,
-                  textPrimary,
-                  textSecondary,
-                ),
-                SizedBox(height: 22.h),
-                _buildSectionTitle('颜色', textPrimary),
-                SizedBox(height: 12.h),
-                _buildDynamicColorOption(themeController, theme, textSecondary),
-                SizedBox(height: 22.h),
-                _buildSectionTitle('照片信息', textPrimary),
-                SizedBox(height: 12.h),
-                _buildPhotoMetadataOption(
-                  photoDisplayPreferences,
-                  theme,
-                  textSecondary,
-                ),
-              ],
-            ),
-          );
-        },
-      ),
-    );
-  }
-
-  Widget _buildSectionTitle(String title, Color textColor) {
-    return Padding(
-      padding: EdgeInsets.only(left: 4.w),
-      child: Text(
-        title,
-        style: TextStyle(
-          fontSize: 14.sp,
-          fontWeight: FontWeight.w600,
-          color: textColor,
-        ),
-      ),
-    );
-  }
-
-  Widget _buildThemeSelector(
-    ThemeController controller,
-    ThemeData theme,
-    Color textPrimary,
-    Color textSecondary,
-  ) {
-    return AppCard(
-      padding: EdgeInsets.zero,
-      child: Column(
-        children: [
-          _buildThemeOption(
-            icon: Icons.brightness_auto_rounded,
-            title: '跟随系统',
-            isSelected: controller.themeMode == AppThemeMode.system,
-            onTap: () => controller.setThemeMode(AppThemeMode.system),
-            theme: theme,
-            textPrimary: textPrimary,
-            textSecondary: textSecondary,
-          ),
-          _buildDivider(theme),
-          _buildThemeOption(
-            icon: Icons.light_mode_rounded,
-            title: '浅色模式',
-            isSelected: controller.themeMode == AppThemeMode.light,
-            onTap: () => controller.setThemeMode(AppThemeMode.light),
-            theme: theme,
-            textPrimary: textPrimary,
-            textSecondary: textSecondary,
-          ),
-          _buildDivider(theme),
-          _buildThemeOption(
-            icon: Icons.dark_mode_rounded,
-            title: '深色模式',
-            isSelected: controller.themeMode == AppThemeMode.dark,
-            onTap: () => controller.setThemeMode(AppThemeMode.dark),
-            theme: theme,
-            textPrimary: textPrimary,
-            textSecondary: textSecondary,
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildThemeOption({
-    required IconData icon,
-    required String title,
-    required bool isSelected,
-    required VoidCallback onTap,
-    required ThemeData theme,
-    required Color textPrimary,
-    required Color textSecondary,
-  }) {
-    final selectedColor = theme.colorScheme.primary;
-    return InkWell(
-      onTap: onTap,
-      borderRadius: BorderRadius.circular(16.r),
-      child: Padding(
-        padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 14.h),
-        child: Row(
-          children: [
-            Icon(
-              icon,
-              color: isSelected ? selectedColor : textSecondary,
-              size: 24.sp,
-            ),
-            SizedBox(width: 14.w),
-            Expanded(
-              child: Text(
-                title,
-                style: TextStyle(
-                  fontSize: 15.sp,
-                  fontWeight: FontWeight.w500,
-                  color: isSelected ? selectedColor : textPrimary,
-                ),
+      body: SafeArea(
+        child: ConstrainedPage(
+          child: AnimatedBuilder(
+            animation: Listenable.merge([
+              themeController,
+              photoDisplayPreferences,
+            ]),
+            builder: (context, _) => SingleChildScrollView(
+              padding: const EdgeInsets.fromLTRB(22, 16, 22, 32),
+              child: Column(
+                children: [
+                  AppSettingsGroup(
+                    title: '主题模式',
+                    children: [
+                      for (final entry in [
+                        (
+                          AppThemeMode.system,
+                          '跟随系统',
+                          Icons.brightness_auto_rounded,
+                        ),
+                        (AppThemeMode.light, '浅色模式', Icons.light_mode_rounded),
+                        (AppThemeMode.dark, '深色模式', Icons.dark_mode_rounded),
+                      ])
+                        AppSettingsTile(
+                          icon: entry.$3,
+                          title: entry.$2,
+                          selected: themeController.themeMode == entry.$1,
+                          onTap: () => themeController.setThemeMode(entry.$1),
+                          trailing: themeController.themeMode == entry.$1
+                              ? Icon(
+                                  Icons.check_rounded,
+                                  color: Theme.of(context).colorScheme.primary,
+                                )
+                              : const SizedBox(width: 22),
+                        ),
+                    ],
+                  ),
+                  const SizedBox(height: 24),
+                  AppSettingsGroup(
+                    title: '颜色',
+                    children: [
+                      AppSettingsTile(
+                        icon: Icons.auto_awesome_rounded,
+                        title: '动态取色',
+                        subtitle: 'Android 12 及以上跟随系统壁纸颜色，其他平台使用默认主题色。',
+                        onTap: () => themeController.setDynamicColorEnabled(
+                          !themeController.dynamicColorEnabled,
+                        ),
+                        trailing: Switch(
+                          value: themeController.dynamicColorEnabled,
+                          onChanged: themeController.setDynamicColorEnabled,
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 24),
+                  AppSettingsGroup(
+                    title: '照片信息',
+                    children: [
+                      AppSettingsTile(
+                        icon: Icons.location_on_outlined,
+                        title: '显示 GPS',
+                        subtitle: '在照片预览中显示已读取的经纬度；缺少 GPS 的照片不显示。',
+                        onTap: () => photoDisplayPreferences.setShowGpsMetadata(
+                          !photoDisplayPreferences.showGpsMetadata,
+                        ),
+                        trailing: Switch(
+                          value: photoDisplayPreferences.showGpsMetadata,
+                          onChanged: photoDisplayPreferences.setShowGpsMetadata,
+                        ),
+                      ),
+                    ],
+                  ),
+                ],
               ),
             ),
-            if (isSelected)
-              Icon(Icons.check_rounded, color: selectedColor, size: 22.sp),
-          ],
+          ),
         ),
       ),
-    );
-  }
-
-  Widget _buildDynamicColorOption(
-    ThemeController controller,
-    ThemeData theme,
-    Color textSecondary,
-  ) {
-    return AppCard(
-      padding: EdgeInsets.zero,
-      child: SwitchListTile(
-        value: controller.dynamicColorEnabled,
-        onChanged: controller.setDynamicColorEnabled,
-        secondary: Icon(
-          Icons.auto_awesome_rounded,
-          color: theme.colorScheme.primary,
-        ),
-        title: const Text('动态取色'),
-        subtitle: Text(
-          'Android 12 及以上跟随系统壁纸颜色，其他平台自动使用默认主题色。',
-          style: TextStyle(color: textSecondary),
-        ),
-      ),
-    );
-  }
-
-  Widget _buildPhotoMetadataOption(
-    PhotoDisplayPreferences preferences,
-    ThemeData theme,
-    Color textSecondary,
-  ) {
-    return AppCard(
-      padding: EdgeInsets.zero,
-      child: SwitchListTile(
-        value: preferences.showGpsMetadata,
-        onChanged: preferences.setShowGpsMetadata,
-        secondary: Icon(
-          Icons.location_on_outlined,
-          color: theme.colorScheme.primary,
-        ),
-        title: const Text('显示 GPS'),
-        subtitle: Text(
-          '仅在照片预览中显示已读取到的经纬度；缺少 GPS 的照片不会显示。',
-          style: TextStyle(color: textSecondary),
-        ),
-      ),
-    );
-  }
-
-  Widget _buildDivider(ThemeData theme) {
-    return Padding(
-      padding: EdgeInsets.symmetric(horizontal: 16.w),
-      child: Divider(height: 1, color: theme.dividerColor),
     );
   }
 }

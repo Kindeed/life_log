@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:life_log/common/widgets/app_bottom_sheet.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:intl/intl.dart';
@@ -14,6 +15,8 @@ import 'package:life_log/features/evidence/presentation/evidence_cubit.dart';
 import 'package:life_log/features/expense/presentation/expense_record_cubit.dart';
 import 'package:life_log/features/expense/presentation/expense_record_editor_launcher.dart';
 import 'package:life_log/features/subscription/domain/entities/subscription_entry.dart';
+import 'package:life_log/features/subscription/domain/entities/subscription_entry_stats.dart';
+import 'package:life_log/features/subscription/domain/entities/subscription_currency.dart';
 import 'package:life_log/features/subscription/presentation/subscription_editor_launcher.dart';
 import 'package:life_log/features/subscription/presentation/subscription_date_refresh.dart';
 import 'package:life_log/features/subscription/presentation/subscription_today_cubit.dart';
@@ -133,16 +136,25 @@ class _TodayContent extends StatelessWidget {
                           builder: (context, subscriptionState) {
                             return BlocBuilder<EvidenceCubit, EvidenceState>(
                               buildWhen: (previous, current) =>
-                                  previous.totalPendingAmount !=
-                                  current.totalPendingAmount,
+                                  previous.entries != current.entries,
                               builder: (context, evidenceState) {
                                 return _PendingCard(
                                   subs:
                                       subscriptionState.snapshot.dueSoonEntries,
                                   dueAmountCny:
                                       subscriptionState.snapshot.dueSoonCostCny,
-                                  pendingEvidenceAmount:
-                                      evidenceState.totalPendingAmount,
+                                  pendingEvidenceAmounts:
+                                      evidenceState.pendingAmountsByCurrency,
+                                  missingSubscriptionRates: subscriptionState
+                                      .snapshot
+                                      .dueSoonEntries
+                                      .currenciesWithoutRates(
+                                        subscriptionState
+                                            .snapshot
+                                            .exchangeRates,
+                                      )
+                                      .map((currency) => currency.code)
+                                      .join('/'),
                                   textSecondary: textSecondary,
                                 );
                               },
@@ -269,13 +281,15 @@ class _TodayLogCard extends StatelessWidget {
 class _PendingCard extends StatelessWidget {
   final List<SubscriptionEntry> subs;
   final double dueAmountCny;
-  final double pendingEvidenceAmount;
+  final Map<String, double> pendingEvidenceAmounts;
+  final String missingSubscriptionRates;
   final Color textSecondary;
 
   const _PendingCard({
     required this.subs,
     required this.dueAmountCny,
-    required this.pendingEvidenceAmount,
+    required this.pendingEvidenceAmounts,
+    required this.missingSubscriptionRates,
     required this.textSecondary,
   });
 
@@ -284,7 +298,9 @@ class _PendingCard extends StatelessWidget {
     final theme = Theme.of(context);
     final semantic = theme.semanticColors;
     final hasDueSoon = subs.isNotEmpty;
-    final hasPendingEvidence = pendingEvidenceAmount > 0;
+    final hasPendingEvidence = pendingEvidenceAmounts.values.any(
+      (amount) => amount > 0,
+    );
 
     return AppCard(
       padding: EdgeInsets.all(16.w),
@@ -318,7 +334,8 @@ class _PendingCard extends StatelessWidget {
                 icon: Icons.account_balance_wallet_rounded,
                 color: semantic.expense,
                 label: '扣费提醒',
-                value: '${subs.length} 项 · ${formatMoney(dueAmountCny)}',
+                value:
+                    '${subs.length} 项 · 人民币估算 ${formatCnyEstimate(dueAmountCny)}${missingSubscriptionRates.isEmpty ? '' : '\n缺少 $missingSubscriptionRates 汇率，未计入估算'}',
               ),
             if (hasPendingEvidence) ...[
               if (hasDueSoon) SizedBox(height: 8.h),
@@ -326,7 +343,10 @@ class _PendingCard extends StatelessWidget {
                 icon: Icons.pending_actions_rounded,
                 color: semantic.stats,
                 label: '待报销凭证',
-                value: formatMoney(pendingEvidenceAmount),
+                value: formatMoneyTotals(
+                  pendingEvidenceAmounts,
+                  separator: '\n',
+                ),
               ),
             ],
           ],
@@ -364,8 +384,16 @@ class _PendingRow extends StatelessWidget {
           child: Icon(icon, color: color, size: 17.sp),
         ),
         SizedBox(width: 10.w),
-        Expanded(child: Text(label)),
-        Text(value, style: TextStyle(color: textSecondary)),
+        Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(label),
+              const SizedBox(height: 3),
+              Text(value, style: TextStyle(color: textSecondary)),
+            ],
+          ),
+        ),
       ],
     );
   }
@@ -447,7 +475,7 @@ class _QuickActions extends StatelessWidget {
     final colorScheme = Theme.of(context).colorScheme;
     final textTheme = Theme.of(context).textTheme;
 
-    showModalBottomSheet<void>(
+    showAppBottomSheet<void>(
       context: context,
       backgroundColor: Colors.transparent,
       builder: (sheetContext) {

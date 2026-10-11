@@ -1,6 +1,10 @@
 import 'dart:io';
 
 import 'package:flutter/material.dart';
+import 'package:life_log/common/widgets/app_feedback.dart';
+import 'package:life_log/common/widgets/app_form_feedback.dart';
+import 'package:life_log/common/theme/app_motion.dart';
+import 'package:life_log/common/theme/app_radius.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:life_log/common/theme/theme_extensions.dart';
 import 'package:life_log/common/utils/formatters.dart';
@@ -28,6 +32,15 @@ class EvidenceDetailSheet extends StatefulWidget {
 class _EvidenceDetailSheetState extends State<EvidenceDetailSheet> {
   late ExpenseEvidence _item;
   bool _isParsing = false;
+  final _scrollController = ScrollController();
+  String? _actionMessage;
+  bool _actionError = false;
+
+  @override
+  void dispose() {
+    _scrollController.dispose();
+    super.dispose();
+  }
 
   @override
   void initState() {
@@ -52,13 +65,24 @@ class _EvidenceDetailSheetState extends State<EvidenceDetailSheet> {
         padding: EdgeInsets.fromLTRB(18.w, 16.h, 18.w, 24.h),
         decoration: BoxDecoration(
           color: theme.scaffoldBackgroundColor,
-          borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
+          borderRadius: const BorderRadius.vertical(
+            top: Radius.circular(AppRadius.sheet),
+          ),
         ),
         child: SingleChildScrollView(
+          controller: _scrollController,
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             mainAxisSize: MainAxisSize.min,
             children: [
+              if (_actionMessage != null)
+                AppFormFeedback(
+                  message: _actionMessage!,
+                  isError: _actionError,
+                  icon: _actionError
+                      ? Icons.error_outline_rounded
+                      : Icons.info_outline_rounded,
+                ),
               Row(
                 children: [
                   Expanded(
@@ -98,6 +122,7 @@ class _EvidenceDetailSheetState extends State<EvidenceDetailSheet> {
                           context,
                           _item,
                           notify: true,
+                          feedback: _showFileFeedback,
                         );
                     if (restored && mounted) setState(() {});
                   },
@@ -106,7 +131,12 @@ class _EvidenceDetailSheetState extends State<EvidenceDetailSheet> {
               SizedBox(height: 16.h),
               _InfoRow(label: '项目', value: _item.projectName),
               _InfoRow(label: '日期', value: formatDateYmd(_item.evidenceDate)),
-              _InfoRow(label: '金额', value: formatMoney(_item.amount ?? 0)),
+              _InfoRow(
+                label: '金额',
+                value: _item.amount == null
+                    ? '未填金额'
+                    : formatMoney(_item.amount!, currency: _item.currency),
+              ),
               _InfoRow(label: '类型', value: _item.category.label),
               _InfoRow(label: '状态', value: _item.status.label),
               if (evidenceContentSummary(_item) case final summary?)
@@ -126,8 +156,11 @@ class _EvidenceDetailSheetState extends State<EvidenceDetailSheet> {
                         child: _ActionButton(
                           icon: Icons.open_in_new_rounded,
                           label: '打开',
-                          onPressed: () =>
-                              EvidenceDetailFileActions.open(context, _item),
+                          onPressed: () => EvidenceDetailFileActions.open(
+                            context,
+                            _item,
+                            feedback: _showFileFeedback,
+                          ),
                         ),
                       ),
                       SizedBox(width: 10.w),
@@ -135,8 +168,11 @@ class _EvidenceDetailSheetState extends State<EvidenceDetailSheet> {
                         child: _ActionButton(
                           icon: Icons.ios_share_rounded,
                           label: '导出',
-                          onPressed: () =>
-                              EvidenceDetailFileActions.export(context, _item),
+                          onPressed: () => EvidenceDetailFileActions.export(
+                            context,
+                            _item,
+                            feedback: _showFileFeedback,
+                          ),
                         ),
                       ),
                     ],
@@ -185,9 +221,9 @@ class _EvidenceDetailSheetState extends State<EvidenceDetailSheet> {
       return;
     }
 
-    final messenger = ScaffoldMessenger.maybeOf(context);
+    final feedback = AppFeedback.capture(context);
     await Navigator.of(context).maybePop();
-    _showActionSuccess('凭证已删除', messenger: messenger);
+    feedback.success('凭证已删除');
   }
 
   Future<bool> _showDeleteConfirmation() async {
@@ -219,7 +255,11 @@ class _EvidenceDetailSheetState extends State<EvidenceDetailSheet> {
 
     final EvidenceParseResult? result;
     try {
-      result = await EvidenceDetailFileActions.parse(context, _item);
+      result = await EvidenceDetailFileActions.parse(
+        context,
+        _item,
+        feedback: _showFileFeedback,
+      );
     } finally {
       if (mounted) {
         setState(() => _isParsing = false);
@@ -325,28 +365,31 @@ class _EvidenceDetailSheetState extends State<EvidenceDetailSheet> {
         line.startsWith('校验：');
   }
 
-  void _showActionSuccess(String message, {ScaffoldMessengerState? messenger}) {
-    final activeMessenger = messenger ?? ScaffoldMessenger.maybeOf(context);
-    if (activeMessenger == null) return;
-    activeMessenger
-      ..hideCurrentSnackBar()
-      ..showSnackBar(
-        SnackBar(content: Text(message), behavior: SnackBarBehavior.floating),
-      );
-  }
+  void _showActionSuccess(String message) => _showFileFeedback(message, false);
 
   void _showActionFailure(String title, String message) {
-    final messenger = ScaffoldMessenger.maybeOf(context);
-    if (messenger == null) return;
-    messenger
-      ..hideCurrentSnackBar()
-      ..showSnackBar(
-        SnackBar(
-          content: Text(message),
-          behavior: SnackBarBehavior.floating,
-          backgroundColor: Theme.of(context).colorScheme.error,
-        ),
-      );
+    _showFileFeedback('$title：$message', true);
+  }
+
+  void _showFileFeedback(String message, bool isError) {
+    if (!mounted) return;
+    setState(() {
+      _actionMessage = message;
+      _actionError = isError;
+    });
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted || !_scrollController.hasClients) return;
+      final duration = AppMotion.duration(context, AppMotion.fast);
+      if (duration == Duration.zero) {
+        _scrollController.jumpTo(0);
+      } else {
+        _scrollController.animateTo(
+          0,
+          duration: duration,
+          curve: AppMotion.standardDecelerate,
+        );
+      }
+    });
   }
 }
 

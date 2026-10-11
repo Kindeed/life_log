@@ -24,6 +24,7 @@ import 'package:file_picker/file_picker.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:life_log/features/project/data/project_cover_file_store.dart';
 import 'package:flutter/material.dart';
+import 'package:life_log/common/widgets/app_bottom_sheet.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:life_log/common/utils/formatters.dart';
@@ -1674,7 +1675,7 @@ class _ProjectDetailViewState extends State<ProjectDetailView>
       ...summaries.where((s) => s.name.isNotEmpty),
       ...summaries.where((s) => s.name.isEmpty),
     ];
-    await showModalBottomSheet<void>(
+    await showAppBottomSheet<void>(
       context: context,
       isScrollControlled: true,
       backgroundColor: Colors.transparent,

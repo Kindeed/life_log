@@ -376,7 +376,7 @@ void main() {
         expect(source, contains('BlocListener<ExpenseRecordEditorCubit'));
         expect(source, contains('SaveExpenseRecordEntry'));
         expect(source, contains('DeleteExpenseRecordEntry'));
-        expect(source, contains('ScaffoldMessenger'));
+        expect(source, contains('AppFeedback'));
         expect(source, contains('Navigator.of(context)'));
         expect(source, isNot(contains("package:get/get.dart")));
         expect(source, isNot(contains('ExpenseRecordController')));

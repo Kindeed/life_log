@@ -268,7 +268,7 @@ void main() {
       expect(source, contains('BlocListener<EvidenceEditorCubit'));
       expect(source, contains('SaveEvidenceEntry'));
       expect(source, contains('DeleteEvidenceEntry'));
-      expect(source, contains('ScaffoldMessenger'));
+      expect(source, contains('AppFeedback'));
       expect(source, isNot(contains('EvidenceController.to.saveEvidence')));
       expect(source, isNot(contains('EvidenceController.to.deleteEvidence')));
       expect(source, isNot(contains('ExpenseEvidence()')));
@@ -291,7 +291,7 @@ void main() {
       expect(source, isNot(contains('AppConfirmDialog.show')));
       expect(source, contains('Navigator.of(context).maybePop'));
       expect(source, contains('showDialog<bool>'));
-      expect(source, contains('ScaffoldMessenger'));
+      expect(source, contains('AppFeedback'));
     });
 
     test('guards attachment picker returns after the editor is disposed', () {

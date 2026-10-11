@@ -42,7 +42,7 @@ void main() {
 
         expect(source, isNot(contains('AppActionSheet.show')));
         expect(source, isNot(contains('AppActionSheetItem')));
-        expect(source, contains('showModalBottomSheet'));
+        expect(source, contains('showAppBottomSheet'));
         expect(source, contains('Navigator.of(sheetContext).pop'));
       },
     );

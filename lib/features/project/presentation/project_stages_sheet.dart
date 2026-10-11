@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:life_log/common/widgets/app_bottom_sheet.dart';
 import 'package:life_log/common/widgets/app_button.dart';
 import 'package:life_log/common/widgets/app_sheet_scaffold.dart';
 import 'package:life_log/common/widgets/app_text_field.dart';
@@ -13,7 +14,7 @@ Future<void> showProjectStagesSheet(
   required ProjectCubit cubit,
   Iterable<String> historicalNames = const [],
 }) {
-  return showModalBottomSheet<void>(
+  return showAppBottomSheet<void>(
     context: context,
     isScrollControlled: true,
     isDismissible: false,

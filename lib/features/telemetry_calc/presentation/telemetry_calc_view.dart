@@ -1,4 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/rendering.dart' show ScrollCacheExtent;
+import 'package:life_log/common/widgets/app_page_route.dart';
+import 'package:life_log/common/widgets/app_bottom_sheet.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_math_fork/flutter_math.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
@@ -82,7 +85,7 @@ class _TelemetryCalcViewState extends State<TelemetryCalcView> {
       body: SafeArea(
         child: ConstrainedPage(
           child: CustomScrollView(
-            cacheExtent: 900,
+            scrollCacheExtent: const ScrollCacheExtent.pixels(900),
             slivers: [
               SliverToBoxAdapter(
                 child: Padding(
@@ -263,7 +266,7 @@ class _TelemetryCalcViewState extends State<TelemetryCalcView> {
   }
 
   void _showRecentTemplateActions(TelemetryTemplate template) {
-    showModalBottomSheet<void>(
+    showAppBottomSheet<void>(
       context: context,
       showDragHandle: true,
       builder: (sheetContext) {
@@ -559,7 +562,7 @@ class _TelemetryCalcDetailViewState extends State<TelemetryCalcDetailView> {
       widget.definition.category,
       theme.semanticColors,
     );
-    showModalBottomSheet<void>(
+    showAppBottomSheet<void>(
       context: context,
       isScrollControlled: true,
       showDragHandle: true,
@@ -617,7 +620,7 @@ class _TelemetryCalcDetailViewState extends State<TelemetryCalcDetailView> {
 
   void _showTemplates() {
     final templates = _store.loadTemplates(widget.definition.id);
-    showModalBottomSheet<void>(
+    showAppBottomSheet<void>(
       context: context,
       showDragHandle: true,
       builder: (sheetContext) {
@@ -692,9 +695,7 @@ class _TelemetryCalcDetailViewState extends State<TelemetryCalcDetailView> {
 }
 
 Future<T?> _openTelemetryPage<T>(BuildContext context, Widget page) {
-  return Navigator.of(
-    context,
-  ).push<T>(MaterialPageRoute<T>(builder: (_) => page));
+  return Navigator.of(context).push<T>(appPageRoute<T>(context, page));
 }
 
 Future<void> _copyTelemetryText(
@@ -937,7 +938,7 @@ class _CalculationWorkbench extends StatelessWidget {
             opacity: animation,
             child: SizeTransition(
               sizeFactor: animation,
-              axisAlignment: -1,
+              alignment: AlignmentDirectional.topStart,
               child: child,
             ),
           );

@@ -133,7 +133,11 @@ void main() {
         final actionSource = action.readAsStringSync();
         expect(actionSource, contains('class ProfileActionButton'));
         expect(actionSource, contains('ProfileView'));
-        expect(actionSource, contains('Navigator.of(context).push'));
+        expect(
+          actionSource,
+          matches(RegExp(r'Navigator\.of\(\s*context,?\s*\)\s*\.push')),
+        );
+        expect(actionSource, contains('appPageRoute'));
         expect(tabsView, contains('_KeepAliveTabPage(child: MoreView())'));
         expect(photoView, isNot(contains('ProfileActionButton')));
       },
@@ -212,6 +216,9 @@ void main() {
         final diSource = diFile.readAsStringSync();
         final moreSource = moreViewFile.readAsStringSync();
         final profileSource = profileViewFile.readAsStringSync();
+        final aboutSource = File(
+          'lib/features/profile/presentation/views/about_view.dart',
+        ).readAsStringSync();
 
         expect(diSource, contains('configureMoreFeatureDependencies'));
 
@@ -232,7 +239,9 @@ void main() {
         expect(moreSource, contains('AboutView'));
 
         expect(profileSource, contains('SyncCenterView'));
-        expect(profileSource, contains('DeveloperView'));
+        expect(profileSource, isNot(contains('DeveloperView')));
+        expect(aboutSource, contains('DeveloperView'));
+        expect(aboutSource, contains('关于与诊断'));
         expect(profileSource, isNot(contains('StatisticsView')));
         expect(profileSource, isNot(contains('DataManagementView')));
         expect(profileSource, isNot(contains('AppearanceView')));

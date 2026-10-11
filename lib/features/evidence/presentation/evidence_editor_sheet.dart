@@ -8,6 +8,8 @@ import 'dart:io';
 
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
+import 'package:life_log/common/widgets/app_feedback.dart';
+import 'package:life_log/common/widgets/app_form_feedback.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:image_picker/image_picker.dart';
@@ -16,7 +18,6 @@ import 'package:life_log/common/utils/date_utils.dart';
 import 'package:life_log/common/utils/formatters.dart';
 import 'package:life_log/common/widgets/app_date_picker.dart';
 import 'package:life_log/core/di/service_locator.dart';
-import 'package:life_log/core/errors/app_failure.dart';
 import 'package:life_log/features/evidence/application/delete_evidence_entry.dart';
 import 'package:life_log/features/evidence/application/save_evidence_entry.dart';
 import 'package:life_log/features/evidence/data/evidence_file_utils.dart';
@@ -56,6 +57,8 @@ class _EvidenceEditorSheetState extends State<EvidenceEditorSheet> {
   late final TextEditingController _noteController;
   late final EvidencePendingPickerStore _pendingPickerStore;
   bool _isParsingAttachment = false;
+  String? _attachmentMessage;
+  bool _attachmentError = false;
   late final Future<List<ProjectEntry>> _projects;
 
   @override
@@ -209,6 +212,16 @@ class _EvidenceEditorSheetState extends State<EvidenceEditorSheet> {
               ),
             ),
           ],
+          if (_attachmentMessage != null) ...[
+            SizedBox(height: 10.h),
+            AppFormFeedback(
+              message: _attachmentMessage!,
+              isError: _attachmentError,
+              icon: _attachmentError
+                  ? Icons.error_outline_rounded
+                  : Icons.info_outline_rounded,
+            ),
+          ],
         ] else ...[
           SizedBox(height: 12.h),
           Row(
@@ -339,6 +352,8 @@ class _EvidenceEditorSheetState extends State<EvidenceEditorSheet> {
           maxLines: 3,
         ),
         SizedBox(height: 20.h),
+        if (editorState.failure != null)
+          AppFormFeedback(message: editorState.failure!.message),
         if (editorState.existingEntry == null)
           SizedBox(
             width: double.infinity,
@@ -719,24 +734,16 @@ class _EvidenceEditorSheetState extends State<EvidenceEditorSheet> {
     switch (editorState.status) {
       case EvidenceEditorStatus.saved:
       case EvidenceEditorStatus.deleted:
-        final messenger = ScaffoldMessenger.maybeOf(context);
+        final feedback = AppFeedback.capture(context);
         if (!context.mounted) return;
         await Navigator.of(context).maybePop();
-        messenger
-          ?..hideCurrentSnackBar()
-          ..showSnackBar(
-            SnackBar(
-              content: Text(
-                editorState.status == EvidenceEditorStatus.saved
-                    ? '凭证记录已保存'
-                    : '凭证已删除',
-              ),
-              behavior: SnackBarBehavior.floating,
-            ),
-          );
+        feedback.success(
+          editorState.status == EvidenceEditorStatus.saved
+              ? '凭证记录已保存'
+              : '凭证已删除',
+        );
         break;
       case EvidenceEditorStatus.failure:
-        _showEditorFailure(context, editorState.failure);
         break;
       case EvidenceEditorStatus.editing:
       case EvidenceEditorStatus.submitting:
@@ -751,21 +758,6 @@ class _EvidenceEditorSheetState extends State<EvidenceEditorSheet> {
       ..changeMerchant(_merchantController.text)
       ..changeProjectName(_projectController.text)
       ..changeNote(_noteController.text);
-  }
-
-  void _showEditorFailure(BuildContext context, AppFailure? failure) {
-    final message = failure?.message ?? '保存失败';
-    final messenger = ScaffoldMessenger.maybeOf(context);
-    if (messenger == null) return;
-    messenger
-      ..hideCurrentSnackBar()
-      ..showSnackBar(
-        SnackBar(
-          content: Text(message),
-          behavior: SnackBarBehavior.floating,
-          backgroundColor: Theme.of(context).colorScheme.error,
-        ),
-      );
   }
 
   String _formatDate(DateTime date) => formatDateYmd(date);
@@ -822,7 +814,7 @@ class _EvidenceEditorSheetState extends State<EvidenceEditorSheet> {
     final path = _previewPath(_editorCubit.state);
     if (path == null) return;
     if (!isEvidenceParseablePath(path)) {
-      _showEditorMessage(context, '当前仅支持解析图片或 PDF 凭证');
+      _showEditorMessage(context, '当前仅支持解析图片或 PDF 凭证', isError: true);
       return;
     }
 
@@ -834,8 +826,10 @@ class _EvidenceEditorSheetState extends State<EvidenceEditorSheet> {
       if (!mounted) return;
       var changed = false;
 
-      if (result.amount != null && _amountController.text.trim().isEmpty) {
-        _amountController.text = result.amount!.toStringAsFixed(2);
+      if (result.amount != null &&
+          result.amount!.isFinite &&
+          _amountController.text.trim().isEmpty) {
+        _amountController.text = formatMoneyInput(result.amount!);
         _editorCubit.changeAmountText(_amountController.text);
         changed = true;
       }
@@ -862,7 +856,7 @@ class _EvidenceEditorSheetState extends State<EvidenceEditorSheet> {
       _showEditorMessage(context, changed ? '已填入识别到的空字段' : '没有识别到可自动填入的字段');
     } catch (e) {
       if (!mounted) return;
-      _showEditorMessage(context, e.toString());
+      _showEditorMessage(context, e.toString(), isError: true);
     } finally {
       if (mounted) {
         setState(() => _isParsingAttachment = false);
@@ -870,14 +864,16 @@ class _EvidenceEditorSheetState extends State<EvidenceEditorSheet> {
     }
   }
 
-  void _showEditorMessage(BuildContext context, String message) {
-    final messenger = ScaffoldMessenger.maybeOf(context);
-    if (messenger == null) return;
-    messenger
-      ..hideCurrentSnackBar()
-      ..showSnackBar(
-        SnackBar(content: Text(message), behavior: SnackBarBehavior.floating),
-      );
+  void _showEditorMessage(
+    BuildContext context,
+    String message, {
+    bool isError = false,
+  }) {
+    if (!mounted) return;
+    setState(() {
+      _attachmentMessage = message;
+      _attachmentError = isError;
+    });
   }
 
   bool _shouldApplyParsedDate() {

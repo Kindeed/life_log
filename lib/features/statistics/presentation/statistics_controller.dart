@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'package:flutter/foundation.dart';
+import 'package:life_log/common/utils/formatters.dart';
 import 'package:life_log/core/di/service_locator.dart';
 import 'package:life_log/features/evidence/application/watch_evidence_entries.dart';
 import 'package:life_log/features/evidence/domain/entities/evidence_entry.dart';
@@ -40,6 +41,7 @@ class StatisticsController extends ChangeNotifier {
     Future<List<ExpenseRecordEntry>> Function()? getAllExpenseRecords,
     Stream<void> Function()? watchExpenseRecordEntries,
     SubscriptionExchangeRateReader? exchangeRateReader,
+    Stream<void> Function()? watchScope,
   }) : _getAllWorkLogEntries =
            getAllWorkLogEntries ??
            (() => serviceLocator<WorkLogRepositoryPort>().getAllEntries()),
@@ -67,6 +69,7 @@ class StatisticsController extends ChangeNotifier {
            getAllExpenseRecords ??
            (() =>
                serviceLocator<ExpenseRecordRepositoryPort>().getAllEntries()),
+       _watchScope = watchScope ?? (() => const Stream<void>.empty()),
        _watchExpenseRecordEntries =
            watchExpenseRecordEntries ??
            (() => serviceLocator<WatchExpenseRecordEntries>()());
@@ -80,6 +83,7 @@ class StatisticsController extends ChangeNotifier {
 
   double selectedMonthSubCost = 0;
   double selectedMonthExpenseRecordCost = 0;
+  Map<String, double> selectedMonthExpensesByCurrency = const {};
   double selectedMonthTotalCost = 0;
   double yearSubCost = 0;
 
@@ -87,12 +91,18 @@ class StatisticsController extends ChangeNotifier {
   double unreimbursedAmount = 0;
   double evidenceReimbursedAmount = 0;
   double evidenceUnreimbursedAmount = 0;
+  Map<String, double> evidencePendingByCurrency = const {};
+  Map<String, double> evidenceReimbursedByCurrency = const {};
   List<DailyWorkStat> dailyWorkStats = const [];
 
   StreamSubscription? _logSub;
   StreamSubscription? _subSub;
   StreamSubscription? _evidenceSub;
   StreamSubscription? _expenseRecordSub;
+  StreamSubscription<void>? _scopeSub;
+  final Stream<void> Function() _watchScope;
+  int _scopeGeneration = 0;
+  bool _disposed = false;
   List<WorkLogEntry> _workLogEntries = const [];
   List<SubscriptionEntry> _subs = const [];
   SubscriptionExchangeRates _subscriptionRates =
@@ -108,7 +118,7 @@ class StatisticsController extends ChangeNotifier {
   final Stream<void> Function() _watchEvidenceEntries;
   final Future<List<ExpenseRecordEntry>> Function() _getAllExpenseRecords;
   final Stream<void> Function() _watchExpenseRecordEntries;
-  final _refreshGate = _RefreshGate<StatisticsRefreshSource>();
+  var _refreshGate = _RefreshGate<StatisticsRefreshSource>();
   bool _started = false;
 
   String lastUpdated = '';
@@ -117,6 +127,7 @@ class StatisticsController extends ChangeNotifier {
     if (_started) return;
     _started = true;
     LogService.to.debug('Stats', 'Controller Init');
+    _scopeSub = _watchScope().listen((_) => _scopeChanged());
     refreshStats();
 
     _logSub = _watchWorkLogEntries().listen((_) {
@@ -159,10 +170,29 @@ class StatisticsController extends ChangeNotifier {
     _subSub?.cancel();
     _evidenceSub?.cancel();
     _expenseRecordSub?.cancel();
+    _scopeSub?.cancel();
+    _disposed = true;
+    _scopeGeneration++;
+    _refreshGate.invalidate();
     super.dispose();
   }
 
+  void _scopeChanged() {
+    if (_disposed) return;
+    _scopeGeneration++;
+    _refreshGate.invalidate();
+    _refreshGate = _RefreshGate<StatisticsRefreshSource>();
+    _workLogEntries = const [];
+    _subs = const [];
+    _evidence = const [];
+    _expenseRecords = const [];
+    _subscriptionRates = SubscriptionExchangeRates.cnyOnly(DateTime.now());
+    _calculateAllStats();
+    unawaited(refreshStats());
+  }
+
   Future<void> refreshStats() async {
+    if (_disposed) return;
     return _refreshGate.run(
       StatisticsRefreshSource.values.toSet(),
       _refreshChangedSources,
@@ -186,14 +216,17 @@ class StatisticsController extends ChangeNotifier {
   Future<void> _refreshChangedSources(
     Set<StatisticsRefreshSource> sources,
   ) async {
+    final generation = _scopeGeneration;
+    if (_disposed) return;
     final allSources = StatisticsRefreshSource.values.toSet();
     final loaded = <StatisticsRefreshSource>{};
 
     for (final source in StatisticsRefreshSource.values) {
       if (!sources.contains(source)) continue;
-      if (await _loadStatsSource(source)) {
+      if (await _loadStatsSource(source, generation)) {
         loaded.add(source);
       }
+      if (_disposed || generation != _scopeGeneration) return;
     }
 
     if (loaded.isEmpty) return;
@@ -217,32 +250,53 @@ class StatisticsController extends ChangeNotifier {
     }
   }
 
-  Future<bool> _loadStatsSource(StatisticsRefreshSource source) async {
+  Future<bool> _loadStatsSource(
+    StatisticsRefreshSource source,
+    int generation,
+  ) async {
+    bool current() => !_disposed && generation == _scopeGeneration;
     try {
       switch (source) {
         case StatisticsRefreshSource.workLogs:
-          _workLogEntries = await _getAllWorkLogEntries();
+          final entries = await _getAllWorkLogEntries();
+          if (!current()) return false;
+          _workLogEntries = entries;
           return true;
         case StatisticsRefreshSource.subscriptions:
-          _subs = await _getAllSubscriptions();
+          final entries = await _getAllSubscriptions();
+          if (!current()) return false;
+          var rates = _subscriptionRates;
           if (_exchangeRateReader != null &&
-              _subs.any(
+              entries.any(
                 (entry) =>
                     entry.currency != SubscriptionCurrency.cny &&
                     (entry.price ?? 0) > 0,
               )) {
-            _subscriptionRates = await _exchangeRateReader.load(DateTime.now());
+            try {
+              rates = await _exchangeRateReader.load(DateTime.now());
+            } catch (_) {
+              rates = rates.copyWith(fromCache: true, warning: '汇率更新失败，保留已有汇率');
+            }
           }
+          if (!current()) return false;
+          _subs = entries;
+          _subscriptionRates = rates;
           return true;
         case StatisticsRefreshSource.evidence:
-          _evidence = await _getAllEvidence();
+          final entries = await _getAllEvidence();
+          if (!current()) return false;
+          _evidence = entries;
           return true;
         case StatisticsRefreshSource.expenseRecords:
-          _expenseRecords = await _getAllExpenseRecords();
+          final entries = await _getAllExpenseRecords();
+          if (!current()) return false;
+          _expenseRecords = entries;
           return true;
       }
     } catch (e, stackTrace) {
-      LogService.to.error('Stats', '刷新统计数据失败($source): $e', stackTrace);
+      if (current()) {
+        LogService.to.error('Stats', '刷新统计数据失败($source): $e', stackTrace);
+      }
       return false;
     }
   }
@@ -261,6 +315,40 @@ class StatisticsController extends ChangeNotifier {
     pending: evidenceUnreimbursedAmount,
     reimbursed: evidenceReimbursedAmount,
   );
+
+  Map<String, ReimbursementStats> get evidenceReimbursementsByCurrency {
+    final codes = {
+      ...evidencePendingByCurrency.keys,
+      ...evidenceReimbursedByCurrency.keys,
+    }.toList()..sort();
+    return Map.unmodifiable({
+      for (final code in codes)
+        code: ReimbursementStats(
+          pending: evidencePendingByCurrency[code] ?? 0,
+          reimbursed: evidenceReimbursedByCurrency[code] ?? 0,
+        ),
+    });
+  }
+
+  String get subscriptionEstimateNote {
+    final missing =
+        _subs
+            .where((entry) => entry.yearlyCost > 0)
+            .currenciesWithoutRates(_subscriptionRates)
+            .map((currency) => currency.code)
+            .toList()
+          ..sort();
+    return [
+      '订阅为人民币估算',
+      if (missing.isNotEmpty) '缺少 ${missing.join('/')} 汇率，未计入估算',
+      if (_subscriptionRates.warning != null) _subscriptionRates.warning!,
+      if (_subs.any(
+        (entry) =>
+            entry.currency != SubscriptionCurrency.cny && entry.yearlyCost > 0,
+      ))
+        '${_subscriptionRates.rateDate.month}月${_subscriptionRates.rateDate.day}日汇率',
+    ].join(' · ');
+  }
 
   bool get isCurrentMonth {
     final now = DateTime.now();
@@ -326,6 +414,8 @@ class StatisticsController extends ChangeNotifier {
   }) {
     if (updateTimestamp) _touchLastUpdated();
     final monthEvidence = _evidence.inMonth(selectedMonth).toList();
+    evidencePendingByCurrency = monthEvidence.pendingAmountsByCurrency;
+    evidenceReimbursedByCurrency = monthEvidence.reimbursedAmountsByCurrency;
     evidenceReimbursedAmount = monthEvidence.totalReimbursedAmount;
     evidenceUnreimbursedAmount = monthEvidence.totalPendingAmount;
     if (notify) notifyListeners();
@@ -351,16 +441,20 @@ class StatisticsController extends ChangeNotifier {
     bool notify = true,
   }) {
     if (updateTimestamp) _touchLastUpdated();
-    selectedMonthExpenseRecordCost = _expenseRecords
+    selectedMonthExpensesByCurrency = _expenseRecords
         .inMonth(selectedMonth)
-        .totalAmount;
+        .totalAmountsByCurrency;
+    selectedMonthExpenseRecordCost =
+        selectedMonthExpensesByCurrency['CNY'] ?? 0;
     _calculateSelectedMonthTotalCost();
     if (notify) notifyListeners();
   }
 
   void _calculateSelectedMonthTotalCost() {
-    selectedMonthTotalCost =
-        selectedMonthSubCost + selectedMonthExpenseRecordCost;
+    selectedMonthTotalCost = sumMoneyValues([
+      selectedMonthSubCost,
+      selectedMonthExpenseRecordCost,
+    ]);
   }
 
   List<DailyWorkStat> _buildDailyWorkStats(
@@ -427,7 +521,7 @@ class ReimbursementStats {
 
   const ReimbursementStats({required this.pending, required this.reimbursed});
 
-  double get total => pending + reimbursed;
+  double get total => sumMoneyValues([pending, reimbursed]);
 }
 
 class _RefreshGate<T> {
@@ -435,8 +529,15 @@ class _RefreshGate<T> {
 
   Future<void>? _inFlight;
   final Set<T> _pending = {};
+  bool _invalidated = false;
+
+  void invalidate() {
+    _invalidated = true;
+    _pending.clear();
+  }
 
   Future<void> run(Set<T> requested, Future<void> Function(Set<T>) operation) {
+    if (_invalidated) return Future.value();
     _pending.addAll(requested);
     final activeRefresh = _inFlight;
     if (activeRefresh != null) {
@@ -456,7 +557,7 @@ class _RefreshGate<T> {
   Future<void> _runLoop(Future<void> Function(Set<T>) operation) async {
     try {
       var runs = 0;
-      while (_pending.isNotEmpty && runs < _maxRunsPerDrain) {
+      while (!_invalidated && _pending.isNotEmpty && runs < _maxRunsPerDrain) {
         runs++;
         final current = Set<T>.of(_pending);
         _pending.clear();

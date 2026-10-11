@@ -26,7 +26,7 @@ class _AppPressFeedbackState extends State<AppPressFeedback> {
   }
 
   void _setPressed(bool value) {
-    if ((value && !widget.enabled) || value == _pressed) return;
+    if (!mounted || (value && !widget.enabled) || value == _pressed) return;
     setState(() => _pressed = value);
   }
 

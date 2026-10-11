@@ -2,21 +2,38 @@ import 'package:flutter/material.dart';
 
 import '../theme/app_motion.dart';
 
-Route<T> appPageRoute<T>(BuildContext context, Widget page) =>
-    PageRouteBuilder<T>(
-      transitionDuration: AppMotion.duration(context, AppMotion.normal),
-      reverseTransitionDuration: AppMotion.duration(context, AppMotion.normal),
-      pageBuilder: (_, _, _) => page,
-      transitionsBuilder: (_, animation, _, child) {
-        final eased = animation.drive(CurveTween(curve: AppMotion.standard));
-        return FadeTransition(
-          opacity: eased,
-          child: SlideTransition(
-            position: eased.drive(
-              Tween(begin: const Offset(0.06, 0), end: Offset.zero),
-            ),
-            child: child,
-          ),
-        );
-      },
-    );
+/// Keeps Material's platform transitions, including predictive back and the
+/// previous route's delegated transition, while sharing application timings.
+Route<T> appPageRoute<T>(
+  BuildContext context,
+  Widget page, {
+  RouteSettings? settings,
+  bool fullscreenDialog = false,
+}) => AppMaterialPageRoute<T>(
+  builder: (_) => page,
+  reducedMotion: MediaQuery.disableAnimationsOf(context),
+  settings: settings,
+  fullscreenDialog: fullscreenDialog,
+);
+
+class AppMaterialPageRoute<T> extends MaterialPageRoute<T> {
+  final bool reducedMotion;
+
+  AppMaterialPageRoute({
+    required super.builder,
+    required this.reducedMotion,
+    super.settings,
+    super.fullscreenDialog,
+    super.maintainState,
+    super.allowSnapshotting,
+    super.requestFocus,
+  });
+
+  @override
+  Duration get transitionDuration =>
+      reducedMotion ? Duration.zero : AppMotion.normal;
+
+  @override
+  Duration get reverseTransitionDuration =>
+      reducedMotion ? Duration.zero : AppMotion.pageExit;
+}

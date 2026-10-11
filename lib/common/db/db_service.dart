@@ -31,6 +31,7 @@ import '../utils/date_utils.dart';
 import '../services/auth_service.dart';
 import '../utils/sync_id_policy.dart';
 import '../../features/subscription/domain/entities/subscription_currency.dart';
+
 // import '../services/sync_service.dart'; // Removed cyclic dependency
 
 class DbService {

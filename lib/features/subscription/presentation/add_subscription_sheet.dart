@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:life_log/common/widgets/app_bottom_sheet.dart';
+import 'package:life_log/common/widgets/app_feedback.dart';
 import 'package:life_log/common/widgets/app_unsaved_changes_guard.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:intl/intl.dart';
@@ -206,7 +208,7 @@ class _AddSubscriptionSheetState extends State<AddSubscriptionSheet> {
   }
 
   void _showCyclePicker() {
-    showModalBottomSheet<void>(
+    showAppBottomSheet<void>(
       context: context,
       backgroundColor: Colors.transparent,
       builder: (sheetContext) {
@@ -245,7 +247,7 @@ class _AddSubscriptionSheetState extends State<AddSubscriptionSheet> {
   }
 
   void _showCurrencyPicker() {
-    showModalBottomSheet<void>(
+    showAppBottomSheet<void>(
       context: context,
       backgroundColor: Colors.transparent,
       builder: (sheetContext) {
@@ -286,7 +288,7 @@ class _AddSubscriptionSheetState extends State<AddSubscriptionSheet> {
 
   void _showReminderPicker() {
     const options = <int>[0, 1, 3, 7, 14];
-    showModalBottomSheet<void>(
+    showAppBottomSheet<void>(
       context: context,
       backgroundColor: Colors.transparent,
       builder: (sheetContext) {
@@ -431,7 +433,7 @@ class _AddSubscriptionSheetState extends State<AddSubscriptionSheet> {
     final priceText = _priceController.text.trim();
     if (priceText.isNotEmpty) {
       price = double.tryParse(priceText);
-      if (price == null || price < 0) {
+      if (price == null || !price.isFinite || price < 0) {
         _showMessage("价格格式不正确", isError: true);
         return;
       }
@@ -459,8 +461,7 @@ class _AddSubscriptionSheetState extends State<AddSubscriptionSheet> {
         entry.hasBusinessChangesComparedTo(existingEntry);
 
     final navigator = Navigator.of(context);
-    final messenger = ScaffoldMessenger.of(context);
-    final successColor = Theme.of(context).semanticColors.success;
+    final feedback = AppFeedback.capture(context);
     setState(() {
       _busy = true;
       _feedback = null;
@@ -475,16 +476,7 @@ class _AddSubscriptionSheetState extends State<AddSubscriptionSheet> {
     result.when(
       success: (_) {
         navigator.pop();
-        messenger
-          ..hideCurrentSnackBar()
-          ..showSnackBar(
-            SnackBar(
-              content: const Text("订阅已保存"),
-              behavior: SnackBarBehavior.floating,
-              backgroundColor: successColor,
-              duration: const Duration(seconds: 3),
-            ),
-          );
+        feedback.success('订阅已保存');
       },
       failure: (failure) {
         _showMessage("保存失败：${_errorText(failure.message)}", isError: true);
@@ -521,17 +513,9 @@ class _AddSubscriptionSheetState extends State<AddSubscriptionSheet> {
     }
 
     final navigator = Navigator.of(context);
-    final messenger = ScaffoldMessenger.of(context);
+    final feedback = AppFeedback.capture(context);
     navigator.pop();
-    messenger
-      ..hideCurrentSnackBar()
-      ..showSnackBar(
-        const SnackBar(
-          content: Text("订阅已删除"),
-          behavior: SnackBarBehavior.floating,
-          duration: Duration(seconds: 1),
-        ),
-      );
+    feedback.success('订阅已删除');
   }
 
   String _errorText(Object error) {
@@ -639,7 +623,7 @@ class _AddSubscriptionSheetState extends State<AddSubscriptionSheet> {
                   offset: const Offset(0, 1.5),
                   child: Icon(
                     icon,
-                    color: isDark ? Colors.grey[500] : Colors.grey[400],
+                    color: Theme.of(context).colorScheme.onSurfaceVariant,
                     size: 20.sp,
                   ),
                 ),
@@ -652,7 +636,7 @@ class _AddSubscriptionSheetState extends State<AddSubscriptionSheet> {
                 ),
                 Icon(
                   Icons.arrow_drop_down,
-                  color: isDark ? Colors.grey[600] : Colors.grey[500],
+                  color: Theme.of(context).colorScheme.onSurfaceVariant,
                 ),
                 SizedBox(width: 12.w),
               ],

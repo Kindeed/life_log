@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
+import 'package:life_log/common/widgets/app_bottom_sheet.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:life_log/common/services/log_service.dart';
 import 'package:life_log/common/theme/app_radius.dart';
@@ -23,7 +24,7 @@ void showEvidenceAddActions(
   final sheetTitle =
       title ?? (initialProject == null ? '添加凭证' : '添加到 $initialProject');
 
-  showModalBottomSheet<void>(
+  showAppBottomSheet<void>(
     context: context,
     backgroundColor: Colors.transparent,
     isScrollControlled: true,

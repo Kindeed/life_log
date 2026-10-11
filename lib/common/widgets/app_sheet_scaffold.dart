@@ -72,52 +72,57 @@ class AppSheetScaffold extends StatelessWidget {
             ? null
             : Border(top: BorderSide(color: semantic.border, width: 1)),
       ),
-      child: Column(
-        mainAxisSize: effectiveHeight == null
-            ? MainAxisSize.min
-            : MainAxisSize.max,
-        children: [
-          if (effectiveShowGrabber) ...[
-            const SizedBox(height: AppSpacing.md),
-            Center(
-              child: Container(
-                width: 40,
-                height: 4,
-                decoration: BoxDecoration(
-                  color: semantic.border.withValues(alpha: 0.9),
-                  borderRadius: BorderRadius.circular(2),
+      child: Material(
+        type: MaterialType.transparency,
+        child: Column(
+          mainAxisSize: effectiveHeight == null
+              ? MainAxisSize.min
+              : MainAxisSize.max,
+          children: [
+            if (effectiveShowGrabber) ...[
+              const SizedBox(height: AppSpacing.md),
+              Center(
+                child: Container(
+                  width: 40,
+                  height: 4,
+                  decoration: BoxDecoration(
+                    color: semantic.border.withValues(alpha: 0.9),
+                    borderRadius: BorderRadius.circular(2),
+                  ),
                 ),
               ),
-            ),
-          ],
-          if (title != null) ...[
+            ],
+            if (title != null) ...[
+              const SizedBox(height: AppSpacing.lg),
+              _SheetTitle(title: title!, isPage: isPage),
+            ],
             const SizedBox(height: AppSpacing.lg),
-            _SheetTitle(title: title!, isPage: isPage),
-          ],
-          const SizedBox(height: AppSpacing.lg),
-          if (effectiveHeight == null)
-            scrollable
-                ? ConstrainedBox(
-                    constraints: BoxConstraints(maxHeight: maxScrollableHeight),
-                    child: SingleChildScrollView(
-                      keyboardDismissBehavior:
-                          ScrollViewKeyboardDismissBehavior.onDrag,
-                      child: content,
-                    ),
-                  )
-                : content
-          else
-            Expanded(
-              child: scrollable
-                  ? SingleChildScrollView(
-                      keyboardDismissBehavior:
-                          ScrollViewKeyboardDismissBehavior.onDrag,
-                      child: content,
+            if (effectiveHeight == null)
+              scrollable
+                  ? ConstrainedBox(
+                      constraints: BoxConstraints(
+                        maxHeight: maxScrollableHeight,
+                      ),
+                      child: SingleChildScrollView(
+                        keyboardDismissBehavior:
+                            ScrollViewKeyboardDismissBehavior.onDrag,
+                        child: content,
+                      ),
                     )
-                  : content,
-            ),
-          if (showBottomBar) bottomBar!,
-        ],
+                  : content
+            else
+              Expanded(
+                child: scrollable
+                    ? SingleChildScrollView(
+                        keyboardDismissBehavior:
+                            ScrollViewKeyboardDismissBehavior.onDrag,
+                        child: content,
+                      )
+                    : content,
+              ),
+            if (showBottomBar) bottomBar!,
+          ],
+        ),
       ),
     );
 

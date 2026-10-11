@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:life_log/common/widgets/app_feedback.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:life_log/common/services/cloud_config_service.dart';
@@ -345,16 +346,14 @@ class DeveloperView extends StatelessWidget {
 
     if (confirmed != true || !context.mounted) return;
     logService.clearLogs();
-    final messenger = ScaffoldMessenger.of(context);
-    messenger.showSnackBar(const SnackBar(content: Text('所有日志已清空')));
+    AppFeedback.capture(context).success('所有日志已清空');
   }
 
   Future<void> _copyLogs(BuildContext context, LogService logService) async {
     final text = logService.exportLogs();
     await Clipboard.setData(ClipboardData(text: text));
     if (!context.mounted) return;
-    final messenger = ScaffoldMessenger.of(context);
-    messenger.showSnackBar(const SnackBar(content: Text('日志已复制到剪贴板')));
+    AppFeedback.capture(context).success('日志已复制到剪贴板');
   }
 
   Future<void> _copyDiagnostics(
@@ -364,8 +363,7 @@ class DeveloperView extends StatelessWidget {
     final text = logService.exportDiagnostics();
     await Clipboard.setData(ClipboardData(text: text));
     if (!context.mounted) return;
-    final messenger = ScaffoldMessenger.of(context);
-    messenger.showSnackBar(const SnackBar(content: Text('诊断信息已复制')));
+    AppFeedback.capture(context).success('诊断信息已复制');
   }
 
   Future<void> _exportLogs(LogService logService) async {

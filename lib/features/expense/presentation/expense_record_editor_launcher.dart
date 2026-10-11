@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:life_log/common/widgets/app_page_route.dart';
 import 'package:life_log/core/di/service_locator.dart';
 import 'package:life_log/features/expense/application/load_expense_record_edit_draft.dart';
 import 'package:life_log/features/expense/domain/entities/expense_record_entry.dart';
@@ -16,8 +17,9 @@ Future<void> openExpenseRecordEditorPage(
   if (!context.mounted) return;
 
   await Navigator.of(context).push<void>(
-    MaterialPageRoute<void>(
-      builder: (_) => ExpenseRecordEditView(
+    appPageRoute<void>(
+      context,
+      ExpenseRecordEditView(
         existingEntry: input.entry,
         existingAlreadyDirty: input.alreadyDirty,
         initialDate: initialDate,

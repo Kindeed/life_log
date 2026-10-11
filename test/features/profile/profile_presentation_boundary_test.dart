@@ -104,7 +104,7 @@ void main() {
       expect(view, isNot(contains('Get.snackbar')));
       expect(view, isNot(contains('AppConfirmDialog')));
       expect(view, contains('SyncCenterView'));
-      expect(view, contains('DeveloperView'));
+      expect(view, isNot(contains('DeveloperView')));
       expect(view, isNot(contains('StatisticsController')));
       expect(view, isNot(contains('StatisticsView')));
       expect(view, isNot(contains('DataManagementView')));
@@ -116,9 +116,9 @@ void main() {
         contains('serviceLocator.registerLazySingleton<StatisticsController>'),
       );
       expect(view, contains('Navigator.of('));
-      expect(view, contains('MaterialPageRoute'));
+      expect(view, contains('appPageRoute'));
       expect(view, contains('context.go(AppRoutes.login)'));
-      expect(view, contains('ScaffoldMessenger.of(context)'));
+      expect(view, contains('AppFeedback.capture(context)'));
     });
 
     test('login page uses GoRouter and local feedback lifecycles', () {
@@ -130,7 +130,7 @@ void main() {
       expect(view, isNot(contains('Get.back')));
       expect(view, isNot(contains('Get.snackbar')));
       expect(view, contains('context.go(AppRoutes.root)'));
-      expect(view, contains('ScaffoldMessenger.of(context)'));
+      expect(view, contains('AppFeedback.capture(context)'));
     });
 
     test('about page describes the current runtime stack', () {
@@ -156,7 +156,7 @@ void main() {
       expect(view, contains('showDialog<void>'));
       expect(view, contains('Navigator.of('));
       expect(view, contains('context.go(AppRoutes.root)'));
-      expect(view, contains('ScaffoldMessenger.of(context)'));
+      expect(view, contains('AppFeedback.capture(context)'));
     });
 
     test('appearance page uses injected theme controller access', () {
@@ -225,7 +225,7 @@ void main() {
       expect(logService, contains('setDebugEnabled'));
       expect(cloudConfig, contains('bool isConfigured'));
       expect(view, contains('showDialog<bool>'));
-      expect(view, contains('ScaffoldMessenger.of(context)'));
+      expect(view, contains('AppFeedback.capture(context)'));
       expect(
         appEntry,
         contains('serviceLocator.registerSingleton<CloudConfigService>'),
@@ -237,10 +237,10 @@ void main() {
     });
 
     test(
-      'profile developer entry describes diagnostics without UI gallery copy',
+      'about developer entry describes diagnostics without UI gallery copy',
       () {
         final view = File(
-          'lib/features/profile/presentation/profile_view.dart',
+          'lib/features/profile/presentation/views/about_view.dart',
         ).readAsStringSync();
 
         expect(view, contains("subtitle: '日志、调试、诊断信息'"));

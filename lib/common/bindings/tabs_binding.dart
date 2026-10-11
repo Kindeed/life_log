@@ -5,6 +5,7 @@ import 'package:life_log/features/work_log/application/initialize_work_log_featu
 import 'package:life_log/core/di/service_locator.dart';
 import '../services/log_service.dart';
 import 'package:life_log/features/statistics/presentation/statistics_controller.dart';
+import 'package:life_log/features/profile/domain/repositories/profile_account_repository_port.dart';
 
 void configurePresentationDependencies() {
   if (!serviceLocator.isRegistered<TabsController>()) {
@@ -12,7 +13,7 @@ void configurePresentationDependencies() {
   }
   if (!serviceLocator.isRegistered<StatisticsController>()) {
     serviceLocator.registerLazySingleton<StatisticsController>(
-      () => StatisticsController()..start(),
+      () => StatisticsController(watchScope: _watchStatisticsScope)..start(),
       dispose: (controller) => controller.dispose(),
     );
   }
@@ -21,6 +22,27 @@ void configurePresentationDependencies() {
       _initializeWorkLogFeature(serviceLocator<InitializeWorkLogFeature>()),
     );
   }
+}
+
+Stream<void> _watchStatisticsScope() {
+  if (!serviceLocator.isRegistered<ProfileAccountRepositoryPort>()) {
+    return const Stream.empty();
+  }
+  final account = serviceLocator<ProfileAccountRepositoryPort>();
+  final initial = account.loadAccount();
+  var first = true;
+  return account
+      .watchAccount()
+      .where((snapshot) {
+        if (first) {
+          first = false;
+          return snapshot != initial;
+        }
+        // This port exposes no durable owner id. Every later auth notification
+        // therefore invalidates cached aggregates conservatively.
+        return true;
+      })
+      .map((_) {});
 }
 
 Future<void> _initializeWorkLogFeature(

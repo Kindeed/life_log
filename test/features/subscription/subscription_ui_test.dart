@@ -20,7 +20,7 @@ void main() {
       expect(
         timelineView,
         contains(
-          'package:life_log/features/subscription/presentation/subscription_view.dart',
+          'package:life_log/features/subscription/presentation/subscription_editor_launcher.dart',
         ),
       );
       expect(
@@ -75,8 +75,8 @@ void main() {
         'lib/features/subscription/presentation/add_subscription_sheet.dart',
       ).readAsStringSync();
 
-      expect(source, contains('showModalBottomSheet'));
-      expect(source, contains('ScaffoldMessenger'));
+      expect(source, contains('showAppBottomSheet'));
+      expect(source, contains('AppFeedback'));
       expect(source, contains('Navigator.of('));
       expect(source, isNot(contains('Get.bottomSheet')));
       expect(source, isNot(contains('Get.back')));
@@ -95,9 +95,9 @@ void main() {
       ).readAsStringSync();
 
       expect(controller.existsSync(), isFalse);
-      expect(view, contains('ScaffoldMessenger'));
+      expect(view, contains('AppFeedback'));
       expect(view, contains('_showSubscriptionMessage'));
-      expect(sheet, contains('ScaffoldMessenger'));
+      expect(sheet, contains('AppFeedback'));
       expect(sheet, contains('_showMessage'));
     });
 
@@ -211,7 +211,7 @@ void main() {
         expect(sheet, contains('DeleteSubscriptionEntry'));
         expect(sheet, contains('confirmSubscriptionDelete'));
         expect(sheet, contains('label: "删除"'));
-        expect(sheet, contains('content: Text("订阅已删除")'));
+        expect(sheet, contains("feedback.success('订阅已删除')"));
 
         final dialogs = File(
           'lib/features/subscription/presentation/subscription_dialogs.dart',

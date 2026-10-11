@@ -2,9 +2,10 @@ import 'dart:io';
 
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:get_storage/get_storage.dart';
 import 'package:life_log/common/services/auth_service.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
+
+import 'support/test_get_storage.dart';
 
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
@@ -16,11 +17,11 @@ void main() {
       const pathChannel = MethodChannel('plugins.flutter.io/path_provider');
       TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
           .setMockMethodCallHandler(pathChannel, (_) async => folder.path);
-      final storage = GetStorage(
+      final fixture = await TestGetStorage.open(
         'epoch_${DateTime.now().microsecondsSinceEpoch}',
-        folder.path,
+        folder,
       );
-      await storage.initStorage;
+      final storage = fixture.storage;
       final client = SupabaseClient('https://example.supabase.co', 'test-key');
       final auth = AuthService(client: client, storage: storage);
       final observed = <(String?, int)>[];
@@ -43,8 +44,8 @@ void main() {
         expect(auth.sessionEpoch, epoch);
       } finally {
         auth.dispose();
-        await storage.erase();
         await client.dispose();
+        await fixture.close();
         await folder.delete(recursive: true);
         TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
             .setMockMethodCallHandler(pathChannel, null);

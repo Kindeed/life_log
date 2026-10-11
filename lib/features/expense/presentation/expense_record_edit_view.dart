@@ -4,6 +4,7 @@ import 'package:life_log/features/project/presentation/project_stage_field.dart'
 import 'dart:async';
 
 import 'package:flutter/material.dart';
+import 'package:life_log/common/widgets/app_feedback.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:life_log/common/theme/theme_extensions.dart';
@@ -172,25 +173,18 @@ class _ExpenseRecordEditViewState extends State<ExpenseRecordEditView> {
     switch (editorState.status) {
       case ExpenseRecordEditorStatus.saved:
       case ExpenseRecordEditorStatus.deleted:
-        final messenger = ScaffoldMessenger.maybeOf(context);
+        final feedback = AppFeedback.capture(context);
         final refresh = widget.onSavedOrDeleted;
         if (refresh != null) {
           unawaited(Future<void>.sync(refresh).catchError((Object _) {}));
         }
         if (!context.mounted) return;
         await Navigator.of(context).maybePop();
-        messenger
-          ?..hideCurrentSnackBar()
-          ..showSnackBar(
-            SnackBar(
-              content: Text(
-                editorState.status == ExpenseRecordEditorStatus.saved
-                    ? '支出已保存'
-                    : '支出已删除',
-              ),
-              behavior: SnackBarBehavior.floating,
-            ),
-          );
+        feedback.success(
+          editorState.status == ExpenseRecordEditorStatus.saved
+              ? '支出已保存'
+              : '支出已删除',
+        );
         break;
       case ExpenseRecordEditorStatus.failure:
         _showEditorFailure(context, editorState.failure);
@@ -212,17 +206,7 @@ class _ExpenseRecordEditViewState extends State<ExpenseRecordEditView> {
 
   void _showEditorFailure(BuildContext context, AppFailure? failure) {
     final message = failure?.message ?? '保存失败';
-    final messenger = ScaffoldMessenger.maybeOf(context);
-    if (messenger == null) return;
-    messenger
-      ..hideCurrentSnackBar()
-      ..showSnackBar(
-        SnackBar(
-          content: Text(message),
-          behavior: SnackBarBehavior.floating,
-          backgroundColor: Theme.of(context).colorScheme.error,
-        ),
-      );
+    AppFeedback.capture(context).error(message);
   }
 
   Future<bool> _confirmDelete() async {

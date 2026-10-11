@@ -8,21 +8,22 @@ void main() {
       'lib/features/more/presentation/more_view.dart',
     ).readAsStringSync();
 
-    expect(source, contains("title: '个人与账户'"));
+    expect(source, contains('AppSettingsTile'));
+    expect(source, isNot(contains('AppTabIconAction')));
     expect(source, contains('ProfileView'));
     expect(source, isNot(contains('SyncCenterView')));
     expect(source, isNot(contains('云同步中心')));
     expect(source, isNot(contains('DeveloperView')));
     expect(source, contains("title: '记录与分析'"));
-    expect(source, contains("title: '工具'"));
-    expect(source, contains("title: '应用'"));
+    expect(source, contains("title: '专业工具'"));
+    expect(source, contains("title: '应用设置'"));
     expect(source, contains("title: '全部记录'"));
     expect(source, contains("title: '统计面板'"));
     expect(source, contains("title: '订阅管理'"));
     expect(source, contains("title: '遥测计算器'"));
     expect(source, contains("title: '外观设置'"));
     expect(source, contains("title: '数据备份与恢复'"));
-    expect(source, contains("title: '关于应用'"));
+    expect(source, contains("title: '关于与诊断'"));
   });
 
   test('quick action labels are shared and canonical', () {

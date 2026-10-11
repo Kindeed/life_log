@@ -1,4 +1,5 @@
 import 'package:life_log/common/utils/date_utils.dart';
+import 'package:life_log/common/utils/formatters.dart';
 import 'package:life_log/features/work_log/domain/entities/work_log_entry.dart';
 import 'package:life_log/features/work_log/domain/entities/work_log_month_snapshot.dart';
 
@@ -42,17 +43,23 @@ extension WorkLogEntryStats on Iterable<WorkLogEntry> {
   }
 
   double get totalReimbursedAmount {
-    return where(
-      (entry) =>
-          entry.expenses != null && entry.expenses! > 0 && entry.isReimbursed,
-    ).fold(0.0, (sum, entry) => sum + entry.expenses!);
+    return sumMoneyValues(
+      where(
+        (entry) =>
+            entry.expenses != null && entry.expenses! > 0 && entry.isReimbursed,
+      ).map((entry) => entry.expenses!),
+    );
   }
 
   double get totalUnreimbursedAmount {
-    return where(
-      (entry) =>
-          entry.expenses != null && entry.expenses! > 0 && !entry.isReimbursed,
-    ).fold(0.0, (sum, entry) => sum + entry.expenses!);
+    return sumMoneyValues(
+      where(
+        (entry) =>
+            entry.expenses != null &&
+            entry.expenses! > 0 &&
+            !entry.isReimbursed,
+      ).map((entry) => entry.expenses!),
+    );
   }
 
   WorkLogMonthSummary getMonthSummary(DateTime monthYear) {

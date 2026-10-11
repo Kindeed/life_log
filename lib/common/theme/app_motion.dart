@@ -6,6 +6,7 @@ class AppMotion {
 
   static const Duration fast = Duration(milliseconds: 140);
   static const Duration normal = Duration(milliseconds: 240);
+  static const Duration pageExit = Duration(milliseconds: 200);
   static const Duration sheet = Duration(milliseconds: 300);
   static const Duration slow = Duration(milliseconds: 400);
 

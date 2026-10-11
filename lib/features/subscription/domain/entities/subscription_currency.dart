@@ -1,3 +1,5 @@
+import 'package:life_log/common/utils/formatters.dart';
+
 enum SubscriptionCurrency { cny, usd, eur, jpy, hkd }
 
 extension SubscriptionCurrencyInfo on SubscriptionCurrency {
@@ -37,5 +39,5 @@ SubscriptionCurrency subscriptionCurrencyFromCode(Object? value) {
 }
 
 String formatSubscriptionAmount(double value, SubscriptionCurrency currency) {
-  return '${currency.symbol}${value.toStringAsFixed(2)}';
+  return formatMoney(value, currency: currency.code);
 }

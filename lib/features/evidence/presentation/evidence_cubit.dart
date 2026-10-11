@@ -24,8 +24,12 @@ final class EvidenceProjectSummary extends Equatable {
 
   EvidenceEntry get latest => items.first;
   int get count => items.length;
-  double get pendingAmount => items.totalPendingAmount;
-  double get reimbursedAmount => items.totalReimbursedAmount;
+  double get pendingAmount => pendingAmountsByCurrency['CNY'] ?? 0;
+  double get reimbursedAmount => reimbursedAmountsByCurrency['CNY'] ?? 0;
+  late final Map<String, double> pendingAmountsByCurrency =
+      items.pendingAmountsByCurrency;
+  late final Map<String, double> reimbursedAmountsByCurrency =
+      items.reimbursedAmountsByCurrency;
 
   @override
   List<Object?> get props => [projectName, items];
@@ -115,6 +119,9 @@ final class EvidenceState extends Equatable {
     return entriesForProject(projectName).totalPendingAmount;
   }
 
+  Map<String, double> get pendingAmountsByCurrency =>
+      entries.pendingAmountsByCurrency;
+
   static List<EvidenceProjectSummary> _projectSummaries(
     List<EvidenceEntry> entries,
     EvidenceSortMode sortMode,
@@ -137,7 +144,20 @@ final class EvidenceState extends Equatable {
         );
         break;
       case EvidenceSortMode.amount:
-        summaries.sort((a, b) => b.pendingAmount.compareTo(a.pendingAmount));
+        summaries.sort((a, b) {
+          final aCodes = a.pendingAmountsByCurrency.keys.toList()..sort();
+          final bCodes = b.pendingAmountsByCurrency.keys.toList()..sort();
+          final aCode = aCodes.isEmpty ? 'CNY' : aCodes.first;
+          final bCode = bCodes.isEmpty ? 'CNY' : bCodes.first;
+          final byCurrency = aCode.compareTo(bCode);
+          if (byCurrency != 0) return byCurrency;
+          final byAmount = (b.pendingAmountsByCurrency[bCode] ?? 0).compareTo(
+            a.pendingAmountsByCurrency[aCode] ?? 0,
+          );
+          return byAmount != 0
+              ? byAmount
+              : a.projectName.compareTo(b.projectName);
+        });
         break;
       case EvidenceSortMode.project:
         summaries.sort((a, b) => a.projectName.compareTo(b.projectName));

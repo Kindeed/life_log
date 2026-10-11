@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:life_log/common/widgets/app_bottom_sheet.dart';
+import 'package:life_log/common/widgets/app_pill.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:life_log/common/layout/constrained_page.dart';
@@ -153,7 +155,7 @@ class _EvidenceListViewState extends State<EvidenceListView> {
     final theme = Theme.of(context);
     final textSecondary = theme.colorScheme.onSurfaceVariant;
 
-    showModalBottomSheet<void>(
+    showAppBottomSheet<void>(
       context: context,
       isScrollControlled: true,
       backgroundColor: Colors.transparent,
@@ -257,7 +259,10 @@ class _EvidenceOverview extends StatelessWidget {
               ),
               AppMetricTile(
                 label: '待报销',
-                value: formatMoney(state.totalPendingAmount),
+                value: formatMoneyTotals(
+                  state.pendingAmountsByCurrency,
+                  separator: '\n',
+                ),
                 icon: Icons.pending_actions_rounded,
                 color: semantic.expense,
               ),
@@ -281,7 +286,7 @@ class _EvidenceOverview extends StatelessWidget {
               ),
               AppFilterChipItem(
                 value: EvidenceSortMode.amount,
-                label: '金额',
+                label: '金额（分币种）',
                 icon: Icons.payments_rounded,
               ),
               AppFilterChipItem(
@@ -351,22 +356,28 @@ class _EvidenceProjectCard extends StatelessWidget {
                   spacing: 6.w,
                   runSpacing: 6.h,
                   children: [
-                    _MetaPill(
+                    AppPill(
                       icon: Icons.receipt_long_rounded,
                       label: '${summary.count} 条',
                       color: semantic.warning,
                     ),
-                    _MetaPill(
-                      icon: Icons.pending_actions_rounded,
-                      label: formatMoney(summary.pendingAmount),
-                      color: semantic.expense,
-                    ),
-                    if (summary.reimbursedAmount > 0)
-                      _MetaPill(
-                        icon: Icons.verified_rounded,
-                        label: formatMoney(summary.reimbursedAmount),
-                        color: semantic.success,
+                    for (final amount
+                        in summary.pendingAmountsByCurrency.entries)
+                      AppPill(
+                        icon: Icons.pending_actions_rounded,
+                        label:
+                            '待报销 ${formatMoney(amount.value, currency: amount.key)}',
+                        color: semantic.expense,
                       ),
+                    for (final amount
+                        in summary.reimbursedAmountsByCurrency.entries)
+                      if (amount.value > 0)
+                        AppPill(
+                          icon: Icons.verified_rounded,
+                          label:
+                              '已报销 ${formatMoney(amount.value, currency: amount.key)}',
+                          color: semantic.success,
+                        ),
                   ],
                 ),
               ],
@@ -399,10 +410,10 @@ class _EvidenceItemCard extends StatelessWidget {
     final theme = Theme.of(context);
     final legacyItem = legacyEvidenceFromEntry(item);
     final statusColor = item.status == EvidenceEntryStatus.reimbursed
-        ? Colors.green
+        ? theme.semanticColors.success
         : item.status == EvidenceEntryStatus.submitted
-        ? Colors.blue
-        : Colors.orange;
+        ? theme.semanticColors.work
+        : theme.semanticColors.warning;
 
     return AppCard(
       onTap: onTap,
@@ -441,53 +452,21 @@ class _EvidenceItemCard extends StatelessWidget {
             crossAxisAlignment: CrossAxisAlignment.end,
             children: [
               Text(
-                formatMoney(item.amount ?? 0),
+                item.amount == null
+                    ? '未填金额'
+                    : formatMoney(item.amount!, currency: item.currency),
                 style: TextStyle(
                   fontWeight: FontWeight.w800,
                   color: theme.colorScheme.onSurface,
                 ),
               ),
               SizedBox(height: 6.h),
-              _MetaPill(
+              AppPill(
                 icon: Icons.circle,
                 label: item.status.label,
                 color: statusColor,
               ),
             ],
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-class _MetaPill extends StatelessWidget {
-  final IconData icon;
-  final String label;
-  final Color color;
-
-  const _MetaPill({
-    required this.icon,
-    required this.label,
-    required this.color,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      padding: EdgeInsets.symmetric(horizontal: 8.w, vertical: 5.h),
-      decoration: BoxDecoration(
-        color: color.withValues(alpha: 0.1),
-        borderRadius: BorderRadius.circular(8),
-      ),
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Icon(icon, size: 10.sp, color: color),
-          SizedBox(width: 4.w),
-          Text(
-            label,
-            style: TextStyle(fontSize: 11.sp, color: color),
           ),
         ],
       ),

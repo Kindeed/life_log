@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:life_log/common/theme/app_status_colors.dart';
 import 'package:life_log/common/theme/app_motion.dart';
 import 'package:life_log/common/theme/app_radius.dart';
 import 'package:life_log/common/theme/theme_extensions.dart';
@@ -41,6 +42,9 @@ class DayCell extends StatelessWidget {
         day.month != focusedDay.month &&
         !selected;
     final status = event == null ? null : _eventStatus(context, event!);
+    final statusColors = status == null
+        ? null
+        : AppStatusColors.fromTint(theme, status.color);
     final foreground = selected ? scheme.onPrimary : textPrimary;
     final muted = selected
         ? scheme.onPrimary.withValues(alpha: 0.88)
@@ -154,9 +158,7 @@ class DayCell extends StatelessWidget {
                                           ? scheme.onPrimary.withValues(
                                               alpha: 0.15,
                                             )
-                                          : status.color.withValues(
-                                              alpha: isDark ? 0.20 : 0.10,
-                                            ),
+                                          : statusColors!.container,
                                     ),
                                     child: Row(
                                       mainAxisSize: MainAxisSize.min,
@@ -169,7 +171,7 @@ class DayCell extends StatelessWidget {
                                             style: TextStyle(
                                               color: selected
                                                   ? scheme.onPrimary
-                                                  : status.color,
+                                                  : statusColors!.foreground,
                                               fontSize: dense
                                                   ? 8
                                                   : compact
@@ -190,7 +192,7 @@ class DayCell extends StatelessWidget {
                                               style: TextStyle(
                                                 color: selected
                                                     ? scheme.onPrimary
-                                                    : muted,
+                                                    : statusColors!.foreground,
                                                 fontSize: compact ? 7 : 8,
                                                 height: 1,
                                               ),

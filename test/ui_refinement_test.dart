@@ -176,6 +176,46 @@ void main() {
     expect(tester.takeException(), isNull);
   });
 
+  testWidgets('subscription rejects nonfinite prices without writing', (
+    tester,
+  ) async {
+    _phone(tester, 390);
+    final repository = _DelayedSubscriptionRepository();
+    serviceLocator.registerSingleton(SaveSubscriptionEntry(repository));
+    await tester.pumpWidget(_harness(const SubscriptionEditView()));
+    await tester.pumpAndSettle();
+    await tester.enterText(find.byType(TextFormField).first, '金额校验');
+    for (final input in ['NaN', 'Infinity', '-Infinity']) {
+      await tester.enterText(find.byType(TextFormField).at(1), input);
+      await tester.testTextInput.receiveAction(TextInputAction.done);
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('保存订阅'));
+      await tester.pumpAndSettle();
+      expect(find.text('价格格式不正确'), findsOneWidget);
+      expect(repository.calls, 0);
+      expect(tester.takeException(), isNull);
+    }
+  });
+
+  testWidgets('subscription separates tiny estimate from original amount', (
+    tester,
+  ) async {
+    _phone(tester, 320);
+    final repository = _TinySubscriptionRepository();
+    serviceLocator.registerFactory<SubscriptionCubit>(
+      () => SubscriptionCubit(
+        loadEntries: LoadSubscriptionEntries(repository),
+        watchEntries: WatchSubscriptionEntries(repository),
+        initialNow: () => DateTime(2026, 9, 16),
+      ),
+    );
+    await tester.pumpWidget(_harness(const SubscriptionView(), dark: true));
+    await tester.pumpAndSettle();
+    expect(find.text('<¥0.01'), findsOneWidget);
+    expect(find.text('¥0.004'), findsOneWidget);
+    expect(tester.takeException(), isNull);
+  });
+
   for (final dark in [false, true]) {
     for (final scale in [1.0, 2.0]) {
       testWidgets('subscription layout dark=$dark scale=$scale', (
@@ -366,6 +406,19 @@ class _DelayedSubscriptionRepository implements SubscriptionRepositoryPort {
   Future<void> reorderEntries(List<SubscriptionEntry> entries) async {}
   @override
   Stream<void> watchEntries() => const Stream.empty();
+}
+
+class _TinySubscriptionRepository extends _DelayedSubscriptionRepository {
+  @override
+  Future<List<SubscriptionEntry>> getAllEntries() async => [
+    SubscriptionEntry(
+      id: 1,
+      name: '微小金额订阅',
+      price: 0.004,
+      cycle: SubscriptionBillingCycle.monthly,
+      nextPaymentDate: DateTime(2026, 9, 17),
+    ),
+  ];
 }
 
 class _SubscriptionPreviewRepository extends _DelayedSubscriptionRepository {

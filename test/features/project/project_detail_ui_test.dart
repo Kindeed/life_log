@@ -8,6 +8,10 @@ import 'package:life_log/features/expense/presentation/expense_record_edit_view.
 import 'package:life_log/features/evidence/application/save_evidence_entry.dart';
 import 'package:life_log/features/evidence/application/delete_evidence_entry.dart';
 import 'package:life_log/features/evidence/presentation/evidence_editor_sheet.dart';
+import 'package:life_log/features/evidence/data/evidence_model.dart';
+import 'package:life_log/features/evidence/data/evidence_parse_service.dart';
+import 'package:life_log/common/utils/money_input.dart';
+import 'package:life_log/common/widgets/app_form_feedback.dart';
 import 'dart:async';
 import 'dart:io';
 import 'dart:ui' as ui;
@@ -460,6 +464,78 @@ void main() {
       expect(tester.takeException(), isNull);
     },
   );
+  for (final spec in [('JPY', 123.0, '123'), ('CNY', 0.001, '0.001')]) {
+    testWidgets('receipt OCR retains editable amount ${spec.$1}', (
+      tester,
+    ) async {
+      _phone(tester);
+      final f = await _Fixture.ready();
+      serviceLocator.registerSingleton<SaveEvidenceEntry>(
+        SaveEvidenceEntry(f.evidence),
+      );
+      serviceLocator.registerSingleton<DeleteEvidenceEntry>(
+        DeleteEvidenceEntry(f.evidence),
+      );
+      serviceLocator.registerSingleton<EvidenceParseService>(
+        _ParsedAmount(spec.$2),
+      );
+      final existing = ExpenseEvidence()
+        ..projectName = '项目A'
+        ..evidenceDate = DateTime(2026, 10, 11)
+        ..currency = spec.$1
+        ..localFilePath = 'receipt-ocr-review.png';
+      await tester.pumpWidget(
+        _harness(EvidenceEditorSheet(asPage: true, existing: existing)),
+      );
+      await tester.pumpAndSettle();
+      final parse = find.text('解析附件');
+      await tester.scrollUntilVisible(
+        parse,
+        150,
+        scrollable: find.byType(Scrollable).first,
+      );
+      await tester.tap(parse);
+      await tester.pumpAndSettle();
+      final amount = tester.widget<AppAmountField>(find.byType(AppAmountField));
+      expect(amount.currency, spec.$1);
+      expect(amount.controller.text, spec.$3);
+      if (spec.$1 == 'JPY') {
+        expect(moneyInputError(amount.controller.text, 'JPY'), isNull);
+      } else {
+        final save = find.text('保存修改');
+        await tester.scrollUntilVisible(
+          save,
+          250,
+          scrollable: find.byType(Scrollable).first,
+        );
+        await tester.tap(save);
+        await tester.pumpAndSettle();
+        expect(find.byType(EvidenceEditorSheet), findsOneWidget);
+        expect(find.byType(SnackBar), findsNothing);
+        expect(
+          find
+              .descendant(
+                of: find.byType(AppFormFeedback),
+                matching: find.text('请输入有效金额，最多两位小数'),
+              )
+              .hitTestable(),
+          findsOneWidget,
+        );
+        expect(amount.controller.text, '0.001');
+        await tester.scrollUntilVisible(
+          parse,
+          -250,
+          scrollable: find.byType(Scrollable).first,
+        );
+      }
+      amount.controller.text = '55';
+      await tester.tap(parse);
+      await tester.pumpAndSettle();
+      expect(amount.controller.text, '55');
+      expect(tester.takeException(), isNull);
+    });
+  }
+
   testWidgets(
     'expense and receipt amounts remain separate, with original currencies',
     (tester) async {
@@ -1136,6 +1212,14 @@ class _Expenses extends _Data<ExpenseRecordEntry>
   }) async {
     saved.add(entry);
   }
+}
+
+class _ParsedAmount extends EvidenceParseService {
+  final double amount;
+  _ParsedAmount(this.amount);
+  @override
+  Future<EvidenceParseResult> parseFile(String path) async =>
+      EvidenceParseResult(rawText: 'fixture', amount: amount);
 }
 
 class _Evidence extends _Data<EvidenceEntry> implements EvidenceRepositoryPort {

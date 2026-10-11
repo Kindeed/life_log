@@ -74,10 +74,15 @@ final class ExpenseRecordState extends Equatable {
   }
 
   double totalForProject(String projectName) {
-    return entriesForProject(
-      projectName,
-    ).fold(0.0, (sum, entry) => sum + entry.amount);
+    return totalsForProjectByCurrency(projectName)['CNY'] ?? 0;
   }
+
+  Map<String, double> get currentMonthTotalsByCurrency => entries
+      .inMonth(DateTime(referenceDay.year, referenceDay.month))
+      .totalAmountsByCurrency;
+
+  Map<String, double> totalsForProjectByCurrency(String projectName) =>
+      entriesForProject(projectName).totalAmountsByCurrency;
 
   @override
   List<Object?> get props => [

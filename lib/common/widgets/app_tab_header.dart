@@ -8,13 +8,13 @@ import 'app_press_feedback.dart';
 class AppTabHeader extends StatelessWidget {
   final String title;
   final String eyebrow;
-  final Widget action;
+  final Widget? action;
 
   const AppTabHeader({
     super.key,
     required this.title,
     required this.eyebrow,
-    required this.action,
+    this.action,
   });
 
   @override
@@ -42,17 +42,23 @@ class AppTabHeader extends StatelessWidget {
       padding: const EdgeInsets.fromLTRB(22, 12, 22, 16),
       child: LayoutBuilder(
         builder: (context, constraints) {
+          if (action == null) {
+            return SizedBox(width: double.infinity, child: heading);
+          }
           final stackAction =
               constraints.maxWidth < 290 ||
               MediaQuery.textScalerOf(context).scale(14) > 20;
           if (stackAction) {
-            return Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                heading,
-                const SizedBox(height: AppSpacing.md),
-                action,
-              ],
+            return SizedBox(
+              width: double.infinity,
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  heading,
+                  const SizedBox(height: AppSpacing.md),
+                  action!,
+                ],
+              ),
             );
           }
           return Row(
@@ -60,7 +66,7 @@ class AppTabHeader extends StatelessWidget {
             children: [
               Expanded(child: heading),
               const SizedBox(width: AppSpacing.md),
-              action,
+              action!,
             ],
           );
         },

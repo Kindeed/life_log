@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:life_log/common/widgets/app_page_route.dart';
 import 'package:life_log/features/profile/presentation/profile_view.dart';
 
 class ProfileActionButton extends StatelessWidget {
@@ -10,9 +11,9 @@ class ProfileActionButton extends StatelessWidget {
       tooltip: '我的',
       icon: const Icon(Icons.account_circle_outlined),
       onPressed: () {
-        Navigator.of(context).push<void>(
-          MaterialPageRoute<void>(builder: (_) => const ProfileView()),
-        );
+        Navigator.of(
+          context,
+        ).push<void>(appPageRoute<void>(context, const ProfileView()));
       },
     );
   }

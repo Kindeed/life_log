@@ -80,7 +80,7 @@ void main() {
         expect(presentationSources, isNot(contains('AppConfirmDialog')));
         expect(presentationSources, isNot(contains('AppActionSheet.show')));
         expect(presentationSources, contains('Navigator.of('));
-        expect(presentationSources, contains('showModalBottomSheet'));
+        expect(presentationSources, contains('showAppBottomSheet'));
         expect(presentationSources, contains('ScaffoldMessenger.of(context)'));
       },
     );

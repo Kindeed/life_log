@@ -4,16 +4,18 @@ import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:go_router/go_router.dart';
 import 'package:life_log/common/layout/constrained_page.dart';
 import 'package:life_log/common/theme/app_semantic_colors.dart';
-import 'package:life_log/common/theme/app_spacing.dart';
+import 'package:life_log/common/widgets/app_settings.dart';
+import 'package:life_log/common/widgets/app_feedback.dart';
+import 'package:life_log/common/widgets/app_page_route.dart';
 import 'package:life_log/common/theme/theme_extensions.dart';
 import 'package:life_log/common/widgets/app_card.dart';
-import 'package:life_log/common/widgets/app_section_header.dart';
+
 import 'package:life_log/core/di/service_locator.dart';
 import 'package:life_log/core/routing/app_routes.dart';
 import 'package:life_log/features/profile/application/sign_out_profile_account.dart';
 import 'package:life_log/features/profile/application/sync_profile_data.dart';
 import 'package:life_log/features/profile/presentation/profile_account_cubit.dart';
-import 'package:life_log/features/profile/presentation/views/developer_view.dart';
+
 import 'package:life_log/features/sync_center/presentation/sync_center_view.dart';
 
 class ProfileView extends StatefulWidget {
@@ -62,31 +64,16 @@ class _ProfileViewState extends State<ProfileView> {
                   },
                 ),
                 SizedBox(height: 22.h),
-                _SettingsGroup(
+                AppSettingsGroup(
                   title: '同步',
                   children: [
-                    _SettingsTile(
+                    AppSettingsTile(
                       icon: Icons.sync_problem_rounded,
                       iconColor: semantic.warning,
                       title: '同步状态',
                       subtitle: '冲突、失败任务、附件同步状态',
                       onTap: () =>
                           _openProfilePage(context, const SyncCenterView()),
-                    ),
-                  ],
-                ),
-                SizedBox(height: 18.h),
-                _SettingsGroup(
-                  title: '开发者',
-                  muted: true,
-                  children: [
-                    _SettingsTile(
-                      icon: Icons.bug_report_outlined,
-                      iconColor: semantic.warning,
-                      title: '开发者选项',
-                      subtitle: '日志、调试、诊断信息',
-                      onTap: () =>
-                          _openProfilePage(context, const DeveloperView()),
                     ),
                   ],
                 ),
@@ -198,29 +185,29 @@ class _AccountCard extends StatelessWidget {
   }
 
   Future<void> _sync(BuildContext context) async {
-    final messenger = ScaffoldMessenger.of(context);
+    final feedback = AppFeedback.capture(context);
     final result = await serviceLocator<SyncProfileData>().call();
     final failure = result.failureOrNull;
     if (failure != null) {
-      messenger.showSnackBar(SnackBar(content: Text(failure.message)));
+      feedback.error(failure.message);
       return;
     }
 
     if (result.valueOrNull == true) {
-      messenger.showSnackBar(const SnackBar(content: Text('数据已与云端同步')));
+      feedback.success('数据已与云端同步');
     } else {
-      messenger.showSnackBar(const SnackBar(content: Text('请检查网络或查看日志获取详情')));
+      feedback.info('请检查网络或查看日志获取详情');
     }
   }
 
   Future<void> _logout(BuildContext context) async {
-    final messenger = ScaffoldMessenger.of(context);
+    final feedback = AppFeedback.capture(context);
     final confirmed = await _confirmLogout(context);
     if (confirmed) {
       final result = await serviceLocator<SignOutProfileAccount>().call();
       final failure = result.failureOrNull;
       if (failure != null) {
-        messenger.showSnackBar(SnackBar(content: Text(failure.message)));
+        feedback.error(failure.message);
         return;
       }
 
@@ -308,102 +295,5 @@ class _AccountAction extends StatelessWidget {
 }
 
 Future<void> _openProfilePage(BuildContext context, Widget page) {
-  return Navigator.of(
-    context,
-  ).push(MaterialPageRoute<void>(builder: (_) => page));
-}
-
-class _SettingsGroup extends StatelessWidget {
-  final String title;
-  final List<Widget> children;
-  final bool muted;
-
-  const _SettingsGroup({
-    required this.title,
-    required this.children,
-    this.muted = false,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return Opacity(
-      opacity: muted ? 0.88 : 1,
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          AppSectionHeader(title: title),
-          const SizedBox(height: AppSpacing.sm),
-          AppCard(
-            padding: EdgeInsets.zero,
-            child: Column(children: children),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-class _SettingsTile extends StatelessWidget {
-  final IconData icon;
-  final Color iconColor;
-  final String title;
-  final String subtitle;
-  final VoidCallback onTap;
-
-  const _SettingsTile({
-    required this.icon,
-    required this.iconColor,
-    required this.title,
-    required this.subtitle,
-    required this.onTap,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    final textSecondary = Theme.of(context).colorScheme.onSurfaceVariant;
-
-    return InkWell(
-      onTap: onTap,
-      borderRadius: BorderRadius.circular(18),
-      child: Padding(
-        padding: EdgeInsets.symmetric(horizontal: 14.w, vertical: 13.h),
-        child: Row(
-          children: [
-            Container(
-              width: 40.w,
-              height: 40.w,
-              decoration: BoxDecoration(
-                color: iconColor.withValues(alpha: 0.1),
-                borderRadius: BorderRadius.circular(14.r),
-              ),
-              child: Icon(icon, color: iconColor, size: 22.sp),
-            ),
-            SizedBox(width: 14.w),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    title,
-                    style: TextStyle(
-                      fontSize: 15.sp,
-                      fontWeight: FontWeight.w600,
-                    ),
-                  ),
-                  SizedBox(height: 2.h),
-                  Text(
-                    subtitle,
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                    style: TextStyle(fontSize: 12.sp, color: textSecondary),
-                  ),
-                ],
-              ),
-            ),
-            Icon(Icons.chevron_right_rounded, color: textSecondary),
-          ],
-        ),
-      ),
-    );
-  }
+  return Navigator.of(context).push(appPageRoute<void>(context, page));
 }

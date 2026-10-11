@@ -1,8 +1,11 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:package_info_plus/package_info_plus.dart';
+import 'package:life_log/common/layout/constrained_page.dart';
+import 'package:life_log/common/widgets/app_card.dart';
+import 'package:life_log/common/widgets/app_page_route.dart';
+import 'package:life_log/common/widgets/app_settings.dart';
+import 'developer_view.dart';
 
-/// 关于页面
 class AboutView extends StatelessWidget {
   const AboutView({super.key});
 
@@ -14,147 +17,94 @@ class AboutView extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final isDark = theme.brightness == Brightness.dark;
-    final cardColor = theme.cardColor;
-    final textPrimary = theme.colorScheme.onSurface;
-    final textSecondary = theme.colorScheme.onSurfaceVariant;
-
+    final scheme = theme.colorScheme;
     return Scaffold(
-      backgroundColor: theme.scaffoldBackgroundColor,
-      appBar: AppBar(title: const Text('关于')),
-      body: SingleChildScrollView(
-        padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 24.h),
-        child: Column(
-          children: [
-            // Logo 和应用名
-            Container(
-              width: 80.w,
-              height: 80.w,
-              decoration: BoxDecoration(
-                color: Theme.of(context).colorScheme.primary,
-                borderRadius: BorderRadius.circular(20.r),
-                boxShadow: [
-                  BoxShadow(
-                    color: Theme.of(
-                      context,
-                    ).colorScheme.primary.withValues(alpha: 0.3),
-                    blurRadius: 20,
-                    offset: const Offset(0, 8),
+      appBar: AppBar(title: const Text('关于与诊断')),
+      body: SafeArea(
+        child: ConstrainedPage(
+          child: SingleChildScrollView(
+            padding: const EdgeInsets.fromLTRB(22, 16, 22, 32),
+            child: Column(
+              children: [
+                AppCard(
+                  child: Column(
+                    children: [
+                      Container(
+                        width: 64,
+                        height: 64,
+                        decoration: BoxDecoration(
+                          color: scheme.primaryContainer,
+                          borderRadius: BorderRadius.circular(22),
+                        ),
+                        child: Icon(
+                          Icons.calendar_month_rounded,
+                          color: scheme.onPrimaryContainer,
+                          size: 32,
+                        ),
+                      ),
+                      const SizedBox(height: 16),
+                      Text('LifeLog', style: theme.textTheme.headlineSmall),
+                      const SizedBox(height: 4),
+                      FutureBuilder<String>(
+                        future: _loadVersionText(),
+                        builder: (_, snapshot) => Text(
+                          snapshot.data ?? '版本 --',
+                          style: theme.textTheme.bodySmall?.copyWith(
+                            color: scheme.onSurfaceVariant,
+                          ),
+                        ),
+                      ),
+                      const SizedBox(height: 16),
+                      Text(
+                        '记录工时、管理支出和订阅，保留项目现场的照片与凭证。',
+                        style: theme.textTheme.bodyMedium,
+                        textAlign: TextAlign.center,
+                      ),
+                    ],
                   ),
-                ],
-              ),
-              child: Icon(
-                Icons.calendar_month_rounded,
-                color: theme.colorScheme.onPrimary,
-                size: 40.sp,
-              ),
-            ),
-            SizedBox(height: 16.h),
-            Text(
-              'LifeLog',
-              style: TextStyle(
-                fontSize: 24.sp,
-                fontWeight: FontWeight.bold,
-                color: textPrimary,
-              ),
-            ),
-            SizedBox(height: 4.h),
-            FutureBuilder<String>(
-              future: _loadVersionText(),
-              builder: (context, snapshot) {
-                return Text(
-                  snapshot.data ?? '版本 --',
-                  style: TextStyle(fontSize: 14.sp, color: textSecondary),
-                );
-              },
-            ),
-            SizedBox(height: 32.h),
-
-            // 应用信息卡片
-            Container(
-              width: double.infinity,
-              padding: EdgeInsets.all(20.w),
-              decoration: BoxDecoration(
-                color: cardColor,
-                borderRadius: BorderRadius.circular(16.r),
-                boxShadow: [
-                  BoxShadow(
-                    color: isDark
-                        ? Colors.black.withValues(alpha: 0.3)
-                        : Colors.black.withValues(alpha: 0.05),
-                    blurRadius: 10,
-                    offset: const Offset(0, 4),
-                  ),
-                ],
-              ),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    '关于应用',
-                    style: TextStyle(
-                      fontSize: 16.sp,
-                      fontWeight: FontWeight.w600,
-                      color: textPrimary,
+                ),
+                const SizedBox(height: 24),
+                const AppSettingsGroup(
+                  title: '应用信息',
+                  children: [
+                    AppSettingsTile(
+                      icon: Icons.person_outline_rounded,
+                      title: '开发者',
+                      subtitle: '个人开发',
                     ),
-                  ),
-                  SizedBox(height: 12.h),
-                  Text(
-                    'LifeLog 是一款个人生活记录应用，帮助你管理工时、追踪支出、记录项目照片。',
-                    style: TextStyle(
-                      fontSize: 14.sp,
-                      color: textSecondary,
-                      height: 1.5,
+                    AppSettingsTile(
+                      icon: Icons.code_rounded,
+                      title: '技术栈',
+                      subtitle: 'Flutter + GoRouter',
                     ),
+                  ],
+                ),
+                const SizedBox(height: 24),
+                AppSettingsGroup(
+                  title: '诊断',
+                  children: [
+                    AppSettingsTile(
+                      icon: Icons.bug_report_outlined,
+                      title: '开发者选项',
+                      subtitle: '日志、调试、诊断信息',
+                      onTap: () => Navigator.of(context).push<void>(
+                        appPageRoute<void>(context, const DeveloperView()),
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 24),
+                Text(
+                  '© ${DateTime.now().year} LifeLog',
+                  style: theme.textTheme.bodySmall?.copyWith(
+                    color: scheme.onSurfaceVariant,
                   ),
-                  SizedBox(height: 20.h),
-                  _buildInfoRow('开发者', '个人开发', textPrimary, textSecondary),
-                  SizedBox(height: 8.h),
-                  _buildInfoRow(
-                    '技术栈',
-                    'Flutter + GoRouter',
-                    textPrimary,
-                    textSecondary,
-                  ),
-                ],
-              ),
+                ),
+              ],
             ),
-
-            SizedBox(height: 40.h),
-
-            // 版权信息
-            Text(
-              '© ${DateTime.now().year} LifeLog. All rights reserved.',
-              style: TextStyle(fontSize: 12.sp, color: textSecondary),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _buildInfoRow(
-    String label,
-    String value,
-    Color textPrimary,
-    Color textSecondary,
-  ) {
-    return Row(
-      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-      children: [
-        Text(
-          label,
-          style: TextStyle(fontSize: 14.sp, color: textSecondary),
-        ),
-        Text(
-          value,
-          style: TextStyle(
-            fontSize: 14.sp,
-            fontWeight: FontWeight.w500,
-            color: textPrimary,
           ),
         ),
-      ],
+      ),
     );
   }
 }

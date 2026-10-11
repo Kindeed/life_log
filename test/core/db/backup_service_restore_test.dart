@@ -19,12 +19,14 @@ import 'package:life_log/features/work_log/data/work_log_model.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../../../tool/isar_test_runtime.dart' show initializeTestIsar;
+import '../../support/test_get_storage.dart';
 
 void main() {
   const pathChannel = MethodChannel('plugins.flutter.io/path_provider');
   TestWidgetsFlutterBinding.ensureInitialized();
   late Directory storageDirectory;
   late GetStorage storage;
+  late TestGetStorage storageFixture;
   setUpAll(() async {
     await initializeTestIsar();
     storageDirectory = await Directory.systemTemp.createTemp('backup_cursors_');
@@ -33,8 +35,8 @@ void main() {
           pathChannel,
           (_) async => storageDirectory.path,
         );
-    storage = GetStorage('GetStorage', storageDirectory.path);
-    await storage.initStorage;
+    storageFixture = await TestGetStorage.open('GetStorage', storageDirectory);
+    storage = storageFixture.storage;
     await Supabase.initialize(
       url: 'https://restore-test.supabase.co',
       anonKey: 'test-key',
@@ -48,9 +50,7 @@ void main() {
   });
   tearDownAll(() async {
     await Supabase.instance.client.dispose();
-    await storage.erase();
-    await storage.queue.add<void>(() async {});
-    await Future<void>.delayed(const Duration(milliseconds: 50));
+    await storageFixture.close();
     TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
         .setMockMethodCallHandler(pathChannel, null);
     await storageDirectory.delete(recursive: true);

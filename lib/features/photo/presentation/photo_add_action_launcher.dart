@@ -2,6 +2,7 @@ import 'dart:io';
 
 import 'package:device_info_plus/device_info_plus.dart';
 import 'package:flutter/material.dart';
+import 'package:life_log/common/widgets/app_page_route.dart';
 import 'package:get_storage/get_storage.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:life_log/common/services/log_service.dart';
@@ -103,9 +104,7 @@ Future<void> importPhotoFromGallery(
   final messenger = ScaffoldMessenger.maybeOf(context);
   try {
     final result = await Navigator.of(context).push<GalleryImportResult>(
-      MaterialPageRoute<GalleryImportResult>(
-        builder: (_) => const GalleryImportView(),
-      ),
+      appPageRoute<GalleryImportResult>(context, const GalleryImportView()),
     );
     if (result == null || !context.mounted) return;
 

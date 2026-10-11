@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:life_log/common/widgets/app_bottom_sheet.dart';
 import 'package:flutter/services.dart';
 import 'package:life_log/common/theme/app_radius.dart';
 import 'package:life_log/common/theme/app_spacing.dart';
@@ -26,7 +27,7 @@ Future<void> showPhotoActionSheet(
   String? title,
   required List<PhotoActionSheetItem> actions,
 }) {
-  return showModalBottomSheet<void>(
+  return showAppBottomSheet<void>(
     context: context,
     backgroundColor: Colors.transparent,
     isScrollControlled: true,
@@ -50,58 +51,61 @@ Future<void> showPhotoActionSheet(
               top: BorderSide(color: theme.colorScheme.outlineVariant),
             ),
           ),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Center(
-                child: Container(
-                  width: 40,
-                  height: 4,
-                  decoration: BoxDecoration(
-                    color: semantic.border.withValues(alpha: 0.9),
-                    borderRadius: BorderRadius.circular(2),
-                  ),
-                ),
-              ),
-              if (title != null) ...[
-                const SizedBox(height: AppSpacing.lg),
-                Text(
-                  title,
-                  style: theme.textTheme.titleMedium?.copyWith(
-                    fontWeight: FontWeight.w700,
-                  ),
-                ),
-                const SizedBox(height: AppSpacing.sm),
-              ],
-              ...actions.map(
-                (action) => ListTile(
-                  minTileHeight: 56,
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(AppRadius.lg),
-                  ),
-                  leading: Icon(
-                    action.icon,
-                    color: action.destructive
-                        ? theme.colorScheme.error
-                        : theme.colorScheme.primary,
-                  ),
-                  title: Text(
-                    action.title,
-                    style: theme.textTheme.titleSmall?.copyWith(
-                      fontWeight: FontWeight.w600,
+          child: Material(
+            type: MaterialType.transparency,
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Center(
+                  child: Container(
+                    width: 40,
+                    height: 4,
+                    decoration: BoxDecoration(
+                      color: semantic.border.withValues(alpha: 0.9),
+                      borderRadius: BorderRadius.circular(2),
                     ),
                   ),
-                  subtitle: action.subtitle == null
-                      ? null
-                      : Text(action.subtitle!),
-                  onTap: () {
-                    Navigator.of(sheetContext).pop();
-                    action.onTap();
-                  },
                 ),
-              ),
-            ],
+                if (title != null) ...[
+                  const SizedBox(height: AppSpacing.lg),
+                  Text(
+                    title,
+                    style: theme.textTheme.titleMedium?.copyWith(
+                      fontWeight: FontWeight.w700,
+                    ),
+                  ),
+                  const SizedBox(height: AppSpacing.sm),
+                ],
+                ...actions.map(
+                  (action) => ListTile(
+                    minTileHeight: 56,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(AppRadius.lg),
+                    ),
+                    leading: Icon(
+                      action.icon,
+                      color: action.destructive
+                          ? theme.colorScheme.error
+                          : theme.colorScheme.primary,
+                    ),
+                    title: Text(
+                      action.title,
+                      style: theme.textTheme.titleSmall?.copyWith(
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                    subtitle: action.subtitle == null
+                        ? null
+                        : Text(action.subtitle!),
+                    onTap: () {
+                      Navigator.of(sheetContext).pop();
+                      action.onTap();
+                    },
+                  ),
+                ),
+              ],
+            ),
           ),
         ),
       );

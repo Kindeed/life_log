@@ -11,6 +11,68 @@ import 'package:life_log/features/evidence/presentation/evidence_cubit.dart';
 
 void main() {
   group('EvidenceCubit', () {
+    test(
+      'groups reimbursement amounts and sorts only within the same currency',
+      () {
+        final state = EvidenceState.ready(
+          entries: [
+            EvidenceEntry(
+              id: 1,
+              projectName: 'JPY first',
+              evidenceDate: DateTime(2026, 10),
+              amount: 5000,
+              currency: 'JPY',
+            ),
+            EvidenceEntry(
+              id: 2,
+              projectName: 'USD low',
+              evidenceDate: DateTime(2026, 10),
+              amount: 3.5,
+              currency: 'USD',
+            ),
+            EvidenceEntry(
+              id: 3,
+              projectName: 'USD high',
+              evidenceDate: DateTime(2026, 10),
+              amount: 10,
+              currency: 'USD',
+            ),
+            EvidenceEntry(
+              id: 4,
+              projectName: 'CNY',
+              evidenceDate: DateTime(2026, 10),
+              amount: 1,
+            ),
+            EvidenceEntry(
+              id: 5,
+              projectName: 'USD high',
+              evidenceDate: DateTime(2026, 10),
+              amount: 0.001,
+              currency: 'USD',
+              status: EvidenceEntryStatus.reimbursed,
+            ),
+          ],
+          searchQuery: '',
+          sortMode: EvidenceSortMode.amount,
+        );
+        expect(state.projectSummaries.map((summary) => summary.projectName), [
+          'CNY',
+          'JPY first',
+          'USD high',
+          'USD low',
+        ]);
+        expect(state.pendingAmountsByCurrency, {
+          'CNY': 1,
+          'JPY': 5000,
+          'USD': 13.5,
+        });
+        expect(state.totalPendingAmount, 1);
+        expect(state.projectSummaries[2].reimbursedAmountsByCurrency, {
+          'USD': 0.001,
+        });
+      },
+    );
+
     test('loads entries and derives project summaries and totals', () async {
       final repository = _EvidenceCubitRepository(
         entries: [
@@ -190,7 +252,7 @@ void main() {
       );
       expect(source, contains('state.filteredProjectSummaries'));
       expect(source, contains('state.totalEvidenceCount'));
-      expect(source, contains('state.totalPendingAmount'));
+      expect(source, contains('state.pendingAmountsByCurrency'));
       expect(source, isNot(contains('controller.evidence')));
       expect(source, isNot(contains('controller.filteredProjectSummaries')));
       expect(source, isNot(contains('controller.totalEvidenceCount')));
@@ -242,7 +304,7 @@ void main() {
         todayView,
         matches(RegExp(r'BlocBuilder<\s*EvidenceCubit', multiLine: true)),
       );
-      expect(todayView, contains('totalPendingAmount'));
+      expect(todayView, contains('pendingAmountsByCurrency'));
       expect(todayView, isNot(contains('final evidence = Get.find')));
       expect(todayView, isNot(contains('evidence.totalPendingAmount')));
       expect(todayView, isNot(contains('evidence.loadEvidence()')));
@@ -293,7 +355,7 @@ void main() {
       expect(sources, isNot(contains('Get.to(')));
       expect(sources, isNot(contains('Get.bottomSheet(')));
       expect(sources, isNot(contains('AppActionSheet.show')));
-      expect(sources, contains('showModalBottomSheet'));
+      expect(sources, contains('showAppBottomSheet'));
       expect(sources, contains('Navigator.of(context).push'));
       expect(sources, contains('BuildContext context'));
       expect(

@@ -4,6 +4,7 @@ import 'package:life_log/features/project/presentation/project_stage_field.dart'
 import 'dart:async';
 
 import 'package:flutter/material.dart';
+import 'package:life_log/common/widgets/app_bottom_sheet.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:life_log/common/theme/app_colors.dart';
@@ -30,7 +31,7 @@ void showCaptureDialog(
   required FutureOr<void> Function(String projectName, String description)
   onConfirm,
 }) {
-  showModalBottomSheet<void>(
+  showAppBottomSheet<void>(
     context: context,
     isScrollControlled: true,
     backgroundColor: Colors.transparent,

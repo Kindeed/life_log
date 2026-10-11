@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:life_log/common/widgets/app_bottom_sheet.dart';
+import 'package:life_log/common/widgets/app_feedback.dart';
 import 'package:life_log/common/widgets/app_page_route.dart';
-import 'package:life_log/common/theme/app_motion.dart';
 import 'package:life_log/core/di/service_locator.dart';
 import 'package:life_log/features/work_log/application/load_work_log_edit_draft.dart';
 import 'package:life_log/features/work_log/domain/entities/work_log_entry.dart';
@@ -38,13 +39,9 @@ Future<void> openWorkLogEditorSheet(
 }) async {
   final draft = await _loadEditDraft(context, existingEntry);
   if (!context.mounted) return;
-  await showModalBottomSheet<void>(
+  await showAppBottomSheet<void>(
     context: context,
     isScrollControlled: true,
-    sheetAnimationStyle: AnimationStyle(
-      duration: AppMotion.duration(context, AppMotion.sheet),
-      reverseDuration: AppMotion.duration(context, AppMotion.normal),
-    ),
     isDismissible: false,
     enableDrag: false,
     backgroundColor: Colors.transparent,
@@ -71,9 +68,7 @@ Future<_EditorDraftInput> _loadEditDraft(
   final failure = result.failureOrNull;
   if (failure != null) {
     if (context.mounted) {
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(SnackBar(content: Text('读取工时编辑状态失败：${failure.message}')));
+      AppFeedback.capture(context).error('读取工时编辑状态失败：${failure.message}');
     }
     return _EditorDraftInput(entry: existingEntry);
   }

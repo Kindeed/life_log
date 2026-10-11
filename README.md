@@ -14,7 +14,7 @@ LifeLog 是一个本地优先的 Flutter 生活记录应用，用于管理工时
 
 ## 技术栈
 
-- Flutter 3.38.5 / Dart 3.10
+- Flutter stable / Dart（最低兼容要求见 `pubspec.yaml`，不固定 Flutter 精确版本）
 - GoRouter：应用路由
 - GetIt：依赖注入
 - flutter_bloc/Cubit + ChangeNotifier：功能状态和轻量应用状态
@@ -23,6 +23,8 @@ LifeLog 是一个本地优先的 Flutter 生活记录应用，用于管理工时
 - GitHub Actions：测试包和发布 APK 构建
 
 ## 本地运行
+
+使用满足项目 Flutter/Dart 最低兼容要求的 Flutter 稳定版。CI 跟随 stable 通道；升级 SDK 后需通过静态分析、测试和 Android 构建验证。
 
 无云配置，本地模式：
 

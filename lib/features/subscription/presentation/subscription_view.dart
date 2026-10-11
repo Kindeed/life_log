@@ -1,6 +1,8 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
+import 'package:life_log/common/widgets/app_feedback.dart';
+import 'package:life_log/common/widgets/app_pill.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:life_log/common/layout/constrained_page.dart';
@@ -121,13 +123,15 @@ class _SubscriptionContent extends StatelessWidget {
                 padding: EdgeInsets.fromLTRB(16.w, 8.h, 16.w, 88.h),
                 sliver: SliverReorderableList(
                   itemCount: visibleEntries.length,
-                  onReorder: (oldIndex, newIndex) {
+                  onReorderItem: (oldIndex, newIndex) {
+                    // The command retains Flutter's pre-removal gap index;
+                    // this callback supplies the final index after removal.
                     unawaited(
                       _reorderEntries(
                         context,
                         visibleEntries,
                         oldIndex,
-                        newIndex,
+                        newIndex > oldIndex ? newIndex + 1 : newIndex,
                       ),
                     );
                   },
@@ -268,17 +272,12 @@ class _SubscriptionContent extends StatelessWidget {
     String message, {
     required bool isError,
   }) {
-    final theme = Theme.of(context);
-    final semantic = theme.semanticColors;
-    ScaffoldMessenger.of(context)
-      ..hideCurrentSnackBar()
-      ..showSnackBar(
-        SnackBar(
-          content: Text(message),
-          behavior: SnackBarBehavior.floating,
-          backgroundColor: isError ? theme.colorScheme.error : semantic.success,
-        ),
-      );
+    final feedback = AppFeedback.capture(context);
+    if (isError) {
+      feedback.error(message);
+    } else {
+      feedback.success(message);
+    }
   }
 
   String _errorText(Object error) {
@@ -374,7 +373,7 @@ class _SubscriptionOverview extends StatelessWidget {
                   fit: BoxFit.scaleDown,
                   alignment: Alignment.centerLeft,
                   child: Text(
-                    formatMoney(state.currentMonthCost),
+                    formatCnyEstimate(state.currentMonthCost),
                     style: theme.textTheme.headlineLarge?.copyWith(
                       color: colors.onPrimaryContainer,
                       fontWeight: FontWeight.w800,
@@ -387,7 +386,7 @@ class _SubscriptionOverview extends StatelessWidget {
                   spacing: 20,
                   runSpacing: 8,
                   children: [
-                    Text('固定年支 ${formatMoney(state.yearlyCost)}'),
+                    Text('固定年支 ${formatCnyEstimate(state.yearlyCost)}'),
                     Text('${state.entries.length} 项订阅'),
                   ],
                 ),
@@ -677,12 +676,33 @@ class _SubscriptionCard extends StatelessWidget {
                           ),
                         ),
                         const SizedBox(height: 6),
-                        Text(
-                          due,
-                          style: theme.textTheme.bodySmall?.copyWith(
-                            color: highlight ? semantic.warning : textSecondary,
-                          ),
+                        AppPill(
+                          label: switch (entry.status) {
+                            SubscriptionStatus.active =>
+                              paymentDate == null ? due : '启用',
+                            SubscriptionStatus.paused => '已暂停',
+                            SubscriptionStatus.canceled => '已取消',
+                            SubscriptionStatus.archived => '已归档',
+                          },
+                          color:
+                              entry.status == SubscriptionStatus.active &&
+                                  paymentDate != null
+                              ? semantic.success
+                              : textSecondary,
                         ),
+                        if (entry.status == SubscriptionStatus.active &&
+                            paymentDate != null) ...[
+                          const SizedBox(height: 6),
+                          Text(
+                            due,
+                            style: theme.textTheme.bodySmall?.copyWith(
+                              color: highlight
+                                  ? theme.colorScheme.onSurface
+                                  : textSecondary,
+                              fontWeight: highlight ? FontWeight.w600 : null,
+                            ),
+                          ),
+                        ],
                       ],
                     ),
                   ),
@@ -727,7 +747,7 @@ class _SubscriptionCard extends StatelessWidget {
       entry.price ?? 0,
       entry.currency,
     );
-    return converted == null ? '人民币待换算' : '≈ ¥${converted.toStringAsFixed(2)}';
+    return converted == null ? '人民币待换算' : '≈ ${formatCnyEstimate(converted)}';
   }
 }
 

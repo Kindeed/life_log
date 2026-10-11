@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:life_log/common/widgets/app_page_route.dart';
+import 'package:life_log/common/widgets/app_bottom_sheet.dart';
 import 'package:life_log/features/evidence/data/evidence_model.dart';
 import 'package:life_log/features/evidence/presentation/evidence_editor_sheet.dart';
 
@@ -11,8 +13,9 @@ Future<void> showEvidenceEditorSheet(
   String? sourceExtension,
 }) {
   return Navigator.of(context).push<void>(
-    MaterialPageRoute<void>(
-      builder: (_) => EvidenceEditorSheet(
+    appPageRoute<void>(
+      context,
+      EvidenceEditorSheet(
         existing: existing,
         initialProject: initialProject,
         initialProjectStageName: initialProjectStageName,
@@ -32,7 +35,7 @@ Future<void> showEvidenceEditorBottomSheet(
   String? sourcePath,
   String? sourceExtension,
 }) {
-  return showModalBottomSheet<void>(
+  return showAppBottomSheet<void>(
     context: context,
     isScrollControlled: true,
     backgroundColor: Colors.transparent,

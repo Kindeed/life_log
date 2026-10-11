@@ -70,6 +70,36 @@ void main() {
   });
   tearDown(() async => serviceLocator.reset());
 
+  for (final dark in [false, true]) {
+    testWidgets(
+      'project overview shows separate original currency totals dark=$dark',
+      (tester) async {
+        _phone(tester, 320);
+        _register(mixedCurrencies: true);
+        serviceLocator<TabsController>().goToProject();
+        await tester.pumpWidget(_harness(dark: dark, scale: 2));
+        await tester.pumpAndSettle();
+        expect(find.text('¥10.00\nJPY 700.5\nUSD 12.345'), findsOneWidget);
+        await tester.scrollUntilVisible(
+          find.text('支出 USD 12.345'),
+          200,
+          scrollable: find
+              .descendant(
+                of: find.byType(CustomScrollView).hitTestable().last,
+                matching: find.byType(Scrollable),
+              )
+              .first,
+        );
+        await tester.pumpAndSettle();
+        expect(find.text('支出 USD 12.345'), findsOneWidget);
+        expect(find.text('支出 JPY 700.5'), findsOneWidget);
+        expect(find.text('待报销 USD 0.001'), findsOneWidget);
+        expect(find.text('¥722.85'), findsNothing);
+        expect(tester.takeException(), isNull);
+      },
+    );
+  }
+
   testWidgets(
     'a recorded day keeps festival, overtime, holiday and multiple-entry information',
     (tester) async {
@@ -161,6 +191,49 @@ void main() {
     tabs.goToWork();
     await tester.pump();
     expect(pages.controller!.page, 0);
+    expect(tester.takeException(), isNull);
+  });
+
+  testWidgets('tab foreground follows the sliding indicator continuously', (
+    tester,
+  ) async {
+    _phone(tester, 390);
+    _register();
+    await tester.pumpWidget(_harness());
+    await tester.pumpAndSettle();
+    final tabs = serviceLocator<TabsController>();
+    final pages = tester.widget<PageView>(find.byType(PageView).first);
+    tabs.goToProject();
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 60));
+    final page = pages.controller!.page!;
+    expect(page, greaterThan(0));
+    expect(page, lessThan(1));
+    expect(tabs.currentIndex, 1);
+    for (var index = 0; index < 3; index++) {
+      final label = find.byKey(ValueKey('tab-label-$index'));
+      final scheme = Theme.of(tester.element(label)).colorScheme;
+      final weight = (1 - (page - index).abs()).clamp(0.0, 1.0);
+      final text = tester.widget<Text>(label);
+      expect(
+        text.style!.color,
+        Color.lerp(scheme.onSurfaceVariant, scheme.onPrimaryContainer, weight),
+      );
+      expect(
+        text.style!.fontWeight,
+        FontWeight.lerp(FontWeight.w500, FontWeight.w700, weight),
+      );
+      final slot = find.ancestor(of: label, matching: find.byType(InkWell));
+      final icons = tester
+          .widgetList<Opacity>(
+            find.descendant(of: slot, matching: find.byType(Opacity)),
+          )
+          .toList();
+      expect(icons, hasLength(2));
+      expect(icons.first.opacity, closeTo(1 - weight, 0.001));
+      expect(icons.last.opacity, closeTo(weight, 0.001));
+    }
+    await tester.pumpAndSettle();
     expect(tester.takeException(), isNull);
   });
 
@@ -407,11 +480,20 @@ void main() {
               final rect = tester.getRect(header);
               expect(rect.left, greaterThanOrEqualTo(0));
               expect(rect.right, lessThanOrEqualTo(width));
-              final action = tester.widget<AppTabHeader>(header).action;
-              expect(
-                tester.getSize(find.byWidget(action)).height,
-                greaterThanOrEqualTo(48),
+              expect(rect.width, closeTo(width, 0.1));
+              final titleRect = tester.getRect(
+                find.descendant(of: header, matching: find.text(title)),
               );
+              expect(titleRect.left, closeTo(rect.left + 22, 0.1));
+              final action = tester.widget<AppTabHeader>(header).action;
+              if (entry.key == 'more') {
+                expect(action, isNull);
+              } else {
+                expect(
+                  tester.getSize(find.byWidget(action!)).height,
+                  greaterThanOrEqualTo(48),
+                );
+              }
               if (_reviewDirectory.isNotEmpty && scale == 1 && width == 390) {
                 await _capture(
                   tester,
@@ -616,6 +698,7 @@ _ProjectPort _register({
   bool delayedCreate = false,
   bool longProjectList = false,
   List<PhotoEntry> photoEntries = const [],
+  bool mixedCurrencies = false,
 }) {
   configureWorkLogFeatureDependencies(
     repository: _WorkPort(),
@@ -642,14 +725,14 @@ _ProjectPort _register({
       watchEntries: WatchPhotoEntries(photo),
     ),
   );
-  final evidence = _EvidencePort();
+  final evidence = _EvidencePort(mixedCurrencies: mixedCurrencies);
   serviceLocator.registerFactory<EvidenceCubit>(
     () => EvidenceCubit(
       loadEntries: LoadEvidenceEntries(evidence),
       watchEntries: WatchEvidenceEntries(evidence),
     ),
   );
-  final expense = _ExpensePort();
+  final expense = _ExpensePort(mixedCurrencies: mixedCurrencies);
   serviceLocator.registerFactory<ExpenseRecordCubit>(
     () => ExpenseRecordCubit(
       loadEntries: LoadExpenseRecordEntries(expense),
@@ -720,8 +803,19 @@ class _PhotoPort implements PhotoRepositoryPort {
 }
 
 class _EvidencePort implements EvidenceRepositoryPort {
+  final bool mixedCurrencies;
+  _EvidencePort({this.mixedCurrencies = false});
   @override
-  Future<List<EvidenceEntry>> getAllEntries() async => [];
+  Future<List<EvidenceEntry>> getAllEntries() async => [
+    if (mixedCurrencies)
+      EvidenceEntry(
+        id: 1,
+        projectName: '北辰园区现场交付',
+        evidenceDate: DateTime(2026, 9),
+        amount: 0.001,
+        currency: 'USD',
+      ),
+  ];
   @override
   Stream<void> watchEntries() => const Stream.empty();
   @override
@@ -730,8 +824,33 @@ class _EvidencePort implements EvidenceRepositoryPort {
 }
 
 class _ExpensePort implements ExpenseRecordRepositoryPort {
+  final bool mixedCurrencies;
+  _ExpensePort({this.mixedCurrencies = false});
   @override
-  Future<List<ExpenseRecordEntry>> getAllEntries() async => [];
+  Future<List<ExpenseRecordEntry>> getAllEntries() async => [
+    if (mixedCurrencies) ...[
+      ExpenseRecordEntry(
+        id: 1,
+        projectName: '北辰园区现场交付',
+        expenseDate: DateTime(2026, 9),
+        amount: 10,
+      ),
+      ExpenseRecordEntry(
+        id: 2,
+        projectName: '北辰园区现场交付',
+        expenseDate: DateTime(2026, 9),
+        amount: 12.345,
+        currency: 'USD',
+      ),
+      ExpenseRecordEntry(
+        id: 3,
+        projectName: '北辰园区现场交付',
+        expenseDate: DateTime(2026, 9),
+        amount: 700.5,
+        currency: 'JPY',
+      ),
+    ],
+  ];
   @override
   Stream<void> watchEntries() => const Stream.empty();
   @override

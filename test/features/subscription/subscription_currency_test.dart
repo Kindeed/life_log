@@ -10,7 +10,10 @@ void main() {
     expect(subscriptionCurrencyFromCode('usd'), SubscriptionCurrency.usd);
     expect(subscriptionCurrencyFromCode('EUR'), SubscriptionCurrency.eur);
     expect(subscriptionCurrencyFromCode('unknown'), SubscriptionCurrency.cny);
-    expect(formatSubscriptionAmount(12.5, SubscriptionCurrency.usd), '\$12.50');
+    expect(
+      formatSubscriptionAmount(12.5, SubscriptionCurrency.usd),
+      'USD 12.50',
+    );
   });
 
   test('converts statistics to CNY without changing original amount', () {

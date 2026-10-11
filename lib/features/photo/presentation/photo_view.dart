@@ -19,8 +19,10 @@ import 'package:life_log/common/widgets/app_pill.dart';
 import 'package:life_log/common/widgets/app_text_field.dart';
 import 'package:life_log/core/di/service_locator.dart';
 import 'package:life_log/features/evidence/domain/entities/evidence_entry.dart';
+import 'package:life_log/features/evidence/domain/entities/evidence_entry_stats.dart';
 import 'package:life_log/features/evidence/presentation/evidence_cubit.dart';
 import 'package:life_log/features/expense/domain/entities/expense_record_entry.dart';
+import 'package:life_log/features/expense/domain/entities/expense_record_entry_stats.dart';
 import 'package:life_log/features/expense/presentation/expense_record_cubit.dart';
 import 'package:life_log/features/project/domain/entities/project_entry.dart';
 import 'package:life_log/features/project/presentation/project_cubit.dart';
@@ -215,11 +217,12 @@ class _PhotoViewState extends State<PhotoView> {
                                                     .entriesForProject(
                                                       project.name,
                                                     ),
-                                                pendingAmount: evidenceState
-                                                    .pendingAmountForProject(
+                                                pendingAmounts: evidenceState
+                                                    .entriesForProject(
                                                       project.name,
-                                                    ),
-                                                expenseTotal:
+                                                    )
+                                                    .pendingAmountsByCurrency,
+                                                expenseTotals:
                                                     _expenseTotalForProject(
                                                       expenseRecords,
                                                       project.name,
@@ -270,13 +273,13 @@ class _PhotoViewState extends State<PhotoView> {
     expenseCubit.loadEntries();
   }
 
-  double _expenseTotalForProject(
+  Map<String, double> _expenseTotalForProject(
     List<ExpenseRecordEntry> records,
     String project,
   ) {
     return records
         .where((record) => record.projectName == project)
-        .fold(0.0, (sum, record) => sum + record.amount);
+        .totalAmountsByCurrency;
   }
 
   void _openCreateProjectSheet() {
@@ -437,8 +440,9 @@ class _ProjectOverview extends StatelessWidget {
                 ),
                 const SizedBox(height: 8),
                 Text(
-                  formatMoney(
-                    expenseRecords.fold(0.0, (sum, item) => sum + item.amount),
+                  formatMoneyTotals(
+                    expenseRecords.totalAmountsByCurrency,
+                    separator: '\n',
                   ),
                   style: Theme.of(context).textTheme.headlineSmall?.copyWith(
                     fontWeight: FontWeight.w700,
@@ -502,8 +506,8 @@ class _ProjectOverview extends StatelessWidget {
 class _ProjectCard extends StatelessWidget {
   final PhotoProjectSummary summary;
   final List<EvidenceEntry> evidenceItems;
-  final double pendingAmount;
-  final double expenseTotal;
+  final Map<String, double> pendingAmounts;
+  final Map<String, double> expenseTotals;
   final bool isDark;
   final AppSemanticColors semantic;
   final Color textSecondary;
@@ -512,8 +516,8 @@ class _ProjectCard extends StatelessWidget {
   const _ProjectCard({
     required this.summary,
     required this.evidenceItems,
-    required this.pendingAmount,
-    required this.expenseTotal,
+    required this.pendingAmounts,
+    required this.expenseTotals,
     required this.isDark,
     required this.semantic,
     required this.textSecondary,
@@ -575,18 +579,22 @@ class _ProjectCard extends StatelessWidget {
                       label: "${evidenceItems.length} 份",
                       color: semantic.expense,
                     ),
-                    if (pendingAmount > 0)
-                      AppPill(
-                        icon: Icons.payments_rounded,
-                        label: formatMoney(pendingAmount),
-                        color: semantic.warning,
-                      ),
-                    if (expenseTotal > 0)
-                      AppPill(
-                        icon: Icons.account_balance_wallet_rounded,
-                        label: formatMoney(expenseTotal),
-                        color: semantic.expense,
-                      ),
+                    for (final amount in pendingAmounts.entries)
+                      if (amount.value > 0)
+                        AppPill(
+                          icon: Icons.payments_rounded,
+                          label:
+                              '待报销 ${formatMoney(amount.value, currency: amount.key)}',
+                          color: semantic.warning,
+                        ),
+                    for (final amount in expenseTotals.entries)
+                      if (amount.value > 0)
+                        AppPill(
+                          icon: Icons.account_balance_wallet_rounded,
+                          label:
+                              '支出 ${formatMoney(amount.value, currency: amount.key)}',
+                          color: semantic.expense,
+                        ),
                     AppPill(
                       icon: Icons.devices_rounded,
                       label: "${summary.deviceCount} 台",
@@ -637,10 +645,10 @@ class _ProjectCover extends StatelessWidget {
         borderRadius: BorderRadius.circular(AppRadius.lg),
         child: photos.isEmpty
             ? Container(
-                color: isDark ? Colors.grey[850] : Colors.grey[100],
+                color: Theme.of(context).colorScheme.surfaceContainerLow,
                 child: Icon(
                   Icons.folder_open_rounded,
-                  color: isDark ? Colors.grey[600] : Colors.grey,
+                  color: Theme.of(context).colorScheme.onSurfaceVariant,
                   size: 32.sp,
                 ),
               )
@@ -650,10 +658,10 @@ class _ProjectCover extends StatelessWidget {
                 cacheWidth: physicalWidth,
                 fit: BoxFit.cover,
                 errorBuilder: (_, _, _) => Container(
-                  color: isDark ? Colors.grey[850] : Colors.grey[100],
+                  color: Theme.of(context).colorScheme.surfaceContainerLow,
                   child: Icon(
                     Icons.broken_image_outlined,
-                    color: isDark ? Colors.grey[600] : Colors.grey,
+                    color: Theme.of(context).colorScheme.onSurfaceVariant,
                   ),
                 ),
               )
@@ -672,10 +680,10 @@ class _ProjectCover extends StatelessWidget {
                     cacheWidth: (physicalWidth / 2).ceil(),
                     fit: BoxFit.cover,
                     errorBuilder: (_, _, _) => Container(
-                      color: isDark ? Colors.grey[850] : Colors.grey[100],
+                      color: Theme.of(context).colorScheme.surfaceContainerLow,
                       child: Icon(
                         Icons.broken_image_outlined,
-                        color: isDark ? Colors.grey[600] : Colors.grey,
+                        color: Theme.of(context).colorScheme.onSurfaceVariant,
                       ),
                     ),
                   );

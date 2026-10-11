@@ -22,10 +22,20 @@ Use existing tokens and components before adding new UI primitives.
 ## Reusable Components
 
 - `AppTabHeader`, `AppTabAction` and `AppTabIconAction`: consistent primary-tab
-  titles and 48px header actions; contextual appearance/account actions in More.
+  titles and optional 48px header actions; More uses one account card.
 - `AppPressFeedback`: shared subtle press feedback, including cancellation and
   disabled-state reset; respects reduced motion through AppMotion.
-- `AppPageRoute`: shared directional navigation between primary and detail views.
+- `appPageRoute`/`AppMaterialPageRoute`: shared timing while retaining platform
+  Material transitions, route results and predictive back.
+- `showAppBottomSheet`: shared enter/reverse timing without changing the caller's
+  dismissal, focus, layout or controller ownership.
+- `AppFeedback`: captured parent-messenger feedback with measured compact width,
+  paired success/info/error colors and queue replacement.
+- `AppFormFeedback`: visible inline form/modal status with optional semantic icon.
+- `AppPill`/`AppStatusColors`: wrapping display badges and contrast-checked opaque
+  foreground/container pairs in both themes and dynamic colors.
+- `AppSettingsGroup`/`AppSettingsTile`: common settings rows, dividers and labelled
+  merged switch semantics; reflows under larger system text.
 
 - `AppCard`: use for individual repeated items, dashboard summaries, and
   tappable rows. Do not nest cards inside cards.

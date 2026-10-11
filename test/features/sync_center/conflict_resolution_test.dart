@@ -3,7 +3,6 @@ import 'dart:io';
 
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:get_storage/get_storage.dart';
 import 'package:isar_community/isar.dart';
 import 'package:life_log/common/db/db_service.dart';
 import 'package:life_log/common/services/auth_service.dart';
@@ -25,6 +24,7 @@ import 'package:life_log/features/work_log/data/work_log_model.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../../../tool/isar_test_runtime.dart' show initializeTestIsar;
+import '../../support/test_get_storage.dart';
 
 final _day = DateTime(2026, 10, 1);
 final _updated = DateTime.utc(2026, 10, 1, 10);
@@ -784,6 +784,8 @@ final class _Fixture {
     return _Fixture(directory, database);
   }
 
+  TestGetStorage? _storageFixture;
+
   Future<void> close() async {
     final auth = _auth;
     if (auth != null) {
@@ -791,6 +793,7 @@ final class _Fixture {
       auth.dispose();
       await _client!.dispose();
     }
+    await _storageFixture?.close();
     TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
         .setMockMethodCallHandler(_pathChannel, null);
     await database.close();
@@ -800,11 +803,12 @@ final class _Fixture {
   Future<DbService> openDbService() async {
     TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
         .setMockMethodCallHandler(_pathChannel, (_) async => directory.path);
-    final storage = GetStorage(
+    final storageFixture = await TestGetStorage.open(
       'conflict_auth_${DateTime.now().microsecondsSinceEpoch}',
-      directory.path,
+      directory,
     );
-    await storage.initStorage;
+    _storageFixture = storageFixture;
+    final storage = storageFixture.storage;
     final client = SupabaseClient('https://example.supabase.co', 'test-key');
     final auth = AuthService(client: client, storage: storage);
     auth.currentUser.value = User(

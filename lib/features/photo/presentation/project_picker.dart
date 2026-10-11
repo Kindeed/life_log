@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:life_log/common/widgets/app_bottom_sheet.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:life_log/common/theme/app_colors.dart';
 import 'package:life_log/common/widgets/app_sheet_scaffold.dart';
@@ -12,7 +13,7 @@ void showProjectPicker(
   required TextEditingController controller,
   required List<String> existingProjects,
 }) {
-  showModalBottomSheet<void>(
+  showAppBottomSheet<void>(
     context: context,
     isScrollControlled: true,
     builder: (_) => _ProjectPickerSheet(

@@ -1,9 +1,10 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
+import 'package:life_log/common/widgets/app_feedback.dart';
 import 'package:life_log/common/widgets/app_unsaved_changes_guard.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:life_log/common/theme/app_colors.dart';
+import 'package:life_log/common/theme/app_motion.dart';
 import 'package:life_log/common/theme/theme_extensions.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:life_log/common/widgets/app_button.dart';
@@ -50,6 +51,7 @@ class _AddLogSheetState extends State<AddLogSheet> {
   late final Future<List<ProjectEntry>> _projectEntriesFuture;
   final TextEditingController _noteController = TextEditingController();
   final FocusNode _noteFocusNode = FocusNode();
+  final TextEditingController _overtimeController = TextEditingController();
   final FocusNode _overtimeFocusNode = FocusNode();
 
   final TextEditingController _tripCityController = TextEditingController();
@@ -76,6 +78,9 @@ class _AddLogSheetState extends State<AddLogSheet> {
     final editorState = _editorCubit.state;
     _initialDraft = editorState;
     _noteController.text = editorState.note;
+    _overtimeController.text = editorState.overtimeHours > 0
+        ? _formatOvertime(editorState.overtimeHours)
+        : '';
     _tripCityController.text = editorState.tripLocation;
     _expenseController.text = editorState.expenseText;
     _customLeaveController.text = editorState.customLeave;
@@ -88,6 +93,7 @@ class _AddLogSheetState extends State<AddLogSheet> {
       node.dispose();
     }
     _noteController.dispose();
+    _overtimeController.dispose();
     _tripCityController.dispose();
     _customLeaveController.dispose();
     _expenseController.dispose();
@@ -186,31 +192,53 @@ class _AddLogSheetState extends State<AddLogSheet> {
                             child: Column(
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
-                                if (editorState.type == WorkLogEntryType.work)
-                                  _buildWorkForm(
-                                    editorState,
-                                    isDark,
-                                    bgColor,
-                                    textPrimary,
+                                _animateTypeFormSize(
+                                  AnimatedSwitcher(
+                                    key: const ValueKey(
+                                      'work-log-type-transition',
+                                    ),
+                                    duration: AppMotion.duration(
+                                      context,
+                                      AppMotion.fast,
+                                    ),
+                                    switchInCurve: AppMotion.standardDecelerate,
+                                    // Only the current form is mounted. Keeping
+                                    // outgoing editors during rapid reversal
+                                    // would attach one FocusNode to two fields.
+                                    layoutBuilder: (current, previous) =>
+                                        current ?? const SizedBox.shrink(),
+                                    child: KeyedSubtree(
+                                      key: ValueKey(editorState.type),
+                                      child: switch (editorState.type) {
+                                        WorkLogEntryType.work => _buildWorkForm(
+                                          editorState,
+                                          isDark,
+                                          bgColor,
+                                          textPrimary,
+                                        ),
+                                        WorkLogEntryType.businessTrip =>
+                                          _buildTripForm(
+                                            editorState,
+                                            isDark,
+                                            bgColor,
+                                            textPrimary,
+                                          ),
+                                        WorkLogEntryType.leave =>
+                                          _buildLeaveForm(
+                                            editorState,
+                                            isDark,
+                                            bgColor,
+                                            textPrimary,
+                                            textSecondary,
+                                          ),
+                                        WorkLogEntryType.rest => _buildRestForm(
+                                          isDark,
+                                          textSecondary,
+                                        ),
+                                      },
+                                    ),
                                   ),
-                                if (editorState.type ==
-                                    WorkLogEntryType.businessTrip)
-                                  _buildTripForm(
-                                    editorState,
-                                    isDark,
-                                    bgColor,
-                                    textPrimary,
-                                  ),
-                                if (editorState.type == WorkLogEntryType.leave)
-                                  _buildLeaveForm(
-                                    editorState,
-                                    isDark,
-                                    bgColor,
-                                    textPrimary,
-                                    textSecondary,
-                                  ),
-                                if (editorState.type == WorkLogEntryType.rest)
-                                  _buildRestForm(isDark, textSecondary),
+                                ),
 
                                 SizedBox(height: 20.h),
                                 AppTextField(
@@ -233,6 +261,18 @@ class _AddLogSheetState extends State<AddLogSheet> {
           ),
         ),
       ),
+    );
+  }
+
+  Widget _animateTypeFormSize(Widget child) {
+    // A zero-duration AnimatedSize can re-dirty its own layout in Flutter
+    // 3.38.5. Reduced motion needs no size controller or intermediate frame.
+    if (MediaQuery.disableAnimationsOf(context)) return child;
+    return AnimatedSize(
+      duration: AppMotion.fast,
+      curve: AppMotion.standardDecelerate,
+      alignment: Alignment.topCenter,
+      child: child,
     );
   }
 
@@ -296,11 +336,13 @@ class _AddLogSheetState extends State<AddLogSheet> {
     return Expanded(
       child: GestureDetector(
         onTap: () => _editorCubit.changeType(type),
-        child: Container(
+        child: AnimatedContainer(
+          duration: AppMotion.duration(context, AppMotion.fast),
+          curve: AppMotion.standardDecelerate,
           padding: EdgeInsets.symmetric(vertical: 10.h),
           decoration: BoxDecoration(
             color: isSelected
-                ? (isDark ? AppColors.darkDivider : Theme.of(context).cardColor)
+                ? Theme.of(context).colorScheme.primaryContainer
                 : Colors.transparent,
             borderRadius: BorderRadius.circular(18),
             boxShadow: isSelected
@@ -320,7 +362,7 @@ class _AddLogSheetState extends State<AddLogSheet> {
             style: TextStyle(
               fontWeight: isSelected ? FontWeight.w700 : FontWeight.w500,
               color: isSelected
-                  ? textPrimary
+                  ? Theme.of(context).colorScheme.onPrimaryContainer
                   : Theme.of(context).colorScheme.onSurfaceVariant,
             ),
           ),
@@ -414,24 +456,16 @@ class _AddLogSheetState extends State<AddLogSheet> {
       case WorkLogEditorStatus.saved:
       case WorkLogEditorStatus.deleted:
         if (!context.mounted) return;
-        final messenger = ScaffoldMessenger.maybeOf(context);
+        final feedback = AppFeedback.capture(context);
         final navigator = Navigator.of(context);
         final refresh = widget.onSavedOrDeleted;
         final message = editorState.status == WorkLogEditorStatus.saved
             ? '工时已保存'
             : '工时已删除';
         if (navigator.canPop()) navigator.pop();
-        messenger
-          ?..hideCurrentSnackBar()
-          ..showSnackBar(
-            SnackBar(
-              content: Text(message),
-              behavior: SnackBarBehavior.floating,
-              duration: const Duration(seconds: 3),
-            ),
-          );
+        feedback.success(message);
         if (refresh != null) {
-          unawaited(_refreshAfterCommit(refresh, messenger, message));
+          unawaited(_refreshAfterCommit(refresh, feedback, message));
         }
         break;
       case WorkLogEditorStatus.failure:
@@ -454,21 +488,13 @@ class _AddLogSheetState extends State<AddLogSheet> {
 
   Future<void> _refreshAfterCommit(
     Future<void> Function() refresh,
-    ScaffoldMessengerState? messenger,
+    AppFeedback feedback,
     String committedMessage,
   ) async {
     try {
       await refresh();
     } catch (_) {
-      if (messenger?.mounted != true) return;
-      messenger!
-        ..hideCurrentSnackBar()
-        ..showSnackBar(
-          SnackBar(
-            content: Text('$committedMessage，页面刷新失败，请重试'),
-            behavior: SnackBarBehavior.floating,
-          ),
-        );
+      feedback.info('$committedMessage，页面刷新失败，请重试');
     }
   }
 
@@ -508,6 +534,7 @@ class _AddLogSheetState extends State<AddLogSheet> {
         ),
         SizedBox(height: 12.h),
         AppTextField(
+          controller: _overtimeController,
           focusNode: _overtimeFocusNode,
           keyboardType: const TextInputType.numberWithOptions(decimal: true),
           prefixIcon: Icon(
@@ -646,7 +673,10 @@ class _AddLogSheetState extends State<AddLogSheet> {
   ) {
     final isSelected = editorState.overtimeHours == value;
     return GestureDetector(
-      onTap: () => _editorCubit.changeOvertime(value),
+      onTap: () {
+        _overtimeController.text = value > 0 ? _formatOvertime(value) : '';
+        _editorCubit.changeOvertime(value);
+      },
       child: Container(
         width: 70.w,
         padding: EdgeInsets.symmetric(vertical: 8.h),
@@ -709,9 +739,7 @@ class _AddLogSheetState extends State<AddLogSheet> {
               child: DropdownButtonHideUnderline(
                 child: DropdownButton<String>(
                   value: editorState.transport,
-                  dropdownColor: isDark
-                      ? AppColors.darkCard
-                      : Theme.of(context).cardColor,
+                  dropdownColor: Theme.of(context).colorScheme.surface,
                   style: TextStyle(color: textPrimary),
                   items: ["飞机", "高铁", "火车", "打车", "自驾"]
                       .map((e) => DropdownMenuItem(value: e, child: Text(e)))
@@ -759,8 +787,8 @@ class _AddLogSheetState extends State<AddLogSheet> {
                         ? Icons.check_circle
                         : Icons.pending_outlined,
                     color: editorState.isReimbursed
-                        ? AppColors.green
-                        : AppColors.orange,
+                        ? Theme.of(context).semanticColors.success
+                        : Theme.of(context).semanticColors.warning,
                     size: 20.sp,
                   ),
                   SizedBox(width: 8.w),
@@ -815,7 +843,7 @@ class _AddLogSheetState extends State<AddLogSheet> {
               onTap: () => _editorCubit.changeLeaveType(type),
               child: AppPill(
                 label: type,
-                color: AppColors.purple,
+                color: Theme.of(context).logColors.leave,
                 selected: isSelected,
               ),
             );
@@ -842,7 +870,11 @@ class _AddLogSheetState extends State<AddLogSheet> {
     return Center(
       child: Column(
         children: [
-          Icon(Icons.snooze, size: 40.sp, color: AppColors.orange),
+          Icon(
+            Icons.snooze,
+            size: 40.sp,
+            color: Theme.of(context).logColors.rest,
+          ),
           SizedBox(height: 8.h),
           Text(
             "好好休息，补充能量",
@@ -852,4 +884,8 @@ class _AddLogSheetState extends State<AddLogSheet> {
       ),
     );
   }
+
+  String _formatOvertime(double value) => value == value.roundToDouble()
+      ? value.toStringAsFixed(0)
+      : value.toString();
 }

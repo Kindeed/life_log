@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:life_log/common/widgets/app_feedback.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:go_router/go_router.dart';
@@ -161,7 +162,7 @@ class _LoginViewState extends State<LoginView> {
   Future<void> _submit() async {
     if (!formKey.currentState!.validate()) return;
 
-    final messenger = ScaffoldMessenger.of(context);
+    final feedback = AppFeedback.capture(context);
     final result = await loginCubit.submit(
       email: emailController.text.trim(),
       password: passwordController.text,
@@ -169,19 +170,19 @@ class _LoginViewState extends State<LoginView> {
     );
     final failure = result.failureOrNull;
     if (failure != null) {
-      messenger.showSnackBar(SnackBar(content: Text(failure.message)));
+      feedback.error(failure.message);
       return;
     }
 
     switch (result.valueOrNull!) {
       case LoginSubmitOutcome.signedIn:
-        messenger.showSnackBar(const SnackBar(content: Text('登录成功')));
+        feedback.success('登录成功');
         if (!mounted) return;
         context.go(AppRoutes.root);
         break;
       case LoginSubmitOutcome.registered:
         confirmPasswordController.clear();
-        messenger.showSnackBar(const SnackBar(content: Text('注册成功，请登录')));
+        feedback.success('注册成功，请登录');
         break;
     }
   }

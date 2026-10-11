@@ -23,7 +23,7 @@ class StatisticsView extends StatelessWidget {
     return Scaffold(
       backgroundColor: theme.scaffoldBackgroundColor,
       appBar: AppBar(
-        title: const Text("数据面板"),
+        title: const Text("统计面板"),
         actions: [
           IconButton(
             icon: const Icon(Icons.refresh_rounded),
@@ -247,8 +247,8 @@ class _FinanceOverview extends StatelessWidget {
               SizedBox(height: 14.h),
               _CostComposition(
                 subscriptionCost: logic.selectedMonthSubCost,
-                expenseRecordCost: logic.selectedMonthExpenseRecordCost,
-                totalCost: totalCost,
+                expenseAmounts: logic.selectedMonthExpensesByCurrency,
+                estimateNote: logic.subscriptionEstimateNote,
                 semantic: semantic,
               ),
               SizedBox(height: 18.h),
@@ -259,12 +259,20 @@ class _FinanceOverview extends StatelessWidget {
                 reimbursedColor: semantic.success,
               ),
               SizedBox(height: 14.h),
-              _ReimbursementGroup(
-                title: "凭证报销",
-                stats: logic.evidenceReimbursement,
-                pendingColor: semantic.warning,
-                reimbursedColor: semantic.success,
-              ),
+              for (final group
+                  in logic.evidenceReimbursementsByCurrency.entries)
+                Padding(
+                  padding: const EdgeInsets.only(bottom: 14),
+                  child: _ReimbursementGroup(
+                    title: '凭证报销 · ${group.key}',
+                    currency: group.key,
+                    stats: group.value,
+                    pendingColor: semantic.warning,
+                    reimbursedColor: semantic.success,
+                  ),
+                ),
+              if (logic.evidenceReimbursementsByCurrency.isEmpty)
+                const _EmptyPanel(message: '本月暂无凭证报销金额'),
             ],
           );
         },
@@ -546,7 +554,7 @@ class _TotalCostHeader extends StatelessWidget {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    "本月总支出",
+                    "人民币支出估算",
                     style: TextStyle(color: textSecondary, fontSize: 13.sp),
                   ),
                   SizedBox(height: 4.h),
@@ -554,7 +562,7 @@ class _TotalCostHeader extends StatelessWidget {
                     fit: BoxFit.scaleDown,
                     alignment: Alignment.centerLeft,
                     child: Text(
-                      formatMoney(totalCost),
+                      formatCnyEstimate(totalCost),
                       style: Theme.of(context).textTheme.headlineSmall
                           ?.copyWith(fontWeight: FontWeight.w800, height: 1),
                     ),
@@ -562,17 +570,14 @@ class _TotalCostHeader extends StatelessWidget {
                 ],
               ),
             ),
-            SizedBox(width: 8.w),
-            Flexible(
-              child: Text(
-                "固定年支 ${formatMoney(yearlyCost)}",
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
-                textAlign: TextAlign.right,
-                style: TextStyle(color: textSecondary, fontSize: 12.sp),
-              ),
-            ),
           ],
+        ),
+        const SizedBox(height: 8),
+        Text(
+          '订阅年度人民币估算 ${formatCnyEstimate(yearlyCost)}',
+          style: Theme.of(
+            context,
+          ).textTheme.bodySmall?.copyWith(color: textSecondary),
         ),
       ],
     );
@@ -581,50 +586,52 @@ class _TotalCostHeader extends StatelessWidget {
 
 class _CostComposition extends StatelessWidget {
   final double subscriptionCost;
-  final double expenseRecordCost;
-  final double totalCost;
+  final Map<String, double> expenseAmounts;
+  final String estimateNote;
   final AppSemanticColors semantic;
 
   const _CostComposition({
     required this.subscriptionCost,
-    required this.expenseRecordCost,
-    required this.totalCost,
+    required this.expenseAmounts,
+    required this.estimateNote,
     required this.semantic,
   });
 
   @override
   Widget build(BuildContext context) {
-    if (totalCost <= 0) return const _EmptyPanel(message: "本月暂无支出记录");
-
     return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        Row(
-          children: [
-            Expanded(
-              child: _AmountTile(
-                label: "订阅/固定支出",
-                value: formatMoney(subscriptionCost),
-                color: semantic.expense,
-              ),
-            ),
-            SizedBox(width: 10.w),
-            Expanded(
-              child: _AmountTile(
-                label: "一次性消费",
-                value: formatMoney(expenseRecordCost),
-                color: semantic.stats,
-              ),
-            ),
-          ],
+        _AmountTile(
+          label: '订阅 · 人民币估算',
+          value: formatCnyEstimate(subscriptionCost),
+          color: semantic.expense,
         ),
-        SizedBox(height: 10.h),
-        _StackedBar(
-          firstValue: subscriptionCost,
-          firstColor: semantic.expense,
-          secondValue: expenseRecordCost,
-          secondColor: semantic.stats,
-          total: totalCost,
+        const SizedBox(height: 8),
+        Text(
+          estimateNote,
+          style: Theme.of(context).textTheme.bodySmall?.copyWith(
+            color: Theme.of(context).colorScheme.onSurfaceVariant,
+          ),
         ),
+        const SizedBox(height: 12),
+        for (final code in (expenseAmounts.keys.toList()..sort()))
+          Padding(
+            padding: const EdgeInsets.only(bottom: 8),
+            child: _AmountTile(
+              label: '一次性消费 · $code 原币种',
+              value: formatMoney(expenseAmounts[code]!, currency: code),
+              color: semantic.stats,
+            ),
+          ),
+        if (expenseAmounts.isEmpty) const _EmptyPanel(message: '本月暂无一次性消费'),
+        if (expenseAmounts.keys.any((code) => code != 'CNY'))
+          Text(
+            '外币消费按原币种列示，未计入人民币支出估算',
+            style: Theme.of(context).textTheme.bodySmall?.copyWith(
+              color: Theme.of(context).colorScheme.onSurfaceVariant,
+            ),
+          ),
       ],
     );
   }
@@ -655,20 +662,14 @@ class _AmountTile extends StatelessWidget {
         children: [
           Text(
             label,
-            maxLines: 1,
-            overflow: TextOverflow.ellipsis,
             style: TextStyle(color: textSecondary, fontSize: 12.sp),
           ),
           SizedBox(height: 8.h),
-          FittedBox(
-            fit: BoxFit.scaleDown,
-            alignment: Alignment.centerLeft,
-            child: Text(
-              value,
-              style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                color: color,
-                fontWeight: FontWeight.w800,
-              ),
+          Text(
+            value,
+            style: Theme.of(context).textTheme.titleMedium?.copyWith(
+              color: color,
+              fontWeight: FontWeight.w800,
             ),
           ),
         ],
@@ -682,12 +683,14 @@ class _ReimbursementGroup extends StatelessWidget {
   final ReimbursementStats stats;
   final Color pendingColor;
   final Color reimbursedColor;
+  final String currency;
 
   const _ReimbursementGroup({
     required this.title,
     required this.stats,
     required this.pendingColor,
     required this.reimbursedColor,
+    this.currency = 'CNY',
   });
 
   @override
@@ -696,41 +699,47 @@ class _ReimbursementGroup extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Row(
-          children: [
-            Expanded(
-              child: Text(
-                title,
-                style: Theme.of(
-                  context,
-                ).textTheme.titleSmall?.copyWith(fontWeight: FontWeight.w800),
-              ),
-            ),
-            Text(
-              formatMoney(stats.total),
-              style: TextStyle(color: textSecondary, fontSize: 12.sp),
-            ),
-          ],
+        Text(
+          title,
+          style: Theme.of(
+            context,
+          ).textTheme.titleSmall?.copyWith(fontWeight: FontWeight.w800),
+        ),
+        const SizedBox(height: 4),
+        Text(
+          formatMoney(stats.total, currency: currency),
+          style: Theme.of(
+            context,
+          ).textTheme.bodySmall?.copyWith(color: textSecondary),
         ),
         SizedBox(height: 10.h),
-        Row(
-          children: [
-            Expanded(
-              child: _AmountTile(
-                label: "待报销",
-                value: formatMoney(stats.pending),
-                color: pendingColor,
-              ),
-            ),
-            SizedBox(width: 10.w),
-            Expanded(
-              child: _AmountTile(
-                label: "已报销",
-                value: formatMoney(stats.reimbursed),
-                color: reimbursedColor,
-              ),
-            ),
-          ],
+        LayoutBuilder(
+          builder: (context, constraints) {
+            final pending = _AmountTile(
+              label: '待报销',
+              value: formatMoney(stats.pending, currency: currency),
+              color: pendingColor,
+            );
+            final reimbursed = _AmountTile(
+              label: '已报销',
+              value: formatMoney(stats.reimbursed, currency: currency),
+              color: reimbursedColor,
+            );
+            if (constraints.maxWidth < 300 ||
+                MediaQuery.textScalerOf(context).scale(14) > 19) {
+              return Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [pending, const SizedBox(height: 8), reimbursed],
+              );
+            }
+            return Row(
+              children: [
+                Expanded(child: pending),
+                const SizedBox(width: 10),
+                Expanded(child: reimbursed),
+              ],
+            );
+          },
         ),
         if (stats.total > 0) ...[
           SizedBox(height: 10.h),
@@ -764,7 +773,7 @@ class _StackedBar extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    if (total <= 0) return const SizedBox.shrink();
+    if (!total.isFinite || total <= 0) return const SizedBox.shrink();
 
     return ClipRRect(
       borderRadius: BorderRadius.circular(999),

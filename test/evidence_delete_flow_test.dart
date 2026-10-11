@@ -77,7 +77,8 @@ void main() {
       expect(combined, isNot(contains('Get.snackbar')));
       expect(detailSheet, contains('showDialog<bool>'));
       expect(fileActions, contains('BuildContext context'));
-      expect(combined, contains('ScaffoldMessenger'));
+      expect(combined, contains('AppFeedback'));
+      expect(detailSheet, contains('AppFormFeedback'));
     });
 
     test('routes detail sheet opening through the feature launcher', () {

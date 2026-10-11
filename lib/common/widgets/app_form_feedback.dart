@@ -4,11 +4,13 @@ import 'package:flutter/material.dart';
 class AppFormFeedback extends StatelessWidget {
   final String message;
   final bool isError;
+  final IconData? icon;
 
   const AppFormFeedback({
     super.key,
     required this.message,
     this.isError = true,
+    this.icon,
   });
 
   @override
@@ -21,9 +23,10 @@ class AppFormFeedback extends StatelessWidget {
         child: Row(
           children: [
             Icon(
-              isError
-                  ? Icons.error_outline_rounded
-                  : Icons.hourglass_top_rounded,
+              icon ??
+                  (isError
+                      ? Icons.error_outline_rounded
+                      : Icons.hourglass_top_rounded),
               color: isError ? colors.error : colors.onSurfaceVariant,
               size: 18,
             ),

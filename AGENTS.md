@@ -40,9 +40,11 @@
 
 ## Build / run / test
 
-LifeLog targets Android. The repository uses Flutter 3.38.5 and Dart SDK
-`^3.10.4`; dependency and app versions are maintained in `pubspec.yaml` and
-`pubspec.lock`, not here.
+LifeLog targets Android. Use a Flutter stable release satisfying the Flutter
+and bundled Dart SDK compatibility ranges in `pubspec.yaml`; no exact version
+is required. CI follows the stable channel. Validate SDK upgrades with analysis,
+tests and an Android build. Dependency and app versions are maintained in
+`pubspec.yaml` and `pubspec.lock`, not here.
 
 ```bash
 flutter pub get --enforce-lockfile

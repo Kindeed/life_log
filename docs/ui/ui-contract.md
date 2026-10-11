@@ -17,7 +17,8 @@ Interactive controls should retain at least 48 logical pixels of touch height;
 large text should reflow rather than be globally clamped. Loading, failure,
 empty and partial-data states must remain distinguishable.
 
-The primary tabs share `AppTabHeader`, 48px action geometry and surface insets.
+The primary tabs share `AppTabHeader`, optional 48px actions and surface insets.
+More has a single account card and no duplicate account action in its header.
 Use the warm neutral / green palette and paired light/dark roles, 30px cards,
 28px groups, 22px controls, pill actions and a 36px sheet contour. Calendar cells
 keep date, lunar/festival/solar-term metadata and work status in separate layers.
@@ -29,6 +30,42 @@ Tab changes preserve page/search/scroll state and move the existing navigation
 indicator. Local calendar changes update selected content without replaying the
 whole page entrance. Use `AppMotion.duration` for transitions and reset pressed
 state when a control becomes disabled during a gesture.
+
+## Consistency additions (2026-10-11)
+
+Core save/delete feedback uses `AppFeedback.capture` before closing an editor.
+Short confirmations have measured compact width; long messages wrap within the
+screen. Success/info use 2 seconds, errors 4 seconds, with native SnackBar
+semantics and placement. Replace pending confirmations rather than queueing
+stale results. Recoverable form errors stay inline. Evidence-detail actions use
+local `AppFormFeedback` while the sheet remains open; evidence recognition and
+save failures stay in the editor. Closing success uses the parent feedback handle.
+
+Display badges use `AppPill` and `AppStatusColors` as an opaque container/foreground
+pair with at least 4.5:1 small-text contrast. Subscription lifecycle and next
+billing date are separate; ended items must not also say enabled. Amounts show
+their original currency/precision and totals group currencies. CNY conversions
+are labelled estimates; missing rates remain explicit. Tiny nonzero estimates
+display a bound rather than zero. Do not round persisted original amounts.
+
+Settings use `AppSettingsGroup`/`AppSettingsTile`: 40dp icon containers, minimum
+64dp rows, wrapping text and merged labelled switch semantics. More orders its
+single account entry, record/analysis group, app settings and professional tools.
+Diagnostics live under About; backup copy states database-only scope.
+
+Ordinary Navigator pages use `appPageRoute` with inherited Material platform
+transitions, including predictive back: enter 240ms, reverse 200ms. Sheets use
+`showAppBottomSheet`: 300ms/240ms, preserving dismissal/focus/controller policy.
+Both honour reduced motion. GoRouter root/login pages retain Material defaults.
+Tab foregrounds follow page progress; work-type transitions affect only the
+changing region and preserve input controllers. Reduced motion bypasses
+AnimatedSize where zero duration is not layout-safe.
+
+All-record browsing consumes an independent timeline snapshot: common date/type
+filters, full historical work logs, source failures and stable lazy rows with
+40-row display pages. Subscription rows represent the next billing snapshot,
+not payment history. Repositories still read complete visible collections;
+display pagination is not database pagination or measured device performance.
 
 ## UI Models May Edit
 

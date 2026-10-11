@@ -1,6 +1,7 @@
 import 'dart:io';
 
 import 'package:flutter/material.dart';
+import 'package:life_log/common/widgets/app_bottom_sheet.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:life_log/common/widgets/app_button.dart';
 import 'package:life_log/common/widgets/app_sheet_scaffold.dart';
@@ -180,7 +181,7 @@ class _PhotoPreviewViewState extends State<PhotoPreviewView> {
   }
 
   void _editDescription(PhotoEntry photo) {
-    showModalBottomSheet<void>(
+    showAppBottomSheet<void>(
       context: context,
       isScrollControlled: true,
       backgroundColor: Colors.transparent,

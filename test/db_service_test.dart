@@ -24,11 +24,13 @@ import 'package:life_log/features/work_log/sync/work_log_sync_adapter.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../tool/isar_test_runtime.dart' show initializeTestIsar;
+import 'support/test_get_storage.dart';
 
 late GetStorage _testAuthStorage;
 
 void main() {
   late Directory authStorageDirectory;
+  late TestGetStorage authStorageFixture;
   const pathChannel = MethodChannel('plugins.flutter.io/path_provider');
 
   setUpAll(() async {
@@ -41,8 +43,11 @@ void main() {
           pathChannel,
           (_) async => authStorageDirectory.path,
         );
-    _testAuthStorage = GetStorage('auth', authStorageDirectory.path);
-    await _testAuthStorage.initStorage;
+    authStorageFixture = await TestGetStorage.open(
+      'auth',
+      authStorageDirectory,
+    );
+    _testAuthStorage = authStorageFixture.storage;
     await Supabase.initialize(
       url: 'https://life-log-test.supabase.co',
       anonKey: 'test-anon-key',
@@ -57,9 +62,9 @@ void main() {
   });
 
   tearDownAll(() async {
-    await _testAuthStorage.erase();
-    await authStorageDirectory.delete(recursive: true);
     await Supabase.instance.client.dispose();
+    await authStorageFixture.close();
+    await authStorageDirectory.delete(recursive: true);
     TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
         .setMockMethodCallHandler(pathChannel, null);
   });

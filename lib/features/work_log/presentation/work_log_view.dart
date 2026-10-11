@@ -4,6 +4,7 @@ import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:life_log/common/layout/constrained_page.dart';
 import 'package:life_log/common/theme/app_spacing.dart';
 import 'package:life_log/common/widgets/app_card.dart';
+import 'package:life_log/common/widgets/app_feedback.dart';
 import 'package:life_log/common/widgets/app_tab_header.dart';
 import 'package:life_log/common/widgets/app_empty_state.dart';
 import 'package:life_log/common/widgets/app_loading.dart';
@@ -372,9 +373,7 @@ class _WorkLogContent extends StatelessWidget {
     final failure = result.failureOrNull;
     if (failure != null) {
       if (!context.mounted) return;
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(SnackBar(content: Text('删除失败：${failure.message}')));
+      AppFeedback.capture(context).error('删除失败：${failure.message}');
       return;
     }
 

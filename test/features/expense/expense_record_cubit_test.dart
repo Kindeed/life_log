@@ -11,6 +11,45 @@ import 'package:life_log/features/expense/presentation/expense_record_cubit.dart
 
 void main() {
   group('ExpenseRecordCubit', () {
+    test(
+      'month and project totals separate currency while compatibility scalar stays CNY',
+      () {
+        final state = ExpenseRecordState.ready(
+          entries: [
+            ExpenseRecordEntry(
+              id: 1,
+              expenseDate: DateTime(2026, 10),
+              amount: 10,
+              projectName: 'A',
+            ),
+            ExpenseRecordEntry(
+              id: 2,
+              expenseDate: DateTime(2026, 10),
+              amount: 2.001,
+              currency: ' usd ',
+              projectName: 'A',
+            ),
+            ExpenseRecordEntry(
+              id: 3,
+              expenseDate: DateTime(2026, 9),
+              amount: 100,
+              currency: 'JPY',
+              projectName: 'A',
+            ),
+          ],
+          referenceDay: DateTime(2026, 10),
+        );
+        expect(state.currentMonthTotalsByCurrency, {'CNY': 10, 'USD': 2.001});
+        expect(state.currentMonthTotal, 10);
+        expect(state.totalsForProjectByCurrency('A'), {
+          'CNY': 10,
+          'USD': 2.001,
+          'JPY': 100,
+        });
+        expect(state.totalForProject('A'), 10);
+      },
+    );
+
     test('loads entries and derives month and project totals', () async {
       final repository = _ExpenseRecordCubitRepository(
         entries: [
@@ -128,10 +167,10 @@ void main() {
         'lib/features/timeline/presentation/timeline_view.dart',
       ).readAsStringSync();
 
-      expect(timelineView, contains('ExpenseRecordCubit'));
-      expect(timelineView, contains('ExpenseRecordEntry'));
+      expect(timelineView, contains('TimelineCubit'));
+      expect(timelineView, contains('TimelineExpenseRecord'));
       expect(timelineView, contains('TimelineFilter.expense'));
-      expect(timelineView, contains('_ExpenseRecordTimeline'));
+      expect(timelineView, contains('openExpenseRecordEditorPage'));
       expect(timelineView, isNot(contains('ExpenseRecordController')));
       expect(timelineView, isNot(contains('expense_record_model.dart')));
       expect(timelineView, isNot(contains('DbService')));

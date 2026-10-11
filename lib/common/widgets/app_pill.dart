@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import '../theme/app_radius.dart';
 import '../theme/app_motion.dart';
 import '../theme/app_spacing.dart';
+import '../theme/app_status_colors.dart';
 
 class AppPill extends StatelessWidget {
   final String label;
@@ -20,7 +21,11 @@ class AppPill extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final tint = selected ? 0.14 : 0.08;
+    final colors = AppStatusColors.fromTint(
+      Theme.of(context),
+      color,
+      selected: selected,
+    );
     return AnimatedContainer(
       duration: AppMotion.duration(context, AppMotion.fast),
       curve: AppMotion.standardDecelerate,
@@ -29,26 +34,24 @@ class AppPill extends StatelessWidget {
         vertical: AppSpacing.xs,
       ),
       decoration: BoxDecoration(
-        color: color.withValues(alpha: tint),
+        color: colors.container,
         borderRadius: BorderRadius.circular(AppRadius.pill),
         border: selected
-            ? Border.all(color: color.withValues(alpha: 0.5))
+            ? Border.all(color: colors.foreground.withValues(alpha: 0.5))
             : null,
       ),
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
           if (icon != null) ...[
-            Icon(icon, size: 13, color: color),
+            Icon(icon, size: 13, color: colors.foreground),
             const SizedBox(width: AppSpacing.xs),
           ],
           Flexible(
             child: Text(
               label,
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
               style: Theme.of(context).textTheme.labelSmall?.copyWith(
-                color: color,
+                color: colors.foreground,
                 fontWeight: FontWeight.w700,
                 letterSpacing: 0,
               ),

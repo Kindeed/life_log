@@ -257,27 +257,67 @@ class _SlidingTabBar extends StatelessWidget {
                                 onTap: () => onSelected(index),
                                 child: ExcludeSemantics(
                                   child: Column(
-                                    mainAxisAlignment: MainAxisAlignment.center,
                                     children: [
-                                      Icon(
-                                        selectedIndex == index
-                                            ? destinations[index].selectedIcon
-                                            : destinations[index].icon,
-                                        color: selectedIndex == index
-                                            ? scheme.onPrimaryContainer
-                                            : scheme.onSurfaceVariant,
-                                      ),
-                                      const SizedBox(height: 4),
-                                      Text(
-                                        destinations[index].label,
-                                        style: TextStyle(
-                                          fontSize: 12,
-                                          fontWeight: selectedIndex == index
-                                              ? FontWeight.w700
-                                              : FontWeight.w500,
-                                          color: selectedIndex == index
-                                              ? scheme.onPrimaryContainer
-                                              : scheme.onSurfaceVariant,
+                                      Expanded(
+                                        child: AnimatedBuilder(
+                                          animation: pageController,
+                                          builder: (context, _) {
+                                            final page =
+                                                pageController.hasClients
+                                                ? pageController.page ??
+                                                      selectedIndex.toDouble()
+                                                : selectedIndex.toDouble();
+                                            final weight =
+                                                (1 - (page - index).abs())
+                                                    .clamp(0.0, 1.0);
+                                            final color = Color.lerp(
+                                              scheme.onSurfaceVariant,
+                                              scheme.onPrimaryContainer,
+                                              weight,
+                                            )!;
+                                            return Column(
+                                              mainAxisAlignment:
+                                                  MainAxisAlignment.center,
+                                              children: [
+                                                Stack(
+                                                  children: [
+                                                    Opacity(
+                                                      opacity: 1 - weight,
+                                                      child: Icon(
+                                                        destinations[index]
+                                                            .icon,
+                                                        color: color,
+                                                      ),
+                                                    ),
+                                                    Opacity(
+                                                      opacity: weight,
+                                                      child: Icon(
+                                                        destinations[index]
+                                                            .selectedIcon,
+                                                        color: color,
+                                                      ),
+                                                    ),
+                                                  ],
+                                                ),
+                                                const SizedBox(height: 4),
+                                                Text(
+                                                  destinations[index].label,
+                                                  key: ValueKey(
+                                                    'tab-label-$index',
+                                                  ),
+                                                  style: TextStyle(
+                                                    fontSize: 12,
+                                                    fontWeight: FontWeight.lerp(
+                                                      FontWeight.w500,
+                                                      FontWeight.w700,
+                                                      weight,
+                                                    ),
+                                                    color: color,
+                                                  ),
+                                                ),
+                                              ],
+                                            );
+                                          },
                                         ),
                                       ),
                                     ],

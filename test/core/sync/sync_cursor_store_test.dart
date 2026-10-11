@@ -7,29 +7,28 @@ import 'package:life_log/core/sync/get_storage_sync_cursor_store.dart';
 import 'package:life_log/core/sync/sync_cursor_store.dart';
 import 'package:life_log/core/sync/sync_run_context.dart';
 
+import '../../support/test_get_storage.dart';
+
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
   const pathChannel = MethodChannel('plugins.flutter.io/path_provider');
   late Directory directory;
   late GetStorage storage;
+  late TestGetStorage fixture;
 
   setUp(() async {
     directory = await Directory.systemTemp.createTemp('sync_cursor_test_');
     TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
         .setMockMethodCallHandler(pathChannel, (_) async => directory.path);
-    storage = GetStorage(
+    fixture = await TestGetStorage.open(
       'cursor_${DateTime.now().microsecondsSinceEpoch}',
-      directory.path,
+      directory,
     );
-    await storage.initStorage;
+    storage = fixture.storage;
   });
 
   tearDown(() async {
-    await storage.erase();
-    await storage.queue.add(() async {});
-    // The locked GetStorage driver starts its backup write after the queued
-    // flush completes. Keep the path-provider mock alive while it settles.
-    await Future<void>.delayed(const Duration(milliseconds: 30));
+    await fixture.close();
     await directory.delete(recursive: true);
     TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
         .setMockMethodCallHandler(pathChannel, null);
